@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FMCC — UI Mockup v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08090B;--s1:#0D0F12;--s2:#121519;--s3:#191D23;--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.13);--text:#ECEEF1;--mut:#8B919B;--dim:#5C626C;--acc:#4C8DFF;--accD:#2F6FE8;--accG:rgba(76,141,255,.14);--grn:#34D399;--amb:#F2B54A;--blu:#6AA8FF;--red:#FF6E6E;--ease:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased}
+body:after{content:'';position:fixed;inset:0;pointer-events:none;z-index:99;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+::selection{background:var(--acc);color:#FFFFFF}
+.mono{font-family:'Geist Mono',monospace;font-feature-settings:'tnum'}
+.serif{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+.i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+.app{display:grid;grid-template-columns:248px 1fr;height:100vh}
+/* sidebar */
+.side{background:var(--s1);border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;position:relative}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 28px}
+.mark{width:36px;height:36px;border-radius:11px;background:#0A1430;border:1px solid rgba(76,141,255,.35);display:grid;place-items:center;position:relative;overflow:hidden;box-shadow:0 0 24px rgba(76,141,255,.18)}
+.mark:after{content:'';position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent 0 70%,rgba(76,141,255,.5) 85%,transparent 100%);animation:spin 6s linear infinite}
+.mark svg{position:relative;z-index:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+.logo{width:52px;height:52px;border-radius:14px;background:#fff;padding:3px;object-fit:contain;box-shadow:0 0 0 1px rgba(255,255,255,.1),0 10px 28px -8px rgba(76,141,255,.55);transition:transform .4s var(--ease)}
+.logo:hover{transform:rotate(-4deg) scale(1.06)}
+.brand b{font-size:16px;font-weight:700;letter-spacing:.06em}.brand small{display:block;color:var(--dim);font-size:11px;letter-spacing:.02em;margin-top:1px}
+.sec{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:0 12px 8px;font-weight:600}
+.nav{position:relative}
+.nav-ind{position:absolute;left:0;right:0;top:0;height:40px;border-radius:10px;background:linear-gradient(90deg,rgba(76,141,255,.12),rgba(76,141,255,.02));border:1px solid rgba(76,141,255,.18);transition:transform .5s var(--ease),height .3s var(--ease);pointer-events:none}
+.nav-ind:before{content:'';position:absolute;left:-1px;top:10px;bottom:10px;width:3px;border-radius:3px;background:var(--acc);box-shadow:0 0 12px var(--acc)}
+.nav-item{position:relative;z-index:1;display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:10px;color:var(--mut);font-size:14px;font-weight:500;cursor:pointer;transition:color .2s,background-color .2s;margin-bottom:2px;user-select:none}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.nav-item.on{color:var(--text)}
+.nav-item.on .i{color:var(--acc)}
+.nav-item .i{transition:transform .3s var(--ease),color .2s}
+.nav-item:hover .i{transform:translateX(2px)}
+.cnt{margin-left:auto;font-family:'Geist Mono';font-size:11px;font-weight:600;background:rgba(242,181,74,.14);color:var(--amb);padding:2px 7px;border-radius:6px}
+.side .foot{margin-top:auto}
+.dofbtn{position:relative;overflow:hidden;border-radius:12px;border:1px solid rgba(76,141,255,.25);background:#0B1226;padding:14px;cursor:pointer;margin-bottom:10px;transition:border-color .3s,transform .3s var(--ease)}
+.dofbtn:hover{border-color:rgba(76,141,255,.6);transform:translateY(-2px)}
+.dofbtn:before{content:'';position:absolute;inset:0;background:radial-gradient(120px 60px at 20% 0%,rgba(76,141,255,.25),transparent);opacity:.7}
+.dofbtn b{position:relative;display:flex;align-items:center;gap:8px;font-size:13.5px}
+.dofbtn small{position:relative;display:block;color:var(--mut);font-size:11.5px;margin-top:4px}
+/* top */
+.main{display:flex;flex-direction:column;min-width:0;position:relative}
+.main:before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:22px 22px;mask-image:radial-gradient(ellipse 70% 50% at 50% 0%,#000,transparent);pointer-events:none}
+.top{height:64px;display:flex;align-items:center;gap:14px;padding:0 28px;border-bottom:1px solid var(--line);position:relative;z-index:5;background:rgba(8,9,11,.7);backdrop-filter:blur(16px)}
+.club{display:flex;align-items:center;gap:11px}
+.crest{width:30px;height:30px;border-radius:9px;background:var(--s3);border:1px solid var(--line2);display:grid;place-items:center;font-size:10.5px;font-weight:700;color:var(--mut)}
+.club b{font-size:14px;font-weight:600;display:block}.club span{font-size:12px;color:var(--mut)}
+.srch{margin-left:20px;display:flex;align-items:center;gap:10px;width:320px;height:38px;padding:0 12px;border-radius:10px;background:var(--s2);border:1px solid var(--line);color:var(--dim);font-size:13px;cursor:pointer;transition:border-color .2s,background-color .2s}
+.srch:hover{border-color:var(--line2);background:var(--s3)}
+kbd{margin-left:auto;font-family:'Geist Mono';font-size:10.5px;color:var(--mut);background:var(--s1);border:1px solid var(--line2);border-bottom-width:2px;padding:2px 6px;border-radius:5px}
+.tr{margin-left:auto;display:flex;align-items:center;gap:8px}
+.link{display:flex;align-items:center;gap:9px;height:34px;padding:0 13px;border-radius:999px;background:rgba(76,141,255,.07);border:1px solid rgba(76,141,255,.22);font-size:12.5px;color:#CFE0FF;font-weight:500}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 0 rgba(76,141,255,.6);animation:pl 2s infinite}
+@keyframes pl{70%{box-shadow:0 0 0 7px rgba(76,141,255,0)}100%{box-shadow:0 0 0 0 rgba(76,141,255,0)}}
+.ib{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--mut);background:var(--s2);border:1px solid var(--line);cursor:pointer;position:relative;transition:color .2s,border-color .2s,background-color .2s}
+.ib:hover{color:var(--text);border-color:var(--line2)}
+.ib.on{color:var(--acc)}
+.ib[data-tip]:hover:after{content:attr(data-tip);position:absolute;top:42px;right:0;white-space:nowrap;background:var(--s3);border:1px solid var(--line2);font-size:11.5px;color:var(--text);padding:5px 9px;border-radius:7px}
+/* content */
+.content{flex:1;overflow:auto;padding:34px 36px 60px;position:relative}
+.screen{display:none}.screen.on{display:block}
+.rise{animation:rise .8s var(--ease) backwards}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.d5{animation-delay:.25s}.d6{animation-delay:.3s}.d7{animation-delay:.35s}.d8{animation-delay:.4s}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:600;display:flex;align-items:center;gap:8px}
+h1{font-size:44px;font-weight:600;letter-spacing:-.035em;line-height:1.05;margin-top:10px}
+h1 .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
+.lede{color:var(--mut);font-size:15px;margin-top:10px}
+.lede b{color:var(--text);font-weight:500}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:30px}
+.hchips{display:flex;gap:8px}
+.hchip{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--s1);border:1px solid var(--line);font-size:12.5px;color:var(--mut)}
+.hchip b{color:var(--text);font-weight:500}
+/* cards */
+.card{position:relative;background:linear-gradient(180deg,var(--s2),var(--s1));border:1px solid var(--line);border-radius:18px;padding:20px;transition:border-color .3s,transform .4s var(--ease),box-shadow .4s;isolation:isolate}
+.card:before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(380px circle at var(--x,-500px) var(--y,-500px),rgba(76,141,255,.07),transparent 45%);z-index:-1;opacity:0;transition:opacity .3s}
+.card:hover:before{opacity:1}
+.card:hover{border-color:var(--line2)}
+.tilt{cursor:pointer;will-change:transform}
+.tilt:hover{box-shadow:0 24px 60px -20px rgba(0,0,0,.8)}
+.ch{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mut);font-weight:500}
+.tile{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--s3);border:1px solid var(--line)}
+.tile .i svg{width:15px;height:15px}
+.st{margin-left:auto;font-size:11px;font-family:'Geist Mono';padding:3px 8px;border-radius:6px}
+.st.g{background:rgba(76,141,255,.1);color:var(--acc)}.st.a{background:rgba(242,181,74,.1);color:var(--amb)}.st.b{background:rgba(106,168,255,.1);color:var(--blu)}
+.num{font-size:44px;font-weight:600;letter-spacing:-.04em;line-height:1;margin-top:18px;font-family:'Geist';font-feature-settings:'tnum'}
+.num small{font-size:13px;letter-spacing:0;color:var(--mut);font-weight:400;margin-left:8px}
+.sent{font-size:13.5px;color:#C5CAD1;margin-top:8px;line-height:1.45}
+.sent b{color:var(--text);font-weight:600}
+.open{display:flex;align-items:center;gap:6px;margin-top:16px;font-size:12.5px;font-weight:600;color:var(--acc)}
+.open .i svg{width:14px;height:14px;transition:transform .3s var(--ease)}
+.card:hover .open .i svg{transform:translateX(4px)}
+.home{display:grid;grid-template-columns:1fr 360px;gap:20px}
+.bento{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.viz{margin-top:16px;height:46px}
+.draw{stroke-dasharray:420;stroke-dashoffset:420;animation:draw 1.6s var(--ease) .3s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.fade{animation:fd 1.2s ease .6s backwards}@keyframes fd{from{opacity:0}}
+.ringw{display:flex;align-items:center;gap:16px;margin-top:16px}
+.ring{transform:rotate(-90deg)}
+.ring .v{animation:ring 1.6s var(--ease) .2s backwards}
+@keyframes ring{from{stroke-dashoffset:213.6}}
+.ringw .num{margin:0;font-size:36px}
+.mbars{display:flex;flex-direction:column;gap:7px;margin-top:16px}
+.mb{display:grid;grid-template-columns:74px 1fr 46px;gap:10px;align-items:center;font-size:11.5px;color:var(--mut)}
+.track{height:5px;border-radius:9px;background:rgba(255,255,255,.06);overflow:hidden}
+.track i{display:block;height:100%;border-radius:9px;animation:grow 1.3s var(--ease) .3s backwards;transform-origin:left}
+@keyframes grow{from{transform:scaleX(0)}}
+.dots{display:flex;gap:5px;margin-top:18px}
+.dots i{flex:1;height:22px;border-radius:5px;background:rgba(255,255,255,.06);animation:rise .6s var(--ease) backwards}
+.dots i.y{background:linear-gradient(180deg,#A98BFF,#6E55D6)}
+.ticks{display:flex;gap:3px;margin-top:18px;align-items:flex-end;height:26px}
+.ticks i{flex:1;border-radius:2px;background:rgba(255,255,255,.08)}
+.ticks i.past{background:var(--red);opacity:.85}
+/* attention */
+.att h4,.ttl{font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px}
+.ttl .st{margin-left:auto}
+.item{display:flex;gap:13px;padding:16px 0;border-top:1px solid var(--line);transition:opacity .4s}
+.item:first-of-type{border-top:0;padding-top:14px}
+.bar{width:3px;border-radius:3px;flex-shrink:0}
+.item p{font-size:13.5px;line-height:1.45;color:#D5D9DE}.item p b{color:var(--text);font-weight:600}
+.item small{color:var(--dim);font-size:12px;display:block;margin-top:3px}
+.item.done{opacity:.45}.item.done p{text-decoration:line-through;text-decoration-color:var(--dim)}
+.acts{display:flex;gap:8px;margin-top:11px}
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 13px;border-radius:9px;font:600 12.5px 'Geist';border:1px solid var(--line2);background:var(--s3);color:var(--text);cursor:pointer;transition:transform .25s var(--ease),background-color .2s,border-color .2s,box-shadow .3s}
+.btn:hover{border-color:rgba(255,255,255,.22);background:#1F242B}
+.btn:active{transform:scale(.97)}
+.btn-p{background:linear-gradient(180deg,#6FA4FF,var(--acc));color:#FFFFFF;border-color:transparent;box-shadow:0 0 0 1px rgba(76,141,255,.5),0 8px 24px -8px rgba(76,141,255,.55),inset 0 1px 0 rgba(255,255,255,.4)}
+.btn-p:hover{background:linear-gradient(180deg,#86B3FF,#5E99FF);box-shadow:0 0 0 1px rgba(76,141,255,.7),0 12px 32px -8px rgba(76,141,255,.75),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn-p:after{content:'';position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg)}
+.btn-p:hover:after{animation:sheen .9s var(--ease)}
+@keyframes sheen{to{left:130%}}
+.btn-l{height:42px;padding:0 20px;font-size:13.5px;border-radius:11px}
+.rip{position:absolute;border-radius:50%;transform:scale(0);background:rgba(255,255,255,.45);animation:rip .6s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(4);opacity:0}}
+.ok{color:var(--acc)}
+.match{margin-top:16px}
+.vs{display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.tm{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);width:110px;text-align:center}
+.tm .crest{width:44px;height:44px;border-radius:13px;font-size:12px}
+.kick{text-align:center}.kick b{font-size:22px;font-weight:600;letter-spacing:-.02em;display:block}.kick small{font-size:11.5px;color:var(--dim)}
+.form{display:flex;gap:5px;justify-content:center;margin-top:16px}
+.form i{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:600 10.5px 'Geist Mono';font-style:normal}
+.W{background:rgba(52,211,153,.13);color:var(--grn)}.D{background:rgba(255,255,255,.07);color:var(--mut)}.L{background:rgba(255,110,110,.13);color:var(--red)}
+/* squad */
+.head{display:flex;align-items:center;gap:20px;margin-bottom:26px}
+.head h1{margin:0;font-size:36px}
+.seg{position:relative;display:inline-flex;padding:4px;border-radius:12px;background:var(--s1);border:1px solid var(--line)}
+.seg span{position:relative;z-index:1;padding:0 16px;height:34px;display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--mut);cursor:pointer;transition:color .3s}
+.seg span.on{color:#FFFFFF}
+.seg .k{position:absolute;top:4px;left:4px;height:34px;border-radius:9px;background:var(--acc);box-shadow:0 4px 18px -4px rgba(76,141,255,.6);transition:transform .45s var(--ease),width .45s var(--ease)}
+.sq{display:grid;grid-template-columns:1fr 360px;gap:20px}
+.pitchc{padding:0;overflow:hidden;height:640px;background:radial-gradient(ellipse at 50% 40%,#0F1F19,#0A110E 70%)}
+.pitchc svg.lines{position:absolute;inset:24px;width:calc(100% - 48px);height:calc(100% - 48px)}
+.pitchc:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 58px,transparent 58px 116px);pointer-events:none}
+.p{position:absolute;transform:translate(-50%,-50%);width:120px;text-align:center;z-index:2;transition:left .8s var(--ease),top .8s var(--ease)}
+.tok{width:54px;height:54px;margin:0 auto 7px;border-radius:50%;display:grid;place-items:center;font:600 12px 'Geist Mono';background:#0B1310;border:1.5px solid rgba(255,255,255,.18);position:relative;cursor:pointer;transition:transform .3s var(--ease),border-color .3s,box-shadow .3s}
+.tok:hover{transform:scale(1.1);border-color:var(--acc);box-shadow:0 0 0 6px rgba(76,141,255,.1)}
+.tok.y{border-color:var(--acc);box-shadow:0 0 22px -2px rgba(76,141,255,.45)}
+.tok.y:before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px dashed rgba(76,141,255,.4);animation:spin 14s linear infinite}
+.tok em{position:absolute;bottom:-5px;right:-10px;font:700 9px 'Geist Mono';font-style:normal;background:var(--acc);color:#FFFFFF;padding:2px 5px;border-radius:5px}
+.p b{display:block;font-size:12.5px;font-weight:600}.p small{font-size:11px;color:#94A99F;font-family:'Geist Mono'}
+.tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translate(-50%,6px);opacity:0;pointer-events:none;white-space:nowrap;background:rgba(18,21,25,.92);backdrop-filter:blur(12px);border:1px solid var(--line2);padding:9px 11px;border-radius:10px;font-size:11.5px;text-align:left;transition:opacity .2s,transform .25s var(--ease);z-index:5}
+.tip span{display:block;color:var(--mut);margin-top:2px}
+.p:hover .tip{opacity:1;transform:translate(-50%,0)}
+.cmp{margin-top:14px}
+.cmp .row{display:grid;grid-template-columns:110px 1fr 34px;gap:10px;align-items:center;font-size:12.5px;color:var(--mut);margin-top:10px}
+.cmp .track{height:7px}
+.why{list-style:none;margin-top:6px}
+.why li{display:flex;gap:11px;padding:12px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.5;color:#D5D9DE;animation:rise .5s var(--ease) backwards}
+.why li:first-child{border-top:0}
+.why i{width:6px;height:6px;border-radius:50%;margin-top:7px;flex-shrink:0}
+/* matches */
+.mt{display:grid;grid-template-columns:1fr 380px;gap:20px}
+.score{display:flex;align-items:center;justify-content:space-between}
+.score .big{font-size:52px;font-weight:600;letter-spacing:-.04em;font-family:'Geist Mono'}
+.score .big span{color:var(--dim);margin:0 8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{height:32px;padding:0 13px;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--mut);background:var(--s1);border:1px solid var(--line);cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:color .2s,border-color .2s,background-color .2s,transform .25s var(--ease)}
+.chip:hover{color:var(--text);border-color:var(--line2);transform:translateY(-1px)}
+.chip.on{color:#FFFFFF;background:var(--acc);border-color:var(--acc)}
+.chalk{margin-top:16px;position:relative;border-radius:14px;background:radial-gradient(ellipse at 50% 50%,#101A16,#0A0F0D);border:1px solid var(--line);padding:18px}
+.chalk svg{width:100%;display:block}
+.pop{transform-box:fill-box;transform-origin:center;animation:pop .55s var(--ease) backwards}
+@keyframes pop{from{transform:scale(0);opacity:0}}
+.shot{cursor:pointer;transition:transform .2s}
+.shot:hover{transform:scale(1.35)}
+.ftip{position:absolute;pointer-events:none;background:rgba(18,21,25,.94);border:1px solid var(--line2);border-radius:9px;padding:8px 10px;font-size:11.5px;opacity:0;transition:opacity .15s;white-space:nowrap;z-index:5}
+.ftip span{color:var(--mut)}
+.leg{display:flex;gap:18px;margin-top:12px;font-size:11.5px;color:var(--mut)}
+.leg span{display:flex;align-items:center;gap:7px}
+.leg i{width:9px;height:9px;border-radius:50%}
+.prow{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);font-size:13px}
+.prow:first-of-type{border-top:0}
+.prow small{display:block;color:var(--dim);font-size:11.5px;margin-top:2px}
+.rt{margin-left:auto;font:600 13px 'Geist Mono';padding:4px 8px;border-radius:7px}
+/* chat */
+.chat{display:grid;grid-template-columns:1fr 320px;gap:20px;height:calc(100vh - 160px)}
+.cwrap{display:flex;flex-direction:column;min-height:0}
+.thread{flex:1;overflow:auto;display:flex;flex-direction:column;gap:18px;padding:4px 4px 20px;max-width:820px}
+.me{align-self:flex-end;max-width:70%;background:linear-gradient(180deg,#13224A,#0F1B3A);border:1px solid rgba(76,141,255,.22);padding:12px 16px;border-radius:16px 16px 4px 16px;font-size:14.5px;animation:rise .45s var(--ease) backwards}
+.dof{display:flex;gap:12px;animation:rise .45s var(--ease) backwards}
+.av{width:34px;height:34px;border-radius:11px;flex-shrink:0;display:grid;place-items:center;background:#0A1430;border:1px solid rgba(76,141,255,.35);color:var(--acc)}
+.bub{background:var(--s2);border:1px solid var(--line);padding:16px 18px;border-radius:4px 16px 16px 16px;font-size:14.5px;line-height:1.6;color:#D9DDE2;max-width:680px}
+.bub b{color:var(--text)}
+.w{animation:fd .35s ease backwards}
+.typing{display:flex;gap:5px;padding:4px 0}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--mut);animation:bounce 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{40%{transform:translateY(-5px);opacity:1}0%,80%{opacity:.4}}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.pc div{background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.pc b{font-size:13.5px}.pc small{display:block;color:var(--mut);font-size:12px;margin-top:4px;font-family:'Geist Mono'}
+.draft{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1px dashed rgba(76,141,255,.35);background:rgba(76,141,255,.04);margin-top:12px;animation:rise .5s var(--ease) backwards}
+.draft p{flex:1;font-size:13.5px}
+.composer{border-radius:16px;background:var(--s2);border:1px solid var(--line2);padding:6px 6px 6px 18px;display:flex;align-items:center;gap:10px;transition:border-color .3s,box-shadow .3s}
+.composer:focus-within{border-color:rgba(76,141,255,.5);box-shadow:0 0 0 4px rgba(76,141,255,.08)}
+.composer input{flex:1;background:none;border:0;outline:0;color:var(--text);font:15px 'Geist'}
+.composer input::placeholder{color:var(--dim)}
+.ctx .r{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:13px;color:#C5CAD1}
+.ctx .r:first-of-type{border-top:0}
+/* palette + toast */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(4,5,6,.6);backdrop-filter:blur(8px);display:none;align-items:flex-start;justify-content:center;padding-top:14vh}
+.ov.on{display:flex;animation:fd .2s ease}
+.pal{width:620px;border-radius:18px;background:rgba(18,21,25,.96);border:1px solid var(--line2);box-shadow:0 40px 120px rgba(0,0,0,.7);overflow:hidden;animation:palin .35s var(--ease)}
+@keyframes palin{from{transform:translateY(-10px) scale(.98);opacity:0}}
+.pal input{width:100%;height:58px;padding:0 20px;background:none;border:0;border-bottom:1px solid var(--line);outline:0;color:var(--text);font:16px 'Geist'}
+.pal .g{padding:8px}
+.pal .gl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:10px 12px 6px}
+.pi{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;font-size:13.5px;cursor:pointer;color:#D5D9DE}
+.pi small{margin-left:auto;color:var(--dim);font-size:12px}
+.pi.sel,.pi:hover{background:rgba(76,141,255,.08);color:var(--text)}
+.toasts{position:fixed;right:24px;bottom:24px;z-index:60;display:flex;flex-direction:column;gap:10px}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:rgba(18,21,25,.95);border:1px solid var(--line2);font-size:13px;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:tin .45s var(--ease)}
+.toast .i{color:var(--acc)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}}
+.ribbon{position:fixed;left:262px;bottom:14px;font-size:11.5px;color:var(--dim);z-index:4}
+body.rm *,body.rm *:before,body.rm *:after{animation:none!important;transition:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <img class="logo" src="https://customer-assets-4nw71qhi.emergentagent.net/job_fm-command-hub-1--4nc4xqh1/artifacts/ad86923cedc85358_FMCC_Reviewer_Copy_5375f743%20%281%29.png" alt="FMCC">
+      <div><b>FMCC</b><small>Command Centre · FM27</small></div>
+    </div>
+    <div class="sec">Club</div>
+    <nav class="nav" id="nav">
+      <div class="nav-ind" id="ind"></div>
+      <div class="nav-item on" data-s="home"><span class="i" data-i="home"></span>Home</div>
+      <div class="nav-item" data-s="squad"><span class="i" data-i="squad"></span>Squad</div>
+      <div class="nav-item" data-s="-"><span class="i" data-i="dev"></span>Development<span class="cnt">4</span></div>
+      <div class="nav-item" data-s="-"><span class="i" data-i="scout"></span>Scouting</div>
+      <div class="nav-item" data-s="matches"><span class="i" data-i="matches"></span>Matches</div>
+      <div class="nav-item" data-s="-"><span class="i" data-i="reports"></span>Reports</div>
+      <div class="nav-item" data-s="-"><span class="i" data-i="elite"></span>Elite Training</div>
+      <div class="nav-item" data-s="-"><span class="i" data-i="awards"></span>Awards</div>
+    </nav>
+    <div class="foot">
+      <div class="dofbtn" id="dofbtn"><b><span class="i" data-i="spark"></span>Ask your DOF</b><small>Your Director of Football</small></div>
+      <div class="nav-item" data-s="-"><span class="i" data-i="settings"></span>Settings</div>
+    </div>
+  </aside>
+
+  <section class="main">
+    <header class="top">
+      <div class="club"><div class="crest">[C]</div><div><b>[Your Club]</b><span>Season 2027/28 · March</span></div></div>
+      <div class="srch" id="srch"><span class="i" data-i="scout"></span>Search players, screens, actions…<kbd>Ctrl K</kbd></div>
+      <div class="tr">
+        <div class="link"><span class="pulse"></span>Game linked · save read 2 min ago</div>
+        <div class="ib on" id="snd" data-tip="Sounds on"><span class="i" data-i="sound"></span></div>
+        <div class="ib on" id="mot" data-tip="Motion on"><span class="i" data-i="motion"></span></div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- HOME -->
+      <div class="screen on" id="home">
+        <div class="hero">
+          <div>
+            <div class="eyebrow rise">Matchday −2 · Wednesday</div>
+            <h1 class="rise d1">Good evening, <span class="serif">Boss.</span></h1>
+            <p class="lede rise d2">Everything is up to date. <b id="attn">Three things</b> need your attention today.</p>
+          </div>
+          <div class="hchips rise d3">
+            <div class="hchip"><span class="i" data-i="matches"></span>Next: <b>Sat vs [Opponent]</b></div>
+            <div class="hchip"><span class="i" data-i="check"></span><b>Backup</b> saved 2 min ago</div>
+          </div>
+        </div>
+        <div class="home">
+          <div class="bento">
+            <div class="card tilt rise d2" data-go="squad">
+              <div class="ch"><span class="tile"><span class="i" data-i="squad"></span></span>Squad<span class="st g">Strong</span></div>
+              <div class="ringw">
+                <svg width="80" height="80" viewBox="0 0 80 80" class="ring"><circle cx="40" cy="40" r="34" stroke="rgba(255,255,255,.07)" stroke-width="7" fill="none"/><circle class="v" cx="40" cy="40" r="34" stroke="url(#gg)" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="27.8"/><defs><linearGradient id="gg"><stop offset="0" stop-color="#2F6FE8"/><stop offset="1" stop-color="#9CC2FF"/></linearGradient></defs></svg>
+                <div><div class="num" data-count="87">87</div><div style="font-size:12px;color:var(--mut);margin-top:4px">Best XI rating</div></div>
+              </div>
+              <p class="sent">One weak spot: <b>Left Back</b></p>
+              <div class="open">Open lineup <span class="i" data-i="arrow"></span></div>
+            </div>
+            <div class="card tilt rise d3">
+              <div class="ch"><span class="tile"><span class="i" data-i="dev"></span></span>Development<span class="st a">Act</span></div>
+              <div class="num" data-count="4">4<small>need minutes</small></div>
+              <div class="mbars">
+                <div class="mb">[Player B]<div class="track"><i style="width:15%;background:var(--amb)"></i></div><span class="mono">40/270</span></div>
+                <div class="mb">[Player E]<div class="track"><i style="width:66%;background:var(--acc)"></i></div><span class="mono">180/270</span></div>
+                <div class="mb">[Player M]<div class="track"><i style="width:92%;background:var(--acc)"></i></div><span class="mono">250/270</span></div>
+              </div>
+              <div class="open">See plan <span class="i" data-i="arrow"></span></div>
+            </div>
+            <div class="card tilt rise d4">
+              <div class="ch"><span class="tile"><span class="i" data-i="scout"></span></span>Scouting<span class="st b">New</span></div>
+              <div class="num" data-count="12">12<small>new targets</small></div>
+              <p class="sent">Best Left Back match: <b>[Target A]</b></p>
+              <div class="mb" style="grid-template-columns:1fr 40px;margin-top:12px"><div class="track" style="height:7px"><i style="width:91%;background:linear-gradient(90deg,#3B7BD9,var(--blu))"></i></div><span class="mono" style="color:var(--blu)">91%</span></div>
+              <div class="open">View rankings <span class="i" data-i="arrow"></span></div>
+            </div>
+            <div class="card tilt rise d5">
+              <div class="ch"><span class="tile"><span class="i" data-i="reports"></span></span>Monthly Report</div>
+              <div class="num" data-count="18" data-prefix="+">+18<small>CA this month</small></div>
+              <svg class="viz" viewBox="0 0 220 46" preserveAspectRatio="none" width="100%"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C8DFF" stop-opacity=".3"/><stop offset="1" stop-color="#4C8DFF" stop-opacity="0"/></linearGradient></defs><path class="fade" d="M0 38 L30 35 L60 36 L90 27 L120 29 L150 18 L185 14 L220 6 L220 46 L0 46Z" fill="url(#ag)"/><polyline class="draw" fill="none" stroke="#4C8DFF" stroke-width="2" points="0,38 30,35 60,36 90,27 120,29 150,18 185,14 220,6"/></svg>
+              <p class="sent">Biggest riser: <b>[Player A]</b> (+6)</p>
+              <div class="open">Read report <span class="i" data-i="arrow"></span></div>
+            </div>
+            <div class="card tilt rise d6">
+              <div class="ch"><span class="tile"><span class="i" data-i="elite"></span></span>Elite Training</div>
+              <div class="num" data-count="2">2<small>nominations</small></div>
+              <div class="dots" id="dots"></div>
+              <p class="sent">8 of 10 sessions above target</p>
+              <div class="open">Review <span class="i" data-i="arrow"></span></div>
+            </div>
+            <div class="card tilt rise d7">
+              <div class="ch"><span class="tile"><span class="i" data-i="awards"></span></span>Awards</div>
+              <div class="num" data-count="3">3<small>weeks left</small></div>
+              <div class="ticks" id="ticks"></div>
+              <p class="sent">Breakout review opens at season end</p>
+              <div class="open">See nominees <span class="i" data-i="arrow"></span></div>
+            </div>
+          </div>
+          <div>
+            <div class="card att rise d3">
+              <div class="ttl">Needs your attention<span class="st a mono" id="attnc">3</span></div>
+              <div class="item"><span class="bar" style="background:var(--amb);box-shadow:0 0 10px var(--amb)"></span><div><p><b>[Player B]</b>, 19, has played 40 of his 270 planned minutes.</p><small>The Development XI picks him for Saturday.</small><div class="acts"><button class="btn btn-p" data-done="Added to Saturday's lineup">Add to lineup</button><button class="btn">Why?</button></div></div></div>
+              <div class="item"><span class="bar" style="background:var(--acc);box-shadow:0 0 10px var(--acc)"></span><div><p>PA boost for <b>[Player C]</b> was applied in-game.</p><small>Backup saved · can't be applied twice</small><div class="acts"><button class="btn" data-done="Record opened">View record</button></div></div></div>
+              <div class="item"><span class="bar" style="background:var(--blu);box-shadow:0 0 10px var(--blu)"></span><div><p><b>[Player D]</b>'s contract ends in 3 months.</p><small>Your DOF has a recommendation.</small><div class="acts"><button class="btn" data-ask="1">Ask DOF</button></div></div></div>
+            </div>
+            <div class="card match rise d5">
+              <div class="ttl">Next match<span class="st g">Home</span></div>
+              <div class="vs"><div class="tm"><div class="crest">[C]</div>[Your Club]</div><div class="kick"><b class="mono">15:00</b><small>Saturday · League</small></div><div class="tm"><div class="crest">[O]</div>[Opponent]</div></div>
+              <div class="form"><i class="W">W</i><i class="W">W</i><i class="D">D</i><i class="W">W</i><i class="L">L</i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SQUAD -->
+      <div class="screen" id="squad">
+        <div class="head rise">
+          <div><div class="eyebrow">Lineup · Saturday</div><h1>Squad</h1></div>
+          <div class="seg" id="seg"><div class="k"></div><span data-v="best">Best XI</span><span class="on" data-v="dev">Development XI</span></div>
+          <button class="btn btn-p btn-l" style="margin-left:auto" id="use">Use this lineup <span class="i" data-i="arrow"></span></button>
+        </div>
+        <div class="sq">
+          <div class="card pitchc rise d1" id="pitch">
+            <svg class="lines" viewBox="0 0 68 105" preserveAspectRatio="none" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="1.2" vector-effect="non-scaling-stroke">
+              <rect x="0" y="0" width="68" height="105" rx="1" vector-effect="non-scaling-stroke"/><line x1="0" y1="52.5" x2="68" y2="52.5" vector-effect="non-scaling-stroke"/><ellipse cx="34" cy="52.5" rx="9.15" ry="9.15" vector-effect="non-scaling-stroke"/>
+              <rect x="13.84" y="0" width="40.32" height="16.5" vector-effect="non-scaling-stroke"/><rect x="24.84" y="0" width="18.32" height="5.5" vector-effect="non-scaling-stroke"/>
+              <rect x="13.84" y="88.5" width="40.32" height="16.5" vector-effect="non-scaling-stroke"/><rect x="24.84" y="99.5" width="18.32" height="5.5" vector-effect="non-scaling-stroke"/>
+            </svg>
+          </div>
+          <div>
+            <div class="card rise d2">
+              <div class="ttl">Team strength</div>
+              <div class="cmp">
+                <div class="row">Best XI<div class="track"><i style="width:87%;background:var(--mut)"></i></div><span class="mono">87</span></div>
+                <div class="row">Development XI<div class="track"><i id="devbar" style="width:83%;background:var(--acc)"></i></div><span class="mono" style="color:var(--acc)">83</span></div>
+              </div>
+            </div>
+            <div class="card rise d3" style="margin-top:16px">
+              <div class="ttl">Why this lineup</div>
+              <ul class="why" id="why"></ul>
+            </div>
+            <div class="card rise d4" style="margin-top:16px">
+              <div class="ttl">Minutes this month</div>
+              <div class="mbars" style="gap:12px">
+                <div class="mb" style="grid-template-columns:80px 1fr 56px">[Player B]<div class="track" style="height:7px"><i style="width:15%;background:var(--amb)"></i></div><span class="mono" style="color:var(--amb)">40/270</span></div>
+                <div class="mb" style="grid-template-columns:80px 1fr 56px">[Player E]<div class="track" style="height:7px"><i style="width:66%;background:var(--acc)"></i></div><span class="mono">180/270</span></div>
+                <div class="mb" style="grid-template-columns:80px 1fr 56px">[Player M]<div class="track" style="height:7px"><i style="width:92%;background:var(--acc)"></i></div><span class="mono">250/270</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATCHES -->
+      <div class="screen" id="matches">
+        <div class="head rise"><div><div class="eyebrow">Last match · League · Matchday 27</div><h1>Matches</h1></div></div>
+        <div class="mt">
+          <div class="card rise d1">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="ttl">Chalkboard</div>
+              <div class="chips" id="lay" style="margin-left:auto">
+                <span class="chip on" data-l="shots">Shots</span><span class="chip" data-l="passes">Passes</span><span class="chip" data-l="def">Defensive</span><span class="chip" data-l="heat">Heat map</span>
+              </div>
+            </div>
+            <div class="chalk" id="chalk">
+              <svg viewBox="-3 -3 111 74" fill="none" stroke="rgba(255,255,255,.16)" stroke-width=".35">
+                <rect x="0" y="0" width="105" height="68" rx=".5"/><line x1="52.5" y1="0" x2="52.5" y2="68"/><circle cx="52.5" cy="34" r="9.15"/><circle cx="52.5" cy="34" r=".5" fill="rgba(255,255,255,.3)"/>
+                <rect x="0" y="13.84" width="16.5" height="40.32"/><rect x="0" y="24.84" width="5.5" height="18.32"/><rect x="88.5" y="13.84" width="16.5" height="40.32"/><rect x="99.5" y="24.84" width="5.5" height="18.32"/>
+                <rect x="-1.8" y="30.34" width="1.8" height="7.32"/><rect x="105" y="30.34" width="1.8" height="7.32"/>
+                <defs><filter id="blur"><feGaussianBlur stdDeviation="2.6"/></filter><marker id="ar" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L6 3L0 6z" fill="#4C8DFF"/></marker><marker id="arx" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L6 3L0 6z" fill="#FF6E6E"/></marker></defs>
+                <g id="layer"></g>
+              </svg>
+              <div class="ftip" id="ftip"></div>
+            </div>
+            <div class="leg" id="leg"></div>
+          </div>
+          <div>
+            <div class="card rise d2">
+              <div class="score"><div class="tm" style="width:auto"><div class="crest">[C]</div></div><div class="big">2<span>–</span>1</div><div class="tm" style="width:auto"><div class="crest">[O]</div></div></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:10px"><span>xG <b class="mono" style="color:var(--acc)">2.26</b></span><span>Shots <b class="mono" style="color:var(--text)">10 – 6</b></span><span>xG <b class="mono" style="color:var(--red)">1.09</b></span></div>
+            </div>
+            <div class="card rise d3" style="margin-top:16px">
+              <div class="ttl">xG timeline</div>
+              <svg id="xgt" viewBox="0 0 320 120" width="100%" style="margin-top:12px;overflow:visible"></svg>
+            </div>
+            <div class="card rise d4" style="margin-top:16px">
+              <div class="ttl">Top performers</div>
+              <div style="margin-top:8px">
+                <div class="prow"><span class="tile mono" style="font-size:10px">ST</span><div><b>[Player L]</b><small>1 goal · 0.83 xG · 4 shots</small></div><span class="rt W">8.4</span></div>
+                <div class="prow"><span class="tile mono" style="font-size:10px">CM</span><div><b>[Player B]</b> <span class="st g" style="margin:0">U21</span><small>1 assist · 3 key passes</small></div><span class="rt W">7.9</span></div>
+                <div class="prow"><span class="tile mono" style="font-size:10px">DM</span><div><b>[Player I]</b><small>7 ball recoveries · 91% passing</small></div><span class="rt D">7.3</span></div>
+              </div>
+              <button class="btn" style="margin-top:14px;width:100%;justify-content:center"><span class="i" data-i="play"></span>Watch goal replays</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="screen" id="chat">
+        <div class="chat">
+          <div class="cwrap">
+            <div class="head rise" style="margin-bottom:18px"><div><div class="eyebrow">Ask anything about your club</div><h1>Director of <span class="serif" style="font-size:40px;color:var(--acc)">Football</span></h1></div></div>
+            <div class="thread" id="thread">
+              <div class="me">Which veteran should I sell this summer?</div>
+              <div class="dof"><div class="av"><span class="i" data-i="spark"></span></div><div class="bub">
+                I'd sell <b>[Player N]</b>. He's 32, his ability has dropped 5 points since August, and <b>[Player B]</b> is ready to take his minutes. His value is still high, and selling now frees about [£ amount] in wages.
+                <div class="pc"><div><b>[Player N] · 32</b><small>CA 141 ↓5 · 1 yr left</small></div><div><b>[Player B] · 19</b><small>CA 128 ↑9 · rising</small></div></div>
+                <div class="draft"><p><b>Draft:</b> add [Player N] to the transfer list</p><button class="btn btn-p" data-done="Added to transfer list">Accept</button><button class="btn">Dismiss</button></div>
+              </div></div>
+            </div>
+            <div class="chips" id="sugg" style="margin-bottom:12px">
+              <span class="chip">Plan my cup lineup</span><span class="chip">Who is ready for the first team?</span><span class="chip">Where am I weakest?</span>
+            </div>
+            <div class="composer"><input id="cin" placeholder="Ask your Director of Football…"><button class="btn btn-p btn-l" id="send">Send <span class="i" data-i="arrow"></span></button></div>
+          </div>
+          <div class="card ctx rise d2" style="align-self:start">
+            <div class="ttl">What your DOF can see</div>
+            <div style="margin-top:8px">
+              <div class="r">Squad &amp; role ratings<span class="i ok" data-i="check"></span></div>
+              <div class="r">Development plans<span class="i ok" data-i="check"></span></div>
+              <div class="r">Scouting rankings<span class="i ok" data-i="check"></span></div>
+              <div class="r">Match analytics<span class="i ok" data-i="check"></span></div>
+              <div class="r">Monthly reports<span class="i ok" data-i="check"></span></div>
+              <div class="r">Award history<span class="i ok" data-i="check"></span></div>
+            </div>
+            <p style="font-size:12px;color:var(--dim);margin-top:12px;line-height:1.5">Nothing changes in your game without your click.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="ov" id="ov"><div class="pal"><input id="pin" placeholder="Search players, screens or actions…"><div class="g" id="plist"></div></div></div>
+<div class="toasts" id="toasts"></div>
+<div class="ribbon">Mockup · click around · Ctrl K to search · [brackets] = placeholders from your save</div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const I={home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',squad:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/>',dev:'<path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/>',scout:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',matches:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',reports:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',elite:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',awards:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',settings:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',sound:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>',mute:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/>',motion:'<path d="M3 8h10a3 3 0 1 0-3-3M3 16h14a3 3 0 1 1-3 3M3 12h18"/>',still:'<path d="M3 8h18M3 12h18M3 16h18"/>',check:'<path d="m5 12 5 5 9-10"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',play:'<path d="M7 4v16l13-8z"/>'};
+const ico=(el)=>{el.innerHTML=`<svg viewBox="0 0 24 24">${I[el.dataset.i]}</svg>`};
+$$('[data-i]').forEach(ico);
+let sound=true,motion=!matchMedia('(prefers-reduced-motion: reduce)').matches,ac;
+document.body.classList.toggle('rm',!motion);
+function blip(f=640,d=.07,v=.035,t='sine'){if(!sound)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type=t;o.frequency.setValueAtTime(f,ac.currentTime);o.frequency.exponentialRampToValueAtTime(f*1.25,ac.currentTime+d);g.gain.setValueAtTime(v,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d+.02)}catch(e){}}
+const chime=()=>{blip(660,.09);setTimeout(()=>blip(990,.14,.03),90)};
+function toast(m){const t=document.createElement('div');t.className='toast';t.innerHTML=`<span class="i" data-i="check"></span>${m}`;ico($('.i',t));$('#toasts').appendChild(t);setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity=0;setTimeout(()=>t.remove(),400)},2600)}
+/* nav */
+function moveInd(){const a=$('.nav-item.on',$('#nav'));const ind=$('#ind');if(!a){ind.style.opacity=0;return}ind.style.opacity=1;ind.style.transform=`translateY(${a.offsetTop}px)`}
+function go(id){$$('.screen').forEach(s=>s.classList.toggle('on',s.id===id));$$('.nav-item').forEach(a=>a.classList.toggle('on',a.dataset.s===id));moveInd();blip(520,.05);if(id==='home')countUp();if(id==='squad')renderXI(false);if(id==='matches'){renderLayer(curLayer);renderXG()}$('.content').scrollTop=0}
+$$('.nav-item').forEach(a=>a.onclick=()=>a.dataset.s==='-'?(blip(380,.06),toast(`${a.textContent.trim().replace(/\d+$/,'')} isn't part of this mockup`)):go(a.dataset.s));
+$('#dofbtn').onclick=()=>go('chat');
+$$('[data-go]').forEach(c=>c.onclick=()=>go(c.dataset.go));
+$$('[data-ask]').forEach(b=>b.onclick=e=>{e.stopPropagation();go('chat')});
+/* count up */
+function countUp(){$$('#home [data-count]').forEach(el=>{const t=+el.dataset.count,p=el.dataset.prefix||'',sm=el.querySelector('small');const tail=sm?sm.outerHTML:'';if(!motion){el.innerHTML=p+t+tail;return}const st=performance.now(),dur=1300;const step=n=>{const k=Math.min(1,(n-st)/dur),e=1-Math.pow(1-k,4);el.innerHTML=p+Math.round(t*e)+tail;if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)})}
+$('#dots').innerHTML=[1,1,1,0,1,1,1,1,0,1].map((y,i)=>`<i class="${y?'y':''}" style="animation-delay:${.3+i*.05}s"></i>`).join('');
+$('#ticks').innerHTML=Array.from({length:30},(_,i)=>`<i class="${i>=9?'':'past'}" style="height:${i%7===0?100:55}%"></i>`).join('');
+/* spotlight, tilt, magnetic, ripple */
+document.addEventListener('pointermove',e=>{const c=e.target.closest('.card');if(c){const r=c.getBoundingClientRect();c.style.setProperty('--x',e.clientX-r.left+'px');c.style.setProperty('--y',e.clientY-r.top+'px');if(motion&&c.classList.contains('tilt')){const px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;c.style.transform=`perspective(900px) rotateX(${-py*5}deg) rotateY(${px*6}deg) translateY(-3px)`}}
+const b=e.target.closest('.btn-p');if(b&&motion){const r=b.getBoundingClientRect();b.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.12}px,${(e.clientY-r.top-r.height/2)*.2}px)`}});
+document.addEventListener('pointerout',e=>{const c=e.target.closest('.tilt');if(c&&!c.contains(e.relatedTarget))c.style.transform='';const b=e.target.closest('.btn-p');if(b&&!b.contains(e.relatedTarget))b.style.transform=''});
+document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn,.chip,.nav-item,.dofbtn');if(!b)return;if(b.classList.contains('btn')&&motion){const r=b.getBoundingClientRect(),s=Math.max(r.width,r.height),sp=document.createElement('span');sp.className='rip';sp.style.cssText=`width:${s}px;height:${s}px;left:${e.clientX-r.left-s/2}px;top:${e.clientY-r.top-s/2}px`;b.appendChild(sp);setTimeout(()=>sp.remove(),600)}});
+let attn=3;const words=['Nothing','One thing','Two things','Three things'];
+document.addEventListener('click',e=>{const b=e.target.closest('[data-done]');if(!b||b.dataset.used)return;e.stopPropagation();b.dataset.used=1;chime();toast(b.dataset.done);b.innerHTML=`<span class="i" data-i="check"></span>Done`;ico($('.i',b));const it=b.closest('.item');if(it){it.classList.add('done');attn--;$('#attnc').textContent=attn;$('#attn').textContent=words[attn]+(attn===1?' needs':'');$('#attn').parentNode.lastChild.textContent=attn===1?' your attention today.':' need your attention today.'}});
+/* toggles */
+$('#snd').onclick=function(){sound=!sound;this.classList.toggle('on',sound);this.dataset.tip=sound?'Sounds on':'Sounds off';this.firstElementChild.dataset.i=sound?'sound':'mute';ico(this.firstElementChild);if(sound)chime();toast(sound?'Sounds on':'Sounds off')};
+$('#mot').onclick=function(){motion=!motion;document.body.classList.toggle('rm',!motion);this.classList.toggle('on',motion);this.dataset.tip=motion?'Motion on':'Reduced motion';this.firstElementChild.dataset.i=motion?'motion':'still';ico(this.firstElementChild);blip(500);toast(motion?'Full motion on':'Reduced motion on')};
+if(!motion){$('#mot').click();motion=false}
+/* squad */
+const XI={best:[['GK',50,91,'[Keeper]',78],['LB',14,72,'[Player P]',79],['CB',37,77,'[Player F]',81],['CB',63,77,'[Player G]',80],['RB',86,72,'[Player H]',77],['CM',29,50,'[Player J]',82],['DM',50,58,'[Player I]',83],['CM',71,50,'[Player Q]',84],['LW',17,24,'[Player K]',84],['ST',50,14,'[Player L]',86],['RW',83,24,'[Player R]',85]],
+dev:[['GK',50,91,'[Keeper]',78],['LB',14,72,'[Player E]',64,1],['CB',37,77,'[Player F]',81],['CB',63,77,'[Player G]',80],['RB',86,72,'[Player H]',77],['DM',37,57,'[Player I]',83],['DM',63,57,'[Player B]',69,1],['AM',50,38,'[Player J]',82],['LW',17,27,'[Player K]',84],['ST',50,13,'[Player L]',86],['RW',83,27,'[Player M]',72,1]]};
+const roles={GK:'Sweeper Keeper (Defend)',LB:'Full Back (Support)',RB:'Wing Back (Support)',CB:'Ball-Playing Defender (Defend)',DM:'Deep-Lying Playmaker (Defend)',CM:'Box-to-Box Midfielder (Support)',AM:'Advanced Playmaker (Attack)',LW:'Inside Forward (Attack)',RW:'Winger (Attack)',ST:'Advanced Forward (Attack)'};
+const WHY={dev:[['acc','Gives three U21 players a start while the spine stays experienced.'],['acc','Only 4 points weaker than your Best XI, against a lower-table side.'],['amb','Left Back is your weak spot. [Player E] is the best young option.']],best:[['acc','Your strongest eleven by role rating for this shape.'],['blu','No U21 starters — [Player B] stays 230 minutes short of his plan.'],['amb','Left Back is still the weakest position in the team.']]};
+let xi='dev';const pitch=$('#pitch');
+XI.dev.forEach((_,i)=>{const d=document.createElement('div');d.className='p';d.innerHTML='<div class="tip"></div><div class="tok"></div><b></b><small></small>';pitch.appendChild(d)});
+function renderXI(anim=true){const ps=$$('.p',pitch);XI[xi].forEach(([r,x,y,n,rt,u],i)=>{const p=ps[i];p.style.left=x+'%';p.style.top=y+'%';const t=$('.tok',p);t.className='tok'+(u?' y':'');t.innerHTML=r+(u?'<em>U21</em>':'');$('b',p).textContent=n;$('small',p).textContent=rt+(u?' · rising':'');$('.tip',p).innerHTML=`<b>${n}</b><span>${roles[r]} · fit ${(rt/20).toFixed(1)}★</span>`});
+$('#why').innerHTML=WHY[xi].map(([c,t],i)=>`<li style="animation-delay:${i*.08}s"><i style="background:var(--${c});box-shadow:0 0 8px var(--${c})"></i>${t}</li>`).join('');
+const on=$('#seg span.on'),k=$('#seg .k');k.style.width=on.offsetWidth+'px';k.style.transform=`translateX(${on.offsetLeft-4}px)`}
+$$('#seg span').forEach(s=>s.onclick=()=>{if(s.dataset.v===xi)return;xi=s.dataset.v;$$('#seg span').forEach(x=>x.classList.toggle('on',x===s));blip(xi==='dev'?700:560);renderXI()});
+$('#use').onclick=()=>{chime();toast(`${xi==='dev'?'Development XI':'Best XI'} set for Saturday`)};
+/* matches */
+const NS='http://www.w3.org/2000/svg';
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const OUR=[[88,34,.42,1,'[Player L]',12],[84,28,.18,0,'[Player K]',23],[92,38,.61,1,'[Player L]',31],[78,40,.07,0,'[Player J]',38],[86,44,.12,0,'[Player M]',44],[95,31,.35,0,'[Player L]',52],[74,25,.05,0,'[Player I]',61],[89,36,.22,0,'[Player B]',67],[81,33,.09,0,'[Player K]',78],[90,26,.15,0,'[Player L]',85]];
+const THEIR=[[14,32,.31,1,'[Opponent 9]',27],[22,40,.08,0,'[Opponent 10]',9],[18,28,.12,0,'[Opponent 7]',49],[28,36,.04,0,'[Opponent 8]',58],[10,35,.48,0,'[Opponent 9]',72],[20,22,.06,0,'[Opponent 11]',88]];
+let curLayer='shots';const ftip=$('#ftip'),chalk=$('#chalk');
+function tipOn(e,h){ftip.innerHTML=h;const r=chalk.getBoundingClientRect();ftip.style.left=e.clientX-r.left+14+'px';ftip.style.top=e.clientY-r.top-10+'px';ftip.style.opacity=1}
+function renderLayer(l){curLayer=l;const g=$('#layer');g.innerHTML='';seed=7;let L='';
+if(l==='shots'){[[OUR,'#4C8DFF'],[THEIR,'#FF6E6E']].forEach(([arr,c])=>arr.forEach(([x,y,xg,gl,n,m],i)=>{const s=mk('circle',{cx:x,cy:y,r:1+xg*5,fill:gl?c:c+'22',stroke:c,'stroke-width':.4,class:'pop shot',style:`animation-delay:${i*.06}s`},g);s.onmousemove=e=>tipOn(e,`<b>${n}</b> · ${m}'<br><span>${xg.toFixed(2)} xG · ${gl?'Goal':'No goal'}</span>`);s.onmouseleave=()=>ftip.style.opacity=0}));L='<span><i style="background:#4C8DFF"></i>Our shots</span><span><i style="background:#FF6E6E"></i>Their shots</span><span><i style="border:1px solid var(--mut)"></i>Size = xG · filled = goal</span>'}
+if(l==='passes'){for(let i=0;i<46;i++){const x=15+rnd()*70,y=6+rnd()*56,ok=rnd()>.14,x2=Math.min(103,x+4+rnd()*16),y2=Math.max(2,Math.min(66,y+(rnd()-.5)*22));mk('line',{x1:x,y1:y,x2,y2,stroke:ok?'#4C8DFF':'#FF6E6E','stroke-width':.45,'stroke-opacity':ok?.75:.9,'marker-end':ok?'url(#ar)':'url(#arx)',class:'pop',style:`animation-delay:${i*.02}s`},g)}L='<span><i style="background:#4C8DFF"></i>Completed (88%)</span><span><i style="background:#FF6E6E"></i>Failed</span>'}
+if(l==='def'){for(let i=0;i<28;i++){const x=6+rnd()*58,y=5+rnd()*58,t=rnd();const c=t<.5?'#A98BFF':t<.8?'#F2B54A':'#4C8DFF';mk('rect',{x:x-1,y:y-1,width:2,height:2,fill:c,transform:`rotate(45 ${x} ${y})`,class:'pop',style:`animation-delay:${i*.03}s`},g)}L='<span><i style="background:#A98BFF"></i>Tackles</span><span><i style="background:#F2B54A"></i>Interceptions</span><span><i style="background:#4C8DFF"></i>Recoveries</span>'}
+if(l==='heat'){const hg=mk('g',{filter:'url(#blur)'},g);for(let i=0;i<60;i++){const x=40+rnd()*50+(rnd()-.5)*20,y=10+rnd()*48;mk('circle',{cx:x,cy:y,r:3+rnd()*4,fill:rnd()>.6?'#F2B54A':'#4C8DFF','fill-opacity':.28,class:'pop',style:`animation-delay:${i*.01}s`},hg)}L='<span><i style="background:#4C8DFF"></i>[Player B] · touches</span><span><i style="background:#F2B54A"></i>Most active zones</span>'}
+$('#leg').innerHTML=L}
+$$('#lay .chip').forEach(c=>c.onclick=()=>{$$('#lay .chip').forEach(x=>x.classList.toggle('on',x===c));blip(600,.05);renderLayer(c.dataset.l)});
+function renderXG(){const s=$('#xgt');s.innerHTML='';const W=320,H=110,mx=2.5,X=m=>m/90*W,Y=v=>H-v/mx*H;[0,1,2].forEach(v=>{mk('line',{x1:0,x2:W,y1:Y(v),y2:Y(v),stroke:'rgba(255,255,255,.06)'},s);mk('text',{x:W+6,y:Y(v)+3,fill:'#5C626C','font-size':9,'font-family':'Geist Mono'},s).textContent=v});
+[[OUR,'#4C8DFF'],[THEIR,'#FF6E6E']].forEach(([arr,c])=>{const sh=[...arr].sort((a,b)=>a[5]-b[5]);let v=0,d=`M0 ${H}`;sh.forEach(([, , xg,gl,, m])=>{d+=` H${X(m)}`;v+=xg;d+=` V${Y(v)}`;if(gl)setTimeout(()=>{},0)});d+=` H${W}`;mk('path',{d,fill:'none',stroke:c,'stroke-width':2,class:'draw',style:'stroke-dasharray:900;stroke-dashoffset:900'},s);let acc=0;sh.forEach(([, , xg,gl,, m])=>{acc+=xg;if(gl)mk('circle',{cx:X(m),cy:Y(acc),r:4,fill:c,stroke:'#0D0F12','stroke-width':2,class:'pop',style:'animation-delay:1.2s'},s)})});
+['0\'','45\'','90\''].forEach((t,i)=>mk('text',{x:i*W/2-(i?8:0),y:H+14,fill:'#5C626C','font-size':9,'font-family':'Geist Mono'},s).textContent=t)}
+/* chat */
+const R={'Plan my cup lineup':['For the cup tie I\'d start three U21s: <b>[Player B]</b> in midfield, <b>[Player E]</b> at left back and <b>[Player M]</b> on the right. That keeps the spine experienced and gets [Player B] to 130 of his 270 planned minutes.','Save as Cup lineup'],
+'Who is ready for the first team?':['<b>[Player M]</b> is closest. He has 250 of 270 planned minutes, averages 7.2 in his last five games and his role rating as a Winger is only 0.3★ behind your starter.','Add [Player M] to first-team plans'],
+'Where am I weakest?':['<b>Left Back.</b> Your best option rates 3.1★ as a Full Back (Support), the lowest in the XI. Scouting has 12 new targets, and the top one is a 91% fit.','Open Left Back shortlist']};
+const th=$('#thread');
+function ask(q){if(!q.trim())return;blip(720,.05);const m=document.createElement('div');m.className='me';m.textContent=q;th.appendChild(m);const d=document.createElement('div');d.className='dof';d.innerHTML='<div class="av"><span class="i" data-i="spark"></span></div><div class="bub"><div class="typing"><i></i><i></i><i></i></div></div>';ico($('.i',d));th.appendChild(d);th.scrollTop=th.scrollHeight;
+const [txt,act]=R[q]||['Good question. In the full program I\'d answer from your squad, plans, match data and history. This mockup only knows the three suggested questions.',null];
+setTimeout(()=>{const b=$('.bub',d);b.innerHTML='';const parts=txt.split(/(\s+)/);let i=0;const tick=()=>{if(i<parts.length){const s=document.createElement('span');s.className='w';s.innerHTML=parts[i++];b.appendChild(s);th.scrollTop=th.scrollHeight;setTimeout(tick,motion?28:0)}else if(act){const x=document.createElement('div');x.className='draft';x.innerHTML=`<p><b>Draft:</b> ${act}</p><button class="btn btn-p" data-done="${act} — saved">Accept</button><button class="btn">Dismiss</button>`;b.appendChild(x);blip(880,.08);th.scrollTop=th.scrollHeight}};tick()},motion?700:0)}
+$$('#sugg .chip').forEach(c=>c.onclick=()=>ask(c.textContent));
+$('#send').onclick=()=>{ask($('#cin').value);$('#cin').value=''};
+$('#cin').onkeydown=e=>{if(e.key==='Enter')$('#send').click()};
+/* palette */
+const P=[['Players','[Player B]','19 · CM · U21','squad'],['Players','[Player E]','20 · LB · U21','squad'],['Players','[Player N]','32 · CB','chat'],['Screens','Development XI','Squad','squad'],['Screens','Last match chalkboard','Matches','matches'],['Screens','Home','Dashboard','home'],['Actions','Ask DOF: Where am I weakest?','DOF','ask'],['Actions','Check for updates','Settings','upd']];
+let sel=0,flt=P;
+function drawPal(){const q=$('#pin').value.toLowerCase();flt=P.filter(p=>(p[1]+p[2]).toLowerCase().includes(q));sel=Math.min(sel,flt.length-1);let h='',last='';flt.forEach((p,i)=>{if(p[0]!==last){h+=`<div class="gl">${p[0]}</div>`;last=p[0]}h+=`<div class="pi ${i===sel?'sel':''}" data-k="${i}">${p[1]}<small>${p[2]}</small></div>`});$('#plist').innerHTML=h||'<div class="gl">No matches</div>';$$('.pi').forEach(e=>e.onclick=()=>runPal(+e.dataset.k))}
+function runPal(i){const p=flt[i];if(!p)return;closePal();if(p[3]==='ask'){go('chat');ask('Where am I weakest?')}else if(p[3]==='upd'){chime();toast('All 5 components up to date')}else go(p[3])}
+function openPal(){$('#ov').classList.add('on');$('#pin').value='';sel=0;drawPal();setTimeout(()=>$('#pin').focus(),30);blip(600,.05)}
+function closePal(){$('#ov').classList.remove('on')}
+$('#srch').onclick=openPal;$('#ov').onclick=e=>{if(e.target.id==='ov')closePal()};
+$('#pin').oninput=()=>{sel=0;drawPal()};
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openPal()}if(!$('#ov').classList.contains('on'))return;if(e.key==='Escape')closePal();if(e.key==='ArrowDown'){sel=Math.min(flt.length-1,sel+1);drawPal()}if(e.key==='ArrowUp'){sel=Math.max(0,sel-1);drawPal()}if(e.key==='Enter')runPal(sel)});
+window.addEventListener('resize',()=>{moveInd();if($('#squad').classList.contains('on'))renderXI()});
+document.fonts.ready.then(()=>{moveInd();countUp()});
+</script>
+</body>
+</html>
