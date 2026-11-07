@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FM Command Centre — UI Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0B0F14;--panel:#121821;--card:#161E29;--line:#222C3A;--text:#E8EDF3;--muted:#8592A3;--green:#3DDC84;--amber:#F5B547;--red:#FF6B6B;--blue:#5AA9FF}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#05070A;color:var(--text);padding:28px;min-height:100vh}
+.mono{font-family:'IBM Plex Mono',monospace}
+.switch{display:flex;gap:8px;justify-content:center;margin-bottom:18px}
+.switch button{background:#141a22;border:1px solid var(--line);color:var(--muted);padding:9px 18px;border-radius:999px;font:600 13px 'Plus Jakarta Sans';cursor:pointer;transition:background-color .2s,color .2s}
+.switch button.on{background:var(--green);color:#06130B;border-color:var(--green)}
+.win{max-width:1440px;margin:0 auto;height:860px;background:var(--bg);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:grid;grid-template-columns:232px 1fr;box-shadow:0 40px 120px rgba(0,0,0,.6)}
+.side{background:var(--panel);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 26px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#3DDC84,#1A8F52);display:grid;place-items:center;font-weight:800;color:#06130B}
+.brand b{font-size:15px}.brand small{display:block;color:var(--muted);font-size:11px}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;margin-bottom:2px;cursor:pointer;transition:background-color .2s,color .2s}
+.nav a:hover{background:#1A2230;color:var(--text)}
+.nav a.on{background:#1C2735;color:var(--text);box-shadow:inset 3px 0 0 var(--green)}
+.nav .ic{width:20px;text-align:center;font-size:15px}
+.nav .badge{margin-left:auto;background:var(--amber);color:#1a1205;font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px}
+.side .bottom{margin-top:auto}
+.chatbtn{background:linear-gradient(135deg,#1E3A2B,#14261D);border:1px solid #275C3F;color:var(--text)!important}
+.main{display:flex;flex-direction:column;overflow:hidden}
+.top{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;gap:16px}
+.crest{width:30px;height:30px;border-radius:50%;background:#2A3546;display:grid;place-items:center;font-size:12px;font-weight:800}
+.top h3{font-size:15px}.top span{color:var(--muted);font-size:13px}
+.pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:rgba(61,220,132,.1);border:1px solid rgba(61,220,132,.35);color:var(--green);padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(61,220,132,.2);animation:p 2s infinite}
+@keyframes p{50%{box-shadow:0 0 0 7px rgba(61,220,132,0)}}
+.search{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px;color:var(--muted);font-size:13px;width:260px}
+.content{padding:30px 32px;overflow:auto;flex:1}
+.screen{display:none;animation:in .35s ease}.screen.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:6px 0 26px;font-size:14.5px}
+.grid{display:grid;grid-template-columns:1fr 340px;gap:24px}
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;transition:transform .2s,border-color .2s}
+.mods .card:hover{transform:translateY(-3px);border-color:#34465E;cursor:pointer}
+.mh{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;font-weight:700;margin-bottom:14px}
+.mi{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:15px}
+.big{font-size:34px;font-weight:800;letter-spacing:-.02em}
+.big small{font-size:14px;color:var(--muted);font-weight:600;margin-left:6px}
+.line{color:var(--text);font-size:13.5px;margin-top:6px;opacity:.85}
+.spark{margin-top:14px;height:34px;width:100%}
+.open{margin-top:14px;font-size:12.5px;font-weight:700;color:var(--green)}
+.att h4{font-size:15px;margin-bottom:14px}
+.item{display:flex;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.item:first-of-type{border-top:0}
+.tag{width:8px;border-radius:4px;flex-shrink:0}
+.item p{font-size:13.5px;line-height:1.45}.item small{color:var(--muted);font-size:12px}
+.btn{display:inline-block;margin-top:9px;padding:7px 13px;border-radius:9px;font-size:12.5px;font-weight:700;border:0;cursor:pointer;transition:transform .15s,opacity .15s}
+.btn:hover{transform:translateY(-1px)}
+.g{background:var(--green);color:#06130B}.ghost{background:#202A38;color:var(--text)}
+.season{margin-top:16px}
+.bar{height:8px;background:#202A38;border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),#9BF0C0);border-radius:99px}
+/* squad */
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg span{padding:9px 18px;border-radius:9px;font-size:13.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.seg span.on{background:var(--green);color:#06130B}
+.row{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.pitch{position:relative;height:600px;border-radius:18px;background:repeating-linear-gradient(0deg,#123222 0 60px,#143826 60px 120px);border:1px solid #1E4A33;overflow:hidden}
+.pitch:before{content:'';position:absolute;inset:22px;border:2px solid rgba(255,255,255,.12);border-radius:6px}
+.pitch:after{content:'';position:absolute;left:22px;right:22px;top:50%;border-top:2px solid rgba(255,255,255,.12)}
+.circle{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px;border:2px solid rgba(255,255,255,.12);border-radius:50%}
+.pl{position:absolute;transform:translate(-50%,-50%);text-align:center;width:110px;z-index:2}
+.tok{width:52px;height:52px;margin:0 auto 6px;border-radius:50%;background:#0E1A14;border:2px solid #3F6B54;display:grid;place-items:center;font-weight:800;font-size:13px;position:relative}
+.tok.y{border-color:var(--green);box-shadow:0 0 0 4px rgba(61,220,132,.15)}
+.tok em{position:absolute;bottom:-4px;right:-8px;font-style:normal;background:var(--green);color:#06130B;font-size:9.5px;font-weight:800;padding:1px 5px;border-radius:6px}
+.pl b{display:block;font-size:12.5px}.pl small{color:#A9C2B4;font-size:11px}
+.why li{list-style:none;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45;display:flex;gap:10px}
+.why li:first-child{border-top:0}
+.mins{margin-top:6px}.mins div{display:flex;justify-content:space-between;font-size:12.5px;margin-top:12px}
+/* chat */
+.chat{display:grid;grid-template-columns:1fr 300px;gap:24px;height:100%}
+.thread{display:flex;flex-direction:column;gap:18px;max-width:760px}
+.me{align-self:flex-end;background:#1F3A2B;border:1px solid #2B5A40;padding:13px 17px;border-radius:16px 16px 4px 16px;font-size:14.5px}
+.dof{display:flex;gap:12px}
+.av{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#3DDC84,#1A8F52);display:grid;place-items:center;font-weight:800;color:#06130B;font-size:13px;flex-shrink:0}
+.bub{background:var(--card);border:1px solid var(--line);padding:16px 18px;border-radius:4px 16px 16px 16px;font-size:14.5px;line-height:1.55}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.cmp div{background:#111822;border:1px solid var(--line);border-radius:12px;padding:12px}
+.cmp b{font-size:14px}.cmp small{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.act{border:1px dashed #2F6B4A;background:rgba(61,220,132,.06);border-radius:12px;padding:13px;display:flex;align-items:center;gap:12px}
+.act p{font-size:13.5px;flex:1}
+.input{margin-top:auto;background:var(--card);border:1px solid #2A3646;border-radius:16px;padding:16px 18px;color:var(--muted);font-size:14.5px;display:flex;justify-content:space-between;align-items:center}
+.chips{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.chips span{background:#18212D;border:1px solid var(--line);padding:7px 13px;border-radius:999px;font-size:12.5px;color:var(--text);cursor:pointer}
+.ctx p{font-size:13px;padding:9px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between}
+.ctx p:first-of-type{border-top:0}
+.note{max-width:1440px;margin:16px auto 0;color:var(--muted);font-size:12.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="switch">
+  <button class="on" onclick="go('home',this)">1 · Home</button>
+  <button onclick="go('squad',this)">2 · Squad (Development XI)</button>
+  <button onclick="go('chat',this)">3 · DOF Chat</button>
+</div>
+
+<div class="win">
+  <aside class="side">
+    <div class="brand"><div class="logo">CC</div><div><b>Command Centre</b><small>Football Manager 27</small></div></div>
+    <nav class="nav">
+      <a class="on" data-s="home" onclick="go('home')"><span class="ic">⌂</span>Home</a>
+      <a data-s="squad" onclick="go('squad')"><span class="ic">◎</span>Squad</a>
+      <a><span class="ic">↗</span>Development<span class="badge">4</span></a>
+      <a><span class="ic">⌕</span>Scouting</a>
+      <a><span class="ic">▶</span>Matches</a>
+      <a><span class="ic">▤</span>Reports</a>
+      <a><span class="ic">◆</span>Elite Training</a>
+      <a><span class="ic">★</span>Awards</a>
+    </nav>
+    <div class="bottom nav">
+      <a class="chatbtn" data-s="chat" onclick="go('chat')"><span class="ic">✦</span>Ask your DOF</a>
+      <a><span class="ic">⚙</span>Settings</a>
+    </div>
+  </aside>
+
+  <section class="main">
+    <header class="top">
+      <div class="crest">[C]</div>
+      <div><h3>[Your Club]</h3><span>Season 2027/28 · March</span></div>
+      <div class="search" style="margin-left:24px">Search any player…</div>
+      <div class="pill"><span class="dot"></span>Game linked · save read 2 min ago</div>
+    </header>
+
+    <div class="content">
+      <!-- HOME -->
+      <div class="screen on" id="home">
+        <h1>Good evening, Boss.</h1>
+        <p class="sub">Everything is up to date. Three things need your attention today.</p>
+        <div class="grid">
+          <div class="mods">
+            <div class="card"><div class="mh"><span class="mi" style="background:rgba(61,220,132,.15)">◎</span>Squad</div><div class="big">87<small>Best XI rating</small></div><p class="line">One weak spot: <b>Left Back</b></p><svg class="spark" viewBox="0 0 200 34"><polyline fill="none" stroke="#3DDC84" stroke-width="2.5" points="0,26 30,24 60,25 90,18 120,20 150,12 200,8"/></svg><div class="open">Open lineup →</div></div>
+            <div class="card"><div class="mh"><span class="mi" style="background:rgba(245,181,71,.15)">↗</span>Development</div><div class="big">4<small>need minutes</small></div><p class="line">Youngsters below their monthly target</p><svg class="spark" viewBox="0 0 200 34"><polyline fill="none" stroke="#F5B547" stroke-width="2.5" points="0,10 40,14 80,12 120,20 160,22 200,24"/></svg><div class="open">See plan →</div></div>
+            <div class="card"><div class="mh"><span class="mi" style="background:rgba(90,169,255,.15)">⌕</span>Scouting</div><div class="big">12<small>new targets</small></div><p class="line">Best match for Left Back: 91% fit</p><svg class="spark" viewBox="0 0 200 34"><polyline fill="none" stroke="#5AA9FF" stroke-width="2.5" points="0,28 40,22 80,24 120,14 160,10 200,6"/></svg><div class="open">View rankings →</div></div>
+            <div class="card"><div class="mh"><span class="mi" style="background:rgba(61,220,132,.15)">▤</span>Monthly Report</div><div class="big mono">+18<small>CA this month</small></div><p class="line">Biggest riser: [Player A] (+6)</p><svg class="spark" viewBox="0 0 200 34"><polyline fill="none" stroke="#3DDC84" stroke-width="2.5" points="0,24 40,22 80,18 120,19 160,12 200,9"/></svg><div class="open">Read report →</div></div>
+            <div class="card"><div class="mh"><span class="mi" style="background:rgba(196,140,255,.15)">◆</span>Elite Training</div><div class="big">2<small>nominations</small></div><p class="line">Both on track for a PA boost</p><svg class="spark" viewBox="0 0 200 34"><polyline fill="none" stroke="#C48CFF" stroke-width="2.5" points="0,20 40,18 80,19 120,14 160,12 200,10"/></svg><div class="open">Review →</div></div>
+            <div class="card"><div class="mh"><span class="mi" style="background:rgba(255,107,107,.15)">★</span>Awards</div><div class="big">3<small>weeks left</small></div><p class="line">Breakout review opens at season end</p><svg class="spark" viewBox="0 0 200 34"><polyline fill="none" stroke="#FF6B6B" stroke-width="2.5" points="0,8 50,12 100,14 150,20 200,26"/></svg><div class="open">See nominees →</div></div>
+          </div>
+          <div>
+            <div class="card att">
+              <h4>Needs your attention</h4>
+              <div class="item"><span class="tag" style="background:var(--amber)"></span><div><p><b>[Player B]</b>, 19, has played 40 of his 270 planned minutes.</p><small>Development XI suggests him for Saturday.</small><br><button class="btn g">Add to lineup</button></div></div>
+              <div class="item"><span class="tag" style="background:var(--green)"></span><div><p>PA boost for <b>[Player C]</b> was applied in-game.</p><small>Backup saved · cannot be applied twice</small><br><button class="btn ghost">View record</button></div></div>
+              <div class="item"><span class="tag" style="background:var(--blue)"></span><div><p><b>[Player D]</b>'s contract ends in 3 months.</p><small>Your DOF has a recommendation.</small><br><button class="btn ghost">Ask DOF</button></div></div>
+            </div>
+            <div class="card season"><div class="mh" style="margin:0">Season progress</div><div class="bar"><i style="width:72%"></i></div><small style="color:var(--muted);font-size:12px">Match 27 of 38 · 11 to go</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SQUAD -->
+      <div class="screen" id="squad">
+        <div class="row"><div><h1>Squad</h1></div><div class="seg" style="margin-left:24px"><span>Best XI</span><span class="on">Development XI</span></div><button class="btn g" style="margin:0 0 0 auto;padding:11px 18px;font-size:13.5px">Use this lineup</button></div>
+        <div class="grid">
+          <div class="pitch"><div class="circle"></div>
+            <div class="pl" style="left:50%;top:90%"><div class="tok">GK</div><b>[Keeper]</b><small>78</small></div>
+            <div class="pl" style="left:15%;top:70%"><div class="tok y">LB<em>U21</em></div><b>[Player E]</b><small>64 · growing</small></div>
+            <div class="pl" style="left:38%;top:74%"><div class="tok">CB</div><b>[Player F]</b><small>81</small></div>
+            <div class="pl" style="left:62%;top:74%"><div class="tok">CB</div><b>[Player G]</b><small>80</small></div>
+            <div class="pl" style="left:85%;top:70%"><div class="tok">RB</div><b>[Player H]</b><small>77</small></div>
+            <div class="pl" style="left:50%;top:52%"><div class="tok">DM</div><b>[Player I]</b><small>83</small></div>
+            <div class="pl" style="left:28%;top:42%"><div class="tok y">CM<em>U21</em></div><b>[Player B]</b><small>69 · growing</small></div>
+            <div class="pl" style="left:72%;top:42%"><div class="tok">CM</div><b>[Player J]</b><small>82</small></div>
+            <div class="pl" style="left:18%;top:18%"><div class="tok">LW</div><b>[Player K]</b><small>84</small></div>
+            <div class="pl" style="left:50%;top:13%"><div class="tok">ST</div><b>[Player L]</b><small>86</small></div>
+            <div class="pl" style="left:82%;top:18%"><div class="tok y">RW<em>U21</em></div><b>[Player M]</b><small>72 · growing</small></div>
+          </div>
+          <div>
+            <div class="card"><h4 style="font-size:15px;margin-bottom:6px">Why this lineup</h4>
+              <ul class="why"><li><span style="color:var(--green)">●</span>Gives three U21 players a start while keeping the spine experienced.</li><li><span style="color:var(--green)">●</span>Only 4 points weaker than your Best XI, against a lower-table side.</li><li><span style="color:var(--amber)">●</span>Left Back is your weak spot. [Player E] is the best young option.</li></ul>
+            </div>
+            <div class="card" style="margin-top:16px"><h4 style="font-size:15px">Minutes this month</h4>
+              <div class="mins">
+                <div><span>[Player B]</span><span class="mono" style="color:var(--amber)">40 / 270</span></div><div class="bar" style="margin:6px 0 0"><i style="width:15%;background:var(--amber)"></i></div>
+                <div><span>[Player E]</span><span class="mono">180 / 270</span></div><div class="bar" style="margin:6px 0 0"><i style="width:66%"></i></div>
+                <div><span>[Player M]</span><span class="mono">250 / 270</span></div><div class="bar" style="margin:6px 0 0"><i style="width:92%"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="screen" id="chat">
+        <div class="chat">
+          <div style="display:flex;flex-direction:column;height:720px">
+            <h1 style="margin-bottom:22px">Director of Football</h1>
+            <div class="thread">
+              <div class="me">Which veteran should I sell this summer?</div>
+              <div class="dof"><div class="av">DF</div><div class="bub">
+                I'd sell <b>[Player N]</b>. He's 32, his ability has dropped 5 points since August, and [Player B] is ready to take his minutes. His value is still high, and selling now frees about [£ amount] in wages.
+                <div class="cmp"><div><b>[Player N] · 32</b><small>CA 141 ↓5 · contract 1 yr</small></div><div><b>[Player B] · 19</b><small>CA 128 ↑9 · PA 165</small></div></div>
+                <div class="act"><p><b>Draft:</b> Add [Player N] to the transfer list</p><button class="btn g" style="margin:0">Accept</button><button class="btn ghost" style="margin:0">Dismiss</button></div>
+              </div></div>
+            </div>
+            <div style="margin-top:auto">
+              <div class="input">Ask your Director of Football…<span class="btn g" style="margin:0">Send</span></div>
+              <div class="chips"><span>Plan my cup lineup</span><span>Who is ready for the first team?</span><span>Where am I weakest?</span></div>
+            </div>
+          </div>
+          <div class="card ctx" style="align-self:start"><h4 style="font-size:15px;margin-bottom:10px">What your DOF can see</h4>
+            <p><span>Squad &amp; ratings</span><span style="color:var(--green)">✓</span></p>
+            <p><span>Development plans</span><span style="color:var(--green)">✓</span></p>
+            <p><span>Scouting rankings</span><span style="color:var(--green)">✓</span></p>
+            <p><span>Monthly reports</span><span style="color:var(--green)">✓</span></p>
+            <p><span>Award history</span><span style="color:var(--green)">✓</span></p>
+            <small style="color:var(--muted);font-size:12px;display:block;margin-top:10px">Nothing changes in your game without your click.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<p class="note">Mockup only. Names in [brackets] are placeholders; real data comes from your save.</p>
+
+<script>
+function go(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  document.querySelectorAll('.nav a[data-s]').forEach(a=>a.classList.toggle('on',a.dataset.s===id));
+  const order=['home','squad','chat'];
+  document.querySelectorAll('.switch button').forEach((b,i)=>b.classList.toggle('on',order[i]===id));
+}
+</script>
+</body>
+</html>
