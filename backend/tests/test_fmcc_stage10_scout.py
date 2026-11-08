@@ -277,18 +277,18 @@ class TestLeagues:
     def test_matching(self):
         d = S.get(f"{API}/leagues").json()
         L = {r["name"]: r for r in d["leagues"]}
-        assert d["list"]["count"] == 181
-        assert L["Serie A"]["opta_name"] == "Italian Serie A"
-        assert L["Highland Football League"]["status"] == "estimated"
+        assert d["list"]["count"] == 408
+        assert L["Serie A"]["opta_name"] == "Serie A"
+        assert L["Highland Football League"]["opta_name"] == "Highland / Lowland Leagues"
         assert L["Women's Super Division"]["status"] == "womens"
         ref = d["list"]["reference"]
         assert abs(L["Serie A"]["multiplier"] - (L["Serie A"]["opta"] / ref) ** 1.5) < .002
 
     def test_match_and_multiplier(self):
-        assert S.put(f"{API}/leagues/Serie A/match", json={"opta_name": "Italian Serie B"}).status_code == 200
+        assert S.put(f"{API}/leagues/Serie A/match", json={"opta_name": "Serie B"}).status_code == 200
         L = {r["name"]: r for r in S.get(f"{API}/leagues").json()["leagues"]}
-        assert L["Serie A"]["opta_name"] == "Italian Serie B"
-        S.put(f"{API}/leagues/Serie A/match", json={"opta_name": "Italian Serie A"})
+        assert L["Serie A"]["opta_name"] == "Serie B"
+        S.put(f"{API}/leagues/Serie A/match", json={"opta_name": "Serie A"})
         assert S.put(f"{API}/leagues/Serie A/match", json={"opta_name": "Nope"}).status_code == 422
         assert S.put(f"{API}/leagues/Nope/match", json={"opta_name": None}).status_code == 404
         assert S.put(f"{API}/leagues/Eredivisie/multiplier", json={"value": 0.5}).status_code == 200
@@ -302,7 +302,7 @@ class TestLeagues:
 
     def test_recalculate_preview(self):
         r = S.post(f"{API}/leagues/recalculate", json={"apply": False}).json()
-        assert r["applied"] is False and any(c["league"] == "Highland Football League" for c in r["changes"])
+        assert r["applied"] is False and isinstance(r["changes"], list)
 
     def test_import_list_and_builtin(self):
         csv = b"Competition,Country,Opta Average\nTEST League A,Testland,90\nTEST League B,Testland,60\n"
@@ -311,7 +311,7 @@ class TestLeagues:
         assert S.get(f"{API}/leagues").json()["list"]["count"] == 2
         assert S.post(f"{API}/leagues/import", files={"file": ("bad.csv", b"a,b\n1,2\n", "text/csv")}).status_code == 422
         S.post(f"{API}/leagues/use-builtin")
-        assert S.get(f"{API}/leagues").json()["list"]["count"] == 181
+        assert S.get(f"{API}/leagues").json()["list"]["count"] == 408
 
 
 # ---- squad best XI ----

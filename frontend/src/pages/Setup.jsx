@@ -4,6 +4,7 @@ import { Check, X, AlertTriangle, FolderSearch, Activity, KeyRound, HeartPulse, 
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { api, errMsg } from "@/lib/api";
+import { DownloadButton } from "@/components/DownloadButton";
 
 const STEPS = [["Find FM", FolderSearch], ["Match analytics", Activity], ["DOF key", KeyRound], ["Health check", HeartPulse]];
 const ICON = { ok: Check, warn: AlertTriangle, fail: X };
@@ -134,6 +135,7 @@ export default function Setup() {
         <img src="/fmcc-logo.png" alt="FMCC" className="wiz-logo rise" data-testid="setup-logo" />
         <h1 className="h rise wiz-h">Welcome to <span className="serif">FMCC.</span></h1>
         <p className="lede wiz-lede">Four quick steps and your club is ready.</p>
+        <DownloadButton />
         {step !== null && <><StepBar step={step} />
           <div className="card rise d1 wiz-card" data-testid="setup-card">
             {step === 0 && <FindStep form={form} set={set} next={() => setStep(1)} />}

@@ -110,6 +110,16 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Tested: iteration_13 (33/34 new + regression + full UI). Fixed afterwards: position-aware role scores, empty compare 422, board move only for shortlisted players, unique board starters, league wording, weight dots, bell closes on outside click.
 - Not built: 'new since last save' counts on saved searches; foul/card/distance/header-attempt stats (not in the save data yet); late reports are a labelled record, not a regenerated report page.
 
+## Implemented (2026-11-08) — Download button
+- GET /api/setup/download reads FMCC_RELEASE_REPO (owner/repo, backend env) and links to the latest GitHub release's .exe (version, size, date; cached 10 min). Hidden inside the Windows program. Shown on the setup page (front page) and on Home. Until the repo is set, or before a release exists, the button is greyed out with a plain message.
+- Releases are published by the workflow when a v* tag is pushed (pushes to main only build an artifact).
+
+## Implemented (2026-11-08) — New league strength list
+- `backend/data/opta_leagues.json` rebuilt from the user's `Global_League_Strength_and_Player_Model.xlsx` (copy kept in `backend/data/sources/`): 408 rated competitions (mean Opta club strength, snapshot 6 Nov 2026, research 8 Nov 2026), plus median, quartiles, top-five mean, rated clubs, evidence, tier, type, competition ID and aliases from the Competition Register. 169 unrated competitions are kept under `unrated` (no score, never treated as weak).
+- Reference = benchmark mean 92.099 (Premier League). Multiplier formula unchanged: (strength ÷ 92.099)^1.5. Note: the workbook calls the 1.5 exponent "retired" and suggests an additive scenario formula with beta left blank by default; not adopted yet.
+- Matching now also uses each competition's aliases (e.g. "English Premier League"). Highland Football League now matches "Highland / Lowland Leagues" instead of being estimated.
+- Stage 10 tests updated to the new names and count; 43/43 pass.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.

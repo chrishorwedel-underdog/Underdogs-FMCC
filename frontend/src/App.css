@@ -211,6 +211,9 @@ h1.h .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
 .bell-row{cursor:pointer;border-radius:8px;padding:8px}.bell-row:hover{background:var(--s2)}.bell-row.unread b:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);margin-right:6px}
 .nav-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);margin-left:auto;flex-shrink:0}
 .rawsw{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);padding:0 8px;cursor:pointer}
+.dl-box{display:flex;flex-direction:column;align-items:center;gap:8px;margin:22px 0 4px}
+.dl-box small{color:var(--mut);font-size:13px}
+.dl-box.compact{flex-direction:row;justify-content:flex-start;margin:0 0 22px;gap:14px}
 .wiz-row .seg button{height:46px;padding:0 26px;font-size:15px}
 .wiz-card .btn-l{height:54px;padding:0 28px;font-size:15.5px;border-radius:13px}
 @media (max-width:760px){.wiz-row{flex-wrap:nowrap;gap:10px}.wiz-row .seg button{padding:0 14px}.wiz-row .btn-l{padding:0 16px;white-space:nowrap}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.wiz-card{padding:26px 22px!important}.wiz-logo{height:110px}}

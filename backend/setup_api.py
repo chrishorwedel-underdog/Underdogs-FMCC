@@ -114,6 +114,38 @@ async def health():
     return {"items": items}
 
 
+_DL = {"at": 0.0, "data": None}
+
+
+@router.get("/download")
+async def download_info():
+    """Latest FMCC-Setup.exe from the GitHub release set in FMCC_RELEASE_REPO (owner/repo). Hidden inside the Windows program."""
+    import time
+    import httpx
+    repo = (os.environ.get("FMCC_RELEASE_REPO") or "").strip().removeprefix("https://").removeprefix("github.com/").strip("/")
+    if LIVE:
+        return {"show": False}
+    if not repo:
+        return {"show": True, "url": None, "version": None, "message": "The download link isn't set up yet"}
+    if _DL["data"] and time.time() - _DL["at"] < 600:
+        return _DL["data"]
+    data = {"show": True, "url": f"https://github.com/{repo}/releases/latest/download/FMCC-Setup.exe", "version": None, "message": None}
+    try:
+        async with httpx.AsyncClient(timeout=8, follow_redirects=True) as client:
+            r = await client.get(f"https://api.github.com/repos/{repo}/releases/latest", headers={"Accept": "application/vnd.github+json"})
+        if r.status_code == 200:
+            rel = r.json()
+            asset = next((a for a in rel.get("assets", []) if a["name"].lower().endswith(".exe")), None)
+            data |= {"version": rel.get("tag_name"), "url": asset["browser_download_url"] if asset else data["url"],
+                     "size_mb": round(asset["size"] / 1e6, 1) if asset else None, "published": (rel.get("published_at") or "")[:10]}
+        elif r.status_code == 404:
+            data |= {"url": None, "message": "No release has been published yet"}
+    except httpx.HTTPError as exc:
+        logger.warning("Release check failed: %s", type(exc).__name__)
+    _DL.update(at=time.time(), data=data)
+    return data
+
+
 class ProgressIn(BaseModel):
     step: int = Field(ge=0, le=3)
     form: dict = Field(default_factory=dict)

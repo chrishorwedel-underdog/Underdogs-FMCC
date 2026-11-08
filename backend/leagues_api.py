@@ -1,4 +1,5 @@
-"""League strength: the built-in Opta list (from the FM26 Player Rating & Similarity Model workbook), matched to the save's leagues.
+"""League strength: the built-in list (mean Opta club strength from the Global League Strength and Player Model workbook,
+408 rated competitions), matched to the save's leagues by name and known aliases.
 Leagues not on the list are placed by their save reputation. Every match, multiplier edit and recalculation is kept as a new version."""
 import csv
 import io
@@ -63,7 +64,9 @@ async def save_leagues(c: dict) -> list:
 def _match(sl: dict, rows: list) -> tuple:
     cands = [r for r in rows if sl["country"] and r["country"].lower() == sl["country"].lower()] or rows
     t = toks(sl["name"]) - STOP or toks(sl["name"])
-    scored = sorted(((len(t & toks(r["name"])) / max(1, len(t)), -r["rank"], r) for r in cands), key=lambda x: (x[0], x[1]), reverse=True)
+    def hit(r):
+        return max(len(t & toks(n)) / max(1, len(t)) for n in [r["name"], *(r.get("aliases") or [])])
+    scored = sorted(((hit(r), -r["rank"], r) for r in cands), key=lambda x: (x[0], x[1]), reverse=True)
     scored = [s for s in scored if s[0] > 0]
     if not scored:
         return None, "estimated", []

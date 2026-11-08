@@ -4,6 +4,7 @@ import { Activity, Check } from "lucide-react";
 import { api, ago, gameDate } from "@/lib/api";
 import { ModuleCards } from "@/components/ModuleCards";
 import { UpNext } from "@/components/Notify";
+import { DownloadButton } from "@/components/DownloadButton";
 
 const WORDS = ["Nothing", "One thing", "Two things", "Three things", "Four things", "Five things"];
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning," : h < 18 ? "Good afternoon," : "Good evening,"; };
@@ -56,6 +57,7 @@ export default function Home() {
         </div>
       </div>
       <UpNext />
+      <DownloadButton compact />
       <ModuleCards d={d} />
       <div className="home-bottom" data-testid="home-bottom">
         <Attention items={d.attention} />
