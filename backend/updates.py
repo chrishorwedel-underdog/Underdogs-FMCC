@@ -12,8 +12,8 @@ COMPONENTS = [  # key, name, role, GitHub repo (None = not published yet), bundl
     ("bepinex", "BepInEx 6", "Add-on loader for FM (IL2CPP bleeding edge)", "bepinex_be", "6.0.0-be.793"),
     ("scoutsheet", "ScoutSheet", "Scouting engine inside Scout Players (MIT licence)", os.environ.get("SCOUTSHEET_REPO") or None, "v1.0.0"),
     ("fmdossier", "FM Dossier", "Squad and recruitment app (launched from Connections)", "page:https://fmdossier.dev/download", "not tracked"),
-    ("fmst26", "FMST26", "Scouting stats app (launched from Connections)", ("page:" + os.environ["FMST26_URL"]) if os.environ.get("FMST26_URL") else None, "not tracked"),
-    ("fmos", "fmOS", "Career website (opens in your browser)", ("page:" + os.environ["FMOS_URL"]) if os.environ.get("FMOS_URL") else None, "not tracked"),
+    ("fmst26", "FMST26", "Scouting stats app (launched from Connections)", "page:https://www.fmscout.com/a-fmst-26.html", "not tracked"),
+    ("fmos", "fmOS", "Manager's office app for Windows and Mac (launched from Connections)", "page:https://fmos.it/", "not tracked"),
 ]
 
 
@@ -21,7 +21,7 @@ async def fetch_page_version(url: str):
     async with httpx.AsyncClient(timeout=8, follow_redirects=True) as client:
         r = await client.get(url)
         r.raise_for_status()
-    m = re.search(r"\bv?(\d+\.\d+\.\d+)\b", re.sub(r"<[^>]+>", " ", r.text))
+    m = re.search(r"(?i)(?:\bversion|\bbeta|\bv)\s*(\d+\.\d+(?:\.\d+)?)\b", re.sub(r"<[^>]+>", " ", r.text))
     return f"v{m.group(1)}" if m else None
 BEPINEX_BUILDS = "https://builds.bepinex.dev"
 

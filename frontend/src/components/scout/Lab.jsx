@@ -5,7 +5,28 @@ import { api } from "@/lib/api";
 import { useGet, useAct, money } from "@/lib/ui";
 import { useScout, fmtMoney } from "./ctx";
 
-const FKEYS = ["formulas", "scout-meta", "scout-players", "scatter", "quadrant"];
+const FKEYS = ["formulas", "formulas-starter", "scout-meta", "scout-players", "scatter", "quadrant"];
+
+const StarterPack = ({ act, onTry }) => {
+  const { data } = useGet("formulas-starter", "/scout/formulas/starter");
+  const left = (data || []).filter((x) => !x.added);
+  const add = (keys) => act(() => api.post("/scout/formulas/starter", { keys }), (r) => `${r.added.length} formula${r.added.length === 1 ? "" : "s"} added`, FKEYS);
+  if (!data) return null;
+  return (
+    <div className="card" style={{ gridColumn: "1 / -1" }} data-testid="formula-starter-pack">
+      <div className="ttl">Starter pack<span className="st n">{data.length - left.length}/{data.length} added</span><span style={{ marginLeft: "auto" }} />
+        <button className="btn btn-p" disabled={!left.length} onClick={() => add(left.map((x) => x.key))} data-testid="formula-starter-add-all">Add all</button></div>
+      <p className="note" style={{ marginTop: 4 }}>Ready-made formulas to get you going. Try one to preview it first, or add it and edit it like your own.</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 10, marginTop: 10 }}>
+        {data.map((x) => <div key={x.key} className="row" style={{ borderTop: 0, border: "1px solid var(--line)", borderRadius: 10, padding: 10 }} data-testid={`starter-${x.key}`}>
+          <div style={{ flex: 1 }}><b>{x.name}</b><small>{x.about}</small><small className="mono">{x.expr}</small></div>
+          <button className="btn" onClick={() => onTry(x)} data-testid={`starter-try-${x.key}`}>Try</button>
+          {x.added ? <span className="st ok" data-testid={`starter-added-${x.key}`}>Added</span> : <button className="btn btn-p" onClick={() => add([x.key])} data-testid={`starter-add-${x.key}`}>Add</button>}
+        </div>)}
+      </div>
+    </div>
+  );
+};
 
 export const FormulasTab = () => {
   const { data } = useGet("formulas", "/scout/formulas");
@@ -18,6 +39,7 @@ export const FormulasTab = () => {
   const importFile = async (file) => { try { const j = JSON.parse(await file.text()); act(() => api.post("/scout/formulas/import", j), (r) => `${r.imported.length} formulas imported`, FKEYS); } catch { act(() => Promise.reject({ response: { data: { detail: "That isn't an FMCC formulas file" } } })); } };
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} data-testid="formulas-tab">
+      <StarterPack act={act} onTry={(x) => { setF({ key: x.key, name: x.name, expr: x.expr }); check(x.expr); }} />
       <div className="card"><div className="ttl"><Plus size={14} />Write a formula<span className="st n">{data?.items.length || 0}/{data?.limit}</span></div>
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <input className="inp" style={{ width: 140 }} placeholder="short_name" value={f.key} onChange={(e) => setF({ ...f, key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })} data-testid="formula-key" />

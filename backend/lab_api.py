@@ -274,6 +274,41 @@ async def delete_formula(key: str):
     return {"ok": True}
 
 
+STARTER = [
+    ("finishing", "Finishing vs xG", "npg - npxg", "Scores more (or less) than his chances suggest"),
+    ("goal_threat", "Goal threat", "npxg + xa", "Chances he gets plus chances he makes"),
+    ("creator", "Creative output", "xa * 10 + chc", "Chance quality and volume together"),
+    ("carrier", "Ball progression", "progp + drb", "Moves the ball forward by passing or dribbling"),
+    ("defender", "Defensive work", "tkw + intc + blk", "Tackles, interceptions and blocks per 90"),
+    ("duels", "Duel winner", "(tkr + aerr) / 2", "Average of tackle and aerial win rates"),
+    ("shot_stopper", "Shot-stopping", "xgp * 10 + savep / 10", "Goalkeepers: goals prevented and save rate"),
+    ("cost_per_grade", "Cost per grade point", "value / max(grade, 1)", "Lower is better value for money"),
+    ("wage_value", "Grade per 1k wage", "grade / max(wage / 1000, 1)", "Higher is more quality for the wage"),
+    ("young_talent", "Young and good", "if(age <= 21, grade, 0)", "Grade for players 21 and under, 0 for everyone else"),
+]
+
+
+@router.get("/scout/formulas/starter")
+async def starter_pack():
+    have = await formulas((await active_career())["id"])
+    return [{"key": k, "name": n, "expr": e, "about": a, "added": k in have} for k, n, e, a in STARTER]
+
+
+class StarterIn(BaseModel):
+    keys: list[str] = Field(min_length=1, max_length=len(STARTER))
+
+
+@router.post("/scout/formulas/starter")
+async def add_starter(body: StarterIn):
+    have = await formulas((await active_career())["id"])
+    done = []
+    for k, n, e, _ in STARTER:
+        if k in body.keys and k not in have:
+            await save_formula(k, FormulaIn(name=n, expr=e))
+            done.append(k)
+    return {"added": done}
+
+
 class ImportIn(BaseModel):
     formulas: list[dict] = Field(max_length=MAX_FORMULAS)
 
@@ -395,16 +430,36 @@ async def list_tactics():
     return await db.tactics.find({"career_id": c["id"]}, {"_id": 0, "career_id": 0}).sort("at", -1).to_list(50)
 
 
+def _layer(slots: list, players: list, used: set) -> dict:
+    """Best natural player per slot with nobody used twice (optimal assignment)."""
+    cand = [p for p in players if p["unique_id"] not in used]
+    if not cand:
+        return {}
+    rate = [[roles.role_rating(p, s["role"]) if roles.eligible(p, s) else None for p in cand] for s in slots]
+    n = len(cand)
+    cost = [[(-r[j] if r[j] is not None else 10_000) if j < n else 0 for j in range(n + len(slots))] for r in rate]
+    out = {}
+    for i, j in enumerate(roles._hungarian(cost)):
+        if j is not None and j < n and rate[i][j] is not None:
+            out[slots[i]["key"]] = {"unique_id": cand[j]["unique_id"], "name": cand[j]["name"], "rating": rate[i][j], "natural": True}
+    return out
+
+
 def fit(players: list, formation: str) -> list:
+    slots = roles.formation_meta(formation)["slots"]
+    used, layers = set(), []
+    for _ in range(3):
+        lay = _layer(slots, players, used)
+        used |= {r["unique_id"] for r in lay.values()}
+        layers.append(lay)
     out = []
-    for s in roles.formation_meta(formation)["slots"]:
+    for s in slots:
+        top = [lay.get(s["key"]) for lay in layers]
         rated = sorted(({"unique_id": p["unique_id"], "name": p["name"], "rating": roles.role_rating(p, s["role"]), "natural": roles.eligible(p, s)} for p in players),
                        key=lambda r: (-r["natural"], -r["rating"]))
-        top = [r for r in rated if r["natural"]][:3]
-        score = round(sum(w * (top[i]["rating"] if i < len(top) else 0) for i, w in enumerate((.6, .3, .1))), 1)
+        score = round(sum(w * (t["rating"] if t else 0) for t, w in zip(top, (.6, .3, .1))), 1)
         out.append({"slot": s["key"], "label": s["label"], "role": s["role"], "role_name": s["role_name"], "group": GROUP.get(s["positions"][0], "CM"),
-                    "starter": top[0] if top else None, "backup": top[1] if len(top) > 1 else None, "depth": top[2] if len(top) > 2 else None,
-                    "score": score, "all": rated[:8]})
+                    "starter": top[0], "backup": top[1], "depth": top[2], "score": score, "all": rated[:8]})
     return out
 
 
@@ -415,7 +470,7 @@ async def tactic_fit(formation: str = "433"):
     c = await active_career()
     slots = fit((await latest_snapshot(c["id"]))["players"], formation)
     return {"formation": roles.FORMATIONS[formation][0], "slots": slots, "gaps": sorted(slots, key=lambda s: s["score"])[:3],
-            "note": "FM tactic files hold in- and out-of-possession roles; FMCC rates the in-possession role until it can read them."}
+            "note": "Each player is used once across starters, backups and depth. FM tactic files hold in- and out-of-possession roles; FMCC rates the in-possession role until it can read them."}
 
 
 @router.get("/squad/shapes")
@@ -432,8 +487,8 @@ async def shapes():
 
 
 # ---------- the three apps ----------
-APPS = [("fmdossier", "FM Dossier", "windows", "https://fmdossier.dev/"), ("fmst26", "FMST26", "windows", os.environ.get("FMST26_URL")),
-        ("fmos", "fmOS", "web", os.environ.get("FMOS_URL"))]
+APPS = [("fmdossier", "FM Dossier", "windows", "https://fmdossier.dev/"), ("fmst26", "FMST26", "windows", "https://www.fmscout.com/a-fmst-26.html"),
+        ("fmos", "fmOS", "windows", "https://fmos.it/")]
 
 
 @router.get("/apps")

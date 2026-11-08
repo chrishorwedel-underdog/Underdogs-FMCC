@@ -54,7 +54,7 @@ export const AppsCard = () => {
             <button className="btn" disabled={!paths[a.key]} onClick={() => act(() => api.put(`/apps/${a.key}/path`, { path: paths[a.key] }), "Saved", ["apps"])} data-testid={`app-path-save-${a.key}`}>Save</button>
             <button className="btn btn-p" onClick={() => act(() => api.post(`/apps/${a.key}/open`), `${a.name} opened`)} data-testid={`app-open-${a.key}`}>Open</button></>}
           {a.kind === "web" && a.url && <a className="btn btn-p" href={a.url} target="_blank" rel="noreferrer" data-testid={`app-open-${a.key}`}>Open</a>}
-          {a.url ? <a className="btn" href={a.url} target="_blank" rel="noreferrer" data-testid={`app-get-${a.key}`}>Get it</a> : <span className="st n" title="FMCC doesn't know its official page yet">No official page set</span>}
+          {a.url ? <a className="btn" href={a.url} target="_blank" rel="noreferrer" data-testid={`app-get-${a.key}`}>Official page</a> : <span className="st n" title="FMCC doesn't know its official page yet">No official page set</span>}
         </div>))}
     </div>
   );

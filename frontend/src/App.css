@@ -178,12 +178,26 @@ h1.h .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
 /* setup */
 .setup{min-height:100vh;display:grid;place-items:center;padding:40px 20px;position:relative}
 .setup:before{content:'';position:absolute;inset:0;background:radial-gradient(800px 400px at 50% 0%,rgba(76,141,255,.12),transparent);pointer-events:none}
-.wiz{width:680px;max-width:100%;position:relative}
-.steps{display:flex;gap:8px;margin:26px 0 20px}
-.stp{flex:1;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--s1)}
-.stp.on{color:var(--text);border-color:rgba(76,141,255,.45)}
+.wiz{width:min(1080px,92vw);max-width:100%;position:relative}
+.wiz-logo{height:150px;margin:0 auto 6px;display:block;filter:drop-shadow(0 12px 40px rgba(76,141,255,.35))}
+.wiz-h{text-align:center;font-size:clamp(44px,4.6vw,68px)!important;letter-spacing:-.02em}
+.wiz-lede{text-align:center;font-size:19px!important;margin-top:10px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:40px 0 24px}
+.stp{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:500;color:var(--dim);padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--s1);transition:border-color .3s,color .3s,background-color .3s}
+.stp.on{color:var(--text);border-color:rgba(76,141,255,.6);background:rgba(76,141,255,.08);box-shadow:0 0 0 1px rgba(76,141,255,.2),0 10px 30px -12px rgba(76,141,255,.5)}
+.wiz-card{padding:40px 44px!important;border-radius:20px!important}
+.wiz-card .ttl{font-size:26px!important}
+.wiz-card .note{font-size:15.5px;line-height:1.6;margin-top:10px!important}
+.wiz-card .inp{height:50px;font-size:15px}
+.wiz-card .lbl{font-size:13px}
+.wiz-row{display:flex;align-items:center;gap:16px;margin-top:28px;flex-wrap:wrap}
+.wiz-row .seg button{height:46px;padding:0 26px;font-size:15px}
+.wiz-card .btn-l{height:54px;padding:0 28px;font-size:15.5px;border-radius:13px}
+@media (max-width:760px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.wiz-card{padding:26px 22px!important}.wiz-logo{height:110px}}
 .stp.done{color:var(--grn);border-color:rgba(52,211,153,.3)}
-.stp i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:600 10.5px 'Geist Mono';font-style:normal;background:var(--s3);flex-shrink:0}
+.stp i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 13px 'Geist Mono';font-style:normal;background:var(--s3);flex-shrink:0}
+.stp.on i{background:var(--acc);color:#fff}
+.stp.done i{background:rgba(52,211,153,.2)}
 @media (max-width:1500px){.bento{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:1200px){.homegrid,.sgrid{grid-template-columns:1fr}}
 /* squad planning */
