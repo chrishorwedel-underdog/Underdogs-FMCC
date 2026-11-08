@@ -6,6 +6,7 @@ import { NAV } from "@/constants/nav";
 
 const SCREENS = [...NAV.map((n) => ({ group: "Screens", label: n.label, sub: n.sub, to: n.to })),
   { group: "Screens", label: "Settings", sub: "Careers, updates and backups", to: "/settings" },
+  { group: "Screens", label: "Game changes", sub: "Queue, batches and audit trail", to: "/changes" },
   { group: "Actions", label: "Check for updates", sub: "Settings", to: "/settings?check=1" },
   { group: "Actions", label: "Back up my data now", sub: "Settings", to: "/settings?backup=1" }];
 

@@ -1,6 +1,6 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Search, RefreshCw, Settings } from "lucide-react";
+import { Search, RefreshCw, Settings, Wand2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api, ago, errMsg, gameDate } from "@/lib/api";
@@ -14,6 +14,8 @@ export const TopBar = ({ career, onSearch }) => {
   const qc = useQueryClient();
   const nav = useNavigate();
   const [busy, setBusy] = useState(false);
+  const { data: ch } = useQuery({ queryKey: ["changes"], queryFn: () => api.get("/changes").then((r) => r.data), refetchInterval: 5000 });
+  const pending = ch?.queued?.length || 0;
   const readSave = async () => {
     setBusy(true);
     try {
@@ -40,6 +42,9 @@ export const TopBar = ({ career, onSearch }) => {
         </div>
         <button className="ib" onClick={readSave} disabled={busy} title="Read latest save" data-testid="read-save-button">
           <RefreshCw size={16} className={busy ? "animate-spin" : ""} />
+        </button>
+        <button className="ib" style={{ position: "relative", width: "auto", padding: "0 10px", gap: 6, display: "flex" }} onClick={() => nav("/changes")} title="Game changes" data-testid="top-changes-button">
+          <Wand2 size={16} /><span style={{ fontSize: 12.5 }}>Game changes</span>{pending > 0 && <span className="st a mono" style={{ margin: 0 }} data-testid="top-changes-count">{pending}</span>}
         </button>
         <button className="ib" onClick={() => nav("/settings")} title="Settings" data-testid="top-settings-button"><Settings size={16} /></button>
       </div>

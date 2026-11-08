@@ -2,6 +2,42 @@
 import random
 from datetime import date
 
+from roles import GK_ATTRS, OUTFIELD_ATTRS, SHARED_ATTRS
+
+ALL_ATTRS = GK_ATTRS + OUTFIELD_ATTRS + SHARED_ATTRS
+PROFILE = {
+    "GK": GK_ATTRS + ["positioning", "decisions", "composure"],
+    "CB": ["tackling", "marking", "heading", "positioning", "strength", "jumping_reach", "composure", "anticipation"],
+    "FB": ["tackling", "marking", "pace", "stamina", "work_rate", "crossing", "acceleration", "positioning"],
+    "DM": ["tackling", "positioning", "passing", "decisions", "composure", "anticipation", "work_rate", "stamina"],
+    "CM": ["passing", "first_touch", "decisions", "vision", "stamina", "work_rate", "technique", "composure"],
+    "AM": ["passing", "vision", "technique", "first_touch", "flair", "dribbling", "composure", "decisions"],
+    "W": ["pace", "acceleration", "dribbling", "crossing", "technique", "flair", "off_the_ball", "first_touch"],
+    "ST": ["finishing", "off_the_ball", "composure", "first_touch", "anticipation", "pace", "heading", "strength"],
+}
+GROUP = {"GK": "GK", "D (C)": "CB", "D (L)": "FB", "D (R)": "FB", "WB (L)": "FB", "WB (R)": "FB", "DM": "DM",
+         "M (C)": "CM", "AM (C)": "AM", "AM (L)": "W", "AM (R)": "W", "ST": "ST"}
+HOMEGROWN_NATIONS = {"England", "Scotland", "Ireland"}
+
+
+def attributes(uid: int, positions: list, ca: int) -> dict:
+    group = GROUP[positions[0]]
+    base = 2 + ca / 200 * 13
+    rng = random.Random(uid * 7)
+    out = {}
+    for a in ALL_ATTRS:
+        noise = rng.uniform(-1.5, 1.5)
+        if a in PROFILE[group]:
+            v = base + 3.5 + noise
+        elif group != "GK" and a in GK_ATTRS:
+            v = 1 + abs(noise)
+        elif group == "GK" and a in OUTFIELD_ATTRS:
+            v = base - 5 + noise
+        else:
+            v = base - 1 + noise
+        out[a] = int(max(1, min(20, round(v))))
+    return out
+
 READER_NAME = "Sample save reader"
 SAMPLE_CLUB = "Sample Club FC"
 
@@ -47,8 +83,49 @@ def _age(birth: str, on: date) -> int:
     return on.year - b.year - ((on.month, on.day) < (b.month, b.day))
 
 
-def read_save(save_no: int, club_name: str) -> dict:
-    """Return the save as fmsave-shaped records: club, game date, players and next fixture."""
+FIRST = {"Italy": ["Marco", "Luca", "Davide", "Andrea"], "Netherlands": ["Daan", "Sem", "Jesse", "Milan"], "Portugal": ["Rui", "Tiago", "Nuno", "Diogo"],
+         "England": ["Jack", "Harry", "Mason", "Leo"], "Brazil": ["Caio", "Vitor", "Rafael", "Lucas"], "France": ["Hugo", "Enzo", "Theo", "Noe"],
+         "Spain": ["Pablo", "Alvaro", "Iker", "Sergio"], "Nigeria": ["Tobi", "Chidi", "Ade", "Emeka"]}
+LAST = {"Italy": ["Bianchi", "Greco", "Conti", "Marino"], "Netherlands": ["de Vries", "Bakker", "Visser", "Smit"], "Portugal": ["Silva", "Costa", "Pereira", "Lopes"],
+        "England": ["Walker", "Bennett", "Hughes", "Turner"], "Brazil": ["Souza", "Lima", "Rocha", "Alves"], "France": ["Moreau", "Laurent", "Girard", "Faure"],
+        "Spain": ["Ruiz", "Moreno", "Ortega", "Castro"], "Nigeria": ["Okoye", "Eze", "Balogun", "Nwosu"]}
+LEAGUES = {"Premier Division": ["Northbridge Athletic", "Castleford Rovers", "Port Ellis United", "Kingsmere Town"],
+           "Serie A": ["AC Valdora", "Sporting Lerici", "US Montebello"],
+           "Eredivisie": ["FC Zuiderhaven", "SV Oostmeer", "Go Ahead Linden"],
+           "Primeira Liga": ["CD Alvorada", "SC Ribeira", "FC Douro Norte"]}
+POS_POOL = [["GK"], ["D (C)"], ["D (C)"], ["D (L)"], ["D (R)"], ["DM", "M (C)"], ["M (C)"], ["AM (C)"], ["AM (L)"], ["AM (R)"], ["ST"], ["ST"]]
+
+
+def scouting_pool(save_no: int, game_date: date, months_played: int, edits: dict) -> list:
+    out, uid = [], 30500000
+    for league, clubs in LEAGUES.items():
+        for club in clubs:
+            for i in range(10):
+                uid += 1
+                rng = random.Random(uid)
+                nat = rng.choice(list(FIRST))
+                age = rng.randint(17, 33)
+                pa = rng.randint(110, 185)
+                growth = 1.2 if age < 21 else 0.4 if age < 24 else 0 if age < 29 else -0.5
+                ca = int(max(60, min(pa, pa - rng.randint(0, 60) * (1 if age < 23 else 0.3) + growth * save_no)))
+                e = edits.get(uid, {})
+                ca, pa2 = max(1, min(200, ca + e.get("ca", 0))), max(1, min(200, pa + e.get("pa", 0)))
+                pos = POS_POOL[i % len(POS_POOL)] if i < 10 else rng.choice(POS_POOL)
+                minutes = int(months_played * rng.uniform(40, 360))
+                exp = 6.0 + (ca - 100) / 100
+                out.append({"unique_id": uid, "name": f"{rng.choice(FIRST[nat])} {rng.choice(LAST[nat])}", "age": age, "nationality": nat,
+                            "club": club, "league": league, "positions": pos, "ca": ca, "pa": pa2,
+                            "value": int(max(150_000, (ca - 60) ** 2.4 * (1.6 if age < 23 else 1) * rng.uniform(0.6, 1.5)) // 50_000 * 50_000),
+                            "wage": int((ca - 50) * 160 * rng.uniform(0.7, 1.3)), "minutes": minutes, "appearances": minutes // 80,
+                            "avg_rating": round(exp + rng.uniform(-0.5, 0.5), 2) if minutes else None,
+                            "goals": int(minutes / 90 * (0.45 if "ST" in pos else 0.15) * rng.uniform(0.3, 1.4)),
+                            "attributes": attributes(uid, pos, ca)})
+    return out
+
+
+def read_save(save_no: int, club_name: str, edits: dict | None = None) -> dict:
+    """Return the save as fmsave-shaped records: club, game date, players, scouting pool and next fixture."""
+    edits = edits or {}
     game_date = _add_months(date(2027, 8, 1), save_no)
     season_year = game_date.year if game_date.month >= 7 else game_date.year - 1
     months_played = (game_date.month - 7) % 12
@@ -58,7 +135,9 @@ def read_save(save_no: int, club_name: str) -> dict:
             continue
         rng = random.Random(uid * 31 + save_no)
         months_here = save_no - joins
-        cur = int(round(min(pa, max(40, ca + growth * months_here + rng.choice([-1, 0, 0, 1])))))
+        e = edits.get(uid, {})
+        pa = max(1, min(200, pa + e.get("pa", 0)))
+        cur = int(round(min(pa, max(40, ca + growth * months_here + rng.choice([-1, 0, 0, 1]) + e.get("ca", 0)))))
         played = 0
         for m in range(months_played):
             played += max(0, int(mins * random.Random(uid + m).uniform(0.6, 1.15)))
@@ -68,6 +147,11 @@ def read_save(save_no: int, club_name: str) -> dict:
             "nationality": nat, "positions": pos, "ca": cur, "pa": pa,
             "contract_end": contract, "wage": wage, "minutes": played, "appearances": apps,
             "avg_rating": round(6.4 + (cur - 100) / 120 + rng.uniform(-0.2, 0.2), 2) if apps else None,
+            "goals": int(played / 90 * (0.5 if "ST" in pos else 0.2 if any(x.startswith("AM") for x in pos) else 0.04)),
+            "assists": int(played / 90 * (0.3 if any(x.startswith("AM") for x in pos) else 0.08)),
+            "training_rating": round(min(9.5, 6.2 + (pa - cur) / 40 + (growth * 0.6) + rng.uniform(-0.3, 0.3)), 1),
+            "homegrown": nat in HOMEGROWN_NATIONS or birth >= "2006-01-01",
+            "attributes": attributes(uid, pos, cur),
         })
     rng = random.Random(save_no)
     fixture = {"opponent": OPPONENTS[save_no % len(OPPONENTS)], "home": save_no % 2 == 0,
@@ -78,7 +162,13 @@ def read_save(save_no: int, club_name: str) -> dict:
         "club_name": club_name, "game_date": game_date.isoformat(),
         "season": f"{season_year}/{str(season_year + 1)[2:]}",
         "players": players, "next_fixture": fixture,
+        "pool": scouting_pool(save_no, game_date, months_played, edits),
     }
+
+
+def editor_supports(edition: str) -> bool:
+    """Edition-specific validation for the (sample) game editor."""
+    return edition in ("FM26", "FM27")
 
 
 def detect_install(edition: str) -> dict:

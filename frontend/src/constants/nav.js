@@ -2,13 +2,13 @@ import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Trophy } fro
 
 export const NAV = [
   { to: "/", key: "home", label: "Home", sub: "Your club at a glance", c: "#A3E635", Icon: Home },
-  { to: "/squad", key: "squad", label: "Squad", sub: "Players read from your save", c: "#2DD4BF", Icon: Users },
-  { to: "/development", key: "development", label: "Development", sub: "Minutes and growth plans", c: "#4C8DFF", Icon: TrendingUp, stage: 2 },
-  { to: "/scouting", key: "scouting", label: "Scouting", sub: "Targets and Moneyball", c: "#22D3EE", Icon: Search, stage: 2 },
+  { to: "/squad", key: "squad", label: "Squad", sub: "Lineups and depth charts", c: "#2DD4BF", Icon: Users },
+  { to: "/development", key: "development", label: "Development", sub: "Minutes and growth plans", c: "#4C8DFF", Icon: TrendingUp },
+  { to: "/scouting", key: "scouting", label: "Scouting", sub: "Targets and Moneyball", c: "#22D3EE", Icon: Search },
   { to: "/matches", key: "matches", label: "Matches", sub: "Chalkboard and match stats", c: "#FB923C", Icon: Activity, stage: 4 },
-  { to: "/reports", key: "reports", label: "Reports", sub: "See the bigger picture", c: "#A78BFA", Icon: BarChart3, stage: 2 },
-  { to: "/elite-training", key: "elite", label: "Elite Training", sub: "Nurture your next generation", c: "#E879F9", Icon: Zap, stage: 2 },
-  { to: "/awards", key: "awards", label: "Awards", sub: "Breakout and Dynamic Potential", c: "#FACC15", Icon: Trophy, stage: 2 },
+  { to: "/reports", key: "reports", label: "Reports", sub: "See the bigger picture", c: "#A78BFA", Icon: BarChart3 },
+  { to: "/elite-training", key: "elite", label: "Elite Training", sub: "Nurture your next generation", c: "#E879F9", Icon: Zap },
+  { to: "/awards", key: "awards", label: "Awards", sub: "Breakout and Dynamic Potential", c: "#FACC15", Icon: Trophy },
 ];
 
 export const STAGE_TEXT = {

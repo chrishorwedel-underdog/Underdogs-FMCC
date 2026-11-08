@@ -23,6 +23,14 @@ export const PlayerSheet = ({ uid, onClose }) => {
             <Fact k="First seen" v={gameDate(data.identity.first_seen_date)} />
           </div>
         )}
+        {data?.role_ratings?.length > 0 && (
+          <div className="card" style={{ marginTop: 20, padding: 14 }} data-testid="player-sheet-roles">
+            <div className="ttl" style={{ marginBottom: 6 }}>Role ratings</div>
+            <div className="mbars">{data.role_ratings.map((r) => (
+              <div className="mb" key={r.role} style={{ gridTemplateColumns: "170px 1fr 30px" }}><span>{r.name} ({r.duty})</span>
+                <div className="track"><i style={{ width: `${r.rating}%`, background: r.natural ? "var(--acc)" : "var(--mut)" }} /></div><span className="mono">{r.rating}</span></div>))}</div>
+          </div>
+        )}
         {data?.history?.length > 0 && (
           <div className="card" style={{ marginTop: 20, padding: 14 }}>
             <div className="ttl" style={{ marginBottom: 10 }}>Ability across saves</div>

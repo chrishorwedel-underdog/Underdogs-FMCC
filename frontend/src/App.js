@@ -12,9 +12,14 @@ import Setup from "@/pages/Setup";
 import Home from "@/pages/Home";
 import Squad from "@/pages/Squad";
 import Settings from "@/pages/Settings";
+import Scouting from "@/pages/Scouting";
+import Development from "@/pages/Development";
+import Reports from "@/pages/Reports";
+import EliteTraining from "@/pages/EliteTraining";
+import Awards from "@/pages/Awards";
+import Changes from "@/pages/Changes";
 
-const LATER = [["/development", "development"], ["/scouting", "scouting"], ["/matches", "matches"], ["/reports", "reports"],
-  ["/elite-training", "elite"], ["/awards", "awards"], ["/dof", "dof"]];
+const LATER = [["/matches", "matches"], ["/dof", "dof"]];
 
 const Shell = ({ state }) => {
   const [pal, setPal] = useState(false);
@@ -35,6 +40,12 @@ const Shell = ({ state }) => {
             <Route path="/" element={<Home />} />
             <Route path="/squad" element={<Squad />} />
             <Route path="/settings" element={<Settings state={state} />} />
+            <Route path="/scouting" element={<Scouting />} />
+            <Route path="/development" element={<Development />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/elite-training" element={<EliteTraining />} />
+            <Route path="/awards" element={<Awards />} />
+            <Route path="/changes" element={<Changes />} />
             {LATER.map(([p, k]) => <Route key={k} path={p} element={<ComingSoon k={k} />} />)}
             <Route path="*" element={<Home />} />
           </Routes>

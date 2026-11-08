@@ -1,5 +1,7 @@
 from datetime import date
 
+import roles
+
 SLOTS = [  # 4-3-3: slot key, label, accepted positions
     ("GK", "Goalkeeper", ["GK"]), ("DL", "Left Back", ["D (L)", "WB (L)"]),
     ("DC1", "Centre Back", ["D (C)"]), ("DC2", "Centre Back", ["D (C)"]),
@@ -29,10 +31,16 @@ def compute(latest: dict, prev: dict | None, last_backup: str | None) -> dict:
     players = latest["players"]
     gd = date.fromisoformat(latest["game_date"])
     before = _by_id(prev)
-    xi = best_xi(players)
-    filled = [s for s in xi if s["player"]]
-    xi_avg = round(sum(s["player"]["ca"] for s in filled) / max(1, len(filled)))
-    weak = min(filled, key=lambda s: s["player"]["ca"]) if filled else None
+    form = roles.formation_meta("433")
+    depth = roles.depth_chart(players, form)
+    xi = roles.best_xi(players, form, depth)
+    xi_avg = roles.strength(xi, depth)
+    by_id = {p["unique_id"]: p for p in players}
+    labels = {s["key"]: s["label"] for s in form["slots"]}
+    rate = {k: {r["unique_id"]: r["rating"] for r in v} for k, v in depth.items()}
+    filled = [(rate[k][u], k, u) for k, u in xi.items() if u]
+    w = min(filled) if filled else None
+    weak = {"label": labels[w[1]], "player": by_id[w[2]] | {"rating": w[0]}} if w else None
 
     youth = []
     for p in players:
@@ -62,7 +70,7 @@ def compute(latest: dict, prev: dict | None, last_backup: str | None) -> dict:
     if weak:
         attention.append({"kind": "weak", "tone": "acc", "unique_id": weak["player"]["unique_id"],
                           "text": f"{weak['label']} is your weakest position in the Best XI.",
-                          "sub": f"{weak['player']['name']} is the best option there (ability {weak['player']['ca']})."})
+                          "sub": f"{weak['player']['name']} is the best option there (role rating {weak['player']['rating']})."})
 
     return {
         "game_date": latest["game_date"], "season": latest["season"], "club_name": latest["club_name"],

@@ -12,15 +12,14 @@ const Card = ({ icon: Icon, title, tag, to, delay, children, id, open }) => {
   );
 };
 
-const Soon = ({ stage, text }) => <div className="soon">{text} <b style={{ color: "var(--text)" }}>Arrives in stage {stage}.</b></div>;
 
 export const ModuleCards = ({ d }) => (
   <div className="bento">
     <Card id="squad" icon={Users} title="Squad" to="/squad" delay="d2" open="Open squad" tag={<span className="st g">{d.squad_size} players</span>}>
-      <div className="num" data-testid="home-xi-average">{d.squad.xi_average}<small>Best XI average ability</small></div>
+      <div className="num" data-testid="home-xi-average">{d.squad.xi_average}<small>Best XI strength</small></div>
       <p className="sent">Weakest spot: <b data-testid="home-weak-spot">{d.squad.weak_spot || "—"}</b></p>
     </Card>
-    <Card id="development" icon={TrendingUp} title="Development" to="/squad?filter=u21" delay="d3" open="See under-21s" tag={d.development.count ? <span className="st a">Act</span> : <span className="st ok">On track</span>}>
+    <Card id="development" icon={TrendingUp} title="Development" to="/development" delay="d3" open="Open plans" tag={d.development.count ? <span className="st a">Act</span> : <span className="st ok">On track</span>}>
       <div className="num" data-testid="home-dev-count">{d.development.count}<small>under-21s need minutes</small></div>
       <div className="mbars">
         {d.development.players.map((p) => (
@@ -28,10 +27,10 @@ export const ModuleCards = ({ d }) => (
         ))}
       </div>
     </Card>
-    <Card id="scouting" icon={Search} title="Scouting" to="/scouting" delay="d4" open="Preview" tag={<span className="st n">Stage 2</span>}>
-      <Soon stage={2} text="Automatic rankings of every player in the save." />
+    <Card id="scouting" icon={Search} title="Scouting" to="/scouting" delay="d4" open="Open rankings">
+      <p className="sent" style={{ marginTop: 18 }}>Every player in the save ranked by role fit, age, potential and value, with shortlists and Moneyball.</p>
     </Card>
-    <Card id="report" icon={BarChart3} title="Since last save" to="/squad" delay="d5" open="See changes">
+    <Card id="report" icon={BarChart3} title="Since last save" to="/reports" delay="d5" open="Open reports">
       {d.has_previous ? (
         <>
           <div className="num" data-testid="home-ca-change">{d.report.total_change > 0 ? "+" : ""}{d.report.total_change}<small>squad ability change</small></div>
@@ -39,10 +38,11 @@ export const ModuleCards = ({ d }) => (
         </>
       ) : <div className="soon" data-testid="home-report-empty">Read one more save to compare players between saves.</div>}
     </Card>
-    <Card id="elite" icon={Zap} title="Elite Training" to="/elite-training" delay="d6" open="Preview" tag={<span className="st n">Stage 2</span>}>
-      <Soon stage={2} text="Nominations and training evidence from your save." />
+    <Card id="elite" icon={Zap} title="Game changes" to="/changes" delay="d6" open="Open game changes" tag={d.pending_changes ? <span className="st a">Waiting</span> : <span className="st ok">Clear</span>}>
+      <div className="num" data-testid="home-pending-changes">{d.pending_changes}<small>changes waiting for you</small></div>
+      <p className="sent">Elite Training, Breakout and Dynamic Potential rewards.</p>
     </Card>
-    <Card id="awards" icon={Trophy} title="Awards" to="/awards" delay="d7" open="Preview">
+    <Card id="awards" icon={Trophy} title="Awards" to="/awards" delay="d7" open="Open awards">
       <div className="num" data-testid="home-weeks-left">{d.awards.weeks_left}<small>weeks to season end</small></div>
       <div className="ticks">{Array.from({ length: 40 }, (_, i) => <i key={i} className={i < 40 - Math.min(40, d.awards.weeks_left) ? "past" : ""} style={{ height: i % 7 === 0 ? "100%" : "55%" }} />)}</div>
       <p className="sent">Breakout reviews open at season end.</p>

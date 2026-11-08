@@ -20,12 +20,17 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 import dashboard  # noqa: E402
+import roles  # noqa: E402
 import sample_reader  # noqa: E402
 import updates  # noqa: E402
-
-client = AsyncIOMotorClient(os.environ['MONGO_URL'])
-db = client[os.environ['DB_NAME']]
-logger = logging.getLogger(__name__)
+from core import (db, client, logger, io_lock, BACKUP_COLLECTIONS, EXTRA_INDEXES, now_iso, get_settings, active_career,  # noqa: E402
+                  latest_two, checksum, create_backup)
+from squad_api import router as squad_router  # noqa: E402
+from scouting_api import router as scouting_router  # noqa: E402
+from plans_api import router as plans_router  # noqa: E402
+from awards_api import router as awards_router  # noqa: E402
+from rules_api import router as rules_router  # noqa: E402
+from changes_api import router as changes_router, resume_unfinished  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
     "careers": [IndexModel([("id", ASCENDING)], name="id", unique=True)],
@@ -36,10 +41,7 @@ INDEXES: dict[str, list[IndexModel]] = {
     ],
     "backups": [IndexModel([("id", ASCENDING)], name="id", unique=True), IndexModel([("created_at", DESCENDING)], name="created_desc")],
     "components": [IndexModel([("key", ASCENDING)], name="key", unique=True)],
-}
-BACKUP_COLLECTIONS = ["settings", "careers", "identities", "snapshots"]
-MAX_AUTO_BACKUPS = 20
-io_lock = asyncio.Lock()
+} | EXTRA_INDEXES
 
 
 async def ensure_indexes() -> None:
@@ -49,10 +51,6 @@ async def ensure_indexes() -> None:
                 await db[collection].create_indexes([model])
             except Exception as exc:
                 logger.error("ensure_indexes(%s.%s): %s", collection, model.document["name"], exc)
-
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 app = FastAPI()
@@ -87,57 +85,22 @@ class AutoInstallIn(BaseModel):
 
 
 # ---------- helpers ----------
-async def get_settings() -> dict:
-    s = await db.settings.find_one({"_id": "app"}, {"_id": 0})
-    return s or {"setup_complete": False, "active_career_id": None, "auto_install_updates": False, "last_update_check": None}
-
-
-async def active_career() -> dict:
-    s = await get_settings()
-    if not s.get("active_career_id"):
-        raise HTTPException(409, "No active career yet. Finish the first-run setup.")
-    c = await db.careers.find_one({"id": s["active_career_id"]}, {"_id": 0})
-    if not c:
-        raise HTTPException(404, "Active career not found")
-    return c
-
-
-async def latest_two(career_id: str) -> list:
-    return await db.snapshots.find({"career_id": career_id}, {"_id": 0}).sort("save_no", -1).limit(2).to_list(2)
-
-
-def checksum(data: dict) -> str:
-    return hashlib.sha256(json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()
-
-
-async def dump_data() -> dict:
-    return {c: await db[c].find({}, {"_id": 0} if c != "settings" else {}).to_list(None) for c in BACKUP_COLLECTIONS}
-
-
-async def create_backup(reason: str, automatic: bool) -> dict:
-    data = await dump_data()
-    doc = {"id": str(uuid.uuid4()), "created_at": now_iso(), "reason": reason, "automatic": automatic,
-           "checksum": checksum(data), "counts": {k: len(v) for k, v in data.items()}, "data": data}
-    await db.backups.insert_one(dict(doc))
-    stored = await db.backups.find_one({"id": doc["id"]}, {"_id": 0})
-    verified = checksum(stored["data"]) == doc["checksum"]
-    await db.backups.update_one({"id": doc["id"]}, {"$set": {"verified": verified}})
-    old = await db.backups.find({"automatic": automatic}, {"id": 1, "_id": 0}).sort("created_at", -1).skip(MAX_AUTO_BACKUPS).to_list(None)
-    if old:
-        await db.backups.delete_many({"id": {"$in": [o["id"] for o in old]}})
-    if not verified:
-        raise HTTPException(500, "Backup could not be verified")
-    return {k: v for k, v in doc.items() if k != "data"} | {"verified": True}
-
-
 async def read_next_save(career: dict) -> dict:
     """Read the next save into a snapshot. Players are matched by the game's unique ID, never by name."""
     save_no = career.get("next_save_no", 0)
     await create_backup(f"{career['name']}: before reading save #{save_no + 1}", automatic=True)
-    save = sample_reader.read_save(save_no, career["club_name"])
+    edits = {e["unique_id"]: e for e in await db.game_edits.find({"career_id": career["id"]}, {"_id": 0}).to_list(None)}
+    save = sample_reader.read_save(save_no, career["club_name"], edits)
+    pool = save.pop("pool")
     snap = {"id": str(uuid.uuid4()), "career_id": career["id"], "save_no": save_no, "read_at": now_iso(),
             "reader": sample_reader.READER_NAME, **save}
     await db.snapshots.insert_one(dict(snap))
+    old_pool = await db.pools.find_one({"career_id": career["id"]}, {"_id": 0, "season": 1, "season_start_ca": 1}) or {}
+    start = old_pool.get("season_start_ca", {}) if old_pool.get("season") == save["season"] else {}
+    for p in pool:
+        start.setdefault(str(p["unique_id"]), p["ca"])
+    await db.pools.update_one({"career_id": career["id"]}, {"$set": {"save_no": save_no, "season": save["season"], "game_date": save["game_date"],
+                                                                    "players": pool, "season_start_ca": start}}, upsert=True)
     for p in save["players"]:
         await db.identities.update_one(
             {"career_id": career["id"], "unique_id": p["unique_id"]},
@@ -244,7 +207,8 @@ async def home():
     if not snaps:
         raise HTTPException(404, "No save read yet")
     b = await db.backups.find_one({}, {"_id": 0, "created_at": 1}, sort=[("created_at", -1)])
-    return dashboard.compute(snaps[0], snaps[1] if len(snaps) > 1 else None, b["created_at"] if b else None) | {"read_at": snaps[0]["read_at"]}
+    pending = await db.changes.count_documents({"career_id": c["id"], "status": {"$in": ["queued", "approved"]}})
+    return dashboard.compute(snaps[0], snaps[1] if len(snaps) > 1 else None, b["created_at"] if b else None) | {"read_at": snaps[0]["read_at"], "pending_changes": pending}
 
 
 @api.get("/squad")
@@ -258,14 +222,15 @@ async def squad():
     names = {}
     for p in latest["players"]:
         names[p["name"]] = names.get(p["name"], 0) + 1
-    xi_ids = {s["player"]["unique_id"] for s in dashboard.best_xi(latest["players"]) if s["player"]}
+    form = roles.formation_meta("433")
+    xi_ids = set(roles.best_xi(latest["players"], form, roles.depth_chart(latest["players"], form)).values())
     idents = {i["unique_id"]: i for i in await db.identities.find({"career_id": c["id"]}, {"_id": 0}).to_list(None)}
     players = []
     for p in latest["players"]:
         prior = before.get(p["unique_id"])
         players.append(p | {"ca_change": p["ca"] - prior["ca"] if prior else None,
                             "is_new": idents.get(p["unique_id"], {}).get("first_seen_save") == latest["save_no"] and latest["save_no"] > 0,
-                            "shared_name": names[p["name"]] > 1, "in_best_xi": p["unique_id"] in xi_ids})
+                            "shared_name": names[p["name"]] > 1, "in_best_xi": p["unique_id"] in xi_ids, "best_role": roles.best_role(p)})
     current = {p["unique_id"] for p in latest["players"]}
     departed = [i for i in idents.values() if i["unique_id"] not in current]
     return {"game_date": latest["game_date"], "save_no": latest["save_no"], "players": players, "departed": departed}
@@ -291,7 +256,8 @@ async def player_detail(unique_id: int):
     snaps = await db.snapshots.find({"career_id": c["id"], "players.unique_id": unique_id},
                                     {"_id": 0, "save_no": 1, "game_date": 1, "players.$": 1}).sort("save_no", 1).to_list(None)
     history = [{"save_no": s["save_no"], "game_date": s["game_date"], "ca": s["players"][0]["ca"], "minutes": s["players"][0]["minutes"]} for s in snaps]
-    return {"identity": ident, "latest": snaps[-1]["players"][0] if snaps else None, "history": history}
+    latest = snaps[-1]["players"][0] if snaps else None
+    return {"identity": ident, "latest": latest, "history": history, "role_ratings": roles.role_ratings(latest)[:6] if latest else []}
 
 
 # ---------- updates ----------
@@ -398,6 +364,8 @@ async def restore_backup(backup_id: str):
 
 
 app.include_router(api)
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router):
+    app.include_router(r)
 app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
                    allow_methods=["*"], allow_headers=["*"])
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -406,6 +374,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 @app.on_event("startup")
 async def start_index_build():
     app.state.index_task = asyncio.create_task(ensure_indexes())
+    asyncio.create_task(resume_unfinished())
 
 
 @app.on_event("shutdown")
