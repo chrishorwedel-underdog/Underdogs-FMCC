@@ -121,11 +121,16 @@ async def add_revision(c: dict, kind: str, uid: int, name: str, value: dict | No
     await audit(c["id"], f"{kind} {'changed' if value else 'removed'}", "editor", note, uid, name)
 
 
-def _write_graphics(dirs: dict, faces: dict, logos: dict) -> dict:
+KIT_SLOTS = ("home", "away", "third")
+
+
+def _write_graphics(dirs: dict, faces: dict, logos: dict, kits: dict | None = None) -> dict:
     out = dirs["graphics"] / "FMCC"
     out.mkdir(parents=True, exist_ok=True)
     keep, recs = set(), []
-    for prefix, rows, paths in (("p", faces, ["person/{u}/portrait", "person/r-{u}/portrait"]), ("c", logos, ["club/{u}/logo"])):
+    groups = [("p", faces, ["person/{u}/portrait", "person/r-{u}/portrait"]), ("c", logos, ["club/{u}/logo"])]
+    groups += [(f"k{s}", (kits or {}).get(s, {}), [f"club/{{u}}/kits/{s}"]) for s in KIT_SLOTS]
+    for prefix, rows, paths in groups:
         for uid, r in rows.items():
             if not r.get("value"):
                 continue
@@ -182,7 +187,8 @@ async def rebuild(c: dict) -> dict:
     dirs = fm_dirs(c)
     faces, logos, names = await latest(c["id"], "face"), await latest(c["id"], "logo"), await latest(c["id"], "name")
     try:
-        g = await asyncio.to_thread(_write_graphics, dirs, faces, logos)
+        kits = {s: await latest(c["id"], f"kit_{s}") for s in KIT_SLOTS}
+        g = await asyncio.to_thread(_write_graphics, dirs, faces, logos, kits)
         lnc = await asyncio.to_thread(_write_lnc, dirs, names, await latest(c["id"], "comp"), await latest(c["id"], "stadium"))
     except PermissionError:
         raise HTTPException(403, "Windows blocked access to FM's folders. Restart FMCC as administrator.")
@@ -510,7 +516,7 @@ async def draft_image(image: str):
 @router.post("/faces/{uid}/use-draft")
 async def use_draft(uid: int, body: DraftIn):
     c = await active_career()
-    d = await db.face_drafts.find_one({"career_id": c["id"], "uid": uid, "kind": {"$ne": "logo"}, "image": body.image}, {"_id": 0})
+    d = await db.face_drafts.find_one({"career_id": c["id"], "uid": uid, "kind": {"$nin": ["logo", "kit"]}, "image": body.image}, {"_id": 0})
     if not d:
         raise HTTPException(404, "That draft wasn't made for this player")
     p = next((x for x in await people(c) if x["unique_id"] == uid), None)

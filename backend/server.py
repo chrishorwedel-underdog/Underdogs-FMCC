@@ -36,6 +36,9 @@ from dof_api import router as dof_router  # noqa: E402
 from connections_api import router as connections_router  # noqa: E402
 from editor_api import router as editor_router  # noqa: E402
 from licensing_api import router as licensing_router  # noqa: E402
+from leagues_api import router as leagues_router  # noqa: E402
+from scout_api import router as scout_router  # noqa: E402
+from graphics_api import router as graphics_router  # noqa: E402
 import sample_matches  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
@@ -481,7 +484,7 @@ async def restore_backup(backup_id: str):
 
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse

@@ -9,7 +9,9 @@ import { UpdatesCard } from "@/components/UpdatesCard";
 import { BackupsCard } from "@/components/BackupsCard";
 
 const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
-  ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"]];
+  ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"],
+  ["ScoutSheet", "MIT", "Scouting views, fair price, Deal Finder and Offers, rebuilt inside Scout Players"], ["FMDataLab", "No code used", "Its analytics ideas and published possession method, rebuilt"],
+  ["FM26 Player Rating & Similarity Model", "Your workbook", "League list (Opta averages, 10 Aug 2026), position weights, grades and similarity"]];
 
 const SavesCard = () => {
   const { data = [] } = useQuery({ queryKey: ["saves"], queryFn: () => api.get("/saves").then((r) => r.data) });

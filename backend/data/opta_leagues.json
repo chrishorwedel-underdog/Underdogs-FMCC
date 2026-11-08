@@ -1,0 +1,1456 @@
+{
+"source": "FM26_Player_Rating_and_Similarity_Model.xlsx",
+"updated": "2026-08-10",
+"reference": 92.7892349224,
+"exponent": 1.5,
+"leagues": [
+{
+"rank": 1,
+"name": "English Premier League",
+"country": "England",
+"confed": "Europe",
+"teams": 20,
+"opta": 92.7892
+},
+{
+"rank": 2,
+"name": "German Bundesliga",
+"country": "Germany",
+"confed": "Europe",
+"teams": 18,
+"opta": 86.9255
+},
+{
+"rank": 3,
+"name": "Spanish La Liga",
+"country": "Spain",
+"confed": "Europe",
+"teams": 20,
+"opta": 86.8833
+},
+{
+"rank": 4,
+"name": "Italian Serie A",
+"country": "Italy",
+"confed": "Europe",
+"teams": 20,
+"opta": 86.7981
+},
+{
+"rank": 5,
+"name": "French Ligue 1",
+"country": "France",
+"confed": "Europe",
+"teams": 18,
+"opta": 85.8862
+},
+{
+"rank": 6,
+"name": "Brazilian Serie A",
+"country": "Brazil",
+"confed": "South America",
+"teams": 20,
+"opta": 83.8399
+},
+{
+"rank": 7,
+"name": "Belgian Jupiler Pro League",
+"country": "Belgium",
+"confed": "Europe",
+"teams": 18,
+"opta": 82.4388
+},
+{
+"rank": 8,
+"name": "Portuguese Primeira Liga",
+"country": "Portugal",
+"confed": "Europe",
+"teams": 18,
+"opta": 82.0139
+},
+{
+"rank": 9,
+"name": "Liga Profesional Argentina",
+"country": "Argentina",
+"confed": "South America",
+"teams": 30,
+"opta": 81.564
+},
+{
+"rank": 10,
+"name": "EFL Championship",
+"country": "England",
+"confed": "Europe",
+"teams": 24,
+"opta": 81.0023
+},
+{
+"rank": 11,
+"name": "Danish Superligaen",
+"country": "Denmark",
+"confed": "Europe",
+"teams": 12,
+"opta": 80.3838
+},
+{
+"rank": 12,
+"name": "Polish Ekstraklasa",
+"country": "Poland",
+"confed": "Europe",
+"teams": 18,
+"opta": 80.2361
+},
+{
+"rank": 13,
+"name": "Turkish Super Lig",
+"country": "T\u00fcrkiye",
+"confed": "Europe",
+"teams": 18,
+"opta": 79.7921
+},
+{
+"rank": 14,
+"name": "Dutch Eredivisie",
+"country": "Netherlands",
+"confed": "Europe",
+"teams": 18,
+"opta": 79.7685
+},
+{
+"rank": 15,
+"name": "Japanese J1 League",
+"country": "Japan",
+"confed": "Asia",
+"teams": 20,
+"opta": 79.4532
+},
+{
+"rank": 16,
+"name": "Croatia Prva HNL",
+"country": "Croatia",
+"confed": "Europe",
+"teams": 10,
+"opta": 79.4188
+},
+{
+"rank": 17,
+"name": "Brack Super League",
+"country": "Switzerland",
+"confed": "Europe",
+"teams": 12,
+"opta": 79.3531
+},
+{
+"rank": 18,
+"name": "Norwegian Eliteserien",
+"country": "Norway",
+"confed": "Europe",
+"teams": 16,
+"opta": 79.3424
+},
+{
+"rank": 19,
+"name": "Colombia Primera A",
+"country": "Colombia",
+"confed": "South America",
+"teams": 20,
+"opta": 79.32
+},
+{
+"rank": 20,
+"name": "US Major League Soccer",
+"country": "USA",
+"confed": "N/C America",
+"teams": 30,
+"opta": 79.3199
+},
+{
+"rank": 21,
+"name": "Czech First League",
+"country": "Czechia",
+"confed": "Europe",
+"teams": 16,
+"opta": 78.9285
+},
+{
+"rank": 22,
+"name": "Ecuador Liga Pro",
+"country": "Ecuador",
+"confed": "South America",
+"teams": 16,
+"opta": 78.7625
+},
+{
+"rank": 23,
+"name": "Spanish Segunda Division",
+"country": "Spain",
+"confed": "Europe",
+"teams": 22,
+"opta": 78.4379
+},
+{
+"rank": 24,
+"name": "Paraguay Primera Divisi\u00f3n",
+"country": "Paraguay",
+"confed": "South America",
+"teams": 12,
+"opta": 78.3742
+},
+{
+"rank": 25,
+"name": "Austrian Bundesliga",
+"country": "Austria",
+"confed": "Europe",
+"teams": 12,
+"opta": 78.1149
+},
+{
+"rank": 26,
+"name": "Russian Premier League",
+"country": "Russia",
+"confed": "Europe",
+"teams": 16,
+"opta": 78.0093
+},
+{
+"rank": 27,
+"name": "Chile Primera",
+"country": "Chile",
+"confed": "South America",
+"teams": 16,
+"opta": 77.8682
+},
+{
+"rank": 28,
+"name": "Swedish Allsvenskan",
+"country": "Sweden",
+"confed": "Europe",
+"teams": 16,
+"opta": 77.5961
+},
+{
+"rank": 29,
+"name": "Greek Super League",
+"country": "Greece",
+"confed": "Europe",
+"teams": 16,
+"opta": 77.5378
+},
+{
+"rank": 30,
+"name": "Cypriot Division 1",
+"country": "Cyprus",
+"confed": "Europe",
+"teams": 17,
+"opta": 77.5289
+},
+{
+"rank": 31,
+"name": "German Bundesliga Zwei",
+"country": "Germany",
+"confed": "Europe",
+"teams": 18,
+"opta": 77.4789
+},
+{
+"rank": 32,
+"name": "Mexican Primera",
+"country": "Mexico",
+"confed": "N/C America",
+"teams": 19,
+"opta": 77.1512
+},
+{
+"rank": 33,
+"name": "Uruguay Liga AUF",
+"country": "Uruguay",
+"confed": "South America",
+"teams": 16,
+"opta": 77.0536
+},
+{
+"rank": 34,
+"name": "Korean K-League 1",
+"country": "Korea Republic",
+"confed": "Asia",
+"teams": 12,
+"opta": 76.7785
+},
+{
+"rank": 35,
+"name": "Hungarian Liga NB I",
+"country": "Hungary",
+"confed": "Europe",
+"teams": 12,
+"opta": 76.6926
+},
+{
+"rank": 36,
+"name": "Scottish Premiership",
+"country": "Scotland",
+"confed": "Europe",
+"teams": 12,
+"opta": 75.3767
+},
+{
+"rank": 37,
+"name": "Saudi Arabian League",
+"country": "Saudi Arabia",
+"confed": "Asia",
+"teams": 18,
+"opta": 75.2014
+},
+{
+"rank": 38,
+"name": "Italian Serie B",
+"country": "Italy",
+"confed": "Europe",
+"teams": 24,
+"opta": 75.0869
+},
+{
+"rank": 39,
+"name": "French Ligue 2",
+"country": "France",
+"confed": "Europe",
+"teams": 18,
+"opta": 74.8404
+},
+{
+"rank": 40,
+"name": "Argentina Primera Nacional",
+"country": "Argentina",
+"confed": "South America",
+"teams": 36,
+"opta": 74.82
+},
+{
+"rank": 41,
+"name": "Romania Liga I",
+"country": "Romania",
+"confed": "Europe",
+"teams": 16,
+"opta": 74.5976
+},
+{
+"rank": 42,
+"name": "Peru Liga 1",
+"country": "Peru",
+"confed": "South America",
+"teams": 18,
+"opta": 74.4768
+},
+{
+"rank": 43,
+"name": "Algerian Ligue 1",
+"country": "Algeria",
+"confed": "Africa",
+"teams": 16,
+"opta": 74.4009
+},
+{
+"rank": 44,
+"name": "Egyptian Premier League",
+"country": "Egypt",
+"confed": "Africa",
+"teams": 17,
+"opta": 74.3744
+},
+{
+"rank": 45,
+"name": "Bolivia Primera Divisi\u00f3n",
+"country": "Bolivia",
+"confed": "South America",
+"teams": 17,
+"opta": 74.3318
+},
+{
+"rank": 46,
+"name": "Israeli Ligat Ha'al",
+"country": "Israel",
+"confed": "Europe",
+"teams": 14,
+"opta": 74.0691
+},
+{
+"rank": 47,
+"name": "EFL League One",
+"country": "England",
+"confed": "Europe",
+"teams": 24,
+"opta": 74.024
+},
+{
+"rank": 48,
+"name": "Slovakia 1. liga",
+"country": "Slovakia",
+"confed": "Europe",
+"teams": 12,
+"opta": 73.9534
+},
+{
+"rank": 49,
+"name": "Bulgaria First League",
+"country": "Bulgaria",
+"confed": "Europe",
+"teams": 14,
+"opta": 73.9504
+},
+{
+"rank": 50,
+"name": "Botola Pro",
+"country": "Morocco",
+"confed": "Africa",
+"teams": 16,
+"opta": 73.7257
+},
+{
+"rank": 51,
+"name": "Venezuela Primera Divisi\u00f3n",
+"country": "Venezuela",
+"confed": "South America",
+"teams": 14,
+"opta": 73.6933
+},
+{
+"rank": 52,
+"name": "Spanish Primera Division RFEF",
+"country": "Spain",
+"confed": "Europe",
+"teams": 42,
+"opta": 73.3066
+},
+{
+"rank": 53,
+"name": "Azerbaijan Premier League",
+"country": "Azerbaijan",
+"confed": "Europe",
+"teams": 12,
+"opta": 73.1392
+},
+{
+"rank": 54,
+"name": "Australian A-League Men",
+"country": "Australia",
+"confed": "Asia",
+"teams": 12,
+"opta": 72.9768
+},
+{
+"rank": 55,
+"name": "Portuguese Segunda Liga",
+"country": "Portugal",
+"confed": "Europe",
+"teams": 18,
+"opta": 72.7437
+},
+{
+"rank": 56,
+"name": "Serbian Super Liga",
+"country": "Serbia",
+"confed": "Europe",
+"teams": 14,
+"opta": 72.5468
+},
+{
+"rank": 57,
+"name": "Slovenia PrvaLiga",
+"country": "Slovenia",
+"confed": "Europe",
+"teams": 11,
+"opta": 72.3563
+},
+{
+"rank": 58,
+"name": "Ukraine Premier League",
+"country": "Ukraine",
+"confed": "Europe",
+"teams": 15,
+"opta": 72.3442
+},
+{
+"rank": 59,
+"name": "Chile Primera B",
+"country": "Chile",
+"confed": "South America",
+"teams": 16,
+"opta": 72.3426
+},
+{
+"rank": 60,
+"name": "Costa Rica Primera Division",
+"country": "Costa Rica",
+"confed": "N/C America",
+"teams": 12,
+"opta": 71.9359
+},
+{
+"rank": 61,
+"name": "South Africa PSL",
+"country": "South Africa",
+"confed": "Africa",
+"teams": 16,
+"opta": 71.734
+},
+{
+"rank": 62,
+"name": "Persian Gulf Pro League",
+"country": "Iran",
+"confed": "Asia",
+"teams": 16,
+"opta": 71.497
+},
+{
+"rank": 63,
+"name": "UAE Pro League",
+"country": "United Arab Emirates",
+"confed": "Asia",
+"teams": 14,
+"opta": 71.2841
+},
+{
+"rank": 64,
+"name": "Guatemala Liga Nacional",
+"country": "Guatemala",
+"confed": "N/C America",
+"teams": 12,
+"opta": 71.2746
+},
+{
+"rank": 65,
+"name": "Brazilian Serie B",
+"country": "Brazil",
+"confed": "South America",
+"teams": 20,
+"opta": 71.1423
+},
+{
+"rank": 66,
+"name": "German 3rd Liga",
+"country": "Germany",
+"confed": "Europe",
+"teams": 21,
+"opta": 71.0532
+},
+{
+"rank": 67,
+"name": "Albanian Kategoria Superiore",
+"country": "Albania",
+"confed": "Europe",
+"teams": 12,
+"opta": 71.0288
+},
+{
+"rank": 68,
+"name": "Kosovan Superliga",
+"country": "Kosovo",
+"confed": "Europe",
+"teams": 10,
+"opta": 70.7957
+},
+{
+"rank": 69,
+"name": "Finnish Veikkausliiga",
+"country": "Finland",
+"confed": "Europe",
+"teams": 12,
+"opta": 70.4338
+},
+{
+"rank": 70,
+"name": "Bosnia and Herzegovina Premijer Liga",
+"country": "Bosnia and Herzegovina",
+"confed": "Europe",
+"teams": 10,
+"opta": 70.3528
+},
+{
+"rank": 71,
+"name": "Colombia Primera B",
+"country": "Colombia",
+"confed": "South America",
+"teams": 17,
+"opta": 70.2463
+},
+{
+"rank": 72,
+"name": "Honduras Liga Nacional",
+"country": "Honduras",
+"confed": "N/C America",
+"teams": 13,
+"opta": 70.1859
+},
+{
+"rank": 73,
+"name": "Liga Pro Serie B",
+"country": "Ecuador",
+"confed": "South America",
+"teams": 16,
+"opta": 69.8963
+},
+{
+"rank": 74,
+"name": "Kazakhstan Premier League",
+"country": "Kazakhstan",
+"confed": "Europe",
+"teams": 16,
+"opta": 69.6622
+},
+{
+"rank": 75,
+"name": "Irish Premier League",
+"country": "Republic of Ireland",
+"confed": "Europe",
+"teams": 10,
+"opta": 69.5848
+},
+{
+"rank": 76,
+"name": "Qatar Stars League",
+"country": "Qatar",
+"confed": "Asia",
+"teams": 13,
+"opta": 69.3695
+},
+{
+"rank": 77,
+"name": "dieci Challenge League",
+"country": "Switzerland",
+"confed": "Europe",
+"teams": 10,
+"opta": 69.1677
+},
+{
+"rank": 78,
+"name": "Ghana Premier League",
+"country": "Ghana",
+"confed": "Africa",
+"teams": 21,
+"opta": 69.0317
+},
+{
+"rank": 79,
+"name": "Belgian Challenger Pro League",
+"country": "Belgium",
+"confed": "Europe",
+"teams": 15,
+"opta": 68.8784
+},
+{
+"rank": 80,
+"name": "Japanese J2 League",
+"country": "Japan",
+"confed": "Asia",
+"teams": 20,
+"opta": 68.6289
+},
+{
+"rank": 81,
+"name": "Icelandic Besta deild",
+"country": "Iceland",
+"confed": "Europe",
+"teams": 12,
+"opta": 68.5906
+},
+{
+"rank": 82,
+"name": "Ligue 1",
+"country": "Tunisia",
+"confed": "Africa",
+"teams": 16,
+"opta": 68.5886
+},
+{
+"rank": 83,
+"name": "Norwegian 1. divisjon",
+"country": "Norway",
+"confed": "Europe",
+"teams": 16,
+"opta": 68.5347
+},
+{
+"rank": 84,
+"name": "Thai League 1",
+"country": "Thailand",
+"confed": "Asia",
+"teams": 16,
+"opta": 68.517
+},
+{
+"rank": 85,
+"name": "French Ligue 3",
+"country": "France",
+"confed": "Europe",
+"teams": 20,
+"opta": 68.4426
+},
+{
+"rank": 86,
+"name": "Armenian Premier League",
+"country": "Armenia",
+"confed": "Europe",
+"teams": 12,
+"opta": 68.3257
+},
+{
+"rank": 87,
+"name": "Belarus Premier League",
+"country": "Belarus",
+"confed": "Europe",
+"teams": 16,
+"opta": 68.2687
+},
+{
+"rank": 88,
+"name": "Chinese Super League",
+"country": "China PR",
+"confed": "Asia",
+"teams": 16,
+"opta": 68.1204
+},
+{
+"rank": 89,
+"name": "Spanish Segunda Division RFEF",
+"country": "Spain",
+"confed": "Europe",
+"teams": 106,
+"opta": 68.0533
+},
+{
+"rank": 90,
+"name": "EFL League Two",
+"country": "England",
+"confed": "Europe",
+"teams": 24,
+"opta": 67.8557
+},
+{
+"rank": 91,
+"name": "First League",
+"country": "Russia",
+"confed": "Europe",
+"teams": 20,
+"opta": 67.7334
+},
+{
+"rank": 92,
+"name": "I Liga",
+"country": "Poland",
+"confed": "Europe",
+"teams": 18,
+"opta": 67.6738
+},
+{
+"rank": 93,
+"name": "Torneo Federal A",
+"country": "Argentina",
+"confed": "South America",
+"teams": 39,
+"opta": 67.6653
+},
+{
+"rank": 94,
+"name": "Macedonian First League",
+"country": "North Macedonia",
+"confed": "Europe",
+"teams": 10,
+"opta": 67.6352
+},
+{
+"rank": 95,
+"name": "Turkish 1. Lig",
+"country": "T\u00fcrkiye",
+"confed": "Europe",
+"teams": 20,
+"opta": 67.5496
+},
+{
+"rank": 96,
+"name": "Georgian Premier League",
+"country": "Georgia",
+"confed": "Europe",
+"teams": 10,
+"opta": 67.5292
+},
+{
+"rank": 97,
+"name": "Division Intermedia",
+"country": "Paraguay",
+"confed": "South America",
+"teams": 19,
+"opta": 67.4695
+},
+{
+"rank": 98,
+"name": "Liga de Expansi\u00f3n MX",
+"country": "Mexico",
+"confed": "N/C America",
+"teams": 17,
+"opta": 67.2088
+},
+{
+"rank": 99,
+"name": "Korean K-League 2",
+"country": "Korea Republic",
+"confed": "Asia",
+"teams": 17,
+"opta": 67.1536
+},
+{
+"rank": 100,
+"name": "Super League",
+"country": "Uzbekistan",
+"confed": "Asia",
+"teams": 16,
+"opta": 67.0758
+},
+{
+"rank": 101,
+"name": "Lithuanian Toplyga",
+"country": "Lithuania",
+"confed": "Europe",
+"teams": 10,
+"opta": 66.8927
+},
+{
+"rank": 102,
+"name": "Swedish Superettan",
+"country": "Sweden",
+"confed": "Europe",
+"teams": 16,
+"opta": 66.8659
+},
+{
+"rank": 103,
+"name": "Zimbabwe Premier Soccer League",
+"country": "Zimbabwe",
+"confed": "Africa",
+"teams": 22,
+"opta": 66.8002
+},
+{
+"rank": 104,
+"name": "FNL",
+"country": "Czechia",
+"confed": "Europe",
+"teams": 16,
+"opta": 66.7081
+},
+{
+"rank": 105,
+"name": "League",
+"country": "Jordan",
+"confed": "Asia",
+"teams": 10,
+"opta": 66.7012
+},
+{
+"rank": 106,
+"name": "Latvian Virsliga",
+"country": "Latvia",
+"confed": "Europe",
+"teams": 10,
+"opta": 66.6448
+},
+{
+"rank": 107,
+"name": "Ligi kuu Bara",
+"country": "Tanzania",
+"confed": "Africa",
+"teams": 19,
+"opta": 66.5663
+},
+{
+"rank": 108,
+"name": "El Salvador Primera Division",
+"country": "El Salvador",
+"confed": "N/C America",
+"teams": 14,
+"opta": 66.1659
+},
+{
+"rank": 109,
+"name": "V.League 1",
+"country": "Vietnam",
+"confed": "Asia",
+"teams": 14,
+"opta": 65.954
+},
+{
+"rank": 110,
+"name": "Dutch Eerste Divisie",
+"country": "Netherlands",
+"confed": "Europe",
+"teams": 20,
+"opta": 65.8697
+},
+{
+"rank": 111,
+"name": "Second Division A",
+"country": "Egypt",
+"confed": "Africa",
+"teams": 25,
+"opta": 65.7378
+},
+{
+"rank": 112,
+"name": "First NL",
+"country": "Croatia",
+"confed": "Europe",
+"teams": 16,
+"opta": 65.7083
+},
+{
+"rank": 113,
+"name": "Liga 3",
+"country": "Portugal",
+"confed": "Europe",
+"teams": 24,
+"opta": 65.6623
+},
+{
+"rank": 114,
+"name": "LPF",
+"country": "Panama",
+"confed": "N/C America",
+"teams": 12,
+"opta": 65.4921
+},
+{
+"rank": 115,
+"name": "Indonesia Super League",
+"country": "Indonesia",
+"confed": "Asia",
+"teams": 18,
+"opta": 65.388
+},
+{
+"rank": 116,
+"name": "Maltese League",
+"country": "Malta",
+"confed": "Europe",
+"teams": 14,
+"opta": 65.2814
+},
+{
+"rank": 117,
+"name": "Danish 1. Division",
+"country": "Denmark",
+"confed": "Europe",
+"teams": 12,
+"opta": 65.2423
+},
+{
+"rank": 118,
+"name": "Austrian 2. Liga",
+"country": "Austria",
+"confed": "Europe",
+"teams": 17,
+"opta": 65.1472
+},
+{
+"rank": 119,
+"name": "Liga 2",
+"country": "Peru",
+"confed": "South America",
+"teams": 18,
+"opta": 65.1199
+},
+{
+"rank": 120,
+"name": "USL Championship",
+"country": "USA",
+"confed": "N/C America",
+"teams": 26,
+"opta": 65.115
+},
+{
+"rank": 121,
+"name": "Primera Division",
+"country": "Nicaragua",
+"confed": "N/C America",
+"teams": 11,
+"opta": 64.7601
+},
+{
+"rank": 122,
+"name": "Premier League",
+"country": "Bahrain",
+"confed": "Asia",
+"teams": 12,
+"opta": 64.7519
+},
+{
+"rank": 123,
+"name": "NB II",
+"country": "Hungary",
+"confed": "Europe",
+"teams": 16,
+"opta": 64.6933
+},
+{
+"rank": 124,
+"name": "Malaysian Super League",
+"country": "Malaysia",
+"confed": "Asia",
+"teams": 14,
+"opta": 64.5492
+},
+{
+"rank": 125,
+"name": "Moldovan Super Liga",
+"country": "Moldova",
+"confed": "Europe",
+"teams": 8,
+"opta": 64.3907
+},
+{
+"rank": 126,
+"name": "Mo\u00e7ambola",
+"country": "Mozambique",
+"confed": "Africa",
+"teams": 17,
+"opta": 64.3848
+},
+{
+"rank": 127,
+"name": "Segunda Divisi\u00f3n",
+"country": "Uruguay",
+"confed": "South America",
+"teams": 14,
+"opta": 64.3477
+},
+{
+"rank": 128,
+"name": "Professional League",
+"country": "Oman",
+"confed": "Asia",
+"teams": 14,
+"opta": 64.2937
+},
+{
+"rank": 129,
+"name": "Italian Serie C",
+"country": "Italy",
+"confed": "Europe",
+"teams": 56,
+"opta": 64.0096
+},
+{
+"rank": 130,
+"name": "Japanese J3 League",
+"country": "Japan",
+"confed": "Asia",
+"teams": 20,
+"opta": 63.969
+},
+{
+"rank": 131,
+"name": "Liga Leumit",
+"country": "Israel",
+"confed": "Europe",
+"teams": 18,
+"opta": 63.9444
+},
+{
+"rank": 132,
+"name": "Liga Mayor",
+"country": "Dominican Republic",
+"confed": "N/C America",
+"teams": 10,
+"opta": 63.7252
+},
+{
+"rank": 133,
+"name": "Canadian Premier League",
+"country": "Canada",
+"confed": "N/C America",
+"teams": 9,
+"opta": 63.6055
+},
+{
+"rank": 134,
+"name": "Segunda Divisi\u00f3n",
+"country": "Venezuela",
+"confed": "South America",
+"teams": 20,
+"opta": 63.561
+},
+{
+"rank": 135,
+"name": "German Regionalliga",
+"country": "Germany",
+"confed": "Europe",
+"teams": 90,
+"opta": 63.4943
+},
+{
+"rank": 136,
+"name": "Primera Division",
+"country": "Guatemala",
+"confed": "N/C America",
+"teams": 24,
+"opta": 63.2752
+},
+{
+"rank": 137,
+"name": "Luxembourg Division Nationale",
+"country": "Luxembourg",
+"confed": "Europe",
+"teams": 16,
+"opta": 63.2038
+},
+{
+"rank": 138,
+"name": "Segunda Divisi\u00f3n",
+"country": "Chile",
+"confed": "South America",
+"teams": 16,
+"opta": 63.1892
+},
+{
+"rank": 139,
+"name": "Scottish Championship",
+"country": "Scotland",
+"confed": "Europe",
+"teams": 10,
+"opta": 63.1772
+},
+{
+"rank": 140,
+"name": "Montenegro First League",
+"country": "Montenegro",
+"confed": "Europe",
+"teams": 10,
+"opta": 63.1307
+},
+{
+"rank": 141,
+"name": "Faroe Islands Premier League",
+"country": "Faroe Islands",
+"confed": "Europe",
+"teams": 10,
+"opta": 62.5607
+},
+{
+"rank": 142,
+"name": "Championnat National",
+"country": "Benin",
+"confed": "Africa",
+"teams": 18,
+"opta": 62.249
+},
+{
+"rank": 143,
+"name": "Saudi Arabian First Division League",
+"country": "Saudi Arabia",
+"confed": "Asia",
+"teams": 21,
+"opta": 62.123
+},
+{
+"rank": 144,
+"name": "Championnat D1",
+"country": "Gabon",
+"confed": "Africa",
+"teams": 16,
+"opta": 62.0379
+},
+{
+"rank": 145,
+"name": "National 1",
+"country": "France",
+"confed": "Europe",
+"teams": 54,
+"opta": 62.0372
+},
+{
+"rank": 146,
+"name": "Liga II",
+"country": "Romania",
+"confed": "Europe",
+"teams": 27,
+"opta": 61.9052
+},
+{
+"rank": 147,
+"name": "Estonian Premium liiga",
+"country": "Estonia",
+"confed": "Europe",
+"teams": 10,
+"opta": 61.8342
+},
+{
+"rank": 148,
+"name": "Brazilian Serie C",
+"country": "Brazil",
+"confed": "South America",
+"teams": 20,
+"opta": 61.6788
+},
+{
+"rank": 149,
+"name": "II Liga",
+"country": "Poland",
+"confed": "Europe",
+"teams": 19,
+"opta": 61.5916
+},
+{
+"rank": 150,
+"name": "1. Deild",
+"country": "Iceland",
+"confed": "Europe",
+"teams": 12,
+"opta": 61.4235
+},
+{
+"rank": 151,
+"name": "Ligue 1",
+"country": "Congo",
+"confed": "Africa",
+"teams": 16,
+"opta": 61.2795
+},
+{
+"rank": 152,
+"name": "Premier Division",
+"country": "Grenada",
+"confed": "N/C America",
+"teams": 12,
+"opta": 61.0998
+},
+{
+"rank": 153,
+"name": "Prva Liga",
+"country": "Serbia",
+"confed": "Europe",
+"teams": 22,
+"opta": 61.0347
+},
+{
+"rank": 154,
+"name": "2. Division",
+"country": "Norway",
+"confed": "Europe",
+"teams": 28,
+"opta": 60.9249
+},
+{
+"rank": 155,
+"name": "Kenya Premier League",
+"country": "Kenya",
+"confed": "Africa",
+"teams": 18,
+"opta": 60.7851
+},
+{
+"rank": 156,
+"name": "Qatar Stars League 2",
+"country": "Qatar",
+"confed": "Asia",
+"teams": 7,
+"opta": 60.7777
+},
+{
+"rank": 157,
+"name": "2. Division",
+"country": "Cyprus",
+"confed": "Europe",
+"teams": 13,
+"opta": 60.4844
+},
+{
+"rank": 158,
+"name": "Singapore Premier League",
+"country": "Singapore",
+"confed": "Asia",
+"teams": 8,
+"opta": 60.3833
+},
+{
+"rank": 159,
+"name": "Second League A",
+"country": "Russia",
+"confed": "Europe",
+"teams": 18,
+"opta": 60.0429
+},
+{
+"rank": 160,
+"name": "Indian Super League",
+"country": "India",
+"confed": "Asia",
+"teams": 14,
+"opta": 60.0085
+},
+{
+"rank": 161,
+"name": "Dutch Tweede Divisie",
+"country": "Netherlands",
+"confed": "Europe",
+"teams": 18,
+"opta": 59.907
+},
+{
+"rank": 162,
+"name": "Spanish Tercera Division RFEF",
+"country": "Spain",
+"confed": "Europe",
+"teams": 319,
+"opta": 59.7756
+},
+{
+"rank": 163,
+"name": "Super League 2",
+"country": "Greece",
+"confed": "Europe",
+"teams": 18,
+"opta": 59.758
+},
+{
+"rank": 164,
+"name": "Liga 3",
+"country": "Peru",
+"confed": "South America",
+"teams": 43,
+"opta": 59.5931
+},
+{
+"rank": 165,
+"name": "Division d'Honneur",
+"country": "Martinique",
+"confed": "N/C America",
+"teams": 17,
+"opta": 59.5792
+},
+{
+"rank": 166,
+"name": "Super League",
+"country": "Malawi",
+"confed": "Africa",
+"teams": 19,
+"opta": 59.5668
+},
+{
+"rank": 167,
+"name": "2. liga",
+"country": "Slovakia",
+"confed": "Europe",
+"teams": 16,
+"opta": 59.4829
+},
+{
+"rank": 168,
+"name": "Northern Ireland Premiership",
+"country": "Northern Ireland",
+"confed": "Europe",
+"teams": 12,
+"opta": 59.4822
+},
+{
+"rank": 169,
+"name": "Belgian Division 1",
+"country": "Belgium",
+"confed": "Europe",
+"teams": 28,
+"opta": 59.4558
+},
+{
+"rank": 170,
+"name": "Iraqi League",
+"country": "Iraq",
+"confed": "Asia",
+"teams": 20,
+"opta": 59.4242
+},
+{
+"rank": 171,
+"name": "Argentina Primera B (Metropolitana)",
+"country": "Argentina",
+"confed": "South America",
+"teams": 22,
+"opta": 59.2374
+},
+{
+"rank": 172,
+"name": "R\u00e9gional 1",
+"country": "French Guiana",
+"confed": "N/C America",
+"teams": 14,
+"opta": 59.0858
+},
+{
+"rank": 173,
+"name": "1. Liga Promotion",
+"country": "Switzerland",
+"confed": "Europe",
+"teams": 18,
+"opta": 59.0528
+},
+{
+"rank": 174,
+"name": "Liga de Ascenso",
+"country": "Costa Rica",
+"confed": "N/C America",
+"teams": 15,
+"opta": 58.9341
+},
+{
+"rank": 175,
+"name": "K3 League",
+"country": "Korea Republic",
+"confed": "Asia",
+"teams": 14,
+"opta": 58.922
+},
+{
+"rank": 176,
+"name": "Ettan",
+"country": "Sweden",
+"confed": "Europe",
+"teams": 32,
+"opta": 58.8751
+},
+{
+"rank": 177,
+"name": "Ykk\u00f6sliiga",
+"country": "Finland",
+"confed": "Europe",
+"teams": 10,
+"opta": 58.6097
+},
+{
+"rank": 178,
+"name": "Turkish 2. Liga",
+"country": "T\u00fcrkiye",
+"confed": "Europe",
+"teams": 36,
+"opta": 58.4654
+},
+{
+"rank": 179,
+"name": "Campeonato de Portugal Prio",
+"country": "Portugal",
+"confed": "Europe",
+"teams": 52,
+"opta": 58.3755
+},
+{
+"rank": 180,
+"name": "Premier League",
+"country": "Hong Kong, China",
+"confed": "Asia",
+"teams": 10,
+"opta": 58.3188
+},
+{
+"rank": 181,
+"name": "English National League",
+"country": "England",
+"confed": "Europe",
+"teams": 24,
+"opta": 58.1209
+}
+]
+}

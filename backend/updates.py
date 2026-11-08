@@ -10,6 +10,7 @@ COMPONENTS = [  # key, name, role, GitHub repo (None = not published yet), bundl
     ("fmlibreeditor", "FMLibreEditor", "Built-in game editor", "tozmoz/FMLibreEditor", "v0.5.0"),
     ("fmmatchlens", "FMMatchLens", "Match analytics add-on", "osnsyc/FMMatchLens", "v0.7.1"),
     ("bepinex", "BepInEx 6", "Add-on loader for FM (IL2CPP bleeding edge)", "bepinex_be", "6.0.0-be.793"),
+    ("scoutsheet", "ScoutSheet", "Scouting engine inside Scout Players (MIT licence)", os.environ.get("SCOUTSHEET_REPO") or None, "v1.0.0"),
 ]
 BEPINEX_BUILDS = "https://builds.bepinex.dev"
 

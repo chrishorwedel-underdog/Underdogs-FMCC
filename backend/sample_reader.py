@@ -91,7 +91,16 @@ LAST = {"Italy": ["Bianchi", "Greco", "Conti", "Marino"], "Netherlands": ["de Vr
 LEAGUES = {"Premier Division": ["Northbridge Athletic", "Castleford Rovers", "Port Ellis United", "Kingsmere Town"],
            "Serie A": ["AC Valdora", "Sporting Lerici", "US Montebello"],
            "Eredivisie": ["FC Zuiderhaven", "SV Oostmeer", "Go Ahead Linden"],
-           "Primeira Liga": ["CD Alvorada", "SC Ribeira", "FC Douro Norte"]}
+           "Primeira Liga": ["CD Alvorada", "SC Ribeira", "FC Douro Norte"],
+           "Highland Football League": ["Glenmore Rovers", "Strathbeg Athletic"],
+           "Women's Super Division": ["Northbridge Athletic Women", "Port Ellis United Women"]}
+WOMEN = {"Women's Super Division"}
+FIRST_F = {"Italy": ["Giulia", "Sara"], "Netherlands": ["Lieke", "Fenna"], "Portugal": ["Ines", "Marta"], "England": ["Ella", "Lucy"],
+           "Brazil": ["Ana", "Bia"], "France": ["Lea", "Chloe"], "Spain": ["Alba", "Irene"], "Nigeria": ["Ada", "Ngozi"]}
+# country, save reputation, gender (SAMPLE)
+LEAGUE_INFO = {"Premier Division": ("England", 8800, "M"), "Serie A": ("Italy", 8300, "M"), "Eredivisie": ("Netherlands", 7000, "M"),
+               "Primeira Liga": ("Portugal", 7400, "M"), "Highland Football League": ("Scotland", 1600, "M"), "Women's Super Division": ("England", 5200, "F")}
+CONTRACTS = ["2028-01-31", "2028-06-30", "2029-06-30", "2030-06-30", "2031-06-30"]
 POS_POOL = [["GK"], ["D (C)"], ["D (C)"], ["D (L)"], ["D (R)"], ["DM", "M (C)"], ["M (C)"], ["AM (C)"], ["AM (L)"], ["AM (R)"], ["ST"], ["ST"]]
 
 
@@ -112,7 +121,10 @@ def scouting_pool(save_no: int, game_date: date, months_played: int, edits: dict
                 pos = POS_POOL[i % len(POS_POOL)]
                 minutes = int(months_played * rng.uniform(40, 360))
                 exp = 6.0 + (ca - 100) / 100
-                out.append({"unique_id": uid, "name": f"{rng.choice(FIRST[nat])} {rng.choice(LAST[nat])}", "age": age, "nationality": nat,
+                female = league in WOMEN
+                first = (FIRST_F if female else FIRST)[nat]
+                out.append({"unique_id": uid, "name": f"{rng.choice(first)} {rng.choice(LAST[nat])}", "age": age, "nationality": nat,
+                            "gender": "F" if female else "M", "contract_end": CONTRACTS[uid % len(CONTRACTS)],
                             "club": club, "league": league, "positions": pos, "ca": ca, "pa": pa2,
                             "value": int(max(150_000, (ca - 60) ** 2.4 * 400 * (1.6 if age < 23 else 1) * rng.uniform(0.6, 1.5)) // 50_000 * 50_000),
                             "wage": int((ca - 50) * 160 * rng.uniform(0.7, 1.3)), "minutes": minutes, "appearances": minutes // 80,

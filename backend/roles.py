@@ -76,31 +76,55 @@ def strength(assign: dict, depth: dict) -> int:
     return round(sum(vals) / max(1, len(vals)))
 
 
+def _hungarian(cost: list) -> list:
+    """Minimum-cost assignment of n rows to m >= n columns (exact, same result as trying every lineup)."""
+    n, m = len(cost), len(cost[0])
+    inf = float("inf")
+    u, v, p, way = [0] * (n + 1), [0] * (m + 1), [0] * (m + 1), [0] * (m + 1)
+    for i in range(1, n + 1):
+        p[0], j0 = i, 0
+        minv, used = [inf] * (m + 1), [False] * (m + 1)
+        while True:
+            used[j0] = True
+            i0, delta, j1 = p[j0], inf, 0
+            for j in range(1, m + 1):
+                if not used[j]:
+                    cur = cost[i0 - 1][j - 1] - u[i0] - v[j]
+                    if cur < minv[j]:
+                        minv[j], way[j] = cur, j0
+                    if minv[j] < delta:
+                        delta, j1 = minv[j], j
+            for j in range(m + 1):
+                if used[j]:
+                    u[p[j]] += delta
+                    v[j] -= delta
+                else:
+                    minv[j] -= delta
+            j0 = j1
+            if p[j0] == 0:
+                break
+        while j0:
+            j1 = way[j0]
+            p[j0] = p[j1]
+            j0 = j1
+    res = [None] * n
+    for j in range(1, m + 1):
+        if p[j]:
+            res[p[j] - 1] = j - 1
+    return res
+
+
 def best_xi(players: list, form: dict, depth: dict) -> dict:
+    """The highest-scoring lineup of eligible players for the formation and roles (optimal assignment, not a greedy pick)."""
     rate = {k: {r["unique_id"]: r["rating"] for r in v} for k, v in depth.items()}
-    assign, used = {}, set()
-    for s in sorted(form["slots"], key=lambda s: len(depth[s["key"]])):
-        pick = next((r["unique_id"] for r in depth[s["key"]] if r["unique_id"] not in used), None)
-        assign[s["key"]] = pick
-        used.add(pick)
-    improved, rounds = True, 0
-    while improved and rounds < 50:
-        improved, rounds = False, rounds + 1
-        for a in assign:
-            for cand in rate[a]:
-                cur = assign[a]
-                other = next((k for k, v in assign.items() if v == cand), None)
-                gain = rate[a][cand] - rate[a].get(cur, 0)
-                if other:
-                    if cur is None or cur not in rate[other] or other == a:
-                        continue
-                    gain += rate[other][cur] - rate[other][cand]
-                if gain > 0:
-                    if other:
-                        assign[other] = cur
-                    assign[a] = cand
-                    improved = True
-    return assign
+    slots = [s["key"] for s in form["slots"]]
+    uids = sorted({u for r in rate.values() for u in r})
+    if not uids:
+        return {k: None for k in slots}
+    cols = uids + [None] * len(slots)
+    cost = [[-rate[k][u] if u is not None and u in rate[k] else (0 if u is None else 10_000) for u in cols] for k in slots]
+    pick = _hungarian(cost)
+    return {k: (cols[j] if cols[j] is not None and cols[j] in rate[k] else None) for k, j in zip(slots, pick)}
 
 
 def development_xi(best: dict, form: dict, depth: dict, info: dict, rules: dict) -> tuple:

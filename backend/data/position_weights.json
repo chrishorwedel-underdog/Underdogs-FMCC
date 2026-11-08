@@ -1,0 +1,1108 @@
+{
+"Goalkeeper": [
+{
+"category": "Analytical",
+"metric": "xG prevented / 90",
+"weight": 0.3,
+"direction": 1,
+"per90": true,
+"note": "Post-shot xG minus goals conceded; higher is better."
+},
+{
+"category": "Analytical",
+"metric": "Save percentage",
+"weight": 0.15,
+"direction": 1,
+"per90": false,
+"note": "Use shot-quality-aware peer baselines."
+},
+{
+"category": "Analytical",
+"metric": "Pass completion",
+"weight": 0.1,
+"direction": 1,
+"per90": false,
+"note": "Prefer open-play passing under comparable pressure."
+},
+{
+"category": "Analytical",
+"metric": "Progressive passes / 90",
+"weight": 0.1,
+"direction": 1,
+"per90": true,
+"note": "Completed passes that materially advance possession."
+},
+{
+"category": "Analytical",
+"metric": "Possession lost / 90",
+"weight": 0.1,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Actual",
+"metric": "Saves / 90",
+"weight": 0.07,
+"direction": 1,
+"per90": true,
+"note": "Observed saves; retain shot-quality context."
+},
+{
+"category": "Actual",
+"metric": "Goals conceded / 90",
+"weight": 0.07,
+"direction": -1,
+"per90": true,
+"note": "Lower is better; team defence remains a confounder."
+},
+{
+"category": "Actual",
+"metric": "Mistakes leading to goals / 90",
+"weight": 0.06,
+"direction": -1,
+"per90": true,
+"note": "Lower is better; strongly regress small samples."
+},
+{
+"category": "Actual",
+"metric": "Clean-sheet rate",
+"weight": 0.05,
+"direction": 1,
+"per90": false,
+"note": "Team-dependent outcome; only a modest weight."
+}
+],
+"Centre-back": [
+{
+"category": "Analytical",
+"metric": "Aerial-duel win rate",
+"weight": 0.13,
+"direction": 1,
+"per90": false,
+"note": "Win percentage, not raw duel volume."
+},
+{
+"category": "Analytical",
+"metric": "Possession-adjusted interceptions / 90",
+"weight": 0.12,
+"direction": 1,
+"per90": true,
+"note": "Adjust opportunity for team possession."
+},
+{
+"category": "Analytical",
+"metric": "Tackle win rate",
+"weight": 0.1,
+"direction": 1,
+"per90": false,
+"note": "Successful tackles divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Possession-won / possession-lost ratio",
+"weight": 0.1,
+"direction": 1,
+"per90": false,
+"note": "Ball security and recovery balance."
+},
+{
+"category": "Analytical",
+"metric": "Progressive passes / 90",
+"weight": 0.1,
+"direction": 1,
+"per90": true,
+"note": "Completed progressive distribution."
+},
+{
+"category": "Analytical",
+"metric": "Errors / mistakes / 90",
+"weight": 0.07,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Analytical",
+"metric": "Possession-adjusted blocks + clearances / 90",
+"weight": 0.07,
+"direction": 1,
+"per90": true,
+"note": "Opportunity-adjusted defensive volume."
+},
+{
+"category": "Analytical",
+"metric": "Pass completion",
+"weight": 0.06,
+"direction": 1,
+"per90": false,
+"note": "Benchmark against same-position cohort."
+},
+{
+"category": "Actual",
+"metric": "Tackles won / 90",
+"weight": 0.07,
+"direction": 1,
+"per90": true,
+"note": "Observed successful tackles."
+},
+{
+"category": "Actual",
+"metric": "Aerial duels won / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed aerial wins."
+},
+{
+"category": "Actual",
+"metric": "Interceptions / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed interceptions."
+},
+{
+"category": "Actual",
+"metric": "Blocks / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed blocks."
+},
+{
+"category": "Actual",
+"metric": "Key headers + key tackles / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "High-value defensive events."
+}
+],
+"Full-back": [
+{
+"category": "Analytical",
+"metric": "Tackle win rate",
+"weight": 0.12,
+"direction": 1,
+"per90": false,
+"note": "Successful tackles divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Progressive passes / 90",
+"weight": 0.12,
+"direction": 1,
+"per90": true,
+"note": "Completed progressive distribution."
+},
+{
+"category": "Analytical",
+"metric": "Possession-adjusted interceptions / 90",
+"weight": 0.1,
+"direction": 1,
+"per90": true,
+"note": "Adjust opportunity for team possession."
+},
+{
+"category": "Analytical",
+"metric": "Possession-won / possession-lost ratio",
+"weight": 0.1,
+"direction": 1,
+"per90": false,
+"note": "Ball recovery and security balance."
+},
+{
+"category": "Analytical",
+"metric": "Expected assists / 90",
+"weight": 0.1,
+"direction": 1,
+"per90": true,
+"note": "Chance quality created."
+},
+{
+"category": "Analytical",
+"metric": "Pass completion",
+"weight": 0.07,
+"direction": 1,
+"per90": false,
+"note": "Same-position benchmark."
+},
+{
+"category": "Analytical",
+"metric": "Cross completion",
+"weight": 0.06,
+"direction": 1,
+"per90": false,
+"note": "Completed crosses divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Successful-dribble rate",
+"weight": 0.04,
+"direction": 1,
+"per90": false,
+"note": "Successful take-ons divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Errors + possession losses / 90",
+"weight": 0.04,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Actual",
+"metric": "Accurate crosses / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed completed crosses."
+},
+{
+"category": "Actual",
+"metric": "Tackles won / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed successful tackles."
+},
+{
+"category": "Actual",
+"metric": "Interceptions / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed interceptions."
+},
+{
+"category": "Actual",
+"metric": "Successful dribbles / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed successful take-ons."
+},
+{
+"category": "Actual",
+"metric": "Open-play key passes / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed open-play chances created."
+},
+{
+"category": "Actual",
+"metric": "Assists / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed assists."
+},
+{
+"category": "Actual",
+"metric": "Goals / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed goals."
+}
+],
+"Wing-back": [
+{
+"category": "Analytical",
+"metric": "Expected assists / 90",
+"weight": 0.15,
+"direction": 1,
+"per90": true,
+"note": "Chance quality created."
+},
+{
+"category": "Analytical",
+"metric": "Progressive passes / 90",
+"weight": 0.1,
+"direction": 1,
+"per90": true,
+"note": "Completed progressive distribution."
+},
+{
+"category": "Analytical",
+"metric": "Successful-dribble rate",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Successful take-ons divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Tackle win rate",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Successful tackles divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Cross completion",
+"weight": 0.07,
+"direction": 1,
+"per90": false,
+"note": "Completed crosses divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Possession-adjusted interceptions / 90",
+"weight": 0.07,
+"direction": 1,
+"per90": true,
+"note": "Adjust opportunity for team possession."
+},
+{
+"category": "Analytical",
+"metric": "Possession-won / possession-lost ratio",
+"weight": 0.07,
+"direction": 1,
+"per90": false,
+"note": "Ball recovery and security balance."
+},
+{
+"category": "Analytical",
+"metric": "Pass completion",
+"weight": 0.05,
+"direction": 1,
+"per90": false,
+"note": "Same-position benchmark."
+},
+{
+"category": "Analytical",
+"metric": "Sprints / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "High-speed running output."
+},
+{
+"category": "Analytical",
+"metric": "Possession lost / 90",
+"weight": 0.04,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Actual",
+"metric": "Accurate crosses / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed completed crosses."
+},
+{
+"category": "Actual",
+"metric": "Successful dribbles / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed successful take-ons."
+},
+{
+"category": "Actual",
+"metric": "Open-play key passes / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed open-play chances created."
+},
+{
+"category": "Actual",
+"metric": "Assists / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed assists."
+},
+{
+"category": "Actual",
+"metric": "Tackles won / 90",
+"weight": 0.03,
+"direction": 1,
+"per90": true,
+"note": "Observed successful tackles."
+},
+{
+"category": "Actual",
+"metric": "Interceptions / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed interceptions."
+},
+{
+"category": "Actual",
+"metric": "Goals / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed goals."
+}
+],
+"Defensive midfielder": [
+{
+"category": "Analytical",
+"metric": "Possession-adjusted interceptions / 90",
+"weight": 0.15,
+"direction": 1,
+"per90": true,
+"note": "Adjust opportunity for team possession."
+},
+{
+"category": "Analytical",
+"metric": "Progressive passes / 90",
+"weight": 0.13,
+"direction": 1,
+"per90": true,
+"note": "Completed progressive distribution."
+},
+{
+"category": "Analytical",
+"metric": "Possession-won / possession-lost ratio",
+"weight": 0.12,
+"direction": 1,
+"per90": false,
+"note": "Ball recovery and security balance."
+},
+{
+"category": "Analytical",
+"metric": "Tackle win rate",
+"weight": 0.11,
+"direction": 1,
+"per90": false,
+"note": "Successful tackles divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Pass completion",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Same-position benchmark."
+},
+{
+"category": "Analytical",
+"metric": "Possession lost / 90",
+"weight": 0.07,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Analytical",
+"metric": "Aerial-duel win rate",
+"weight": 0.04,
+"direction": 1,
+"per90": false,
+"note": "Win percentage, not raw duel volume."
+},
+{
+"category": "Analytical",
+"metric": "Expected assists or key-pass rate",
+"weight": 0.03,
+"direction": 1,
+"per90": false,
+"note": "Low-weight creative signal."
+},
+{
+"category": "Analytical",
+"metric": "Successful-pressure rate",
+"weight": 0.02,
+"direction": 1,
+"per90": false,
+"note": "Pressures leading to a turnover or disruption."
+},
+{
+"category": "Actual",
+"metric": "Possession won / 90",
+"weight": 0.06,
+"direction": 1,
+"per90": true,
+"note": "Observed recoveries."
+},
+{
+"category": "Actual",
+"metric": "Interceptions / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed interceptions."
+},
+{
+"category": "Actual",
+"metric": "Tackles won / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed successful tackles."
+},
+{
+"category": "Actual",
+"metric": "Progressive passes completed / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed completed progressive passes."
+},
+{
+"category": "Actual",
+"metric": "Key tackles / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "High-value defensive events."
+},
+{
+"category": "Actual",
+"metric": "Assists / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed assists."
+},
+{
+"category": "Actual",
+"metric": "Goals / 90",
+"weight": 0.01,
+"direction": 1,
+"per90": true,
+"note": "Observed goals."
+}
+],
+"Central midfielder": [
+{
+"category": "Analytical",
+"metric": "Progressive passes / 90",
+"weight": 0.15,
+"direction": 1,
+"per90": true,
+"note": "Completed progressive distribution."
+},
+{
+"category": "Analytical",
+"metric": "Expected assists / 90",
+"weight": 0.1,
+"direction": 1,
+"per90": true,
+"note": "Chance quality created."
+},
+{
+"category": "Analytical",
+"metric": "Possession-won / possession-lost ratio",
+"weight": 0.1,
+"direction": 1,
+"per90": false,
+"note": "Ball recovery and security balance."
+},
+{
+"category": "Analytical",
+"metric": "Chance-creation rate",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Open-play creation frequency."
+},
+{
+"category": "Analytical",
+"metric": "Pass completion",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Same-position benchmark."
+},
+{
+"category": "Analytical",
+"metric": "Possession-adjusted interceptions / 90",
+"weight": 0.06,
+"direction": 1,
+"per90": true,
+"note": "Adjust opportunity for team possession."
+},
+{
+"category": "Analytical",
+"metric": "Successful-dribble rate",
+"weight": 0.05,
+"direction": 1,
+"per90": false,
+"note": "Successful take-ons divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Non-penalty expected goals / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Shot quality and volume excluding penalties."
+},
+{
+"category": "Analytical",
+"metric": "Possession lost / 90",
+"weight": 0.05,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Analytical",
+"metric": "Tackle or pressure success rate",
+"weight": 0.03,
+"direction": 1,
+"per90": false,
+"note": "Defensive efficiency."
+},
+{
+"category": "Actual",
+"metric": "Open-play key passes / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed open-play chances created."
+},
+{
+"category": "Actual",
+"metric": "Goals / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed goals."
+},
+{
+"category": "Actual",
+"metric": "Assists / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed assists."
+},
+{
+"category": "Actual",
+"metric": "Passes completed / 90",
+"weight": 0.03,
+"direction": 1,
+"per90": true,
+"note": "Observed completed passes."
+},
+{
+"category": "Actual",
+"metric": "Progressive passes completed / 90",
+"weight": 0.03,
+"direction": 1,
+"per90": true,
+"note": "Observed completed progressive passes."
+},
+{
+"category": "Actual",
+"metric": "Possession won / 90",
+"weight": 0.03,
+"direction": 1,
+"per90": true,
+"note": "Observed recoveries."
+},
+{
+"category": "Actual",
+"metric": "Successful dribbles / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed successful take-ons."
+},
+{
+"category": "Actual",
+"metric": "Tackles won / 90",
+"weight": 0.01,
+"direction": 1,
+"per90": true,
+"note": "Observed successful tackles."
+}
+],
+"Attacking midfielder": [
+{
+"category": "Analytical",
+"metric": "Expected assists / 90",
+"weight": 0.18,
+"direction": 1,
+"per90": true,
+"note": "Chance quality created."
+},
+{
+"category": "Analytical",
+"metric": "Non-penalty expected goals / 90",
+"weight": 0.15,
+"direction": 1,
+"per90": true,
+"note": "Shot quality and volume excluding penalties."
+},
+{
+"category": "Analytical",
+"metric": "Chance quality: xA per key pass",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Average quality of created chances."
+},
+{
+"category": "Analytical",
+"metric": "Progressive passes / 90",
+"weight": 0.08,
+"direction": 1,
+"per90": true,
+"note": "Completed progressive distribution."
+},
+{
+"category": "Analytical",
+"metric": "Successful-dribble rate",
+"weight": 0.07,
+"direction": 1,
+"per90": false,
+"note": "Successful take-ons divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Shooting accuracy",
+"weight": 0.06,
+"direction": 1,
+"per90": false,
+"note": "Shots on target divided by total shots."
+},
+{
+"category": "Analytical",
+"metric": "Pass completion",
+"weight": 0.05,
+"direction": 1,
+"per90": false,
+"note": "Same-position benchmark."
+},
+{
+"category": "Analytical",
+"metric": "Possession lost / 90",
+"weight": 0.05,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Analytical",
+"metric": "Offsides / 90",
+"weight": 0.03,
+"direction": -1,
+"per90": true,
+"note": "Lower is better, with role context."
+},
+{
+"category": "Actual",
+"metric": "Non-penalty goals / 90",
+"weight": 0.08,
+"direction": 1,
+"per90": true,
+"note": "Observed non-penalty goals."
+},
+{
+"category": "Actual",
+"metric": "Assists / 90",
+"weight": 0.06,
+"direction": 1,
+"per90": true,
+"note": "Observed assists."
+},
+{
+"category": "Actual",
+"metric": "Open-play key passes / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed open-play chances created."
+},
+{
+"category": "Actual",
+"metric": "Successful dribbles / 90",
+"weight": 0.03,
+"direction": 1,
+"per90": true,
+"note": "Observed successful take-ons."
+},
+{
+"category": "Actual",
+"metric": "Shots on target / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed shots on target."
+},
+{
+"category": "Actual",
+"metric": "Chances created / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed chances created."
+}
+],
+"Winger / wide forward": [
+{
+"category": "Analytical",
+"metric": "Non-penalty expected goals / 90",
+"weight": 0.15,
+"direction": 1,
+"per90": true,
+"note": "Shot quality and volume excluding penalties."
+},
+{
+"category": "Analytical",
+"metric": "Expected assists / 90",
+"weight": 0.15,
+"direction": 1,
+"per90": true,
+"note": "Chance quality created."
+},
+{
+"category": "Analytical",
+"metric": "Successful-dribble rate",
+"weight": 0.1,
+"direction": 1,
+"per90": false,
+"note": "Successful take-ons divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Chance-creation rate",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Open-play creation frequency."
+},
+{
+"category": "Analytical",
+"metric": "Cross completion",
+"weight": 0.07,
+"direction": 1,
+"per90": false,
+"note": "Completed crosses divided by attempts."
+},
+{
+"category": "Analytical",
+"metric": "Shooting accuracy",
+"weight": 0.06,
+"direction": 1,
+"per90": false,
+"note": "Shots on target divided by total shots."
+},
+{
+"category": "Analytical",
+"metric": "Regressed xG overperformance",
+"weight": 0.05,
+"direction": 1,
+"per90": false,
+"note": "Finishing signal shrunk strongly toward zero."
+},
+{
+"category": "Analytical",
+"metric": "Possession lost / 90",
+"weight": 0.05,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Analytical",
+"metric": "Offsides / 90",
+"weight": 0.02,
+"direction": -1,
+"per90": true,
+"note": "Lower is better, with role context."
+},
+{
+"category": "Analytical",
+"metric": "Sprints / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "High-speed running output."
+},
+{
+"category": "Actual",
+"metric": "Non-penalty goals / 90",
+"weight": 0.08,
+"direction": 1,
+"per90": true,
+"note": "Observed non-penalty goals."
+},
+{
+"category": "Actual",
+"metric": "Assists / 90",
+"weight": 0.05,
+"direction": 1,
+"per90": true,
+"note": "Observed assists."
+},
+{
+"category": "Actual",
+"metric": "Successful dribbles / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed successful take-ons."
+},
+{
+"category": "Actual",
+"metric": "Accurate crosses / 90",
+"weight": 0.03,
+"direction": 1,
+"per90": true,
+"note": "Observed completed crosses."
+},
+{
+"category": "Actual",
+"metric": "Open-play key passes / 90",
+"weight": 0.03,
+"direction": 1,
+"per90": true,
+"note": "Observed open-play chances created."
+},
+{
+"category": "Actual",
+"metric": "Fouls drawn / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed fouls won."
+}
+],
+"Striker": [
+{
+"category": "Analytical",
+"metric": "Non-penalty expected goals / 90",
+"weight": 0.24,
+"direction": 1,
+"per90": true,
+"note": "Primary sustainable scoring signal."
+},
+{
+"category": "Analytical",
+"metric": "Average xG per shot",
+"weight": 0.1,
+"direction": 1,
+"per90": false,
+"note": "Average shot quality."
+},
+{
+"category": "Analytical",
+"metric": "Shooting accuracy",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Shots on target divided by total shots."
+},
+{
+"category": "Analytical",
+"metric": "Expected assists / 90",
+"weight": 0.08,
+"direction": 1,
+"per90": true,
+"note": "Chance quality created."
+},
+{
+"category": "Analytical",
+"metric": "Regressed xG overperformance",
+"weight": 0.08,
+"direction": 1,
+"per90": false,
+"note": "Finishing signal shrunk strongly toward zero."
+},
+{
+"category": "Analytical",
+"metric": "Aerial-duel win rate",
+"weight": 0.06,
+"direction": 1,
+"per90": false,
+"note": "Win percentage, not raw duel volume."
+},
+{
+"category": "Analytical",
+"metric": "Offsides / 90",
+"weight": 0.04,
+"direction": -1,
+"per90": true,
+"note": "Lower is better, with role context."
+},
+{
+"category": "Analytical",
+"metric": "Possession lost / 90",
+"weight": 0.04,
+"direction": -1,
+"per90": true,
+"note": "Lower is better."
+},
+{
+"category": "Analytical",
+"metric": "Successful-dribble rate",
+"weight": 0.03,
+"direction": 1,
+"per90": false,
+"note": "Successful take-ons divided by attempts."
+},
+{
+"category": "Actual",
+"metric": "Non-penalty goals / 90",
+"weight": 0.12,
+"direction": 1,
+"per90": true,
+"note": "Observed non-penalty goals."
+},
+{
+"category": "Actual",
+"metric": "Assists / 90",
+"weight": 0.04,
+"direction": 1,
+"per90": true,
+"note": "Observed assists."
+},
+{
+"category": "Actual",
+"metric": "Shots on target / 90",
+"weight": 0.03,
+"direction": 1,
+"per90": true,
+"note": "Observed shots on target."
+},
+{
+"category": "Actual",
+"metric": "Aerial duels won / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed aerial wins."
+},
+{
+"category": "Actual",
+"metric": "Open-play key passes / 90",
+"weight": 0.02,
+"direction": 1,
+"per90": true,
+"note": "Observed open-play chances created."
+},
+{
+"category": "Actual",
+"metric": "Successful dribbles / 90",
+"weight": 0.01,
+"direction": 1,
+"per90": true,
+"note": "Observed successful take-ons."
+},
+{
+"category": "Actual",
+"metric": "Fouls drawn / 90",
+"weight": 0.01,
+"direction": 1,
+"per90": true,
+"note": "Observed fouls won."
+}
+]
+}
