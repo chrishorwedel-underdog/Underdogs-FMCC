@@ -46,7 +46,7 @@ const Row = ({ p, act, canPick, onPick, hasPack }) => {
         <input ref={ref} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => e.target.files[0] && upload(e.target.files[0])} data-testid={`face-file-${p.unique_id}`} />
         <button className="btn" onClick={() => ref.current.click()} data-testid={`face-upload-${p.unique_id}`}><Upload size={13} />Upload</button>{" "}
         <button className="btn" onClick={() => onPick(p)} data-testid={`face-pick-${p.unique_id}`}><Images size={13} />Pick face</button>{" "}
-        {canPick && <button className="btn" onClick={() => act(() => api.post(`/editor/faces/${p.unique_id}/another`), "Another NG_Regens face picked", ["editor-players", "editor-players-missing"])} data-testid={`face-another-${p.unique_id}`}><Shuffle size={13} />Another NG_Regens</button>}{" "}
+        {canPick && <button className="btn" onClick={() => act(() => api.post(`/editor/faces/${p.unique_id}/another`), "Another NG_Regens face picked", ["editor-players", "editor-players-missing", "editor-status", "ng-folder"])} data-testid={`face-another-${p.unique_id}`}><Shuffle size={13} />Another NG_Regens</button>}{" "}
         {p.custom && <button className="btn btn-d" onClick={() => act(() => api.delete(`/editor/faces/${p.unique_id}`), "FMCC face removed", ["editor-players", "editor-status", "editor-players-missing"])} data-testid={`face-remove-${p.unique_id}`}><Trash2 size={13} /></button>}
       </td>
     </tr>

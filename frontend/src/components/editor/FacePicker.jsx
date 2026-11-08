@@ -27,7 +27,7 @@ const Create = ({ player, onClose }) => {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 220px", gap: 18 }} data-testid="face-create">
       <div>
-        <p className="note">ChatGPT draws a made-up person who fits a {player.age}-year-old from {player.nationality}, in a facepack style. Add anything you'd like, such as hair, beard or skin tone.</p>
+        <p className="note">ChatGPT draws a made-up person who fits a {player.age ? `${player.age}-year-old ` : ""}footballer{player.nationality ? ` from ${player.nationality}` : ""}, in a facepack style. Add anything you'd like, such as hair, beard or skin tone.</p>
         <textarea className="inp" rows={3} maxLength={300} style={{ marginTop: 10, height: "auto", padding: 10 }} placeholder="e.g. short curly black hair, light beard" value={notes} onChange={(e) => setNotes(e.target.value)} data-testid="face-create-notes" />
         <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "center" }}>
           <button className="btn btn-p" disabled={busy} onClick={make} data-testid="face-create-generate">{busy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}{draft ? "Try again" : "Create face"}</button>
@@ -57,7 +57,7 @@ export const FacePicker = ({ player, folders, defaultFolder, onClose }) => {
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-4xl" data-testid="face-picker">
         <DialogHeader><DialogTitle>Pick a face for {player.name}</DialogTitle>
-          <DialogDescription>{player.nationality} · {player.club}</DialogDescription></DialogHeader>
+          <DialogDescription>{[player.nationality, player.club].filter(Boolean).join(" · ")}</DialogDescription></DialogHeader>
         <TabBar id="face-picker" value={tab} onChange={setTab} tabs={[...(folders.length ? [["ng", "NG_Regens"]] : []), ["ai", "Create with ChatGPT"]]} />
         {tab === "ng" ? <Browse player={player} folders={folders} defaultFolder={defaultFolder} onClose={onClose} /> : <Create player={player} onClose={onClose} />}
       </DialogContent>
@@ -78,7 +78,7 @@ const Browse = ({ player, folders, defaultFolder, onClose }) => {
   };
   return (
     <>
-      <p className="note">Pictures already used by another player are labelled; you can still pick them.</p>
+      <p className="note">{defaultFolder ? "" : `No NG_Regens folder matches ${player.nationality || "this player's nationality"}; pick any folder. `}Pictures already used by another player are labelled; you can still pick them.</p>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <select className="inp" style={{ width: 240, height: 34 }} value={folder} onChange={(e) => setFolder(e.target.value)} data-testid="face-picker-folder">
             {folders.map((f) => <option key={f} value={f}>{f}</option>)}

@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api/editor")
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
 ROOT = Path(__file__).parent
 MAX_UPLOAD = 5 * 1024 * 1024
+GENERATING: set[int] = set()
 SAMPLE_CLUB_FIELDS = [("reputation", "Reputation", 0, 10000), ("balance", "Cash balance (£)", -500_000_000, 2_000_000_000),
                       ("transfer_budget", "Transfer budget (£)", 0, 2_000_000_000), ("wage_budget", "Wage budget (£/week)", 0, 50_000_000),
                       ("training", "Training facilities", 1, 20), ("youth_facilities", "Youth facilities", 1, 20), ("youth_coaching", "Youth coaching", 1, 20),
@@ -406,6 +407,9 @@ async def generate_face(uid: int, body: GenerateIn):
     key = api_key()
     if not key:
         raise HTTPException(409, "Add your OpenAI key in Settings to create faces with ChatGPT")
+    if uid in GENERATING:
+        raise HTTPException(409, "A face for this player is already being created")
+    GENERATING.add(uid)
     prompt = (f"Photorealistic head-and-shoulders portrait of a fictional {p.get('age') or 22}-year-old professional footballer from {p.get('nationality') or 'Europe'}, "
               "facing the camera, plain dark training top, neutral light-grey studio background, soft even lighting, square crop, "
               "in the style of a Football Manager facepack. No text, no logos, no watermark, not a real person."
@@ -415,6 +419,8 @@ async def generate_face(uid: int, body: GenerateIn):
     except Exception as exc:
         logger.warning("face generation failed: %s", exc)
         raise HTTPException(502, "ChatGPT couldn't create a face just now. Please try again.")
+    finally:
+        GENERATING.discard(uid)
     if not images:
         raise HTTPException(502, "ChatGPT didn't return a picture. Please try again.")
     img = _store(fm_dirs(c), await asyncio.to_thread(_png, images[0], 250))
@@ -450,7 +456,7 @@ async def pick_face(uid: int, body: PickIn):
         raise HTTPException(404, "Player not found in this save")
     ng = await ng_index(c)
     src = _ng_path(ng, body.path)
-    folder = body.path.split("/")[0]
+    folder = src.relative_to(Path(ng["folder"]).resolve()).parts[0]
     img = _store(fm_dirs(c), await asyncio.to_thread(src.read_bytes))
     await add_revision(c, "face", uid, p["name"], {"image": img, "source": f"NG_Regens · {folder}", "ng_file": str(src)}, f"Face picked from NG_Regens: {body.path}")
     return await rebuild(c)

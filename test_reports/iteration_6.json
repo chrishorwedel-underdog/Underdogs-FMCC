@@ -1,0 +1,38 @@
+{
+  "summary": "Tested the new Face Picker (NG_Regens browse and pick) and Create with ChatGPT (GPT Image 1.5 via the Emergent key) through the API and the UI, plus a regression of the editor. New pytest file test_fmcc_stage7_face_picker.py: 22/22 pass, including 1 real generation. Stage 6 editor regression: 14/14 pass. UI (Playwright, 1920x1080): face-pick-UID opens face-picker with the NG_Regens and ChatGPT tabs. The folder select defaults to the player's nationality (Nigeria). Tiles show 3 pictures, each labelled with the player using it. Changing the folder reloads the tiles (Brazil). Prev and Next are both disabled with 3 pictures, and Use stays disabled until a tile is picked. Picking a tile and pressing Use closes the dialog, the row shows 'NG_Regens · Brazil' with a new image, and the history gains a new revision. On the ChatGPT tab, the notes went into the prompt, generation took about 15 s, the draft showed at 250 px and the button changed to 'Try again'. Using the draft gave the source 'Created with ChatGPT' and a toast. Security checks pass: ng-picture traversal (../../server.py, Italy/../../../server.py, /etc/passwd, config.xml) returns 404; picking a missing or traversal path returns 404; an unknown ng-folder returns 404; an unknown draft returns 404; use-draft with a draft made for another player returns 404; a bad image name returns 422; notes over 300 characters return 422. The UI regression passes: Another NG_Regens changes the image, upload gives 'Your picture', remove gives 'No face', fill-missing is enabled and the Clubs tab loads. No bugs found in scope.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/editor/faces/{uid}/generate", "issue": "Every draft is written to the store folder and a face_drafts doc. Unused drafts are never cleaned up, and there is no throttle or lock against repeated clicks, which spend credits."},
+      {"endpoint": "POST /api/editor/faces/{uid}/pick", "issue": "The source label comes from body.path.split('/')[0]. A valid but non-canonical path such as './Italy/italy_1.png' or a backslash path gives a wrong label like 'NG_Regens · .'. Take the folder from src.relative_to(base).parts[0] instead."},
+      {"endpoint": "GET /api/editor/ng-folder/{folder}", "issue": "used_by keeps only one name per file. When two players share a picture, the last one wins. Cosmetic."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Another NG_Regens", "issue": "Doesn't invalidate the 'ng-folder' or 'editor-status' query, so an open picker or a status count can be out of date until refetch. Minor.", "affected_selectors": ["[data-testid^=face-another-]"]}
+    ],
+    "design_issues": [
+      {"screen": "Face picker", "issues": ["The folder picker is a native <select>, not shadcn Select (same as the nation-folder pickers).", "For players whose nationality has no folder (e.g. Ireland), the picker opens on the first folder alphabetically with no hint that there is no match.", "Create tab copy reads 'from undefined' or 'null-year-old' if nationality or age is missing."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage7_face_picker.py", "/app/backend/tests/test_fmcc_stage6_editor.py", "/app/test_reports/pytest/pytest_stage7.xml"],
+  "action_items": [
+    "Optional: derive the pick_face folder label from the resolved path, not the raw string",
+    "Optional: clean up unused face drafts and debounce or guard the generate button against repeat calls",
+    "Optional: add 'ng-folder' and 'editor-status' to the queries refreshed after Another NG_Regens"
+  ],
+  "critical_code_review_comments": [
+    "_ng_path uses resolve() + is_relative_to + a .png suffix + is_file. The path traversal guard is solid (verified).",
+    "use_draft checks that the draft belongs to this career and uid, and DraftIn has a strict regex. Good.",
+    "generate_face falls back to EMERGENT_LLM_KEY via dof_api.api_key(). It returns 502 with a friendly message on failure, and the frontend uses a 120 s timeout.",
+    "Drafts stay in the store with no TTL, so they build up on disk"
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage7_face_picker.py"],
+  "success_rate": {"backend": "100% (22/22 new + 14/14 regression)", "frontend": "100% of the flows asked for"},
+  "seed_data_creation": "None created as seed data. Leftovers (branding revisions are append-only): Alvaro Moreno 30500117 has pick, ChatGPT, upload, remove and another revisions; he ends with no face after my UI remove. Ade Eze 30500006 has fill-missing (from the stage6 regression), Brazil pick and ChatGPT revisions, then I removed it, so he ends with no face. The stage6 regression's fill-missing also gave NG faces to other face-less players in matching folders. 2 face_drafts docs and their PNGs are in preview_fm/store. I didn't touch the main agent's data (Ade Okoye Brazil pick, Alvaro Castro 30500089 ChatGPT face).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && pytest tests/test_fmcc_stage7_face_picker.py -n 0. Set FMCC_RUN_AI=1 to include the one real generation (costs credits). The sample folders each have 3 PNGs (Italy, Netherlands, Portugal, England, Brazil, Spain, Nigeria). Tile testids are ng-pic-<Folder>/<file>.png. The ChatGPT tab is face-picker-tab-ai. 2 generations were used this round."
+}
