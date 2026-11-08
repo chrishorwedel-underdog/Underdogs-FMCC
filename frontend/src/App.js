@@ -1,56 +1,59 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { HOME } from "@/constants/testIds";
+import { useQuery } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
+import { api } from "@/lib/api";
+import { Sidebar } from "@/components/Sidebar";
+import { TopBar } from "@/components/TopBar";
+import { CommandPalette } from "@/components/CommandPalette";
+import { ComingSoon } from "@/components/ComingSoon";
+import Setup from "@/pages/Setup";
+import Home from "@/pages/Home";
+import Squad from "@/pages/Squad";
+import Settings from "@/pages/Settings";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const LATER = [["/development", "development"], ["/scouting", "scouting"], ["/matches", "matches"], ["/reports", "reports"],
+  ["/elite-training", "elite"], ["/awards", "awards"], ["/dof", "dof"]];
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
+const Shell = ({ state }) => {
+  const [pal, setPal] = useState(false);
   useEffect(() => {
-    helloWorldApi();
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPal(true); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
-
   return (
-    // The marker attribute below lets the platform probe detect the stock splash — remove it with this page
-    <div data-emergent-splash>
-      <header className="App-header">
-        <a
-          data-testid={HOME.emergentLink}
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
+    <div className="app grain">
+      <Sidebar />
+      <section className="main">
+        <TopBar career={state.career} onSearch={() => setPal(true)} />
+        <div className="content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/squad" element={<Squad />} />
+            <Route path="/settings" element={<Settings state={state} />} />
+            {LATER.map(([p, k]) => <Route key={k} path={p} element={<ComingSoon k={k} />} />)}
+            <Route path="*" element={<Home />} />
+          </Routes>
+        </div>
+      </section>
+      <CommandPalette open={pal} onClose={() => setPal(false)} />
     </div>
   );
 };
 
 function App() {
+  const { data: state, isLoading, isError } = useQuery({ queryKey: ["state"], queryFn: () => api.get("/state").then((r) => r.data) });
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      {isLoading && <div className="setup"><p className="note">Starting FMCC…</p></div>}
+      {isError && <div className="setup"><p className="note" data-testid="app-error">FMCC couldn't start. Please reload.</p></div>}
+      {state && (state.setup_complete && state.career ? <Shell state={state} /> : <Setup />)}
+      <Toaster theme="dark" position="bottom-right" />
+    </BrowserRouter>
   );
 }
 
