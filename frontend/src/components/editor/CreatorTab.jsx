@@ -59,14 +59,18 @@ export const CreatorTab = () => {
     <div style={{ display: "grid", gap: 16 }} data-testid="creator-tab">
       <div className="card">
         <div className="ttl"><UserPlus size={14} />Player Creator<span className="st b">New careers only</span></div>
-        <p className="note" style={{ marginTop: 4 }}>Makes a batch of new free-agent players as an FMCC editor data file. Pick it from FM's database list when you start a new career. Players already in the game keep their clubs; in a running career you can only rename players.</p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }} data-testid="pc-presets">
+          {meta.presets.map((p) => <button key={p.key} className="btn" title={p.about} onClick={() => set({ ...DEFAULT, nations: f.nations, ethnicities: f.ethnicities, ...p.settings, name: p.name, seed: f.seed })} data-testid={`pc-preset-${p.key}`}>{p.name}</button>)}
+          <button className="btn" onClick={() => set(DEFAULT)} data-testid="pc-reset">Reset</button>
+        </div>
+        <p className="note" style={{ marginTop: 8 }}>Presets fill in the settings below; you can change anything before you preview. Makes a batch of new free-agent players as an FMCC editor data file. Pick it from FM's database list when you start a new career. Players already in the game keep their clubs; in a running career you can only rename players.</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 14 }}>
           <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
             <label className="note" style={{ display: "grid", gap: 4 }}>Batch name<input className="inp" maxLength={60} placeholder="e.g. Academy wonderkids" value={f.name} onChange={(e) => set({ name: e.target.value })} data-testid="pc-name" /></label>
             <label className="note" style={{ display: "grid", gap: 4 }}>How many players<input className="inp mono" style={{ width: 100 }} type="number" min={1} max={200} value={f.count} onChange={(e) => set({ count: Number(e.target.value) })} data-testid="pc-count" /></label>
             <div><div className="eyebrow">Nationalities</div><Nations f={f} set={set} meta={meta} /></div>
             <div><div className="eyebrow">Ethnicity mix (none picked = typical for each nationality)</div><Chips all={meta.ethnicities} sel={f.ethnicities} toggle={toggle("ethnicities")} id="eth" /></div>
-            <Range f={f} set={set} lo="skin_lo" hi="skin_hi" label="Skin tone (FM's 1 light – 20 dark scale)" min={1} max={20} />
+            <Range f={f} set={set} lo="skin_lo" hi="skin_hi" label="Skin tone (FM's 1 light – 20 dark scale; leave at 1–20 for typical tones per ethnicity)" min={1} max={20} />
           </div>
           <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
             <div><div className="eyebrow">Positions</div><Chips all={meta.positions} sel={f.positions} toggle={toggle("positions")} id="pos" /></div>

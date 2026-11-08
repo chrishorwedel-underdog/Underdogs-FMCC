@@ -2,6 +2,7 @@
 ability) as an FMCC editor data file, with matching NG_Regens faces. Existing players are never changed. Whether FM accepts
 the file is UNCONFIRMED until tested on a PC (Test checklist)."""
 import asyncio
+import json
 import random
 import re
 from datetime import date
@@ -20,7 +21,7 @@ router = APIRouter(prefix="/api/creator")
 ETHNICITIES = ["Northern European", "Mediterranean / Hispanic", "North African / Middle Eastern", "African / Caribbean", "Asian", "South East Asian",
                "Pacific Islander", "Native American", "Native Australian", "Mixed race", "East Asian"]
 POSITIONS = ["GK", "DC", "DL", "DR", "DM", "MC", "AML", "AMR", "AMC", "ST"]
-# Small sample name lists; nations without a list use the closest one and say so.
+# Name lists (more in data/names.json); nations without a list use the closest one and say so.
 NAMES = {
     "England": (["Harry", "Jack", "Oliver", "George", "Charlie", "Alfie", "Callum", "Jamie", "Lewis", "Ryan"], ["Smith", "Taylor", "Brown", "Walker", "Wright", "Hughes", "Turner", "Clarke", "Hall", "Ward"]),
     "Spain": (["Pablo", "Sergio", "Álvaro", "Hugo", "Javier", "Diego", "Marcos", "Iker", "Adrián", "Raúl"], ["García", "Martínez", "López", "Sánchez", "Romero", "Navarro", "Torres", "Ruiz", "Molina", "Ortega"]),
@@ -44,6 +45,28 @@ CLOSEST = {"Scotland": "England", "Wales": "England", "Ireland": "England", "Bel
            "Colombia": "Spain", "Uruguay": "Argentina", "Senegal": "France", "Ivory Coast": "France", "Cameroon": "France", "Algeria": "Morocco", "Tunisia": "Morocco",
            "Egypt": "Morocco", "China": "South Korea", "Australia": "England", "Canada": "United States"}
 ID_BASE = 2_100_000_000
+# Typical skin tone range per ethnicity, used only when the range is left at the full 1-20.
+ETH_SKIN = {"Northern European": (1, 5), "Mediterranean / Hispanic": (3, 9), "North African / Middle Eastern": (5, 11), "African / Caribbean": (13, 20),
+            "Asian": (5, 12), "South East Asian": (6, 12), "Pacific Islander": (8, 14), "Native American": (7, 13), "Native Australian": (13, 19),
+            "Mixed race": (6, 15), "East Asian": (2, 7)}
+NAMES |= {k: tuple(v) for k, v in json.loads((Path(__file__).parent / "data" / "names.json").read_text(encoding="utf-8")).items()}
+DEFAULT_ETH |= {"Senegal": "African / Caribbean", "Ivory Coast": "African / Caribbean", "Cameroon": "African / Caribbean", "Algeria": "North African / Middle Eastern",
+                "Tunisia": "North African / Middle Eastern", "Egypt": "North African / Middle Eastern", "Saudi Arabia": "North African / Middle Eastern",
+                "Turkey": "Mediterranean / Hispanic", "Greece": "Mediterranean / Hispanic", "Mexico": "Mediterranean / Hispanic", "Colombia": "Mixed race",
+                "Uruguay": "Mediterranean / Hispanic", "Chile": "Mediterranean / Hispanic", "Ecuador": "Mixed race", "Paraguay": "Mediterranean / Hispanic", "China": "East Asian"}
+PRESETS = {
+    "academy": ("Academy intake", "A mixed youth intake: 15-17, raw today, high ceilings",
+                {"count": 16, "age_lo": 15, "age_hi": 17, "ca_lo": 40, "ca_hi": 85, "pa_lo": 110, "pa_hi": 175, "height_lo": 165, "height_hi": 192}),
+    "wonderkids": ("Wonderkids", "A handful of 16-19s who could become world class",
+                   {"count": 8, "age_lo": 16, "age_hi": 19, "ca_lo": 90, "ca_hi": 130, "pa_lo": 165, "pa_hi": 195, "height_lo": 170, "height_hi": 192}),
+    "hidden_gems": ("Hidden gems abroad", "20-24s from smaller football nations, decent now with room to grow",
+                    {"count": 20, "age_lo": 20, "age_hi": 24, "ca_lo": 100, "ca_hi": 135, "pa_lo": 130, "pa_hi": 160, "height_lo": 170, "height_hi": 192,
+                     "nations": [{"nation": n, "weight": 1} for n in ("Ecuador", "Paraguay", "Senegal", "Ghana", "Serbia", "Croatia", "Denmark", "South Korea")]}),
+    "veterans": ("Veteran free agents", "30-35s who can still do a job on a short deal",
+                 {"count": 15, "age_lo": 30, "age_hi": 35, "ca_lo": 115, "ca_hi": 150, "pa_lo": 120, "pa_hi": 155, "height_lo": 172, "height_hi": 192}),
+    "keepers": ("Goalkeeper pool", "Keepers of every age to fill your goalkeeping depth",
+                {"count": 10, "age_lo": 17, "age_hi": 33, "ca_lo": 70, "ca_hi": 140, "pa_lo": 110, "pa_hi": 165, "height_lo": 185, "height_hi": 200, "positions": ["GK"]}),
+}
 
 
 class NationIn(BaseModel):
@@ -102,9 +125,11 @@ def generate(b: BatchIn, game_date: str, start_id: int) -> list:
         ca = rng.randint(b.ca_lo, b.ca_hi)
         pa = max(ca, rng.randint(b.pa_lo, b.pa_hi))
         foot = b.foot if b.foot != "any" else rng.choices(["right", "left", "both"], [70, 24, 6])[0]
+        eth = rng.choice(b.ethnicities) if b.ethnicities else DEFAULT_ETH.get(nation, "Northern European")
+        lo, hi = ETH_SKIN.get(eth, (1, 20)) if (b.skin_lo, b.skin_hi) == (1, 20) else (b.skin_lo, b.skin_hi)
         out.append({"id": start_id + i, "first_name": name[0], "last_name": name[1], "name": f"{name[0]} {name[1]}", "nationality": nation,
-                    "names_from": src if src != nation else None, "ethnicity": rng.choice(b.ethnicities) if b.ethnicities else DEFAULT_ETH.get(nation, "Northern European"),
-                    "skin_tone": rng.randint(b.skin_lo, b.skin_hi), "age": age, "dob": date(gd.year - age, rng.randint(1, 12), rng.randint(1, 28)).isoformat(),
+                    "names_from": src if src != nation else None, "ethnicity": eth,
+                    "skin_tone": rng.randint(lo, hi), "age": age, "dob": date(gd.year - age, rng.randint(1, 12), rng.randint(1, 28)).isoformat(),
                     "position": rng.choice(b.positions), "ca": ca, "pa": pa, "foot": foot, "height": rng.randint(b.height_lo, b.height_hi), "club": "Free agent", "face": None})
     return out
 
@@ -146,7 +171,7 @@ async def _next_id(cid: str) -> int:
 async def meta():
     c = await active_career()
     ng = await editor_api.ng_index(c)
-    return {"edition": c["edition"], "ethnicities": ETHNICITIES, "positions": POSITIONS, "name_lists": sorted(NAMES), "closest": CLOSEST,
+    return {"presets": [{"key": k, "name": n, "about": a, "settings": s} for k, (n, a, s) in PRESETS.items()], "edition": c["edition"], "ethnicities": ETHNICITIES, "positions": POSITIONS, "name_lists": sorted(NAMES), "closest": CLOSEST,
             "nations": sorted(set(NAMES) | set(CLOSEST) | set(ng.get("folders") or {})), "ng_installed": ng["installed"],
             "ng_folders": sorted(ng.get("folders") or {}), "desktop": editor_api.LIVE}
 

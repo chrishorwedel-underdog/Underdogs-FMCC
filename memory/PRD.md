@@ -133,6 +133,7 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Faces: NG_Regens picture from the matching nationality folder (unused ones first), written to FMCC's graphics output; batches report how many got faces.
 - Output: FMCC XML editor data file (download in the preview; placed in the FM editor data folder in the Windows program). Format UNCONFIRMED; added to the Test checklist ("Created players appear in a new career"). Batches are saved with revisions; removing one deletes its file and releases its faces.
 - Self-tested: API (meta, preview, validation, create with 5/8 faces, file, delete) and screenshots.
+- (2026-11-08) Name lists: `backend/data/names.json` adds 37 nations (52 total, 12 first + 12 last names each, common names rather than famous players); the closest-list fallback stays for the rest. Typical skin tone per ethnicity when the range is left at 1–20. Presets: Academy intake, Wonderkids, Hidden gems abroad (8 smaller football nations), Veteran free agents, Goalkeeper pool; they fill in the form and can be adjusted. Self-tested with the API and a screenshot.
 
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
