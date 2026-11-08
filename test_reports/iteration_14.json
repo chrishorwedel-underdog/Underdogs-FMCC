@@ -1,0 +1,42 @@
+{
+  "summary": "Tested Player Creator saved presets, layered name lists (sample update channel) and regression of preview/batches. Backend: 17/18 new pytest cases pass. The only failure: a preset name made only of spaces is accepted and saved as an empty name. All requested flows pass: list/create/409 duplicate (case-insensitive, also with surrounding spaces)/422 invalid settings; PATCH rename/overwrite/404; soft delete then 404 on the second delete; unknown nation (Atlantis) dropped with a note; all unknown gives England plus a note; presets visible after creating and activating a second career; names counts (Senegal 24 built-in + 19 from update, Jamaica 0 + 20, England 20 + 12); check diff (Jamaica, Peru, Slovenia, Venezuela; 111 names); install; second install 409; wrong version 409; meta name_lists/closest updated; check is up to date after install; preview Senegal/Jamaica uses update names, Jamaica is African / Caribbean, nothing borrowed; Peru batch is Mixed race with update names; a batch made before install keeps its names (sample and XML file); rollback goes back to built-in; a second rollback gives 409. Frontend (1920): built-in presets, Save as preset (prefills '<name> (copy)' after a built-in), Yours tag, load, inline rename, overwrite (confirm), duplicate error toast, delete (confirm), unknown-nation toast and title note; Name lists card: Sample label, diff, Skip, Install, total/count updates, Roll back with confirm, nation rows '<n> built-in + <m> from update', 'update' tags in the preview (18/20 rows). No page errors. The Mobile 390 layout breaks.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/creator/presets and PATCH /api/creator/presets/{pid}", "issue": "A name made only of spaces ('   ') passes min_length=1, then strip() saves name '' (200). The UI blocks it with trim(), but the API should return 422. Add a validator that strips the name and rejects an empty result."},
+      {"endpoint": "PATCH /api/creator/presets/{pid}", "issue": "An empty body {} returns 200 and writes an audit entry 'preset changed' with no change. Consider returning 422 when neither name nor settings is given."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CreatorTab layout (mobile 390px)", "issue": "Every card in creator-tab (the Player Creator card, pc-names, pc-batches) is 636px wide inside a 358px column, so the Positions/Age/CA/PA column and the right side of the Name lists card are cut off and the content scrolls sideways. Cause: the inner grid uses gridTemplateColumns '1fr 1fr' with no breakpoint, and the outer grid (display:grid, gap 16) has an implicit auto column that grows to that min-content. Fix: outer gridTemplateColumns 'minmax(0,1fr)' and inner 'repeat(auto-fit, minmax(300px, 1fr))' (or one column under 768px). Nation rows (b width 160 + slider) also need wrapping.", "selector": "[data-testid='creator-tab']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Rollback/Install while a preview is shown", "issue": "The preview card (prev state) isn't cleared after an install or rollback, so it still shows 'update' tags for names no longer in use (or none for names now available) until you preview again.", "affected_selectors": ["[data-testid='pc-preview-card']", "[data-testid='pc-names-rollback']"]},
+      {"flow": "Save as preset after loading your own preset", "issue": "The Save button prefills f.name, which is the loaded preset's own name, so saving straight away always gives a 409 duplicate. Consider prefilling '<name> (copy)' for your own presets too.", "affected_selectors": ["[data-testid='pc-save-preset']"]}
+    ],
+    "design_issues": [
+      {"screen": "Preview table", "issues": ["The 'update' tag shows when either the first or the last name came from the update, so with Senegal (24 + 19) 8 of 10 rows are tagged. This is correct as written, but users may read it as 'the whole name is from the update'. Consider a tooltip."]},
+      {"screen": "MyPreset rename", "issues": ["Cancelling a rename keeps the edited text in local state, so the next Rename opens with the abandoned text instead of the current name."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage15_creator_presets_names.py", "/app/test_reports/pytest/stage15.xml"],
+  "action_items": [
+    "Fix the Creator tab layout on mobile and narrow screens: use minmax(0,1fr) on the outer grid and a responsive inner 2-column grid.",
+    "Reject preset names made only of spaces in PresetIn/PresetPatch (strip, then require min length 1).",
+    "Clear the preview (setPrev(null)) after a name install or rollback, or re-run it.",
+    "Optional: prefill '<name> (copy)' when saving after loading your own preset; reset the rename input on cancel; return 422 for an empty PATCH body."
+  ],
+  "critical_code_review_comments": [
+    "creator_extras.list_presets: settings are returned with nations filtered, but the stored settings are not validated against BatchIn again. If BatchIn changes later (for example new fields or tighter bounds), old presets load whatever was stored. Consider passing them through BatchIn(**s) with a fallback.",
+    "_known() calls ng_index for every GET /presets. Fine for now.",
+    "names_rollback after two installs goes back to 'previous', which only keeps one level (the previous doc's 'previous' is dropped). This matches 'previous version kept', but the history is only one step deep.",
+    "After a rollback, a nation that only existed in the update (Jamaica) silently falls back to England names with Northern European ethnicity in an existing form. CLOSEST has no entry for it. Consider adding Caribbean/South American closest entries (Jamaica→England? Peru→Spain, Venezuela→Spain, Slovenia→Croatia) and DEFAULT_ETH."
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage15_creator_presets_names.py (new)"],
+  "success_rate": {"backend": "94% (17/18)", "frontend": "90% (all flows work at 1920; the mobile layout overflows)"},
+  "seed_data_creation": "Created TEST_Career (setup/complete, plus 2 save reads), TEST_Career2 via POST /careers, about 10 TEST_ presets and 4 creator batches. All are cleaned up: presets soft-deleted, then hard-deleted (my pids only); batches removed; name layer rolled back (installed null); cleanup_test_careers.py --test-results removed both careers. The DB now has 0 careers, 0 creator_presets and 0 creator_batches; the name_layers 'installed' doc is in its rolled-back state (version null).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Setup: POST /api/setup/complete {edition:'FM27', save_folder:'C:/TEST/saves', club_name:'TEST Club', name:'TEST_Career'} (save_folder needs at least 3 characters), then POST /api/saves/read twice. Set localStorage fmcc-tour-done=1. Editor tab: [data-testid=editor-tab-creator]. Run pytest tests/test_fmcc_stage15_creator_presets_names.py -n 0 (it rolls back the name layer before and after). Clean up with python3 tests/cleanup_test_careers.py --test-results, then hard-delete soft-deleted TEST_ presets."
+}

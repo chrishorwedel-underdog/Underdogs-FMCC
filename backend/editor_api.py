@@ -151,7 +151,7 @@ def _lnc_dir(game: Path | None) -> Path | None:
         return None
     if not LIVE:
         return game / "data" / "database" / "db" / "2700" / "lnc" / "all"
-    dbs = sorted((p for p in (game / "data" / "database" / "db").glob("*") if p.name.isdigit()), key=lambda p: int(p.name))
+    dbs = sorted((p for r in ("shared/data/database/db", "data/database/db") for p in (game / r).glob("*") if p.name.isdigit()), key=lambda p: int(p.name))
     return dbs[-1] / "lnc" / "all" if dbs else None
 
 

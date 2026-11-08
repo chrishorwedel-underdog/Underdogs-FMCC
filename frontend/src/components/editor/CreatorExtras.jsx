@@ -62,7 +62,7 @@ const Check = ({ c, act, done }) => (
   </div>
 );
 
-export const NameUpdates = () => {
+export const NameUpdates = ({ onChange }) => {
   const { data } = useGet("creator-names", "/creator/names");
   const act = useAct();
   const [c, setC] = useState(null);
@@ -74,9 +74,9 @@ export const NameUpdates = () => {
       <p className="note" style={{ marginTop: 6 }} data-testid="pc-names-installed">{inst ? `Update installed: ${inst.version}${inst.sample ? " (sample)" : ""}, added to the built-in names.` : "Only FMCC's built-in names are in use."} Updates only add names; players you've already made keep theirs.</p>
       <div className="acts" style={{ marginTop: 8 }}>
         <button className="btn" onClick={() => act(() => api.get("/creator/names/check")).then((r) => r && setC(r))} data-testid="pc-names-check"><RefreshCw size={13} />Check for name updates</button>
-        {data.can_rollback && <button className="btn" onClick={() => window.confirm(`Roll back to ${data.rollback_to}? New batches will stop using the names from ${inst.version}.`) && act(() => api.post("/creator/names/rollback"), (r) => `Rolled back to ${r.now}`, NK).then(() => setC(null))} data-testid="pc-names-rollback"><Undo2 size={13} />Roll back to {data.rollback_to}</button>}
+        {data.can_rollback && <button className="btn" onClick={() => window.confirm(`Roll back to ${data.rollback_to}? New batches will stop using the names from ${inst.version}.`) && act(() => api.post("/creator/names/rollback"), (r) => `Rolled back to ${r.now}`, NK).then(() => { setC(null); onChange(); })} data-testid="pc-names-rollback"><Undo2 size={13} />Roll back to {data.rollback_to}</button>}
       </div>
-      {c && <Check c={c} act={act} done={() => setC(null)} />}
+      {c && <Check c={c} act={act} done={() => { setC(null); onChange(); }} />}
       <details style={{ marginTop: 10 }} data-testid="pc-names-counts"><summary className="note">Names per country ({data.countries.length})</summary>
         <div style={{ columns: "220px", marginTop: 6 }}>{data.countries.map((r) => <small key={r.nation} style={{ display: "block" }} data-testid={`pc-names-count-${r.nation}`}>{r.nation}: {r.builtin} built-in{r.update ? ` + ${r.update} from update` : ""}</small>)}</div>
       </details>

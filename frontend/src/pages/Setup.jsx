@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { api, errMsg } from "@/lib/api";
 import { DownloadButton } from "@/components/DownloadButton";
+import { ExtrasCard } from "@/components/ExtrasCard";
 
 const STEPS = [["Find FM", FolderSearch], ["Match analytics", Activity], ["DOF key", KeyRound], ["Health check", HeartPulse]];
 const ICON = { ok: Check, warn: AlertTriangle, fail: X };
@@ -112,6 +113,8 @@ const HealthStep = ({ analytics }) => {
       <Head title="Health check" text="Green is ready, amber needs a look, red needs fixing. Each one says what to do." />
       {items ? <CheckList items={items} id="health" /> : <p className="note" style={{ textAlign: "center", marginTop: 20 }}><Loader2 size={16} className="animate-spin" /></p>}
       {analytics && <p className="note" style={{ textAlign: "center", marginTop: 14 }} data-testid="setup-analytics-reminder">Match analytics: open Connections to install FMMatchLens with FM closed.</p>}
+      <div style={{ marginTop: 20 }}><ExtrasCard compact /></div>
+      <p className="note" style={{ textAlign: "center", marginTop: 8 }}>You can do this later: the full list is under "Downloads you need" at the top of every page.</p>
       <div style={{ marginTop: 28, textAlign: "center" }}><button className="btn btn-g btn-l" disabled={!items} onClick={() => qc.invalidateQueries()} data-testid="setup-finish-button">Open FMCC</button></div>
     </div>
   );

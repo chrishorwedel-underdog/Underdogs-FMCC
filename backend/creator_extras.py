@@ -8,7 +8,7 @@ from typing import Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 import editor_api
 from creator_api import NAMES, CLOSEST, ETHNICITIES, BatchIn, layer, counts
@@ -33,10 +33,30 @@ class PresetIn(BaseModel):
     name: str = Field(min_length=1, max_length=40)
     settings: BatchIn
 
+    @field_validator("name")
+    @classmethod
+    def not_blank(cls, v):
+        if not v.strip():
+            raise ValueError("Give the preset a name")
+        return v.strip()
+
 
 class PresetPatch(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=40)
     settings: Optional[BatchIn] = None
+
+    @field_validator("name")
+    @classmethod
+    def not_blank(cls, v):
+        if v is not None and not v.strip():
+            raise ValueError("Give the preset a name")
+        return v.strip() if v else v
+
+    @model_validator(mode="after")
+    def something(self):
+        if self.name is None and self.settings is None:
+            raise ValueError("Nothing to change")
+        return self
 
 
 def _store(s: BatchIn) -> dict:

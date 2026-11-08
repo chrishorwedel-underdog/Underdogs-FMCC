@@ -1,7 +1,8 @@
-import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins, Sprout, ShieldCheck, Palette, UserCog, Gavel } from "lucide-react";
+import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins, Sprout, ShieldCheck, Palette, UserCog, Gavel, Package } from "lucide-react";
 
 export const TOP_LINKS = [
   { to: "/safety", key: "safety", label: "Project Safety", Icon: ShieldCheck },
+  { to: "/extras", key: "extras", label: "Downloads you need", Icon: Package },
   { to: "/appearance", key: "appearance", label: "Appearance", Icon: Palette },
 ];
 
