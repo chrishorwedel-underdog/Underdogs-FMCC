@@ -404,7 +404,7 @@ async def undo_batch(batch_id: str):
                     await db.club_edits.update_one({"career_id": c["id"], "uid": ch["unique_id"]}, {"$set": {ch["field"]: ch["old_value"]}}, upsert=True)
                 else:
                     await db.game_edits.update_one({"career_id": c["id"], "unique_id": ch["unique_id"]}, {"$inc": {ch["field"]: -ch["delta"]}})
-            await audit(c["id"], "undone", ch["source"], f"{ch['field'].upper()} put back" + (f" to {ch['old_value']}" if ch.get("old_value") is not None else ""),
+            await audit(c["id"], "undone", ch["source"], f"{ch.get('label') or ch['field'].upper()} put back" + (f" to {ch['old_value']}" if ch.get("old_value") is not None else ""),
                         ch["unique_id"], ch["player_name"], batch_id, ch["hidden"])
             undone += 1
     await db.changes.update_many({"batch_id": batch_id, "status": "approved"}, {"$set": {"status": "queued", "batch_id": None}})

@@ -11,7 +11,7 @@ import { BatchDialog } from "@/components/BatchDialog";
 const Modes = ({ d, act }) => (
   <div className="card" data-testid="change-modes">
     <div className="ttl">How changes are applied</div>
-    {Object.entries(d.sources).map(([k, l]) => (
+    {Object.entries(d.sources).filter(([k]) => k !== "editor").map(([k, l]) => (
       <div className="row" key={k}><div style={{ flex: 1 }}>{l}<small>{d.modes[k] === "auto" && d.auto_allowed ? "Apply automatically" : "Ask me first"}</small></div>
         <Switch disabled={!d.auto_allowed} checked={d.modes[k] === "auto" && d.auto_allowed} onCheckedChange={(v) => act(() => api.put("/changes/modes", { source: k, mode: v ? "auto" : "ask" }), null, ["changes"])} data-testid={`mode-${k}`} /></div>
     ))}

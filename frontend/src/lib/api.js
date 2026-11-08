@@ -2,7 +2,12 @@ import axios from "axios";
 
 export const api = axios.create({ baseURL: `${process.env.REACT_APP_BACKEND_URL}/api` });
 
-export const errMsg = (e) => e?.response?.data?.detail || "Something went wrong. Please try again.";
+export const errMsg = (e) => {
+  const d = e?.response?.data?.detail;
+  if (Array.isArray(d)) return d.map((x) => x?.msg || String(x)).join("; ");
+  if (d && typeof d === "object") return d.msg || JSON.stringify(d);
+  return d || "Something went wrong. Please try again.";
+};
 
 export const ago = (iso) => {
   if (!iso) return "never";

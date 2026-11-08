@@ -61,6 +61,12 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Sidebar restored: Project Safety, Appearance (Coming soon) links; Home, Dynamic Potential, Breakout Player, Scout Players, Monthly Reports, Moneyball, Squad, Development, Elite Training, Matches; 'Chat with your Director of Football'. The Awards page was split into the Dynamic Potential and Breakout Player pages.
 - Tested: iteration_4 (backend 12/12, frontend flows); the batch-detail layout, the approver label and the newest save selection were fixed afterwards.
 
+## Implemented (2026-11-08) — Player & Teams Editor (first build)
+- `/editor` (`backend/editor_api.py`, `pages/PlayerTeamsEditor.jsx`, `components/editor/*`). Faces: reads a user-installed NG_Regens pack (its config.xml), never edits it; upload or remove a face, give a face from NG_Regens to everyone without one (nationality -> folder, automatic when the names match, otherwise you pick the folder), or swap in another NG_Regens picture. FMCC writes its own `graphics/FMCC/config.xml` + PNGs (person uid and r-uid records, club logos). Club logos upload/remove; club renames go into `fmcc_club_names.lnc` (CLUB_LONG/SHORT_NAME_CHANGE); 'Write again' rewrites the files. Every face/logo/name decision is an append-only revision (`branding` collection) with history.
+- Club attributes: read through FMLibreEditor (`get club`) in the Windows program, SAMPLE values in the preview; edits are queued as Game changes (entity club, absolute target) and go through the batch preview, checks, backup, read-back and undo. Not editable: owner personality, separate world reputation, club name through the editor.
+- Preview uses a sandbox folder (`backend/preview_fm`, gitignored) with a SAMPLE stand-in NG_Regens pack. UNVERIFIED against real FM, NG_Regens or the real .lnc path (looks for data/database/db/<highest>/lnc/all).
+- Tested: iteration_5 (14 API tests + UI). Fixed afterwards: the editor mode switch is hidden (club edits always ask), names reject control characters and quotes, 'Another NG_Regens' shows only when a folder exists, the undo label uses the attribute name.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.

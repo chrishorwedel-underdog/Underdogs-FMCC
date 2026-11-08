@@ -377,8 +377,8 @@ async def remove_logo(uid: int):
 
 
 class NameIn(BaseModel):
-    long: str = Field(min_length=2, max_length=60)
-    short: str = Field(min_length=2, max_length=30)
+    long: str = Field(min_length=2, max_length=60, pattern=r'^[^\x00-\x1f"]+$')
+    short: str = Field(min_length=2, max_length=30, pattern=r'^[^\x00-\x1f"]+$')
 
 
 @router.put("/clubs/{uid}/name")

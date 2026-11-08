@@ -1,0 +1,47 @@
+{
+  "summary": "Tested the Player & Teams Editor end to end through the API (new pytest file with 14 tests, all passing) and the UI (Playwright at 1920x800 and 1920x1080). Everything in the review request works: sidebar card (nav-ask-dof fully visible at 1920x800), face search and missing-only filter, NG_Regens status, face upload (PNG and JPEG), 422 for a non-image, 413 for files over 5 MB, face removal as a new revision, fill-missing with the toast listing nationalities that have no folder, nation-folder mapping and refill (France -> Portugal filled 9), Another NG_Regens, club search, logo upload and removal, rename showing 'was <old>' and its revert (.lnc lines checked on disk), the files banner and Write again, history newest first, the club attributes flow (queue -> /changes 'Reputation → 8000' -> dialog with Current 7229 / New 8000 -> apply -> editor shows 8000/7 -> Undo puts back 7229/11), a 422 for reputation 20000, and the DP regression (preview, apply, undo). Found 2 frontend bugs, both fixed by me: (1) uploaded faces and logos never showed until the page was reloaded; (2) the app crashed on any 422 list error. One backend bug is still open: the 'Player & Teams Editor' mode switch on /changes always returns 422.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "PUT /api/changes/modes", "issue": "ModeIn.source is Literal['elite','breakout','dp'], but SOURCES (and the /changes UI) now include 'editor'. Flipping the 'Player & Teams Editor' switch (data-testid mode-editor) always returns 422. Before my errMsg fix this crashed the whole React app.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "PUT /api/editor/clubs/{uid}/name", "issue": "Newlines (and other control characters) in long/short are not removed. _q only swaps double quotes, so a name with '\\n' writes a broken or injected extra line into fmcc_club_names.lnc (reproduced, then reverted). Strip or reject \\r\\n and control characters (Pydantic pattern or replace)."},
+      {"endpoint": "POST /api/editor/faces/{uid}/another", "issue": "Players with no face and no matching folder get a 409 ('No NG_Regens folder is set for X'). That is fine, but the UI shows the 'Another NG_Regens' button on every row, including these."},
+      {"endpoint": "POST /api/changes/batches/{id}/undo (club)", "issue": "The audit detail uses ch['field'].upper() ('REPUTATION put back to 7229') instead of the label. Cosmetic."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "FacesTab Pic (shared by the club logo)", "issue": "FIXED: the 'bad' state stayed set after an onError. A player or club with no picture kept showing initials after a successful upload until the page was reloaded. I added useEffect(() => setBad(false), [uid, rev]).", "selector": "[data-testid^=face-img-], [data-testid^=logo-img-]", "priority": "HIGH"},
+      {"component": "lib/api.js errMsg", "issue": "FIXED: a FastAPI 422 'detail' list was passed straight to the toast, which crashed React ('Objects are not valid as a React child'). errMsg now joins the msg fields.", "selector": "global toasts", "priority": "HIGH"},
+      {"component": "Changes page mode switches", "issue": "The mode-editor switch shows but can't be saved (backend 422). Either add 'editor' to ModeIn or hide this switch.", "selector": "[data-testid=mode-editor]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Face upload/remove -> nation folders list", "issue": "Upload and remove only refresh editor-players and editor-status, not editor-players-missing, so the nation-folders list in NG_Regens can be out of date until a fill or a reload.", "affected_selectors": ["[data-testid=nation-folders]"]}
+    ],
+    "design_issues": [
+      {"screen": "/editor NG_Regens card", "issues": ["Nation folder pickers are native <select> elements, not shadcn Select, which doesn't match the rest of the UI.", "'Another NG_Regens' shows for players whose nationality has no folder (it just gives an error toast)."]},
+      {"screen": "/changes batch dialog", "issues": ["The column header says PLAYER for club rows (e.g. Castleford Rovers). Consider 'Player / club'."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage6_editor.py", "/app/test_reports/pytest/pytest_stage6.xml"],
+  "action_items": [
+    "Add 'editor' to ModeIn.source Literal in changes_api.py, or hide the editor mode switch on /changes (it always returns 422 now)",
+    "Strip or reject newlines and control characters in club rename long/short before writing the .lnc",
+    "Optionally hide 'Another NG_Regens' when the player's nationality has no folder, and refresh editor-players-missing after face upload/remove",
+    "Keep my two small frontend fixes (FacesTab Pic reset and errMsg handling list details)"
+  ],
+  "critical_code_review_comments": [
+    "changes_api.ModeIn wasn't updated when 'editor' was added to SOURCES, so the frontend and backend disagree",
+    "editor_api._write_lnc: _q() only swaps double quotes. Validate names with a pattern to stop line injection in the .lnc",
+    "FacesTab Pic: image error state didn't reset when the props changed (fixed)",
+    "errMsg didn't handle Pydantic list errors, so any 422 from a form could crash the app (fixed)",
+    "undo_batch for club edits restores old_value from the preview's expected value. If that was None, the club_edits field is set to None. In preview mode this only happens when the preview wasn't ready, so low risk"
+  ],
+  "updated_files": ["/app/frontend/src/components/editor/FacesTab.jsx", "/app/frontend/src/lib/api.js", "/app/backend/tests/test_fmcc_stage6_editor.py"],
+  "success_rate": {"backend": "100% of 14 editor/regression tests (1 extra bug found outside the scope: /api/changes/modes with source=editor)", "frontend": "~90% (all requested flows pass after the 2 fixes; mode-editor switch still fails)"},
+  "seed_data_creation": "None. Leftovers (branding revisions are append-only, so there is no delete): face revisions for Callum Reid 20481116 (uploaded then removed, ends with no face) and another test player (uploaded then removed). fill-missing gave NG_Regens faces to the Croatia player (Italy folder) and 9 France players (Portugal folder); these are still active. Enzo Moreau 30500047 and one other NG player each got an extra 'another' revision. Castleford Rovers 978596 got logo and rename revisions, both reverted, and one apply+undo club batch (values back to 7229/11). Another club used by the API test had its logo/rename reverted and its batch undone, and a queued training change was rejected. One DP change was applied and undone in the regression test. nation_folders mapping reset to {}. Main agent's data left untouched (Northbridge rename/logo, 7 queued DP changes, TEST_career).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run with: cd /app/backend && pytest tests/test_fmcc_stage6_editor.py -n 0. It doesn't need an empty DB (setup is skipped if already done) and picks clubs with no rename/logo. The sample NG_Regens pack lives at backend/preview_fm/graphics/NG_Regens; FMCC output is at graphics/FMCC/config.xml and game/data/database/db/2700/lnc/all/fmcc_club_names.lnc. In the /changes queue, tick only your own rows (queue-row-ID button[role=checkbox]), because there are 7 pre-existing DP changes. Retest that mode-editor saves after the main agent's fix."
+}

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, Shuffle, Trash2, Wand2, FolderOpen } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
@@ -7,6 +7,7 @@ const BASE = `${process.env.REACT_APP_BACKEND_URL}/api/editor/image`;
 
 export const Pic = ({ kind, uid, rev, size = 44, label }) => {
   const [bad, setBad] = useState(false);
+  useEffect(() => { setBad(false); }, [uid, rev]);
   const key = `${uid}-${rev || "ng"}`;
   if (bad) return <span className="pic none" style={{ width: size, height: size }} data-testid={`${kind}-none-${uid}`}>{label?.slice(0, 2).toUpperCase()}</span>;
   return <img key={key} className="pic" src={`${BASE}/${kind}/${uid}?v=${rev || "ng"}`} alt={label} width={size} height={size} onError={() => setBad(true)} data-testid={`${kind}-img-${uid}`} />;
@@ -31,9 +32,9 @@ const NationFolders = ({ s, act }) => {
   );
 };
 
-const Row = ({ p, act }) => {
+const Row = ({ p, act, canPick }) => {
   const ref = useRef(null);
-  const upload = (f) => { const fd = new FormData(); fd.append("file", f); act(() => api.post(`/editor/faces/${p.unique_id}`, fd), `New face for ${p.name}`, ["editor-players", "editor-status"]); };
+  const upload = (f) => { const fd = new FormData(); fd.append("file", f); act(() => api.post(`/editor/faces/${p.unique_id}`, fd), `New face for ${p.name}`, ["editor-players", "editor-status", "editor-players-missing"]); };
   return (
     <tr style={{ cursor: "default" }} data-testid={`face-row-${p.unique_id}`}>
       <td><Pic kind="face" uid={p.unique_id} rev={p.image_rev} label={p.name} /></td>
@@ -43,8 +44,8 @@ const Row = ({ p, act }) => {
       <td style={{ whiteSpace: "nowrap" }}>
         <input ref={ref} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => e.target.files[0] && upload(e.target.files[0])} data-testid={`face-file-${p.unique_id}`} />
         <button className="btn" onClick={() => ref.current.click()} data-testid={`face-upload-${p.unique_id}`}><Upload size={13} />Upload</button>{" "}
-        <button className="btn" onClick={() => act(() => api.post(`/editor/faces/${p.unique_id}/another`), "Another NG_Regens face picked", ["editor-players"])} data-testid={`face-another-${p.unique_id}`}><Shuffle size={13} />Another NG_Regens</button>{" "}
-        {p.custom && <button className="btn btn-d" onClick={() => act(() => api.delete(`/editor/faces/${p.unique_id}`), "FMCC face removed", ["editor-players", "editor-status"])} data-testid={`face-remove-${p.unique_id}`}><Trash2 size={13} /></button>}
+        {canPick && <button className="btn" onClick={() => act(() => api.post(`/editor/faces/${p.unique_id}/another`), "Another NG_Regens face picked", ["editor-players", "editor-players-missing"])} data-testid={`face-another-${p.unique_id}`}><Shuffle size={13} />Another NG_Regens</button>}{" "}
+        {p.custom && <button className="btn btn-d" onClick={() => act(() => api.delete(`/editor/faces/${p.unique_id}`), "FMCC face removed", ["editor-players", "editor-status", "editor-players-missing"])} data-testid={`face-remove-${p.unique_id}`}><Trash2 size={13} /></button>}
       </td>
     </tr>
   );
@@ -65,7 +66,7 @@ export const FacesTab = ({ s }) => {
           <span className="note" style={{ marginLeft: "auto", alignSelf: "center" }} data-testid="faces-total">{data?.total ?? "…"} players</span>
         </div>
         <table className="tbl"><thead><tr><th /><th>Player</th><th>Face</th><th>Change</th></tr></thead>
-          <tbody>{(data?.players || []).map((p) => <Row key={p.unique_id} p={p} act={act} />)}</tbody></table>
+          <tbody>{(data?.players || []).map((p) => <Row key={p.unique_id} p={p} act={act} canPick={!!(s.nation_folders?.[p.nationality] || s.ngregens.folders.some((f) => f.toLowerCase() === (p.nationality || "").toLowerCase()))} />)}</tbody></table>
       </div>
       <div className="card" style={{ alignSelf: "start" }} data-testid="ngregens-card">
         <div className="ttl"><FolderOpen size={15} />NG_Regens<span style={{ marginLeft: "auto" }} className={`st ${s.ngregens.installed ? "ok" : "a"}`} data-testid="ngregens-status">{s.ngregens.installed ? `${s.ngregens.faces} faces mapped` : "Not found"}</span></div>
