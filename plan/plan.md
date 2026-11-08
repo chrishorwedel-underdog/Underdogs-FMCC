@@ -103,10 +103,10 @@ One FM manager on Windows who runs long careers. They want one program that hand
 6. Updates arrive weekly, or whenever you press "Check for updates".
 
 ## UI/UX feel
-A premium data studio: calm, precise and expensive-looking, like a professional analytics tool, built first for ease of use. Someone new should understand any screen within seconds. The updated mockup is in /app/plan/mockup.html, with four clickable screens: Home, Squad (Best XI / Development XI), Matches (chalkboard) and DOF Chat. It now includes the new colour-coded sidebar, the larger logo, the red DOF button and the larger text.
-- **Brand:** the FMCC bulldog logo ("From Underdog Podcasts") sits large and round in the top-left corner of the sidebar, next to the FMCC name. It also appears on the installer, the Windows taskbar icon and the first-run screen. The program is called **FMCC** everywhere.
+A premium data studio: calm, precise and expensive-looking, like a professional analytics tool, built first for ease of use. Someone new should understand any screen within seconds. The updated mockup is in /app/plan/mockup.html, with four clickable screens: Home, Squad (Best XI / Development XI), Matches (chalkboard) and DOF Chat. It now includes the colour-coded sidebar with taller, bolder buttons, the transparent logo at twice the size, the red DOF button and text two sizes larger than the first mockup.
+- **Brand:** the FMCC bulldog logo ("From Underdog Podcasts") sits at the top of the sidebar, twice its previous size (about 150 pixels across), with no white background, so it sits directly on the dark interface. The FMCC name and "Command Centre · FM27" sit centred beneath it. It also appears on the installer, the Windows taskbar icon and the first-run screen. The program is called **FMCC** everywhere.
 - **Colour:** a near-black graphite background with soft layered panels. One fixed accent colour, an electric blue taken from the logo, is used for primary buttons, highlights and your team's data. Green, amber and red are used only for meaning (good, needs attention, warning) inside the screens. The two exceptions are the sidebar, where each section has its own colour, and the "Ask your DOF" button, which uses the red from the logo. The colours never change with your club.
-- **Typography:** all text is one size larger than in the first mockup, across every screen, the top bar and the sidebar. A clean modern sans-serif is used for text, a monospaced font for numbers so figures line up, and an elegant italic serif for a few headline accents ("Good evening, *Boss.*").
+- **Typography:** all text is two sizes larger than in the first mockup (one step larger than the previous update), across every screen, the top bar, the sidebar, pop-ups and notifications. A clean modern sans-serif is used for text, a monospaced font for numbers so figures line up, and an elegant italic serif for a few headline accents ("Good evening, *Boss.*").
 - **Depth and texture:** subtle film grain, a faint dot grid behind the header, glass-blur top bar and pop-ups, and soft glows around key elements.
 - **Buttons that react:**
   - Primary buttons glow, have a light sheen that sweeps across on hover, lean slightly towards the cursor, and show a ripple where you click.
@@ -118,7 +118,7 @@ A premium data studio: calm, precise and expensive-looking, like a professional 
   - On the chalkboard, shots, passes and actions pop in one by one, and switching map type re-animates them.
 - **Cards:** each card has a soft spotlight that follows the cursor. Module cards on Home tilt slightly in 3D as you hover them.
 - **Navigation:** one wider sidebar of large, rounded, colour-coded buttons, in the style of the reference picture you sent. Nothing is hidden in nested menus. Screens open with a short staggered reveal.
-  - **Each button:** a coloured icon tile, a bold name and a short subtitle. Every section keeps its own colour:
+  - **Each button:** a coloured icon tile, a bold name and a short subtitle. Every sidebar button is 150% as tall as in the previous mockup, with extra-bold names, bolder subtitles and thicker icons. This applies only to the sidebar buttons; buttons inside the screens keep their current size. Every section keeps its own colour:
     - Home (lime): "Your club at a glance"
     - Squad (teal): "Lineups and depth charts"
     - Development (blue): "Minutes and growth plans"
@@ -130,6 +130,7 @@ A premium data studio: calm, precise and expensive-looking, like a professional 
   - **Selected and hover:** the selected button fills with its colour and glows. Other buttons slide slightly and brighten their border on hover. Counts such as "4" on Development stay on the right.
   - **Ask your DOF:** a big, softly pulsing button in the logo's red sits near the bottom, reading "Ask your DOF · Chat with your Director of Football".
   - **Settings:** sits below it, as a quieter grey button reading "Updates, sounds and safety".
+  - **Scrolling:** with the taller buttons, the sidebar no longer fits on one screen, so it scrolls on its own, separately from the page, with a thin, subtle scrollbar.
 - **Home talks to you:** it opens with a greeting and a one-line status ("Everything is up to date. Three things need your attention today"), which updates as you deal with items. Six cards each show one big number, one plain sentence, one small chart and one "Open" link.
 - **Plain language everywhere:** "4 youngsters need minutes" instead of a data table. Every automatic suggestion includes a short "Why this…" explanation.
 - **One clear action per screen:** for example "Use this lineup" or "Accept". Secondary options stay quiet.
@@ -184,9 +185,10 @@ A premium data studio: calm, precise and expensive-looking, like a professional 
 - **Accent colour from the logo:** electric blue from the logo stays the main accent inside the screens, leaving green, amber and red free to mean good, attention and warning.
 - **Logo red on the DOF button:** the logo's red is used for the DOF button. It is never used for warnings in the sidebar, so the two aren't confused. Warnings inside screens keep their own, slightly softer red.
 - **Sidebar colours and subtitles:** each section's colour and subtitle were chosen to echo your reference picture. Both can be changed before the build. The section colours appear only in the sidebar, so the screens stay calm.
-- **Same logo as before:** the FMCC bulldog logo you already sent is used, shown larger and in a round frame. A transparent PNG would give the sharpest edge, but isn't needed.
+- **Same logo as before:** the FMCC bulldog logo you already sent is used. A transparent PNG would give the sharpest edge, but isn't needed.
 - **Larger text means a wider sidebar:** the bigger buttons and text make the sidebar about 50 pixels wider, so the main area is slightly narrower on small screens.
-- **Logo background:** the logo you sent has a white background. FMCC removes it automatically so the logo sits cleanly on the dark interface. In the mockup it sits on a round white frame for now.
+- **Bigger text means less on screen:** with text two sizes larger, Home and the other screens show slightly less at once and scroll sooner on laptop-sized screens.
+- **Logo background:** the logo you sent has a white background baked into the picture. In the program, a clean cut-out version with a transparent background is made from it. In the mockup, the white is trimmed away around the round emblem, so a faint white edge may still show.
 - **Logo in small sizes:** at taskbar and tray size, the full logo with text is too detailed, so the bulldog head inside the circle is used on its own there.
 - **Sounds are original and quiet:** the sounds are short, soft tones made for FMCC, never louder than your system volume. They only play for your own actions and finished DOF drafts, never at random.
 - **Reduce motion follows Windows:** if Windows "Show animations" is turned off, FMCC starts with reduced motion on. You can still switch it back.
