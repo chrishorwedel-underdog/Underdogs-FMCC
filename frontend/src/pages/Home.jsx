@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Activity, Check } from "lucide-react";
 import { api, ago, gameDate } from "@/lib/api";
 import { ModuleCards } from "@/components/ModuleCards";
+import { UpNext } from "@/components/Notify";
 
 const WORDS = ["Nothing", "One thing", "Two things", "Three things", "Four things", "Five things"];
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning," : h < 18 ? "Good afternoon," : "Good evening,"; };
@@ -54,6 +55,7 @@ export default function Home() {
           <div className="hchip" data-testid="home-backup-chip"><Check size={15} /><b>Backup</b> saved {ago(d.last_backup)}</div>
         </div>
       </div>
+      <UpNext />
       <ModuleCards d={d} />
       <div className="home-bottom" data-testid="home-bottom">
         <Attention items={d.attention} />

@@ -1,6 +1,8 @@
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { HelpCircle } from "lucide-react";
 import { startTour } from "@/components/Tour";
+import { NotifyBell } from "@/components/Notify";
+import { useRaw, setRaw } from "@/components/scout/ctx";
 import { useNavigate } from "react-router-dom";
 import { Search, RefreshCw, Settings, Wand2, Plug } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -15,6 +17,7 @@ const linkTone = (iso) => {
 export const TopBar = ({ career, onSearch, sample = true }) => {
   const qc = useQueryClient();
   const nav = useNavigate();
+  const raw = useRaw();
   const [busy, setBusy] = useState(false);
   const { data: ch } = useQuery({ queryKey: ["changes"], queryFn: () => api.get("/changes").then((r) => r.data), refetchInterval: 5000 });
   const pending = ch?.queued?.length || 0;
@@ -61,6 +64,8 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
           <Wand2 size={16} /><span style={{ fontSize: 12.5 }}>Game changes</span>{pending > 0 && <span className="st a mono" style={{ margin: 0 }} data-testid="top-changes-count">{pending}</span>}
         </button>
         <button className="ib" onClick={() => nav("/connections")} title="Connections" data-testid="top-connections-button"><Plug size={16} /></button>
+        <label className="rawsw" title="Show raw numbers instead of percentiles in tables and charts" data-testid="raw-switch"><input type="checkbox" checked={raw} onChange={(e) => setRaw(e.target.checked)} />Raw</label>
+        <NotifyBell />
         <button className="ib" onClick={startTour} title="Take the tour" data-testid="top-tour-button"><HelpCircle size={16} /></button>
         <button className="ib" onClick={() => nav("/settings")} title="Settings" data-testid="top-settings-button"><Settings size={16} /></button>
       </div>

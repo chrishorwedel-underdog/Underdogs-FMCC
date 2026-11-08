@@ -1,99 +1,189 @@
-# FMCC: smoother setup, a smarter Director of Football, and a Windows installer you can test
+# FMCC: Recruitment Lab scouting, in-game countdowns and a notification centre
 
-FM Command Centre is a Windows companion for Football Manager. It plans your squad, scouts players, tracks development and makes safe, reversible changes to your saves.
-This round makes first-run setup clearer, has the Director of Football use your own formulas and tactic, and produces an installer to test on your PC with real FM26 and FM27 saves.
+FM Command Centre is a Windows companion for Football Manager. It plans squads, scouts players, tracks development and makes safe, reversible changes to your saves.
+This round turns scouting into a full Recruitment Lab, inspired by the screenshots you shared. It also adds countdowns to every date-based feature and in-app notifications. The guiding rule: a very deep feature set that stays easy to find and use.
 
 ## Who it's for
-- You, as the first real user, testing on your own Windows PC with FM26 and FM27 installed through Steam.
-- Later, other FM players installing FMCC for the first time with no help.
+- You, as the main user: an FM player who wants professional-level recruitment analytics without spreadsheets.
+- New FMCC users, who should reach any feature in one or two clicks without a manual.
 
 ## Core features and experience
 
-### 1. Polished setup
-- **Step 1, Find Football Manager:** after Find, a green tick confirms each item found: the game folder, the save folder, and how many saves are in it, with the newest save's name and date. If something isn't found, a plain message explains why and offers **Choose folder**.
-- **Step 2, Analytics:** the choice is explained in one sentence. Analytics stays optional and off unless you turn it on.
-- **Step 3, Director of Football key:** the key field shows whether the key works before you continue (a tick or a plain error). This step can be skipped.
-- **Step 4, Health check:** results are shown as a checklist: save readable, backup folder writable, FM version detected, FM running or closed. Each item is green, amber or red, with a one-line fix for anything not green.
-- Setup remembers your progress. If you close FMCC halfway, it reopens on the same step.
-- The look, sizing and layout stay as already approved (large and centred, with the selector and the green Find button on one line).
+### 1. Design rule for this round: deep but easy
+- New depth lives where you already look:
+  - recruitment inside Scout Players and the player profile
+  - countdowns on Home and on each page
+  - notifications behind one bell in the top bar
+- Summary first, detail on demand: the advanced parts sit in tabs or behind "Show more".
+- Every stat and index has a one-line explanation on hover. Every notice and recommendation links straight to where you act on it.
+- One switch in the top bar flips every table and chart between percentiles and raw numbers.
 
-### 2. Smarter Director of Football
-- The DOF reads your squad gaps, your Tactic fit (starter, backup and depth for each position) and your own formulas, including the starter pack.
-- When you ask things like "who should I sign at left back?", it suggests players, says which gap each one fills, and quotes the formula numbers it used.
-- It checks suggestions against your budget, wage limit and age preferences, if you've given them.
-- Each suggestion has **Add to shortlist** and **Open profile** buttons. As before, the DOF never changes the game. Anything it proposes goes into the pending-changes queue for you to approve.
-- New quick prompts: "Fill my biggest gap", "Cheapest upgrade for my XI", "Young player to develop".
+### 2. Recruitment Lab (inside Scout Players)
+The screenshots are used as inspiration, not copied one to one. Anything here that FMCC already has is upgraded rather than duplicated.
 
-### 3. Windows installer ready to test
-- A downloadable Windows installer (`FMCC-Setup.exe`) is built automatically, with a desktop shortcut and a Start-menu entry.
-- The installer isn't signed yet, so Windows will show a "Windows protected your PC" warning on first run. A short page explains how to get past it.
-- Once installed, FMCC uses your real FM26 and FM27 saves instead of the sample squad.
-- A **Test checklist** page (Settings → Testing) lists what to try on your PC and lets you mark each item pass or fail, with an optional note:
-  - setup finds FM
-  - a real save is read (correct date and player count)
-  - a backup is created and restored
-  - automatic save reading picks up a new save
-  - a queued FM27 change is previewed, applied, verified and undone
-  - FMMatchLens installs and is removed cleanly
-  - faces and logos appear in-game
-  - a Punish a Club file shows up in FM's new-career database list and its penalties take effect
-- **Export report** saves your results and FMCC's logs as one file you can send back. Personal file paths are hidden.
-- Live game editing stays FM27-only and keeps every existing safeguard: a verified backup first, a preview, your confirmation, a read-back check, undo and an audit history. FM26 stays read-only.
+**a. Explore chart (an upgraded Scatter)**
+- Your club's players, the target zone (above both medians), the rest of the pool and your shortlist each have their own marker.
+- Median lines are shown, and key players are labelled.
+- A count line reads like "1,074 players plotted, 370 in the target zone".
+- Clicking a dot opens the player.
+- Saved searches show how many players are new since the last save read.
+- Below the chart is a ranked list by role score.
 
-### 4. Punish a Club (any club)
-Inspired by sortitoutsi's "Punish Manchester City" tool, but it works for any club in your database: search, then pick the club.
-- **Penalties you can switch on, each with its own setting:**
-  - **Sporting:** points deduction (choose the number of points), forced relegation, forced player releases, lower player and staff morale, fans' hatred of the club.
-  - **Transfers:** a transfer embargo (choose the number of years and an age limit).
-  - **Money:** wipe the bank balance, add financial-fair-play losses, cancel sponsorship income.
-  - **Reputation and facilities:** lower club reputation, stadium capacity, and training and youth facilities.
-- **Presets:** "Light", "Heavy" and "The full 115", which you can adjust afterwards.
-- **A summary before anything is made**, in plain words, for example "Arsenal: −15 points, two-year transfer ban for over-21s, bank balance set to 0".
-- **Two ways to apply it:**
-  1. **New career (FM26 and FM27):** FMCC creates an editor data file and puts it in your FM editor data folder. When you start a new career, you pick it from the database dropdown at the top right. Every penalty is available this way.
-  2. **Current save (FM27 only):** penalties FMCC can change in a running save (money, reputation, facilities, morale) go into the pending-changes queue, with the usual backup, preview, confirmation, read-back check and undo. Points deductions, relegation and transfer embargoes appear as "new career only", because they can't be changed safely mid-season.
-- You can save several punishments (for example one per rival club). Each is kept in your history and can be removed, and FMCC deletes its own file from the editor data folder when you remove one.
-- Credited in Settings → Credits as inspiration. None of its code or files are used.
+**b. Shortlist board by tactic slot**
+- One column per position in your tactic, headed by your current starter and his score.
+- Shortlisted players are listed under their slot, ranked by score. Each shows how much better he is than your starter (for example "▲ 23"), plus age, value, philosophy fit and a status.
+- You can move a player to another slot. Empty slots offer "DOF picks".
+
+**c. Compare (up to four players)**
+- **Percentile profile:** stats grouped into Shooting, Creating, Possession, Aerial and Out of possession.
+  - Each player is a coloured dot on a 0–100 strip with the pool median marked.
+  - Raw values sit alongside, with the best in each row underlined.
+  - A dash shows when he has too few attempts for a stat to mean anything.
+- **Three views:** Profile, Overlay radar and Pizzas.
+- **Role fit table:** each compared player's score in the roles of his position.
+- **Where they sit:** a chart of non-penalty xG against goals for every player in that position, with a "goals = xG" line and your club's players highlighted.
+
+**d. Player profile, rebuilt**
+- **Header:**
+  - age, height and preferred foot, nationality
+  - minutes and average rating, best role
+  - value, wage, contract and years left, personality
+  - how strong his league is compared with yours (for example "Slightly stronger")
+  - a confidence badge from his minutes
+  - quick actions: Add to compare, Show in Explore, Export report
+- **Assess as:** pick any role. The roles in your tactic are offered first. You then see:
+  - **Role score:** what the role needs.
+  - **Philosophy score:** how well he fits your style.
+  - **Character test:** from his personality.
+- **What the role needs:** the role's key stats, each with a bar, raw value, weight (shown as dots) and percentile.
+- **Your philosophy:** six style traits, each with a weight you can edit:
+  - Keep the ball
+  - Always available
+  - Move it to hurt
+  - Win it back in five
+  - Defend on the front foot
+  - Intensity
+
+  These weights are saved and kept in your history.
+- **Summary:** strengths and weak spots written in plain words from his numbers.
+- **Role fit:** his top 5 roles, each with a role score and a philosophy score. Click a role to assess him in it.
+- **Indices** (percentile averages, 0–100):
+  - Chance creation
+  - Ball security
+  - Ball progression
+  - Shot threat
+  - Finishing, with a "luck" flag when his goals run far ahead of his xG
+  - Ball winning
+  - Pressing
+  - Engine
+  - Aerial
+  - Box defending
+  - Discipline
+  - Crossing
+- **Similar players:** same position, closest percentile profile, with value and score.
+- **Pipeline and notes:** Watching → Scouted → Bid → Signed, or Rejected, with your notes. Every step is kept in history.
+
+**e. DOF picks: ten recommendations for one role**
+- **Inputs:** pick a role or slot, set the transfer budget and maximum wage, and choose filters:
+  - leave out players likely to refuse
+  - leave out players who go against your philosophy
+  - include players who aren't for sale
+- Your current starter is shown as the benchmark.
+- **Five columns, two players each:**
+  - **Dream:** best score in a stronger league that fits your budget.
+  - **Upgrade:** beats your starter by 10 or more, aged 22–29, up to half the budget.
+  - **Value:** most score per £.
+  - **Squad player:** proven at your level, cheap cover.
+  - **Prospect:** 21 or under, ranked against his age group.
+- **Each card shows:** score, gain over your starter, value, wage, contract and a one-line reason. Tags include "Retrain to …", "Big step down for him", "Philosophy 79", "Final year" and "Contract expiring". Buttons: Shortlist, Compare and Open.
+- **"Considered and left out":** a line naming strong players excluded for budget, wage or not being for sale.
+- **"Add all to the shortlists"** and **"Compare top four"**.
+- The DOF chat uses the same picks when you ask who to sign.
+
+**f. New stats**, used across all of the above and in Formulas, filters and the DOF. Each appears only when your save has the numbers:
+- shots per 90 and conversion %
+- goals above xG per 90
+- ball security (the share of touches that don't lose the ball)
+- passes attempted per 90
+- headers won per 90 and header win %
+- pressures completed per 90
+- goal contributions per 90
+- non-penalty xG + xA per 90
+- tackles + interceptions per 90
+- distance covered per 90
+- fouls committed and cards per 90
+- average rating and share of minutes played
+- for goalkeepers: clean-sheet rate, xG prevented and goals conceded per 90
+
+There's also a **league benchmark** for each stat (league average and the top-10% mark) and **trend arrows** showing the change since the previous save.
+
+### 3. Countdowns and missed-date notices (in-game dates from your latest save)
+- **"Up next" strip on Home:** countdowns such as "Monthly report in 12 days", "Dynamic Potential review in 1 month 3 days" and "January window opens in 41 days". Each links to its page.
+- **The same countdowns on their own pages:** Monthly Reports, Dynamic Potential, Breakout Player, Elite Training, Development (monthly minutes targets) and your squad's contract expiries.
+- **Missed-date notices:** if a save jumps past a date without the event being handled, a notice explains it, for example "The October report was missed because no save was read in October". It offers to make it late from the nearest save, clearly labelled, or to dismiss it. Nothing is backfilled silently.
+- Countdowns only move when a new save is read.
+
+### 4. Notification centre (inside FMCC only)
+- **A bell in the top bar** shows an unread count and a list grouped into Today, This month in-game and Earlier. Each notice can be opened or marked read.
+- **Sidebar badges:** a small dot on pages with something new, for example Monthly Reports when a new report is ready.
+- **What creates a notice:**
+  - a new monthly league report
+  - a missed date
+  - a countdown reaching 7 in-game days
+  - game changes waiting for approval
+  - a new save read
+  - add-on updates available
+  - a DOF pick or suggestion still waiting
+  - shortlisted players whose contract enters its final year
+- **Settings → Notifications:** switch each type on or off. Everything is on by default.
+- Notices are kept in history; clearing them only hides them.
 
 ## User flow
-1. You download and run the installer, then open FMCC from the desktop.
-2. In setup, you pick FM26 or FM27 and click the green Find button. You see what was found, optionally add a DOF key, then run the health check.
-3. FMCC reads your latest real save and opens on Home.
-4. Optionally, in Punish a Club you pick a club and penalties, check the summary, then create the new-career file or queue the changes on your current FM27 save.
-5. You ask the DOF to fill a gap, and it suggests players with reasons. You shortlist them or queue changes for approval.
-6. You work through the Test checklist, export the report and send it back. The next round then fixes whatever failed.
+1. You save in FM. FMCC reads the save, and the bell shows "New save read: 1 Nov 2027" and "October report ready".
+2. Home's "Up next" strip shows what's coming. You click "January window opens in 41 days".
+3. In Scout Players → DOF picks you choose your weakest slot, set the budget and see ten picks across Dream, Upgrade, Value, Squad player and Prospect.
+4. You open a pick's profile, assess him in your tactic's role, check his indices and similar players, then add him to Compare against your starter.
+5. You shortlist the best two. They appear on the Shortlist board under that slot, marked Watching, and you move them along the pipeline as you scout and bid.
 
 ## UI/UX feel
-- Same dark FMCC style. Setup keeps its new large, centred look.
-- Results use clear status colours: green for found or passed, amber for needs attention, red for failed. Each comes with plain-English explanations and no technical error codes.
-- DOF suggestions appear as cards in the chat, with a short reason and the numbers behind it.
+- The same dark FMCC style, with a tighter "lab" feel in scouting:
+  - bold condensed headings
+  - a gold highlight for your club
+  - one colour per compared player (A, B, C, D)
+  - green / amber / red only for good / middling / poor
+- Dense where it helps (tables, strips), calm everywhere else.
+- Countdowns are short chips with a small progress ring. Missed dates use amber, never alarms.
 
 ## Implementation phases
 - **Phase 1 (built now, MVP):**
-  - polished setup (found-items ticks, choose-folder fallback, key check, health checklist, resume where you left off)
-  - DOF using gaps, tactic fit and formulas, with suggestion cards and new quick prompts
-  - an automatic installer build
-  - the in-app Test checklist with Export report
-  - Punish a Club: club search, every penalty, presets, a summary, the new-career file, the FM27 current-save queue, and saved punishments
-  - These are checked in the browser preview, where real saves are replaced by the sample squad.
+  - the Explore chart upgrade
+  - the Shortlist board by slot
+  - the four-player Compare with Profile, Overlay and Pizzas, Role fit and Where they sit
+  - the rebuilt player profile, with Assess as, role and philosophy scores, character test, indices, summary, similar players, and pipeline and notes
+  - DOF picks, with its five columns and filters
+  - the new stats, league benchmarks and trend arrows
+  - the raw-numbers switch
+  - the Home "Up next" strip and page countdowns
+  - missed-date notices
+  - the notification bell, sidebar badges and notification settings
+
+  All of this is checked in the browser preview with the sample save.
 - **Phase 2:**
-  - You test on your PC with FM26 and FM27 and send the report.
-  - Fixes for what fails: real-save reading, automatic save pickup, FM27 live changes with undo, FMMatchLens install, in-game faces and logos.
-  - FM27 support is only called verified once it passes your tests.
+  - check the new stats and indices against your real FM26 and FM27 saves on your PC, and adjust them
+  - your own reminders (for example, "remind me 30 in-game days before X's contract ends")
+  - team-level analytics (your style compared with the league)
 - **Phase 3:**
-  - FMMatchLens match import (needs a sample match file or a format description)
-  - a signed installer to remove the Windows warning
-  - automatic in-app updates of FMCC itself
-  - formula sharing codes
+  - shareable scouting reports as an image or PDF
+  - season-over-season comparison of saved searches
+  - philosophy presets shared between careers
 
 ## Assumptions
-- Steam installs only, on Windows 10 or 11. Mac isn't covered.
-- The installed app's DOF uses a key you enter in setup step 3. The browser preview keeps using the existing preview key.
-- The installer stays unsigned for now, so the Windows warning is expected.
-- Nothing from your PC is sent anywhere automatically. You choose to export and send the test report.
-- Budget, wage and age limits for the DOF come from your existing settings and rules. Nothing new is invented.
-- Third-party packs (NG_Regens, logo packs, the real-names fix) are still not bundled. FMCC reads them only if you've installed them.
-- Punish a Club gets its own sidebar entry under the club tools, next to Player & Teams Editor.
-- FMCC writes its own editor data file (XML). FM26 and FM27 accepting it can only be confirmed on your PC, so it's on the Test checklist.
-- In the browser preview, the file is created and shown for download but not placed in an FM folder, and current-save changes are applied to the sample squad only.
-- Phase 1 can't prove real-game behaviour. Everything that needs your PC is listed on the Test checklist rather than claimed as working.
+- Countdowns use in-game dates from your latest save, and notifications appear inside FMCC only, as you chose.
+- Transfer windows and season dates come from the save when available. Otherwise they use each league's usual dates and are marked "estimated".
+- **"Likely to refuse"** is estimated from league strength, club reputation and his role at his current club, and is shown as a tag, never as a certainty. **"Not for sale"** is only used when the save says so.
+- **Personality and the character test** come from FM's personality labels. Hidden attributes are never shown in the Fair play or Moneyball views.
+- **The six philosophy traits** are built from the stats FMCC already has. Their default weights are even, and you can change them.
+- New stats appear only when the save contains the numbers. In the preview they come from the sample save.
+- Values are shown in your chosen currency (£ by default), not €.
+- Existing pages keep their places. Explore, Shortlist board, Compare and DOF picks are tabs inside Scout Players (Compare and Scatter are upgraded, not duplicated). No new sidebar entries are added.
+- The Recruitment Lab screenshots are used for ideas only: no code or images are copied. They're credited as inspiration in Settings.

@@ -9,6 +9,7 @@ import { TopBar } from "@/components/TopBar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModuleGuide } from "@/components/ModuleGuide";
+import { PageCountdown } from "@/components/Notify";
 import { Tour } from "@/components/Tour";
 import Setup from "@/pages/Setup";
 import Home from "@/pages/Home";
@@ -47,6 +48,7 @@ const Shell = ({ state }) => {
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
         <div className="content">
           <ModuleGuide />
+          <PageCountdown />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/squad" element={<Squad />} />

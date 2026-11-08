@@ -11,6 +11,7 @@ import { ScatterTab, Breakdown } from "@/components/scout/Charts";
 import { ComputedTab, RoleScoresTab } from "@/components/scout/Computed";
 import { LeaguesTab } from "@/components/scout/LeaguesTab";
 import { FormulasTab, Quadrant } from "@/components/scout/Lab";
+import { ExploreTab, BoardTab, PicksTab, Compare4 } from "@/components/scout/Recruit";
 import { PossessionTab, ImportTab } from "@/components/scout/DataTabs";
 
 const Shortlist = ({ open }) => {
@@ -62,7 +63,7 @@ const VIEW_NOTE = { full: "Full: everything, including CA, PA, hidden attributes
   moneyball: "Moneyball: match stats and price only. Attributes are switched off." };
 
 export default function Scouting({ initialTab = "players" }) {
-  const [tab, setTab] = useState(initialTab);
+  const [tab, setTab] = useState(new URLSearchParams(window.location.search).get("tab") || initialTab);
   const [view, setView] = useState("full");
   const [compare, setCompare] = useState([]);
   const [open, setOpen] = useState(() => Number(new URLSearchParams(window.location.search).get("player")) || null);
@@ -71,7 +72,7 @@ export default function Scouting({ initialTab = "players" }) {
   const prefs = saved || { currency: "GBP", wages: "week" };
   const setPrefs = (p) => act(() => api.put("/scout/prefs", p), null, ["scout-prefs"]);
   const toggleCompare = (id) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id].slice(-4)));
-  const tabs = [["players", "Players"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Scatter"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
+  const tabs = [["players", "Players"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["board", "Shortlist board"], ["picks", "DOF picks"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
     ["computed", "Computed stats"], ["formulas", "Formulas"], ["roles", "Role scores"], ["leagues", "Leagues"], ["possession", "Possession"], ["import", "HTML import"], ["shortlist", "Shortlist"], ["rules", "Rules"]];
   return (
     <ScoutCtx.Provider value={{ view, prefs, openPlayer: setOpen, compare, toggleCompare }}>
@@ -85,8 +86,10 @@ export default function Scouting({ initialTab = "players" }) {
         {tab === "myclub" && <MyClubTab />}
         {tab === "deals" && <><DealsTab /><Quadrant /></>}
         {tab === "formulas" && <FormulasTab />}
-        {tab === "scatter" && <ScatterTab />}
-        {tab === "compare" && (compare.length ? <><CompareTable ids={compare} clear={() => setCompare([])} /><Breakdown ids={compare} /></>
+        {tab === "scatter" && <ExploreTab open={setOpen} />}
+        {tab === "board" && <BoardTab open={setOpen} />}
+        {tab === "picks" && <PicksTab open={setOpen} onCompare={(id, many) => (many ? setCompare(id) : toggleCompare(id))} />}
+        {tab === "compare" && (compare.length ? <Compare4 ids={compare} clear={() => setCompare([])} />
           : <div className="soon">Pick up to 4 players with the scales button in Players or in a profile to compare them here.</div>)}
         {tab === "computed" && <ComputedTab />}
         {tab === "roles" && <RoleScoresTab />}

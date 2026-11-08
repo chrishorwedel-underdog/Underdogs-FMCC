@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { Quadrant, Replacement, PriceExplained, HistoryChart } from "./Lab";
+import { ProfileLab } from "./Recruit";
 import { useScout, fmtMoney, fmtWage, pctColor, ContractTag } from "./ctx";
 
 const XY = { GK: [50, 90], "D (C)": [50, 74], "D (L)": [14, 70], "D (R)": [86, 70], "WB (L)": [12, 56], "WB (R)": [88, 56], DM: [50, 60],
@@ -61,6 +62,7 @@ const Body = ({ p, view }) => {
         <button className="btn" disabled={busy || !pizza.length} onClick={dof} data-testid="profile-dof-report"><Sparkles size={13} />{busy ? "Writing…" : "DOF report from the numbers"}</button>
       </div>
       {p.report && <p className="note" style={{ lineHeight: 1.6 }} data-testid="profile-report">{p.report}</p>}
+      <ProfileLab uid={p.unique_id} view={view} onCompare={toggleCompare} />
       <Replacement uid={p.unique_id} />
       <PriceExplained uid={p.unique_id} view={view} />
       {p.dof_reports?.map((r) => <div key={r.id} className="soon" style={{ marginTop: 0 }} data-testid="profile-dof-text"><b>Director of Football</b> · {r.season}<br />{r.text}</div>)}

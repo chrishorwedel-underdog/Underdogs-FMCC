@@ -1,4 +1,12 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+
+export const isRaw = () => localStorage.getItem("fmcc-raw") === "1";
+export const setRaw = (v) => { localStorage.setItem("fmcc-raw", v ? "1" : "0"); window.dispatchEvent(new Event("fmcc-raw")); };
+export const useRaw = () => {
+  const [raw, set] = useState(isRaw());
+  useEffect(() => { const f = () => set(isRaw()); window.addEventListener("fmcc-raw", f); return () => window.removeEventListener("fmcc-raw", f); }, []);
+  return raw;
+};
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
@@ -32,9 +40,10 @@ export const usePost = (key, url, body, opts = {}) =>
 export const ContractTag = ({ m }) => (m == null || m > 12 ? null
   : <span className={`tag st ${m <= 6 ? "r" : "a"}`} data-testid="contract-warning">{m} months left</span>);
 
-export const Pct = ({ v, p, marker }) => (
+const PctCell = ({ v, p, marker, raw }) => (
   <td className="mono" style={{ minWidth: 70 }}>
     <span title={marker || undefined}>{num(v)}{marker && <sup style={{ color: "var(--amb)" }}>×</sup>}</span>
-    {p != null && <span style={{ display: "block", height: 3, borderRadius: 2, marginTop: 4, width: `${Math.max(4, p)}%`, background: pctColor(p) }} title={`${p}th percentile`} />}
+    {p != null && !raw && <span style={{ display: "block", height: 3, borderRadius: 2, marginTop: 4, width: `${Math.max(4, p)}%`, background: pctColor(p) }} title={`${p}th percentile`} />}
   </td>
 );
+export const Pct = (props) => <PctCell {...props} raw={useRaw()} />;

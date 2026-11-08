@@ -206,6 +206,11 @@ h1.h .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
 .sugg{display:grid;gap:10px;margin-top:10px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
 .sugg-c{padding:14px;border-radius:12px;border:1px solid var(--line2);background:var(--s2);display:grid;gap:6px;font-size:13px}
 .sugg-c .gap{font:600 11px 'Geist Mono';letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}
+.bell-n{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font:700 10px 'Geist Mono';display:grid;place-items:center}
+.bell-pop{position:absolute;right:0;top:44px;width:380px;max-height:520px;overflow-y:auto;z-index:80;padding:14px;box-shadow:0 20px 60px -10px rgba(0,0,0,.7)}
+.bell-row{cursor:pointer;border-radius:8px;padding:8px}.bell-row:hover{background:var(--s2)}.bell-row.unread b:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);margin-right:6px}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);margin-left:auto;flex-shrink:0}
+.rawsw{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);padding:0 8px;cursor:pointer}
 .wiz-row .seg button{height:46px;padding:0 26px;font-size:15px}
 .wiz-card .btn-l{height:54px;padding:0 28px;font-size:15.5px;border-radius:13px}
 @media (max-width:760px){.wiz-row{flex-wrap:nowrap;gap:10px}.wiz-row .seg button{padding:0 14px}.wiz-row .btn-l{padding:0 16px;white-space:nowrap}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.wiz-card{padding:26px 22px!important}.wiz-logo{height:110px}}

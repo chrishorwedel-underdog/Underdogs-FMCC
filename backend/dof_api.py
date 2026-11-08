@@ -118,6 +118,15 @@ async def lab_context(c: dict) -> str:
     fnum = lambda x: ", ".join(f"{fs[k]['name']} {round(v, 2)}" for k, v in (x.get("f") or {}).items() if v is not None and k in fs)  # noqa: E731
     cands = []
     b = await _budget(c)
+    picks_line = ""
+    try:
+        import recruit_api
+        _, rdata = await recruit_api._ctx()
+        gap_role = fit["gaps"][0]["role"] if fit["gaps"] else "cd"
+        pk = await recruit_api.picks_for(rdata, recruit_api.PicksIn(role=gap_role, budget=b.get("transfer_budget") or 50_000_000, max_wage=10_000_000))
+        picks_line = "\nDOF PICKS for " + pk["role_name"] + ": " + "; ".join(f"{k}: " + ", ".join(f"id {p['unique_id']} {p['name']} score {p['score']} gain {p['gain']}" for p in v) for k, v in pk["columns"].items() if v)
+    except Exception as exc:
+        logger.warning("DOF picks skipped: %s", exc)
     rank = lambda x: x["grade_global"] if x["grade_global"] is not None else (x.get("ca") or 0) / 10  # noqa: E731
     line = lambda x, tag="": (f"id {x['unique_id']} {x['name']} ({x['club']}) {x['group']} age {x['age']} grade {x['grade_global'] if x['grade_global'] is not None else 'not enough minutes'} "  # noqa: E731
                                f"value {x['value']} wage {x['wage']}{tag}" + (f" | formulas: {fnum(x)}" if fnum(x) else ""))
@@ -135,7 +144,7 @@ async def lab_context(c: dict) -> str:
             + "\nSQUAD GAPS (weakest first): " + "; ".join(f"{g['label']} ({g['group']}) {g['role_name']} score {g['score']}" for g in fit["gaps"])
             + "\nMY FORMULAS: " + ("; ".join(f"{v['name']} = {v['expr']}" for v in fs.values()) or "none")
             + "\nTRANSFER BUDGET: " + (f"£{b['transfer_budget']:,}, wage budget £{b.get('wage_budget', 0):,}/week" if b.get("transfer_budget") is not None else "unknown")
-            + "\nTRANSFER CANDIDATES: " + ("; ".join(cands) or "none"))
+            + "\nTRANSFER CANDIDATES: " + ("; ".join(cands) or "none") + picks_line)
 
 
 async def check_suggestions(c: dict, action: dict) -> Optional[dict]:
@@ -166,7 +175,7 @@ ACTION: {"type": "shortlist", "unique_id": <scouting id>, "summary": "..."}
 ACTION: {"type": "nomination", "module": "elite" or "breakout", "unique_id": <squad id>, "summary": "..."}
 ACTION: {"type": "plan", "unique_id": <squad id>, "minutes_target": <int>, "loan": "none" | "loan_lower" | "loan_same" | "loan_abroad", "summary": "..."}
 ACTION: {"type": "suggestions", "summary": "...", "items": [{"unique_id": <id from TRANSFER CANDIDATES>, "gap": "<position it fills>", "reason": "<one sentence>", "numbers": "<the formula and stat numbers you used>"}]}
-When the manager asks who to sign, which gap to fill, the cheapest upgrade or a young player to develop, use the suggestions action with 1-5 players taken ONLY from TRANSFER CANDIDATES.
+When the manager asks who to sign, which gap to fill, the cheapest upgrade or a young player to develop, use the suggestions action with 1-5 players taken ONLY from TRANSFER CANDIDATES or DOF PICKS.
 Say which gap each one fills (from TACTIC FIT and SQUAD GAPS) and quote the formula numbers listed for him. Respect the TRANSFER BUDGET and any budget, wage or age limit the manager gives; if a player breaks one, say so.
 The manager must click Accept before anything is saved, so describe the draft as a suggestion.
 

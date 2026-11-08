@@ -1,8 +1,11 @@
 import { NavLink } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import { NAV, TOP_LINKS } from "@/constants/nav";
+import { useNotices } from "@/components/Notify";
 
-export const Sidebar = () => (
+export const Sidebar = () => {
+  const badges = useNotices().data?.badges || [];
+  return (
   <aside className="side" data-testid="sidebar">
     <div className="brand"><img className="logo" src="/fmcc-logo.png" alt="FMCC — From Underdog Podcasts" data-testid="sidebar-logo" /></div>
     <div className="toplinks">
@@ -18,6 +21,7 @@ export const Sidebar = () => (
           <span className="tile2"><Icon size={20} strokeWidth={2.2} /></span>
           <span className="tx"><b>{label}</b><small>{sub}</small></span>
           {stage && <span className="later">Stage {stage}</span>}
+          {badges.includes(to) && <span className="nav-dot" data-testid={`nav-badge-${key}`} />}
         </NavLink>
       ))}
     </nav>
@@ -28,4 +32,5 @@ export const Sidebar = () => (
       </NavLink>
     </div>
   </aside>
-);
+  );
+};
