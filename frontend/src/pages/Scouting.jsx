@@ -65,7 +65,7 @@ export default function Scouting({ initialTab = "players" }) {
   const [tab, setTab] = useState(initialTab);
   const [view, setView] = useState("full");
   const [compare, setCompare] = useState([]);
-  const [open, setOpen] = useState(null);
+  const [open, setOpen] = useState(() => Number(new URLSearchParams(window.location.search).get("player")) || null);
   const { data: saved } = useGet("scout-prefs", "/scout/prefs");
   const act = useAct();
   const prefs = saved || { currency: "GBP", wages: "week" };

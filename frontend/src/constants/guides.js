@@ -1,5 +1,10 @@
 // Plain-language guide shown at the top of every sidebar page: what it does, what's on it, how to use it.
 export const GUIDES = {
+  "/punish": {
+    what: "Punishes any club in your database, inspired by sortitoutsi's Punish Manchester City tool.",
+    features: ["Search and pick any club", "Sporting, transfer, money, reputation and facility penalties, each with its own setting", "Presets: Light, Heavy and The full 115", "A plain-words summary before anything is made", "A new-career file for FM26 and FM27, and money, reputation and facilities queued on your current FM27 save", "Saved punishments you can download or remove"],
+    how: ["Pick a club", "Switch on penalties or pick a preset, then check the summary", "Make the new-career file and pick it from FM's database list when you start a new career, or queue the live ones and approve them in Game changes"],
+  },
   "/": {
     what: "Your club at a glance. Everything important from your latest save on one screen.",
     features: ["Six cards with your squad, development, scouting, awards, matches and reports", "Needs your attention: contracts ending, players short of minutes and changes waiting for approval", "Your next match", "Updates, backups and careers"],

@@ -8,13 +8,14 @@ import { CareersCard } from "@/components/CareersCard";
 import { UpdatesCard } from "@/components/UpdatesCard";
 import { BackupsCard } from "@/components/BackupsCard";
 import { startTour } from "@/components/Tour";
+import { TestingCard } from "@/components/TestingCard";
 
 const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
   ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"],
   ["ScoutSheet", "MIT", "Scouting views, fair price, Deal Finder and Offers, rebuilt inside Scout Players"], ["FMDataLab", "No code used", "Its analytics ideas and published possession method, rebuilt"],
   ["FM26 Player Rating & Similarity Model", "Your workbook", "League list (Opta averages, 10 Aug 2026), position weights, grades and similarity"],
   ["FMST26", "No code used", "Inspiration for formulas and advanced filters"], ["fmOS", "No code used", "Inspiration for the quadrant chart, replacement search and price explained"],
-  ["FM Dossier", "No code used", "Inspiration for tactic fit, squad gaps and the shape advisor"]];
+  ["FM Dossier", "No code used", "Inspiration for tactic fit, squad gaps and the shape advisor"], ["sortitoutsi Punish Manchester City", "No code used", "Inspiration for Punish a Club"]];
 
 const SavesCard = () => {
   const { data = [] } = useQuery({ queryKey: ["saves"], queryFn: () => api.get("/saves").then((r) => r.data) });
@@ -69,6 +70,7 @@ export default function Settings({ state }) {
         <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
         <span>Browser preview: FMCC is reading a built-in sample save, not your PC. Each refresh in the top bar reads the next month of that sample. The real fmsave reader is packaged in the Windows program.</span>
       </div>}
+      <div style={{ marginBottom: 20 }}><TestingCard /></div>
       <div className="sgrid">
         <div style={{ display: "grid", gap: 20, alignContent: "start" }}><CareersCard career={state.career} key={state.career.id} /><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /></div>
         <div style={{ display: "grid", gap: 20, alignContent: "start" }}>

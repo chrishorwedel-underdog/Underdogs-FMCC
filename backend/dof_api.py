@@ -2,6 +2,7 @@
 import json
 import os
 import re
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -17,8 +18,8 @@ from sample_reader import GROUP
 router = APIRouter(prefix="/api/dof")
 MODEL = ("openai", "gpt-5.6-terra")
 MARK = "ACTION:"
-SUGGESTED = ["Who should start the next game to give my U21s minutes?", "Which veteran should I sell this summer?",
-             "Where am I weakest?", "Who is my most effective presser?", "Which striker is underperforming his xG?"]
+SUGGESTED = ["Fill my biggest gap", "Cheapest upgrade for my XI", "Young player to develop",
+             "Who should start the next game to give my U21s minutes?", "Where am I weakest?", "Which striker is underperforming his xG?"]
 
 
 def api_key():
@@ -88,6 +89,69 @@ DEVELOPMENT PLANS: {'; '.join(f"{p['name']} {p['minutes_target']} min, {p['loan'
 GAME CHANGES WAITING FOR APPROVAL: {pending}"""
 
 
+def _who(r):
+    return f"{r['name']} {r['rating']}" if r else "nobody"
+
+
+async def _budget(c: dict) -> dict:
+    import editor_api
+    own = next((x for x in await editor_api.clubs(c) if x["name"] == c["club_name"]), None)
+    if not own:
+        return {}
+    try:
+        return {f["key"]: f["value"] for f in await editor_api.club_values(c, own["uid"]) if f["key"] in ("transfer_budget", "wage_budget")}
+    except HTTPException:
+        return {}
+
+
+async def lab_context(c: dict) -> str:
+    """Tactic fit, squad gaps, your formulas and transfer candidates for the gaps, with their formula numbers."""
+    import lab_api
+    import scout_api
+    _, data = await scout_api._data()
+    fs = data.get("formulas") or {}
+    fit = await lab_api.tactic_fit("433")
+    groups = []
+    for g in fit["gaps"]:
+        if g["group"] not in groups:
+            groups.append(g["group"])
+    fnum = lambda x: ", ".join(f"{fs[k]['name']} {round(v, 2)}" for k, v in (x.get("f") or {}).items() if v is not None and k in fs)  # noqa: E731
+    cands = []
+    for grp in groups:
+        pool = sorted((x for x in data["players"] if not x["own"] and x["group"] == grp and x["gender"] == "M" and x["grade_global"] is not None),
+                      key=lambda x: -x["grade_global"])[:6]
+        cands += [f"id {x['unique_id']} {x['name']} ({x['club']}) {grp} age {x['age']} grade {x['grade_global']} value {x['value']} wage {x['wage']}"
+                  + (f" | formulas: {fnum(x)}" if fnum(x) else "") for x in pool]
+    young = sorted((x for x in data["players"] if not x["own"] and x["age"] <= 20 and x["gender"] == "M" and x["grade_global"] is not None), key=lambda x: -x["grade_global"])[:6]
+    cands += [f"id {x['unique_id']} {x['name']} ({x['club']}) {x['group']} age {x['age']} grade {x['grade_global']} value {x['value']} wage {x['wage']} (young)" for x in young]
+    b = await _budget(c)
+    return ("\nTACTIC FIT (4-3-3, starter / backup / depth, each player used once): "
+            + "; ".join(f"{s['label']}: {_who(s['starter'])} / {_who(s['backup'])} / {_who(s['depth'])} (score {s['score']})" for s in fit["slots"])
+            + "\nSQUAD GAPS (weakest first): " + "; ".join(f"{g['label']} ({g['group']}) {g['role_name']} score {g['score']}" for g in fit["gaps"])
+            + "\nMY FORMULAS: " + ("; ".join(f"{v['name']} = {v['expr']}" for v in fs.values()) or "none")
+            + "\nTRANSFER BUDGET: " + (f"£{b['transfer_budget']:,}, wage budget £{b.get('wage_budget', 0):,}/week" if b.get("transfer_budget") is not None else "unknown")
+            + "\nTRANSFER CANDIDATES: " + ("; ".join(cands) or "none"))
+
+
+async def check_suggestions(c: dict, action: dict) -> Optional[dict]:
+    """Keep only real players from the save, with FMCC's own numbers attached (never the model's)."""
+    import scout_api
+    _, data = await scout_api._data()
+    budget = (await _budget(c)).get("transfer_budget")
+    items = []
+    for it in (action.get("items") or [])[:5]:
+        try:
+            x = data["by_uid"].get(int(it.get("unique_id")))
+        except (TypeError, ValueError):
+            x = None
+        if not x or x["own"]:
+            continue
+        items.append({"unique_id": x["unique_id"], "name": x["name"], "club": x["club"], "age": x["age"], "value": x["value"], "wage": x["wage"],
+                      "grade": x["grade_global"], "gap": str(it.get("gap", ""))[:40], "reason": str(it.get("reason", ""))[:240],
+                      "numbers": str(it.get("numbers", ""))[:240], "over_budget": budget is not None and (x["value"] or 0) > budget, "shortlisted": False})
+    return {"type": "suggestions", "summary": str(action.get("summary", ""))[:200] or "Players to look at", "items": items} if items else None
+
+
 SYSTEM = """You are the Director of Football inside FMCC, a companion app for Football Manager. The manager has final authority.
 Answer in plain, confident football language, short paragraphs or a few bullets, using player names and the numbers from the data below. Never invent players or numbers.
 Never reveal, estimate or discuss Dynamic Potential values or whether a player's potential was changed by it.
@@ -96,6 +160,9 @@ ACTION: {"type": "lineup", "kind": "dev" or "best", "formation": "433" or "4231"
 ACTION: {"type": "shortlist", "unique_id": <scouting id>, "summary": "..."}
 ACTION: {"type": "nomination", "module": "elite" or "breakout", "unique_id": <squad id>, "summary": "..."}
 ACTION: {"type": "plan", "unique_id": <squad id>, "minutes_target": <int>, "loan": "none" | "loan_lower" | "loan_same" | "loan_abroad", "summary": "..."}
+ACTION: {"type": "suggestions", "summary": "...", "items": [{"unique_id": <id from TRANSFER CANDIDATES>, "gap": "<position it fills>", "reason": "<one sentence>", "numbers": "<the formula and stat numbers you used>"}]}
+When the manager asks who to sign, which gap to fill, the cheapest upgrade or a young player to develop, use the suggestions action with 1-5 players taken ONLY from TRANSFER CANDIDATES.
+Say which gap each one fills (from TACTIC FIT and SQUAD GAPS) and quote the formula numbers listed for him. Respect the TRANSFER BUDGET and any budget, wage or age limit the manager gives; if a player breaks one, say so.
 The manager must click Accept before anything is saved, so describe the draft as a suggestion.
 
 CURRENT DATA:
@@ -108,7 +175,7 @@ def split_action(text: str):
     body, _, tail = text.rpartition(MARK)
     try:
         action = json.loads(re.search(r"\{.*\}", tail, re.S).group(0))
-        if action.get("type") not in ("lineup", "shortlist", "nomination", "plan"):
+        if action.get("type") not in ("lineup", "shortlist", "nomination", "plan", "suggestions"):
             action = None
     except (json.JSONDecodeError, AttributeError):
         action = None
@@ -167,13 +234,9 @@ async def stream(conv_id: str, body: Ask):
     history = await db.dof_messages.find({"conversation_id": conv_id}, {"_id": 0, "role": 1, "content": 1}).sort("at", 1).to_list(500)
     context = await build_context(c)
     try:
-        import lab_api
-        fs = await lab_api.formulas(c["id"])
-        gaps = (await lab_api.tactic_fit("433"))["gaps"]
-        context += ("\nMY FORMULAS: " + ("; ".join(f"{v['name']} = {v['expr']}" for v in fs.values()) or "none")
-                    + "\nTACTIC GAPS (4-3-3, weakest slots): " + "; ".join(f"{g['label']} {g['role_name']} score {g['score']}" for g in gaps))
-    except Exception:
-        pass
+        context += await lab_context(c)
+    except Exception as exc:
+        logger.warning("DOF lab context skipped: %s", exc)
     transcript = "\n".join(f"{'Manager' if m['role'] == 'user' else 'DOF'}: {m['content']}" for m in history[-12:])
     await db.dof_messages.insert_one({"id": new_id(), "conversation_id": conv_id, "role": "user", "content": body.text, "at": now_iso()})
     if conv["title"] == "New conversation":
@@ -195,6 +258,8 @@ async def stream(conv_id: str, body: Ask):
             yield f"data: {json.dumps({'t': 'error', 'c': 'The DOF could not answer right now. Please try again.'})}\n\n"
             return
         text, action = split_action(full)
+        if action and action["type"] == "suggestions":
+            action = await check_suggestions(c, action)
         msg = {"id": new_id(), "conversation_id": conv_id, "role": "assistant", "content": text, "at": now_iso(),
                "draft": {"action": action, "status": "pending"} if action else None}
         await db.dof_messages.insert_one(dict(msg))
@@ -253,6 +318,23 @@ async def accept(msg_id: str):
         raise HTTPException(422, "This draft refers to something that no longer exists")
     await db.dof_messages.update_one({"id": msg_id}, {"$set": {"draft.status": "accepted", "draft.result": done}})
     return {"result": done}
+
+
+@router.post("/messages/{msg_id}/shortlist/{uid}")
+async def shortlist_suggestion(msg_id: str, uid: int):
+    import scouting_api
+    c = await active_career()
+    m = await db.dof_messages.find_one({"id": msg_id}, {"_id": 0})
+    if not m or not m.get("draft") or m["draft"]["action"]["type"] != "suggestions":
+        raise HTTPException(404, "Suggestion not found")
+    await _conv(c, m["conversation_id"])
+    items = m["draft"]["action"]["items"]
+    i = next((n for n, it in enumerate(items) if it["unique_id"] == uid), None)
+    if i is None:
+        raise HTTPException(404, "That player isn't in this suggestion")
+    await scouting_api.shortlist(scouting_api.ShortlistIn(unique_id=uid, action="add"))
+    await db.dof_messages.update_one({"id": msg_id}, {"$set": {f"draft.action.items.{i}.shortlisted": True}})
+    return {"result": f"{items[i]['name']} added to your shortlist"}
 
 
 @router.post("/messages/{msg_id}/dismiss")

@@ -193,6 +193,19 @@ h1.h .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
 .wiz-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:28px;flex-wrap:wrap}
 .btn-g{background:var(--grn);color:#04140D;border-color:transparent;font-weight:600;box-shadow:0 8px 26px -8px rgba(52,211,153,.6);transition:transform .2s,box-shadow .2s,background-color .2s}
 .btn-g:hover:not(:disabled){background:#4BE3AC;transform:translateY(-1px);box-shadow:0 12px 30px -8px rgba(52,211,153,.75)}
+.checks{display:grid;gap:10px;margin-top:24px}
+.chk{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--s2);font-size:15px}
+.chk small{display:block;color:var(--mut);font-size:13.5px;margin-top:2px;word-break:break-word}
+.chk .chk-fix{color:var(--text)}
+.chk-i{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.chk.ok{border-color:rgba(52,211,153,.35)}.chk.ok .chk-i{background:rgba(52,211,153,.18);color:var(--grn)}
+.chk.warn{border-color:rgba(242,181,74,.35)}.chk.warn .chk-i{background:rgba(242,181,74,.16);color:var(--amb)}
+.chk.fail{border-color:rgba(255,110,110,.4)}.chk.fail .chk-i{background:rgba(255,110,110,.16);color:var(--red)}
+.wiz-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+@media (max-width:760px){.wiz-2col{grid-template-columns:1fr}}
+.sugg{display:grid;gap:10px;margin-top:10px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.sugg-c{padding:14px;border-radius:12px;border:1px solid var(--line2);background:var(--s2);display:grid;gap:6px;font-size:13px}
+.sugg-c .gap{font:600 11px 'Geist Mono';letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}
 .wiz-row .seg button{height:46px;padding:0 26px;font-size:15px}
 .wiz-card .btn-l{height:54px;padding:0 28px;font-size:15.5px;border-radius:13px}
 @media (max-width:760px){.wiz-row{flex-wrap:nowrap;gap:10px}.wiz-row .seg button{padding:0 14px}.wiz-row .btn-l{padding:0 16px;white-space:nowrap}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.wiz-card{padding:26px 22px!important}.wiz-logo{height:110px}}

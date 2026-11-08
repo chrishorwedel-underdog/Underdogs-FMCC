@@ -26,6 +26,7 @@ import PlayerTeamsEditor from "@/pages/PlayerTeamsEditor";
 import Changes from "@/pages/Changes";
 import Matches from "@/pages/Matches";
 import Dof from "@/pages/Dof";
+import Punish from "@/pages/Punish";
 
 const LATER = [["/appearance", "appearance"]];
 
@@ -64,6 +65,7 @@ const Shell = ({ state }) => {
             <Route path="/changes" element={<Changes />} />
             <Route path="/matches" element={<Matches />} />
             <Route path="/dof" element={<Dof />} />
+            <Route path="/punish" element={<Punish />} />
             {LATER.map(([p, k]) => <Route key={k} path={p} element={<ComingSoon k={k} />} />)}
             <Route path="*" element={<Home />} />
           </Routes>

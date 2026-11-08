@@ -40,6 +40,9 @@ from leagues_api import router as leagues_router  # noqa: E402
 from scout_api import router as scout_router  # noqa: E402
 from graphics_api import router as graphics_router  # noqa: E402
 from lab_api import router as lab_router  # noqa: E402
+from setup_api import router as setup_router  # noqa: E402
+from testing_api import router as testing_router  # noqa: E402
+from punish_api import router as punish_router  # noqa: E402
 import sample_matches  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
@@ -189,7 +192,7 @@ async def setup_complete(body: SetupIn):
         if s.get("setup_complete"):
             raise HTTPException(409, "Setup is already finished")
         career = await new_career(body, body.save_folder.strip())
-        await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True, "auto_install_updates": False}}, upsert=True)
+        await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True, "auto_install_updates": False}, "$unset": {"setup_progress": ""}}, upsert=True)
     latest = (await latest_two(career["id"]))[0]
     return {"career": career, "health": [
         {"key": "link", "label": "Game link ready", "ok": True, "detail": f"Read {len(latest['players'])} players from {latest['file_name']}" + (" (sample save)" if READER == "sample" else "")},
@@ -492,7 +495,7 @@ async def restore_backup(backup_id: str):
 
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse

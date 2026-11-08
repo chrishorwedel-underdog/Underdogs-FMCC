@@ -1,139 +1,99 @@
-# FMCC: guided tour, ideas from FMST26, FM Dossier and fmOS, and those apps in Updates
+# FMCC: smoother setup, a smarter Director of Football, and a Windows installer you can test
 
-FMCC adds a click-through tour for new users and rebuilds the best ideas from three other Football Manager apps inside Scout Players and Squad.
-The apps themselves can be launched from FMCC when installed, and their new versions are tracked in Settings → Updates.
+FM Command Centre is a Windows companion for Football Manager. It plans your squad, scouts players, tracks development and makes safe, reversible changes to your saves.
+This round makes first-run setup clearer, has the Director of Football use your own formulas and tactic, and produces an installer to test on your PC with real FM26 and FM27 saves.
 
 ## Who it's for
-One manager running an FM26 or FM27 career next to the game. They want a deeper Moneyball engine (their own formulas and sharper filters), to know which signings fit their tactic, and a cheaper like-for-like replacement when a player leaves.
+- You, as the first real user, testing on your own Windows PC with FM26 and FM27 installed through Steam.
+- Later, other FM players installing FMCC for the first time with no help.
 
 ## Core features and experience
 
-### 1. Guided tour
-- Starts automatically the first time FMCC opens after setup.
-- Steps through every sidebar page in order (Home, Dynamic Potential, Breakout Player, Scout Players, Monthly Reports, Moneyball, Squad, Development, Elite Training, Matches, Player & Teams Editor), then Project Safety, Game changes and the Director of Football button.
-- On each step:
-  - FMCC opens that page;
-  - the menu item is highlighted;
-  - a small card says in two or three lines what the page does, with Back, Next and Skip tour.
-- It finishes on Home with "You're ready".
-- It can be replayed at any time from a "Take the tour" button in Settings and the help button in the top bar.
-- It uses the same wording as the "What this page does" cards, so the two always agree.
+### 1. Polished setup
+- **Step 1, Find Football Manager:** after Find, a green tick confirms each item found: the game folder, the save folder, and how many saves are in it, with the newest save's name and date. If something isn't found, a plain message explains why and offers **Choose folder**.
+- **Step 2, Analytics:** the choice is explained in one sentence. Analytics stays optional and off unless you turn it on.
+- **Step 3, Director of Football key:** the key field shows whether the key works before you continue (a tick or a plain error). This step can be skipped.
+- **Step 4, Health check:** results are shown as a checklist: save readable, backup folder writable, FM version detected, FM running or closed. Each item is green, amber or red, with a one-line fix for anything not green.
+- Setup remembers your progress. If you close FMCC halfway, it reopens on the same step.
+- The look, sizing and layout stay as already approved (large and centred, with the selector and the green Find button on one line).
 
-### 2. Formula builder (the FMST26 idea)
-- In Scout Players → a new **Formulas** tab, you write your own stat. For example: `(npxg + xa) / 2`, `tkw + intc * 0.8`, `npg - npxg`.
-- **What a formula can use:**
-  - every stat FMCC already has, plus minutes, age, value, wage, grade and computed stats;
-  - + − × ÷, brackets, min, max, abs and if.
-- **Chaining:** a formula can use another of your formulas.
-- **Where formulas appear:**
-  - as columns in the Players table;
-  - as X/Y on the Scatter chart;
-  - in filters and in the Compare tab.
-- **Percentiles:** each formula gets a percentile rank against a pool you pick:
-  - the whole save;
-  - the same position;
-  - the same league;
-  - your current filter.
-- **Checks and history:**
-  - a live preview shows the result for 5 sample players while you type;
-  - errors (unknown stat, division by zero, a formula that uses itself) are shown in plain words;
-  - every saved formula is kept as a new version, never overwritten.
-- **Limit:** up to 30 formulas.
+### 2. Smarter Director of Football
+- The DOF reads your squad gaps, your Tactic fit (starter, backup and depth for each position) and your own formulas, including the starter pack.
+- When you ask things like "who should I sign at left back?", it suggests players, says which gap each one fills, and quotes the formula numbers it used.
+- It checks suggestions against your budget, wage limit and age preferences, if you've given them.
+- Each suggestion has **Add to shortlist** and **Open profile** buttons. As before, the DOF never changes the game. Anything it proposes goes into the pending-changes queue for you to approve.
+- New quick prompts: "Fill my biggest gap", "Cheapest upgrade for my XI", "Young player to develop".
 
-### 3. Advanced filters and percentile filters (FMST26)
-- **A filter builder:**
-  - conditions joined with AND / OR;
-  - groups inside groups.
-- **Kinds of conditions:**
-  - **Value:** for example, "minutes ≥ 900".
-  - **Stat against stat:** for example, "npg < npxg" (finishing below expectation).
-  - **Percentile:** for example, "top 10% of central midfielders for progressive passes".
-- **Percentile settings:** you pick the pool (whole save, same position or same league). Every stat cell can show a green-to-red heat colour by percentile.
-- **Saving:** filters save with the existing saved searches and work in every view (Full, Fair play, Moneyball).
-- **Fair play:** filters only use what your scouts know, so nothing hidden can be found by filtering.
+### 3. Windows installer ready to test
+- A downloadable Windows installer (`FMCC-Setup.exe`) is built automatically, with a desktop shortcut and a Start-menu entry.
+- The installer isn't signed yet, so Windows will show a "Windows protected your PC" warning on first run. A short page explains how to get past it.
+- Once installed, FMCC uses your real FM26 and FM27 saves instead of the sample squad.
+- A **Test checklist** page (Settings → Testing) lists what to try on your PC and lets you mark each item pass or fail, with an optional note:
+  - setup finds FM
+  - a real save is read (correct date and player count)
+  - a backup is created and restored
+  - automatic save reading picks up a new save
+  - a queued FM27 change is previewed, applied, verified and undone
+  - FMMatchLens installs and is removed cleanly
+  - faces and logos appear in-game
+  - a Punish a Club file shows up in FM's new-career database list and its penalties take effect
+- **Export report** saves your results and FMCC's logs as one file you can send back. Personal file paths are hidden.
+- Live game editing stays FM27-only and keeps every existing safeguard: a verified backup first, a preview, your confirmation, a read-back check, undo and an audit history. FM26 stays read-only.
 
-### 4. Quadrant chart and replacement search (fmOS)
-- **Quadrant chart** (Deals & Offers → Quadrant):
-  - performance is on one axis and total cost (fee + wages over the contract) on the other;
-  - for performance you pick the global grade, a computed stat or one of your formulas;
-  - the four zones are labelled Hidden gems, Stars, Overpriced and Avoid;
-  - you click any dot to open the profile.
-- **Replacement search:**
-  - a "Find a replacement" button sits on every profile;
-  - it lists players with the same playing style (the workbook's similarity engine), filtered by your caps (max fee, max wage, max age);
-  - results are sorted by similarity and cheapness, with the saving shown against the player being replaced;
-  - from My Club you can do the same for any of your own players who are leaving or ageing.
-
-### 5. Tactic fit and squad gaps (FM Dossier)
-- **Importing:** in Squad → a new **Tactic fit** tab, you import an FM tactic file (.fmf) or pick one of FMCC's formations. FMCC reads the formation, positions and roles from the file.
-- **Fit:** every player in your squad is rated for every slot of that tactic:
-  - for both the in-possession and out-of-possession role where the file has them;
-  - using the same role ratings as Squad.
-- **Squad gaps:** each slot gets a rating for the starter, the backup and depth. The weakest slots are listed first.
-- **Fixing a gap:** clicking a gap opens Scout Players with a ready-made search for that role, within reach of your club's budget and reputation.
-- **History:** every imported tactic is kept, so you can switch between tactics and compare them.
-
-### 6. The three apps inside FMCC
-- **Connections** gets a card for each app:
-  - **FMST26 and FM Dossier** (Windows programs): FMCC looks for them on the PC, shows Installed / Not installed and a version, and offers an **Open** button. If either isn't installed, a **Get it** link goes to its official page.
-  - **fmOS** (a website): it opens in your browser.
-- **Settings → Updates** lists FMST26, FM Dossier and fmOS next to ScoutSheet, BepInEx and FMMatchLens. For each, FMCC:
-  - checks their official page or changelog once a week (and when you press Check);
-  - shows the installed and latest version and what changed, with a link to download.
-- **No automatic installs for these three:** their files aren't FMCC's to redistribute, so FMCC never downloads or installs them. You update them yourself; FMCC tells you when.
-- Credits in Settings name all three as feature inspiration.
-
-### 7. A cleaner, symmetrical Home page
-- **Today:** the six module cards sit on the left, with a narrower column on the right for Needs your attention and Next match. This leaves the page lopsided and empty at the edges.
-- **New layout:** the page fills the screen width, and everything is balanced on one centre line.
-  - **Top:** a full-width welcome band, with the greeting and today's status on the left and the backup and next-match chips on the right, aligned to the same height.
-  - **Middle:** the six module cards in an even 3 × 2 grid. All cards are the same size, with their numbers lined up.
-  - **Bottom:** two equal halves side by side, Needs your attention and Next match, at the same height.
-- **Bigger throughout:** text, numbers, icons, card padding and spacing all go up about one size, so the page reads comfortably on a large monitor without feeling empty.
-- **Smaller screens:** the grid steps down to 2 columns, then 1, and the two bottom halves stack.
-- **Nothing removed:** the same information and links stay; only the arrangement and sizes change.
+### 4. Punish a Club (any club)
+Inspired by sortitoutsi's "Punish Manchester City" tool, but it works for any club in your database: search, then pick the club.
+- **Penalties you can switch on, each with its own setting:**
+  - **Sporting:** points deduction (choose the number of points), forced relegation, forced player releases, lower player and staff morale, fans' hatred of the club.
+  - **Transfers:** a transfer embargo (choose the number of years and an age limit).
+  - **Money:** wipe the bank balance, add financial-fair-play losses, cancel sponsorship income.
+  - **Reputation and facilities:** lower club reputation, stadium capacity, and training and youth facilities.
+- **Presets:** "Light", "Heavy" and "The full 115", which you can adjust afterwards.
+- **A summary before anything is made**, in plain words, for example "Arsenal: −15 points, two-year transfer ban for over-21s, bank balance set to 0".
+- **Two ways to apply it:**
+  1. **New career (FM26 and FM27):** FMCC creates an editor data file and puts it in your FM editor data folder. When you start a new career, you pick it from the database dropdown at the top right. Every penalty is available this way.
+  2. **Current save (FM27 only):** penalties FMCC can change in a running save (money, reputation, facilities, morale) go into the pending-changes queue, with the usual backup, preview, confirmation, read-back check and undo. Points deductions, relegation and transfer embargoes appear as "new career only", because they can't be changed safely mid-season.
+- You can save several punishments (for example one per rival club). Each is kept in your history and can be removed, and FMCC deletes its own file from the editor data folder when you remove one.
+- Credited in Settings → Credits as inspiration. None of its code or files are used.
 
 ## User flow
-1. A new user finishes setup and lands on the new, balanced Home page; the tour starts. They click Next through each page, or skip it and replay it later from Settings.
-2. In Scout Players → Formulas, they write `npg - npxg`, check the preview and save it. It appears as a column and on the Scatter chart.
-3. In Players, they build a filter: central midfielders, top 10% for progressive passes, AND npg below npxg, AND age ≤ 24. Then they save it.
-4. In Squad → Tactic fit, they import their .fmf tactic. The left-back slot shows as the biggest gap, so they click it and get a search for that role within budget.
-5. They open a target's profile, press Find a replacement on their ageing striker, and check the Quadrant chart for hidden gems.
-6. Settings → Updates shows that FM Dossier has a new version; they click through to download it.
+1. You download and run the installer, then open FMCC from the desktop.
+2. In setup, you pick FM26 or FM27 and click the green Find button. You see what was found, optionally add a DOF key, then run the health check.
+3. FMCC reads your latest real save and opens on Home.
+4. Optionally, in Punish a Club you pick a club and penalties, check the summary, then create the new-career file or queue the changes on your current FM27 save.
+5. You ask the DOF to fill a gap, and it suggests players with reasons. You shortlist them or queue changes for approval.
+6. You work through the Test checklist, export the report and send it back. The next round then fixes whatever failed.
 
 ## UI/UX feel
-The same dark FMCC look. The tour is a soft spotlight on the menu item, with a compact card beside it and a step counter (4 of 14). The formula editor is a monospace box with stat suggestions as you type and a live result strip underneath. The filter builder uses nested rounded groups with AND/OR pills. The quadrant chart has four faintly tinted zones with their labels in the corners.
+- Same dark FMCC style. Setup keeps its new large, centred look.
+- Results use clear status colours: green for found or passed, amber for needs attention, red for failed. Each comes with plain-English explanations and no technical error codes.
+- DOF suggestions appear as cards in the chat, with a short reason and the numbers behind it.
 
 ## Implementation phases
-**Phase 1 (built now)**
-- The cleaner, symmetrical and larger Home page.
-- The guided tour (first launch, replayable).
-- The formula builder with chaining, percentiles and versions.
-- Advanced and percentile filters, and percentile heat colours.
-- The quadrant chart and replacement search.
-- Tactic fit and squad gaps from .fmf files.
-- The three apps in Connections (detect, Open, Get it) and in Settings → Updates (version checks, no installs).
-
-**Phase 2**
-- fmOS-style "price explained": a fee broken into age, potential, position, club reputation, contract and form.
-- FM Dossier's Shape Advisor: ranking many formations against your squad.
-- Formulas shared as files you can import and export.
-
-**Phase 3**
-- Value and form history charts per player across seasons.
-- The Director of Football uses your formulas and tactic gaps when it answers.
+- **Phase 1 (built now, MVP):**
+  - polished setup (found-items ticks, choose-folder fallback, key check, health checklist, resume where you left off)
+  - DOF using gaps, tactic fit and formulas, with suggestion cards and new quick prompts
+  - an automatic installer build
+  - the in-app Test checklist with Export report
+  - Punish a Club: club search, every penalty, presets, a summary, the new-career file, the FM27 current-save queue, and saved punishments
+  - These are checked in the browser preview, where real saves are replaced by the sample squad.
+- **Phase 2:**
+  - You test on your PC with FM26 and FM27 and send the report.
+  - Fixes for what fails: real-save reading, automatic save pickup, FM27 live changes with undo, FMMatchLens install, in-game faces and logos.
+  - FM27 support is only called verified once it passes your tests.
+- **Phase 3:**
+  - FMMatchLens match import (needs a sample match file or a format description)
+  - a signed installer to remove the Windows warning
+  - automatic in-app updates of FMCC itself
+  - formula sharing codes
 
 ## Assumptions
-- **No code from the three apps:** none of their code is used, because their licences aren't confirmed. FMST26 and FM Dossier are closed Windows programs, and fmOS is a website. "Incorporate" therefore means:
-  - their ideas are rebuilt inside FMCC;
-  - FMCC launches them when they're installed;
-  - FMCC tracks their versions.
-- **Update checks:** these read each app's public page or changelog. If a page changes its layout, that app shows "Couldn't check" rather than a wrong version.
-- **Finding the installed apps:** FMCC looks in their usual install folders. If one is installed somewhere else, you can point FMCC at it once.
-- **Tactic files:** reading .fmf files depends on FM's tactic file format. The format will be checked on a real FM26/FM27 file. Until then, picking one of FMCC's formations does the same job, and the browser preview uses a SAMPLE tactic.
-- **Live game reading:** FMST26 and FM Dossier read the game live; FMCC keeps reading your saves as it does now. Live reading isn't part of this plan.
-- **Total cost:** the quadrant chart uses value plus wage × contract months left. Bonuses aren't in the save, so they're left out.
-- **Formula safety:** formulas are calculated by FMCC's own maths parser, never run as code. Up to 30 formulas, each up to 300 characters.
-- **Preview data:** match stats and players are SAMPLE data, as they are now.
-- **The tour:** it runs once per FMCC install. Replaying it never changes any data.
-- **Home sizes:** "a little bigger" is read as about one size up for text and spacing on Home only. Other pages keep their current sizes.
+- Steam installs only, on Windows 10 or 11. Mac isn't covered.
+- The installed app's DOF uses a key you enter in setup step 3. The browser preview keeps using the existing preview key.
+- The installer stays unsigned for now, so the Windows warning is expected.
+- Nothing from your PC is sent anywhere automatically. You choose to export and send the test report.
+- Budget, wage and age limits for the DOF come from your existing settings and rules. Nothing new is invented.
+- Third-party packs (NG_Regens, logo packs, the real-names fix) are still not bundled. FMCC reads them only if you've installed them.
+- Punish a Club gets its own sidebar entry under the club tools, next to Player & Teams Editor.
+- FMCC writes its own editor data file (XML). FM26 and FM27 accepting it can only be confirmed on your PC, so it's on the Test checklist.
+- In the browser preview, the file is created and shown for download but not placed in an FM folder, and current-save changes are applied to the sample squad only.
+- Phase 1 can't prove real-game behaviour. Everything that needs your PC is listed on the Test checklist rather than claimed as working.

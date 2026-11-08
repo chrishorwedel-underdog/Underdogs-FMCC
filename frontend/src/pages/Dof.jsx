@@ -1,14 +1,34 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Send, Check, X } from "lucide-react";
+import { Plus, Send, Check, X, Star, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { api, ago, errMsg } from "@/lib/api";
 import { useGet, useAct, PageHead } from "@/lib/ui";
 
 const visible = (t) => { const i = t.indexOf("ACTION:"); return i >= 0 ? t.slice(0, i) : t; };
 
+const Suggestions = ({ m, act }) => (
+  <div className="sugg" data-testid={`suggestions-${m.id}`}>
+    {m.draft.action.items.map((it) => (
+      <div key={it.unique_id} className="sugg-c" data-testid={`suggestion-${it.unique_id}`}>
+        <span className="gap">{it.gap || "Suggestion"}</span>
+        <b style={{ fontSize: 14.5 }}>{it.name}<small style={{ color: "var(--mut)", fontWeight: 400 }}> · {it.club} · age {it.age}</small></b>
+        <span>{it.reason}</span>
+        {it.numbers && <small className="mono" style={{ color: "var(--mut)" }}>{it.numbers}</small>}
+        <small className="mono">Grade {it.grade ?? "–"} · value £{(it.value || 0).toLocaleString()} · wage £{(it.wage || 0).toLocaleString()}/wk</small>
+        {it.over_budget && <span className="st a" style={{ margin: 0 }} data-testid={`suggestion-over-budget-${it.unique_id}`}>Over your transfer budget</span>}
+        <div className="acts">
+          {it.shortlisted ? <span className="st ok" style={{ margin: 0 }} data-testid={`suggestion-shortlisted-${it.unique_id}`}>On your shortlist</span>
+            : <button className="btn btn-p" onClick={() => act(() => api.post(`/dof/messages/${m.id}/shortlist/${it.unique_id}`), (r) => r.result, ["dof-msgs", "scout-players", "shortlist"])} data-testid={`suggestion-shortlist-${it.unique_id}`}><Star size={13} />Add to shortlist</button>}
+          <a className="btn" href={`/scouting?player=${it.unique_id}`} data-testid={`suggestion-profile-${it.unique_id}`}><UserRound size={13} />Open profile</a>
+        </div>
+      </div>))}
+  </div>
+);
+
 const Draft = ({ m, act }) => {
   const d = m.draft;
   if (!d) return null;
+  if (d.action.type === "suggestions") return <div style={{ marginTop: 10 }} data-testid={`draft-${m.id}`}><div className="eyebrow">{d.action.summary}</div><Suggestions m={m} act={act} /></div>;
   return (
     <div className="card" style={{ marginTop: 10, padding: 14, borderColor: "rgba(76,141,255,.4)" }} data-testid={`draft-${m.id}`}>
       <div className="eyebrow">Drafted action · {d.action.type}</div>
