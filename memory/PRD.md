@@ -96,6 +96,13 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 
 - (2026-11-08) Tactic fit cards add "(club, age N)" next to players whose name appears more than once. Setup: Find Football Manager title and text centred, Find button on the right and green. Self-checked with screenshots (desktop + 390px) and the API.
 
+## Implemented (2026-11-08) — Approved plan: polished setup, smarter DOF, installer + test checklist, Punish a Club
+- Setup (`backend/setup_api.py`, `pages/Setup.jsx`): steps Find FM (green ticks for game folder, save folder, save count + newest save; Choose folder if anything fails; club/career names), Match analytics (optional, off), DOF key (real check; Windows saves the key), Health check (save readable, backup folder writable, FM version, FM running; green/amber/red with a fix). Progress is saved and resumed (`setup_progress`, cleared on completion).
+- DOF (`dof_api.py`): context includes Tactic fit (starter/backup/depth), squad gaps, formulas with values, transfer budget and candidates per gap (best, affordable, young). New `suggestions` action: cards with gap, reason, numbers, over-budget tag, Add to shortlist, Open profile (`/scouting?player=`). Only real non-own players are kept. New quick prompts.
+- Installer: the workflow also builds on push to main; output `FMCC-Setup.exe`. Settings > Testing (`testing_api.py`, `TestingCard.jsx`): 8 PC tests with pass/fail and notes (append-only), unsigned-warning help, Export report (JSON with results and log, personal paths hidden).
+- Punish a Club (`punish_api.py`, `pages/Punish.jsx`, sidebar after Player & Teams Editor): club search, 12 penalties with settings, presets Light/Heavy/The full 115, summary, FMCC XML editor-data file (in the preview: download only), queue balance/reputation/training/youth facilities on FM27 (source 'punish'), saved punishments (revisions); removing one deletes its file and withdraws its queued changes. Morale, FFP, sponsors, stadium, points, relegation and embargo are new-career only. The XML format FM expects is UNCONFIRMED (Test checklist item).
+- Tested: iteration_12 (23/23 + UI). Fixed afterwards: candidates when grades are missing, affordable candidates, punish source label, withdraw on remove, progress ignored after setup, card styling.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.

@@ -13,7 +13,7 @@ import sample_reader
 from core import db, active_career, create_backup, audit, now_iso, new_id, get_settings, logger, latest_two
 
 router = APIRouter(prefix="/api")
-SOURCES = {"elite": "Elite Training", "breakout": "Breakout Player", "dp": "Dynamic Potential", "editor": "Player & Teams Editor"}
+SOURCES = {"elite": "Elite Training", "breakout": "Breakout Player", "dp": "Dynamic Potential", "editor": "Player & Teams Editor", "punish": "Punish a Club"}
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
 HIDE = ("delta", "current", "new", "old_value", "new_value")
 STEP_DELAY = 0.12
@@ -112,15 +112,15 @@ async def current_values(c: dict, chs: list) -> dict:
     return {ch["id"]: (clubs.get(ch["unique_id"], {}) if ch.get("entity") == "club" else players.get(ch["unique_id"], {})).get(ch["field"]) for ch in chs}
 
 
-async def queue_club_edit(career: dict, cl: dict, field: str, label: str, value: int):
+async def queue_club_edit(career: dict, cl: dict, field: str, label: str, value: int, source: str = "editor", award_id: str | None = None):
     """A club attribute edit from the Player & Teams Editor: an absolute new value. A newer edit replaces a queued one."""
     await db.changes.update_many({"career_id": career["id"], "entity": "club", "unique_id": cl["uid"], "field": field, "status": "queued"},
                                  {"$set": {"status": "replaced"}})
-    doc = {"id": new_id(), "career_id": career["id"], "source": "editor", "award_id": None, "unique_id": cl["uid"], "player_name": cl["name"],
+    doc = {"id": new_id(), "career_id": career["id"], "source": source, "award_id": award_id, "unique_id": cl["uid"], "player_name": cl["name"],
            "club": cl.get("league"), "entity": "club", "field": field, "label": label, "target": value, "delta": None, "hidden": False,
-           "status": "queued", "created_at": now_iso(), "batch_id": None, "key": f"{career['id']}:editor:{new_id()}"}
+           "status": "queued", "created_at": now_iso(), "batch_id": None, "key": f"{career['id']}:{source}:{new_id()}"}
     await db.changes.insert_one(dict(doc))
-    await audit(career["id"], "queued", "editor", f"{label} → {value}", cl["uid"], cl["name"])
+    await audit(career["id"], "queued", source, f"{label} → {value}", cl["uid"], cl["name"])
 
 
 def new_value(ch: dict, cur):

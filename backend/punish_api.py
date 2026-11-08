@@ -207,7 +207,7 @@ async def queue_current(pid: str):
             if fk in ("training", "youth_facilities"):
                 target = max(1, target)
             if target != f["value"]:
-                await queue_club_edit(c, d["club"], fk, f"{f['label']} (Punish a Club)", target)
+                await queue_club_edit(c, d["club"], fk, f"{f['label']} (Punish a Club)", target, source="punish", award_id=pid)
                 queued.append(f["label"])
     await db.punishments.insert_one({k: v for k, v in d.items() if k != "id"} | {"id": new_id(), "revision": d["revision"] + 1, "queued": True, "at": now_iso()})
     return {"queued": queued, "new_career_only": sorted(set(skipped))}
@@ -220,6 +220,7 @@ async def remove(pid: str):
     p = Path(d["file_path"])
     if p.parent == _folder(c) and p.name.startswith("FMCC Punish - "):
         await asyncio.to_thread(p.unlink, True)
+    dropped = await db.changes.update_many({"career_id": c["id"], "source": "punish", "award_id": pid, "status": "queued"}, {"$set": {"status": "rejected"}})
     await db.punishments.insert_one({k: v for k, v in d.items() if k != "id"} | {"id": new_id(), "revision": d["revision"] + 1, "status": "removed", "at": now_iso()})
-    await audit(c["id"], "punishment removed", "punish", d["summary"])
-    return {"ok": True}
+    await audit(c["id"], "punishment removed", "punish", d["summary"] + (f" ({dropped.modified_count} queued change(s) withdrawn)" if dropped.modified_count else ""))
+    return {"ok": True, "withdrawn": dropped.modified_count}

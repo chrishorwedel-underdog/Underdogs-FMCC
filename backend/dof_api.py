@@ -117,14 +117,19 @@ async def lab_context(c: dict) -> str:
             groups.append(g["group"])
     fnum = lambda x: ", ".join(f"{fs[k]['name']} {round(v, 2)}" for k, v in (x.get("f") or {}).items() if v is not None and k in fs)  # noqa: E731
     cands = []
-    for grp in groups:
-        pool = sorted((x for x in data["players"] if not x["own"] and x["group"] == grp and x["gender"] == "M" and x["grade_global"] is not None),
-                      key=lambda x: -x["grade_global"])[:6]
-        cands += [f"id {x['unique_id']} {x['name']} ({x['club']}) {grp} age {x['age']} grade {x['grade_global']} value {x['value']} wage {x['wage']}"
-                  + (f" | formulas: {fnum(x)}" if fnum(x) else "") for x in pool]
-    young = sorted((x for x in data["players"] if not x["own"] and x["age"] <= 20 and x["gender"] == "M" and x["grade_global"] is not None), key=lambda x: -x["grade_global"])[:6]
-    cands += [f"id {x['unique_id']} {x['name']} ({x['club']}) {x['group']} age {x['age']} grade {x['grade_global']} value {x['value']} wage {x['wage']} (young)" for x in young]
     b = await _budget(c)
+    rank = lambda x: x["grade_global"] if x["grade_global"] is not None else (x.get("ca") or 0) / 10  # noqa: E731
+    line = lambda x, tag="": (f"id {x['unique_id']} {x['name']} ({x['club']}) {x['group']} age {x['age']} grade {x['grade_global'] if x['grade_global'] is not None else 'not enough minutes'} "  # noqa: E731
+                               f"value {x['value']} wage {x['wage']}{tag}" + (f" | formulas: {fnum(x)}" if fnum(x) else ""))
+    market = [x for x in data["players"] if not x["own"] and x["gender"] == "M"]
+    for grp in groups:
+        pool = sorted((x for x in market if x["group"] == grp), key=lambda x: -rank(x))
+        cands += [line(x) for x in pool[:6]]
+        if b.get("transfer_budget") is not None:
+            cheap = [x for x in pool if (x["value"] or 0) <= b["transfer_budget"] and x not in pool[:6]][:3]
+            cands += [line(x, " (affordable)") for x in cheap]
+    young = sorted((x for x in market if x["age"] <= 20), key=lambda x: -rank(x))[:6]
+    cands += [line(x, " (young)") for x in young]
     return ("\nTACTIC FIT (4-3-3, starter / backup / depth, each player used once): "
             + "; ".join(f"{s['label']}: {_who(s['starter'])} / {_who(s['backup'])} / {_who(s['depth'])} (score {s['score']})" for s in fit["slots"])
             + "\nSQUAD GAPS (weakest first): " + "; ".join(f"{g['label']} ({g['group']}) {g['role_name']} score {g['score']}" for g in fit["gaps"])

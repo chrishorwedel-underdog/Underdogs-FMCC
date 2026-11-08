@@ -18,7 +18,7 @@ const Suggestions = ({ m, act }) => (
         {it.over_budget && <span className="st a" style={{ margin: 0 }} data-testid={`suggestion-over-budget-${it.unique_id}`}>Over your transfer budget</span>}
         <div className="acts">
           {it.shortlisted ? <span className="st ok" style={{ margin: 0 }} data-testid={`suggestion-shortlisted-${it.unique_id}`}>On your shortlist</span>
-            : <button className="btn btn-p" onClick={() => act(() => api.post(`/dof/messages/${m.id}/shortlist/${it.unique_id}`), (r) => r.result, ["dof-msgs", "scout-players", "shortlist"])} data-testid={`suggestion-shortlist-${it.unique_id}`}><Star size={13} />Add to shortlist</button>}
+            : <button className="btn btn-p" style={{ whiteSpace: "nowrap" }} onClick={() => act(() => api.post(`/dof/messages/${m.id}/shortlist/${it.unique_id}`), (r) => r.result, ["dof-msgs", "scout-players", "shortlist"])} data-testid={`suggestion-shortlist-${it.unique_id}`}><Star size={13} />Add to shortlist</button>}
           <a className="btn" href={`/scouting?player=${it.unique_id}`} data-testid={`suggestion-profile-${it.unique_id}`}><UserRound size={13} />Open profile</a>
         </div>
       </div>))}
@@ -28,7 +28,7 @@ const Suggestions = ({ m, act }) => (
 const Draft = ({ m, act }) => {
   const d = m.draft;
   if (!d) return null;
-  if (d.action.type === "suggestions") return <div style={{ marginTop: 10 }} data-testid={`draft-${m.id}`}><div className="eyebrow">{d.action.summary}</div><Suggestions m={m} act={act} /></div>;
+  if (d.action.type === "suggestions") return <div style={{ marginTop: 10 }} data-testid={`draft-${m.id}`}><b style={{ fontSize: 13.5 }}>{d.action.summary}</b><Suggestions m={m} act={act} /></div>;
   return (
     <div className="card" style={{ marginTop: 10, padding: 14, borderColor: "rgba(76,141,255,.4)" }} data-testid={`draft-${m.id}`}>
       <div className="eyebrow">Drafted action · {d.action.type}</div>

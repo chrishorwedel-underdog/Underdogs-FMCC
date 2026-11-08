@@ -1,0 +1,47 @@
+{
+  "summary": "Stage 13 test: polished setup with resume, health checklist and key check; Punish a Club; Test checklist and export; smarter DOF suggestion cards; regression. New pytest file test_fmcc_stage13_setup_punish_testing_dof.py passes 23/23 (setup inspect/check-key/health/progress, Punish meta/search/preview/422s/full lifecycle, testing checklist/report scrub, DOF suggestions with a real LLM). UI tested with Playwright at 1920x1080 and 1920x800 with no page errors and no 5xx.\n\nWorking:\n- Setup from a clean state: the 4 step labels are right. FM26/FM27 and the green Find button share a vertical center (788.85px). After Find, 3 green ticks show (game, saves, newest Sample_Club_FC_2027-08-01.fm). The analytics switch is off by default. setup-next-3 stays disabled until 'Check the preview key' shows 'Key works' (real LLM). Health shows save and backup green, version and running amber with fix text, and the analytics reminder. Open FMCC goes to Home.\n- Resume: reloading at step 2 and at step 3 reopens the same step with analytics still on. setup_progress is removed after setup completes. PUT progress drops unknown keys and non-string values. step -1 and 4 give 422.\n- Punish: the sidebar link goes to /punish. 'vald' search returns only AC Valdora. The summary reads exactly 'AC Valdora: −15 points, two-year transfer ban for over-21s, bank balance set to 0', and the new-career-only list shows. 500 points gives the plain error 'Points deduction: points must be between 1 and 120' and hides the Make button. Light, Heavy and Full 115 switch on 2, 5 and 12 penalties. Clear works. Make creates the row and the XML downloads. Queue puts 4 changes in Game changes, and a toast names the new-career-only ones. Queuing twice replaces the old changes rather than duplicating them. Remove deletes the row and the file; afterwards the download and a second delete return 404.\n- Settings: testing-card is the first card. It has 8 items, and the 'n/8 tried' count goes up on Pass/Fail. The Fail and Pass styling works, and notes are kept after a reload. Export downloads fmcc-test-report.json with C:\\Users\\carol changed to [you] (and /home/bob too). The unsigned help and the sortitoutsi credit are present.\n- DOF: the first 3 quick prompts are correct. 'Fill my biggest gap' gave a Caio Souza card with the gap, reason, numbers, grade/value/wage and an Over budget tag. Add to shortlist then shows 'On your shortlist'. Open profile goes to /scouting?player=30500004 with the profile sheet open. The backend drops own-club and unknown ids (a shortlist call with uid 1 returns 404).\n- Regression: Home, Squad (Tactic fit), Scout Formulas starter pack, Editor and Game changes show no errors. At 1920x800 the sidebar fits (scrollHeight equals clientHeight, and the DOF button bottom is at 789 of 800).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "DOF stream / dof_api.lab_context", "issue": "Right after setup (first sample save, 2027-08-01, 0 minutes) every player has grade_global None. So TRANSFER CANDIDATES is 'none' and the DOF says 'There are no transfer candidates' and returns no suggestion cards. That makes the first experience of the feature fail. Cards appeared only after reading 2 more saves (POST /api/saves/read x2). Fall back to CA/PA, value or best_role when grades are missing."},
+      {"endpoint": "dof_api.lab_context", "issue": "Candidates are the top 6 by grade only, and none of them are within budget: the budget is £2.15m and every full-back candidate is worth £13.5m or more. So 'Cheapest upgrade for my XI' can never suggest an affordable player. Add the cheapest in-budget players who beat the current starter for each gap."},
+      {"endpoint": "punish_api.queue_current -> changes_api.queue_club_edit", "issue": "Punish changes are stored with source 'editor', so Game changes shows 'From: Player & Teams Editor' instead of Punish a Club."},
+      {"endpoint": "DELETE /api/punish/{pid}", "issue": "Removing a queued punishment leaves its 4 queued Game changes in place, with no warning and no option to reject them."},
+      {"endpoint": "PUT /api/setup/progress", "issue": "It still accepts writes after setup_complete is true, which leaves a stale setup_progress behind (seen when the API is called directly)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "DOF suggestion card", "issues": ["The numbers are shown twice: the model's 'grade 58.0; value £13,500,000...' line, then FMCC's 'Grade 58 · value £13,500,000 · wage'", "The 'Add to shortlist' label wraps onto 2 lines in the narrow card", "The long suggestion summary is in an uppercase letter-spaced eyebrow, which is hard to read"]},
+      {"screen": "Setup step 1", "issues": ["In the preview, 'Saves in it' says 'Sample saves · newest...' with no number, although the brief asks for how many saves", "The edition selector and Find are on one line but pushed to opposite ends of the card, not next to each other"]},
+      {"screen": "Home vs Squad Tactic fit", "issues": ["Home says 'Weakest spot: Left Back', but Tactic fit and the DOF both say Right Back is the biggest gap (39.0)"]},
+      {"screen": "Game changes", "issues": ["Punish rows show 'Player & Teams Editor' in the From column"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage13_setup_punish_testing_dof.py", "/app/backend/tests/cleanup_test_careers.py", "/app/test_reports/pytest/pytest_stage13.xml"],
+  "action_items": [
+    "lab_context: when grade_global is None (a fresh career or the first save), still list candidates using CA/PA, value or role so the DOF can suggest cards straight after setup",
+    "lab_context: add affordable candidates (value within the transfer budget) for each gap so 'Cheapest upgrade' can work",
+    "Label Punish changes as source 'punish' so Game changes shows 'Punish a Club'",
+    "On removing a punishment that was queued, reject its queued changes or offer to",
+    "Optional: drop the duplicate numbers line on suggestion cards, use a normal-case summary, and stop the Add to shortlist label wrapping",
+    "Optional: show a save count in the setup preview; make Home's weakest spot match Tactic fit",
+    "Optional: ignore PUT /setup/progress once setup is complete"
+  ],
+  "critical_code_review_comments": [
+    "dof_api.lab_context filters on grade_global is not None, which is empty at the start of a season, so suggestions silently disappear",
+    "dof_api.check_suggestions returns only an over_budget flag; nothing pushes the model toward in-budget options because the candidates are ranked by grade only",
+    "punish_api.remove does not touch the changes collection; queue_club_edit hardcodes source 'editor'",
+    "Dof.jsx Open profile uses a plain <a href>, which reloads the whole app instead of a router Link (it works, but is slower)",
+    "setup_api.put_progress has no setup_complete guard"
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage13_setup_punish_testing_dof.py", "/app/backend/tests/cleanup_test_careers.py"],
+  "success_rate": {"backend": "100% (23/23 pytest; the DOF cards need graded players)", "frontend": "100% of the requested flows passed; 4 design notes"},
+  "seed_data_creation": "Made TEST_Career / TEST Club (FM27) through the setup UI, read 2 more sample saves, and created test punishments, a shortlist entry, DOF conversations and test results. Everything is cleaned up: cleanup_test_careers.py deleted the TEST_ career and every record tied to it (audit, identities, pools, snapshots, stat_history, punishments, changes, dof_conversations and dof_messages, shortlist, backups whose reason starts 'TEST_Career:', test_results, league_estimates) and the files in preview_fm/editor data. It then set setup_complete to false and unset setup_progress and active_career_id. /api/state now shows setup_complete false and career null, and /api/setup/progress shows step 0.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The DB is clean, so the preview opens on setup. The stage-13 pytest needs an active career: run setup first (UI or POST /api/setup/complete {edition:'FM27', save_folder:'', club_name:'TEST Club', name:'TEST_Career'}), then POST /api/saves/read twice so players get grades, which the DOF suggestion test needs. Then: export REACT_APP_BACKEND_URL=...; pytest tests/test_fmcc_stage13_setup_punish_testing_dof.py -n 0. Afterwards run python3 tests/cleanup_test_careers.py --test-results. Set localStorage fmcc-tour-done=1 before Playwright clicks, or the guided tour blocks the sidebar.",
+  "rca of the issue": "No DOF suggestions after a fresh setup: stats_model._grade sets grade_global only when minutes >= MIN_PCT. The first sample save is at the start of the season (0 minutes), so every grade is None. lab_context then filters out every candidate, the prompt says 'TRANSFER CANDIDATES: none', and the model follows the 'ONLY from TRANSFER CANDIDATES' rule and returns no suggestions action. To reproduce: clean setup, then ask the DOF 'Fill my biggest gap'. Fix: add a fallback ranking for candidates when grades are missing."
+}

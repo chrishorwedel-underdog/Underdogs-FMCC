@@ -127,6 +127,9 @@ async def get_progress():
 
 @router.put("/progress")
 async def put_progress(body: ProgressIn):
+    s = await db.settings.find_one({"_id": "app"}, {"_id": 0, "setup_complete": 1}) or {}
+    if s.get("setup_complete"):
+        return {"ok": True, "ignored": True}
     allowed = {k: v for k, v in body.form.items() if k in ("edition", "save_folder", "club_name", "name", "analytics", "found") and isinstance(v, (str, bool))}
     await db.settings.update_one({"_id": "app"}, {"$set": {"setup_progress": {"step": body.step, "form": allowed}}}, upsert=True)
     return {"ok": True}
