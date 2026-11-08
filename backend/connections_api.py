@@ -190,7 +190,7 @@ async def remove():
     ml = await ml_state()
     if not ml.get("installed"):
         raise HTTPException(409, "The match add-on isn't installed by FMCC")
-    removed = 0
+    removed = 0 if LIVE else len(ml.get("files", []))
     if LIVE:
         root = Path(ml["game_root"])
         if await asyncio.to_thread(lambda: _paths(c["edition"])[1]):

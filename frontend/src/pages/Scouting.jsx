@@ -67,7 +67,7 @@ export default function Scouting({ initialTab = "rankings" }) {
   const toggle = (id) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id].slice(-4)));
   return (
     <div data-testid="scouting-page">
-      <PageHead eyebrow="Every player in the save, ranked by your rules" title="Scouting">
+      <PageHead eyebrow="Every player in the save, ranked by your rules" title={initialTab === "compare" ? "Moneyball" : "Scouting"}>
         <TabBar id="scouting" value={tab} onChange={setTab} tabs={[["rankings", "Rankings"], ["shortlist", "Shortlist"], ["compare", `Moneyball${compare.length ? ` (${compare.length})` : ""}`], ["rules", "Rules"]]} />
       </PageHead>
       {tab === "rankings" && <Rankings compare={compare} toggleCompare={toggle} />}

@@ -57,10 +57,10 @@ const BatchDetail = ({ id }) => {
   return (
     <div style={{ padding: "6px 0 10px 4px" }} data-testid={`batch-detail-${id}`}>
       <small style={{ display: "block", marginBottom: 6 }}>Approved by {data.approved_by || "Manager"} · {data.save_backup ? `save copied to ${data.save_backup.file}` : "FMCC backup saved"}</small>
-      {data.changes.map((c) => <div key={c.id} className="mb" style={{ gridTemplateColumns: "1fr 90px 110px 90px", fontSize: 12.5 }}>
-        <span>{c.player_name}</span><span className="mono">{c.field.toUpperCase()}</span>
-        <span className="mono">{c.old_value == null && c.hidden ? "Hidden" : `${c.old_value ?? "—"} → ${c.new_value ?? "—"}`}</span>
-        <span className={`st ${c.status === "applied" ? "ok" : c.status === "failed" ? "r" : "n"}`} title={c.error || ""}>{c.status}</span></div>)}
+      {data.changes.map((c) => <div key={c.id} style={{ padding: "6px 8px 6px 0", borderTop: "1px solid var(--line)", fontSize: 12.5 }} data-testid={`batch-change-${c.id}`}>
+        <b style={{ display: "block" }}>{c.player_name}</b>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}><span className="mono">{c.field.toUpperCase()} {c.old_value == null && c.hidden ? "Hidden" : `${c.old_value ?? "—"} → ${c.new_value ?? "—"}`}</span>
+          <span className={`st ${c.status === "applied" ? "ok" : c.status === "failed" ? "r" : "n"}`} style={{ marginLeft: "auto" }} title={c.error || ""}>{c.status}</span></div></div>)}
     </div>
   );
 };

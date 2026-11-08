@@ -36,7 +36,7 @@ def clamp(v: int) -> int:
 
 
 def approver() -> str:
-    return os.environ.get("USERNAME") or "Manager" if LIVE else "Manager (browser preview)"
+    return (os.environ.get("USERNAME") or "Manager") if LIVE else "Manager (browser preview)"
 
 
 async def preflight(c: dict) -> list:
@@ -130,6 +130,8 @@ async def queue_changes(career: dict, source: str, award_id: str, items: list, h
 
 
 async def start_batch(career: dict, ids: list, expected: dict | None = None) -> dict:
+    if await db.changes.count_documents({"id": {"$in": ids}, "career_id": career["id"], "status": "queued"}) == 0:
+        raise HTTPException(409, "These changes were already applied or are being applied")
     checks = await preflight(career)
     failed = [x for x in checks if not x["ok"]]
     if failed:

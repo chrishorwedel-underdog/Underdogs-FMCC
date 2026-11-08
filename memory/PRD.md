@@ -52,10 +52,23 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - The desktop mode hides the sample banners and adds an OpenAI key field (stored in %APPDATA%\FMCC\config.json).
 - Not built: FMMatchLens .fmlens archive reading and the real BepInEx 6 + FMMatchLens install (format undocumented; FMMatchLens needs BepInEx 6 IL2CPP bleeding edge, not the 5.x release tracked in Updates), the real FMLibreEditor writes, a save-folder watcher, code signing.
 
+## Implemented (2026-11-08) — Match add-on, automatic save reading, live game changes, original sidebar
+- Connections screen (`/connections`, `backend/connections_api.py`, `fm_game.py`): finds Steam FM, shows BepInEx 6 / FMMatchLens plugin / dashboard status, one-click install (FM closed, never overwrites, records every added file, verifies FMMatchLens SHA256SUMS, rolls back on failure), remove exactly those files, BepInEx log check, open dashboard, restart as admin. SIMULATED in the browser preview.
+- Automatic save reading (Windows program): watcher in `server.py` reads a save once it stops changing, skips duplicates, notices with a 'Check my save' link; Settings switch (default on).
+- Project Safety page: Check my save report (`GET /api/saves/{n}/check`), backups, game-change record.
+- Live game changes (`live_editor.py` + `changes_api.py`): exact-change preview (current/new values, checks) then one Apply batch; checks FM27 running, known build, safety checks, same save, verified save-file backup; read-back per change; stops on failure and returns the rest to the queue; undo puts old values back when the same save is loaded; approver and old/new values recorded; append-only audit. FM26 stays read-only. Auto-apply is off in the Windows program. The preview uses the SAMPLE editor. UNVERIFIED against a real game.
+- Workflow builds fmlibre-probe (v0.5.0) from source into the installer. Updates list tracks BepInEx 6 bleeding edge.
+- Sidebar restored: Project Safety, Appearance (Coming soon) links; Home, Dynamic Potential, Breakout Player, Scout Players, Monthly Reports, Moneyball, Squad, Development, Elite Training, Matches; 'Chat with your Director of Football'. The Awards page was split into the Dynamic Potential and Breakout Player pages.
+- Tested: iteration_4 (backend 12/12, frontend flows); the batch-detail layout, the approver label and the newest save selection were fixed afterwards.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.
 - P2: restore inside a transaction; GitHub token for update checks; user-saved named presets beyond export/import; registration presets per real league.
 
 ## Next tasks
+- P0: run the Windows build and test it on the user's PC (Connections checks, Check my save, one small FM27 batch).
+- P1: Player & Teams Editor (user request): faces built on a user-installed NG_Regens (read its config.xml; FMCC writes its own graphics folder for missing/custom faces), club logos via config.xml, club renames via .lnc files, club attributes through FMLibreEditor (reputation, balance, budgets, facilities, supporters, stadium). Owner personality, separate world reputation and club name writes aren't supported by FMLibreEditor yet; research fm-editor.
+- P1: reading .fmlens into Matches once the format is known; live changes beyond PA/CA.
+- P2: signed installer; merging Squad and Development; real Appearance settings.
 Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchLens data.

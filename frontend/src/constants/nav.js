@@ -25,5 +25,5 @@ export const STAGE_TEXT = {
   reports: "An automatic squad snapshot each in-game month, with comparisons between months.",
   elite: "Nominations, training evidence from the save and PA boosts under your own rules.",
   appearance: "Themes, colours and how FMCC looks on your screen.",
-  dof: "Your Director of Football to talk to, using your own OpenAI key. It sees your squad, plans, reports and history.",
+  dof: "Your Director of Football to talk to. It sees your squad, plans, reports and history.",
 };

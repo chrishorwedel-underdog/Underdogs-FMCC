@@ -1,0 +1,45 @@
+{
+  "summary": "Stage 5 tested end to end in the browser preview: backend pytest (new test_fmcc_stage5.py, 12 passed and 1 skipped, which was covered in the UI instead) plus Playwright flows at 1920x800 and 1920x1080. Working: first-run setup (FM27, Sample Club FC) lands on Home. The sidebar order, labels and all 13 links are right. At 1920x800 the sidebar fits (scrollHeight 800 = clientHeight) and nav-ask-dof is fully visible. /awards redirects to /dynamic-potential. The word 'Awards' doesn't appear on Home, DP or Breakout. Appearance shows Coming soon. /moneyball opens Scouting with the Moneyball tab selected. DP has Run and Rules tabs, and queuing works with values hidden until 'Show DP details' is on (then current and new values appear in the preview). On Breakout, nominate, Pick, No and 'make official' all work and queue PA +7. On Changes, ticking 1 row applies only that row. The batch dialog shows the Current and New table and 3 checks. Apply finishes the batch, the save reminder appears, the detail shows 150 → 157 with approver 'Manager (browser preview)', and Undo works (the reminder then hides). Reusing a preview_id returns 409, and previewing a non-queued id returns 409. GET /api/changes returns live:false and auto_allowed:true. On Connections (opened from top-connections-button and game-link-pill): the preview banner shows; install, confirm, Installed and 'Waiting for FM'; Check sets Working; the dashboard button gives the expected error toast; Remove works; the editor card says 'FM27: supported'. The Matches Setup tab links to Connections, and 8 sample matches appear after install and 2 reads. Project Safety shows the Check my save summary, gaps, new/left/renamed lists, Data backups and the game-change record. The Settings auto-read switch toggles and persists after reload. Credits list FMLibreEditor GPL-3.0. GET /api/notices returns []. /api/updates shows BepInEx 6, 6.0.0-be.793. Home, Squad, Scouting, Development, Reports, Elite Training and DOF still load with no JS errors. 1 real UI bug: player names are invisible in the expanded batch detail.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "changes_api.approver()", "issue": "Operator precedence bug. `os.environ.get('USERNAME') or 'Manager' if LIVE else 'Manager (browser preview)'` parses as `USERNAME or ('Manager' if LIVE else ...)`, so the preview shows the OS username whenever USERNAME is set. Fix: `(os.environ.get('USERNAME') or 'Manager') if LIVE else 'Manager (browser preview)'`. It returns the correct value here only because USERNAME isn't set in the container."},
+      {"endpoint": "start_batch", "issue": "The backup is made before the queued changes are claimed. If the claim then returns 409 (already applied), an unused 'before game change batch' backup is left behind. Separately, apply_changes marks the preview used before start_batch, so a failed preflight uses up the preview and the user has to review again (acceptable, but worth knowing)."},
+      {"endpoint": "POST /api/connections/matchlens/remove", "issue": "In preview it returns removed:0, so the toast reads 'Removed 0 file(s)' while the confirm dialog says 'removes exactly the 4 file(s) it added'. The two messages disagree."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Changes.jsx BatchDetail", "issue": "Player names are invisible in the expanded batch detail. The grid is `1fr 90px 110px 90px` inside the narrow right-hand Batches card (about 260px), so the 1fr name column collapses to 0px. Measured: every name span is 0 wide. Users see only 'PA 150 → 157 applied' with no player. Fix: put the detail in a wider layout or use flexible columns such as `minmax(90px,1fr) 40px auto auto`, or stack the name above the values.", "selector": "[data-testid^='batch-detail-'] .mb > span:first-child", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Project Safety › Check my save", "issue": "After a new save is read from the top-bar refresh, the dropdown stays on the previously selected save (useState is set only once). The new save is added to the list but not selected, so the card keeps showing the old save until the user picks the new one. Consider selecting the newest save after a read when the user hasn't picked one.", "affected_selectors": ["[data-testid='save-check-select']"]}
+    ],
+    "design_issues": [
+      {"screen": "DOF page", "issues": ["The sidebar says 'Chat with your Director of Football' but the page title is 'Ask your DOF'. STAGE_TEXT.dof still says 'using your own OpenAI key'."]},
+      {"screen": "Moneyball (/moneyball)", "issues": ["The page title is 'Scouting' while the sidebar item is 'Moneyball'. This is acceptable under the plan, but a 'Moneyball' title or eyebrow would be clearer."]},
+      {"screen": "Changes › Batches", "issues": ["Status pills in the expanded detail sit flush against the right edge of the card."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage5.py", "/app/test_reports/pytest/stage5.xml"],
+  "action_items": [
+    "Fix the BatchDetail grid so player names are visible in the narrow Batches card",
+    "Fix the approver() operator precedence in changes_api.py",
+    "Safety: select the newest save in Check my save after a new save is read (unless the user picked one)",
+    "Connections remove in preview: make the toast and the dialog file count agree",
+    "Optional: line up the DOF page title with the sidebar label and update STAGE_TEXT.dof"
+  ],
+  "critical_code_review_comments": [
+    "changes_api.approver() has an operator precedence bug (see backend minor issues)",
+    "start_batch makes the backup before the claim, which can leave orphan backups on 409",
+    "Safety SaveCheck: `no` state never follows a new save",
+    "Windows-only paths (live_editor, fm_game, watch_saves, real BepInEx/FMMatchLens download, restart-admin) were reviewed only, not executed"
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage5.py"],
+  "success_rate": {"backend": "100% (12/12 run, 1 skipped and covered in UI)", "frontend": "95% (1 visual bug in batch detail)"},
+  "seed_data_creation": "Setup completed with career 'Sample career' / club 'Sample Club FC' (FM27), as requested. Left in the DB: 3 save reads; the match add-on installed (simulated); Breakout nominations for Tomas Varga (official, 1 batch applied then undone) and Ben Okafor (not picked); 1 DP run (7 changes: 1 batch of 2 applied then undone, 1 batch of 5 applied and left applied); backups and audit entries. Nothing was deleted because the audit trail is append-only and the app has no delete endpoints for these records.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_fmcc_stage5.py needs an EMPTY DB (first-run) and -n 0; it sets up FM27 itself. Older stage1-4 tests also need an empty DB and were not re-run this iteration (DB wasn't empty; dropping it is not allowed). The stage4 test still calls /api/matchlens/install, but install now lives at /api/connections/matchlens/install, so update it. Breakout candidates only appear after nomination early in the season (no rule matches at Aug-Oct 2027), so nominate by game ID (e.g. 20481101). Two players named 'Luca Romano' (different IDs) are intentional sample data.",
+  "test_credentials": "None needed (no login)."
+}

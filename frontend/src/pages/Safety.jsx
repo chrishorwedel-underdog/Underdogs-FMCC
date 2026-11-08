@@ -16,8 +16,10 @@ const List = ({ title, items, id }) => (
 const SaveCheck = () => {
   const [params] = useSearchParams();
   const { data: saves = [] } = useGet("saves", "/saves");
-  const [no, setNo] = useState(params.get("save"));
-  useEffect(() => { if (no == null && saves.length) setNo(String(saves[0].save_no)); }, [saves, no]);
+  const [picked, setPicked] = useState(params.get("save"));
+  useEffect(() => { if (params.get("save")) { setPicked(params.get("save")); } }, [params]);
+  const no = picked ?? (saves.length ? String(saves[0].save_no) : null);
+  const setNo = setPicked;
   const { data: r } = useGet("save-check", `/saves/${no}/check`, { no }, { enabled: no != null });
   return (
     <div className="card rise d2" data-testid="save-check-card">

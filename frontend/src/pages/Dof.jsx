@@ -80,7 +80,7 @@ export default function Dof() {
   const create = async () => { const c = await act(() => api.post("/dof/conversations", {}), null, ["dof-convs"]); if (c) setConv(c.id); };
   return (
     <div data-testid="dof-page">
-      <PageHead eyebrow={status ? `${status.model} · ${status.key_source}` : ""} title="Ask your DOF">
+      <PageHead eyebrow={status ? `${status.model} · ${status.key_source}` : ""} title="Chat with your Director of Football">
         <button className="btn btn-p" onClick={create} data-testid="dof-new-conversation"><Plus size={13} />New conversation</button>
       </PageHead>
       {status && !status.ready && <div className="banner" style={{ marginBottom: 16 }}>Add your OpenAI key in Settings to use the DOF chat.</div>}
