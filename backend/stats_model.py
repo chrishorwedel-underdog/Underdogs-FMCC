@@ -294,7 +294,7 @@ def similar(data: dict, x: dict, n: int = 8) -> list:
         return []
     out = []
     for o in data["players"]:
-        if o is x or o["cohort"] != x["cohort"] or not o["z"] or o["grade_global"] is None:
+        if o is x or o["cohort"] != x["cohort"] or o["gender"] != x["gender"] or not o["z"] or o["grade_global"] is None:
             continue
         have = [k for k in wts if k in x["z"]]
         if not have or sum(1 for k in have if k in o["z"]) / len(have) < .8:

@@ -79,6 +79,14 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Tested: iteration_9 (39/43 + UI). Fixed afterwards: HTML rows no longer override save players, cache key uses active imports, 'linked' flag, no grades under 400 minutes, Fair play hides best role and role ratings, archetypes limited to their positions, max-age input clamped, Compare tab respects the view, £0 display, adjusted marker only on adjusted stats.
 - Module guides (2026-11-08): every sidebar page (and Project Safety, DOF) opens with a 'What this page does' card listing its features and how it works; it can be collapsed per page. The DOF button text is one size larger and centred.
 
+## Implemented (2026-11-08) — Guided tour, FMST26 / fmOS / FM Dossier ideas, new Home
+- Guided tour (`components/Tour.jsx`): 14 steps, starts by itself the first time, can be replayed from the top bar (?) and Settings; it never changes data.
+- `backend/lab_api.py`: your own formulas (safe expression parser, chaining with f_, cycle checks, max 30, revisions, import/export) shown in Players columns, Scatter, Quadrant and advanced filters; advanced filter (AND/OR groups, value, stat vs stat, percentile; hidden fields blocked in Fair play/Moneyball); heat colours; quadrant (performance vs cost) on Deals & Offers; Find a replacement and Price explained on profiles; season history chart; Squad 'Tactic fit' (formation or .fmf import, starter/backup/depth per slot, squad gaps linking to Scout Players, shape advisor); DOF sees formulas and gaps.
+- Connections 'Other FM apps' card: FM Dossier (official page), FMST26 and fmOS (no official page set yet). Open uses a path you set (Windows program only). Updates list them as 'You update it yourself'. Credits added (no code used).
+- Home redesign: welcome band, 3-column equal module cards, two equal bottom panels, one size larger on Home only.
+- Tested: iteration_10 (33/35 + Stage 10 regression 42/42 + UI). Fixed afterwards: field whitelist in filters/quadrant, CA/PA sort blocked outside Full view, bad filter values no longer crash, similar players same gender, replacement caps of 0, Squad gap links filter Scout Players, quadrant axis, formula preview reset. Remaining 2 test failures are test-order/revision-count artifacts.
+- Known limit: Tactic fit ranks each slot separately, so one player can be the starter in two slots. .fmf reading only finds the formation text; FMST26/fmOS release pages unverified.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.

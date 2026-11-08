@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Star, Scale, Download, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { api, errMsg } from "@/lib/api";
@@ -7,7 +8,7 @@ import { useScout, usePost, fmtMoney, fmtWage, toGBP, ContractTag, Pct, num, pct
 import { AdvFilter } from "./Lab";
 
 const KEY_STATS = ["npxg", "xa", "kp", "progp", "drb", "tkw", "intc", "passc"];
-const BASE = { mode: "p90", gender: "M", source: "save", q: "", group: new URLSearchParams(window.location.search).get("group"), league: null, preset: null, max_value: null, max_wage: null, min_age: 15, max_age: 45, min_minutes: 0, sort: "grade", dir: "desc", adv: null };
+const BASE = { mode: "p90", gender: "M", source: "save", q: "", group: null, league: null, preset: null, max_value: null, max_wage: null, min_age: 15, max_age: 45, min_minutes: 0, sort: "grade", dir: "desc", adv: null };
 
 const Filters = ({ f, setF, meta, prefs }) => {
   const set = (k, fn = (v) => v || null) => (e) => setF({ ...f, [k]: fn(e.target.value) });
@@ -55,7 +56,9 @@ const exportCsv = async (body) => {
 
 export const PlayersTab = () => {
   const { view, prefs, openPlayer, compare, toggleCompare } = useScout();
-  const [f, setF] = useState(BASE);
+  const [params] = useSearchParams();
+  const [f, setF] = useState({ ...BASE, group: params.get("group") });
+  useEffect(() => { setF((x) => ({ ...x, group: params.get("group") })); }, [params]);
   const [cols, setCols] = useState("key");
   const [adv, setAdv] = useState(false);
   const [heat, setHeat] = useState(false);

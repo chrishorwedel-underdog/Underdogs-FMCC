@@ -17,7 +17,7 @@ export const GUIDES = {
   },
   "/scouting": {
     what: "Finds and judges every player in your save: ScoutSheet's scouting with deep FMDataLab-style stats.",
-    features: ["Full, Fair play or Moneyball view (top right): see everything, only what your scouts would know, or just stats and price", "Players: search, ready-made searches, filters, a stats table, saved searches and CSV export", "Click any player for his profile: grade, fair price, pizza chart, similar players and a scouting report", "My Club (your weakest positions), Deals & Offers (bargains and bid checks), Scatter, Compare and Computed stats", "Leagues (how strong each league is) and Possession (adjusts stats for team style)"],
+    features: ["Full, Fair play or Moneyball view (top right): see everything, only what your scouts would know, or just stats and price", "Players: search, ready-made searches, filters, a stats table, saved searches and CSV export", "Click any player for his profile: grade, fair price, pizza chart, similar players and a scouting report", "My Club (your weakest positions), Deals & Offers (bargains, bid checks and a quadrant chart of performance against cost), Scatter, Compare, Computed stats and your own Formulas", "Advanced filters with AND/OR groups and percentile conditions, heat colours, and Find a replacement on every profile", "Leagues (how strong each league is) and Possession (adjusts stats for team style)"],
     how: ["Pick a view at the top", "Search or pick a ready-made search in Players", "Click a player to open his profile, star him for the shortlist or tick the scales to compare"],
   },
   "/reports": {
@@ -32,7 +32,7 @@ export const GUIDES = {
   },
   "/squad": {
     what: "Plans your team: who plays where, who's next in line and the best lineup.",
-    features: ["Role ratings for every player", "Depth charts for each position", "Best XI: the highest-scoring lineup for your formation and roles", "Development XI: a lineup that gives your young players minutes", "Registration checks"],
+    features: ["Role ratings for every player", "Depth charts for each position", "Best XI: the highest-scoring lineup for your formation and roles", "Development XI: a lineup that gives your young players minutes", "Tactic fit: every player rated for every slot of a tactic (import an .fmf or pick a formation), squad gaps and a shape advisor", "Registration checks"],
     how: ["Pick a formation", "Look at Best XI and Development XI on the pitch", "Save a lineup to keep it in your history"],
   },
   "/development": {

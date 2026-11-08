@@ -158,7 +158,7 @@ def value(x: dict, field: str):
         return x["computed"].get(field[2:])
     if field in sm.METRICS:
         return x["p90"].get(field)
-    return x.get({"grade": "grade_global"}.get(field, field))
+    return x.get({"grade": "grade_global"}.get(field, field)) if field in BASE_NAMES else None
 
 
 def pct_of(data: dict, x: dict, field: str, pool: str):
@@ -179,10 +179,12 @@ def pct_of(data: dict, x: dict, field: str, pool: str):
 CMP = {">": lambda a, b: a > b, ">=": lambda a, b: a >= b, "<": lambda a, b: a < b, "<=": lambda a, b: a <= b, "=": lambda a, b: a == b}
 
 
-def match(x: dict, node: dict, data: dict) -> bool:
+def match(x: dict, node: dict, data: dict, depth: int = 0) -> bool:
     """Advanced filter tree: {op: and|or, items: [...]} with value, stat-vs-stat and percentile conditions."""
+    if not isinstance(node, dict) or depth > 4:
+        return False
     if "items" in node:
-        res = [match(x, i, data) for i in node["items"][:30]]
+        res = [match(x, i, data, depth + 1) for i in (node["items"] or [])[:30]]
         return (all(res) if node.get("op", "and") == "and" else any(res)) if res else True
     cmp = CMP.get(node.get("cmp", ">="))
     if not cmp:
@@ -194,7 +196,10 @@ def match(x: dict, node: dict, data: dict) -> bool:
         a, b = pct_of(data, x, node.get("field", ""), node.get("pool", "position")), node.get("value")
     else:
         a, b = value(x, node.get("field", "")), node.get("value")
-    return a is not None and b is not None and cmp(a, float(b))
+    try:
+        return a is not None and b is not None and cmp(float(a), float(b))
+    except (TypeError, ValueError):
+        return False
 
 
 # ---------- formulas ----------
@@ -213,7 +218,8 @@ async def _ctx():
 @router.get("/scout/formulas")
 async def list_formulas():
     c = await active_career()
-    return {"items": list((await formulas(c["id"])).values()), "limit": MAX_FORMULAS,
+    items = [{k: v[k] for k in ("key", "name", "expr", "revision")} for v in (await formulas(c["id"])).values()]
+    return {"items": items, "limit": MAX_FORMULAS,
             "names": sorted(BASE_NAMES) + list(sm.METRICS) + [f"c_{k}" for k in sm.ARCHETYPES]}
 
 
@@ -311,7 +317,7 @@ async def replacement(uid: int, max_value: Optional[int] = None, max_wage: Optio
     rows = []
     for s in sm.similar(data, x, n=80):
         o = data["by_uid"][s["unique_id"]]
-        if o["own"] or (max_value and (o["value"] or 0) > max_value) or (max_wage and (o["wage"] or 0) > max_wage) or (max_age and o["age"] > max_age):
+        if o["own"] or (max_value is not None and (o["value"] or 0) > max_value) or (max_wage is not None and (o["wage"] or 0) > max_wage) or (max_age is not None and o["age"] > max_age):
             continue
         cheap = 1 - min(1, (o["value"] or 0) / max(1, x["value"] or o["value"] or 1))
         rows.append(s | {"wage": o["wage"], "saving": (x["value"] or 0) - (o["value"] or 0), "rank": round(s["similarity"] * .75 + cheap * 25, 1)})

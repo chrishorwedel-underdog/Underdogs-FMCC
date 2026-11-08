@@ -13,7 +13,7 @@ export const FormulasTab = () => {
   const [prev, setPrev] = useState(null);
   const act = useAct();
   const check = async (expr) => { setF((x) => ({ ...x, expr })); if (expr.trim()) setPrev((await api.post("/scout/formulas/preview", { name: "x", expr })).data); else setPrev(null); };
-  const save = () => act(() => api.put(`/scout/formulas/${f.key}`, { name: f.name, expr: f.expr }), "Formula saved", FKEYS).then((r) => r && setF({ key: "", name: "", expr: "" }));
+  const save = () => act(() => api.put(`/scout/formulas/${f.key}`, { name: f.name, expr: f.expr }), "Formula saved", FKEYS).then((r) => { if (r) { setF({ key: "", name: "", expr: "" }); setPrev(null); } });
   const exportAll = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({ formulas: data.items.map(({ key, name, expr }) => ({ key, name, expr })) }, null, 2)], { type: "application/json" })); a.download = "fmcc-formulas.json"; a.click(); };
   const importFile = async (file) => { try { const j = JSON.parse(await file.text()); act(() => api.post("/scout/formulas/import", j), (r) => `${r.imported.length} formulas imported`, FKEYS); } catch { act(() => Promise.reject({ response: { data: { detail: "That isn't an FMCC formulas file" } } })); } };
   return (
@@ -33,7 +33,7 @@ export const FormulasTab = () => {
         <button className="btn" disabled={!data?.items.length} onClick={exportAll} data-testid="formula-export"><Download size={12} />Export</button>
         <label className="btn" data-testid="formula-import"><FileUp size={12} />Import<input type="file" accept=".json" hidden onChange={(e) => { if (e.target.files[0]) importFile(e.target.files[0]); e.target.value = ""; }} /></label></div>
         {data?.items.map((x) => <div key={x.key} className="row" data-testid={`formula-${x.key}`}><div style={{ flex: 1 }}>{x.name}<small className="mono">{x.key} = {x.expr} · version {x.revision}</small></div>
-          <button className="btn" onClick={() => setF({ key: x.key, name: x.name, expr: x.expr })} data-testid={`formula-edit-${x.key}`}>Edit</button>
+          <button className="btn" onClick={() => { setF({ key: x.key, name: x.name, expr: x.expr }); check(x.expr); }} data-testid={`formula-edit-${x.key}`}>Edit</button>
           <button className="btn btn-d" onClick={() => act(() => api.delete(`/scout/formulas/${x.key}`), "Formula removed", FKEYS)} data-testid={`formula-delete-${x.key}`}><Trash2 size={12} /></button></div>)}
         {!data?.items.length && <p className="note">No formulas yet. They appear as columns in Players, on the Scatter and Quadrant charts and in filters.</p>}
       </div>
@@ -87,7 +87,7 @@ export const Quadrant = () => {
   const [perf, setPerf] = useState("grade");
   const { data } = useGet("quadrant", "/scout/quadrant", { perf });
   const pts = data?.points || [];
-  const max = { c: Math.max(1, ...pts.map((p) => p.cost)), p: Math.max(1, ...pts.map((p) => p.perf)), pm: Math.min(0, ...pts.map((p) => p.perf)) };
+  const max = { c: Math.max(1, ...pts.map((p) => p.cost)), p: Math.max(...pts.map((p) => p.perf), data?.mid_perf ?? 0), pm: Math.min(...pts.map((p) => p.perf), data?.mid_perf ?? 0) };
   return (
     <div className="card" style={{ marginTop: 16 }} data-testid="quadrant-card">
       <div className="ttl">Quadrant: performance against total cost<span style={{ marginLeft: "auto" }} />
@@ -100,7 +100,7 @@ export const Quadrant = () => {
           <ReferenceArea x1={data.mid_cost} x2={max.c} y1={max.pm} y2={data.mid_perf} fill="#F87171" fillOpacity={0.05} label={{ value: "Overpriced", position: "insideBottomRight", fill: "#F87171", fontSize: 11 }} />
           <ReferenceArea x1={0} x2={data.mid_cost} y1={max.pm} y2={data.mid_perf} fill="#9CA3AF" fillOpacity={0.04} label={{ value: "Avoid", position: "insideBottomLeft", fill: "#9CA3AF", fontSize: 11 }} />
           <ReferenceLine x={data.mid_cost} stroke="#F2B54A" strokeDasharray="4 4" /><ReferenceLine y={data.mid_perf} stroke="#F2B54A" strokeDasharray="4 4" /></>}
-        <XAxis type="number" dataKey="cost" stroke="#6B7280" fontSize={11} tickFormatter={money} domain={[0, max.c]} /><YAxis type="number" dataKey="perf" stroke="#6B7280" fontSize={11} />
+        <XAxis type="number" dataKey="cost" stroke="#6B7280" fontSize={11} tickFormatter={money} domain={[0, max.c]} /><YAxis type="number" dataKey="perf" stroke="#6B7280" fontSize={11} domain={[max.pm, max.p]} />
         <Tooltip content={({ active, payload }) => (active && payload?.[0] ? <div className="card" style={{ padding: 8, fontSize: 12 }}><b>{payload[0].payload.name}</b><br />{payload[0].payload.zone} · cost {fmtMoney(payload[0].payload.cost, prefs)}</div> : null)} />
         <Scatter data={pts} fill="#4C8DFF" fillOpacity={0.75} onClick={(p) => openPlayer(p.unique_id)} cursor="pointer" />
       </ScatterChart></ResponsiveContainer></div>
