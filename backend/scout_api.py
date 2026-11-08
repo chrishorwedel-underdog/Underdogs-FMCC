@@ -29,8 +29,9 @@ def mask(x: dict, view: str) -> dict:
         return o
     for k in ("ca", "pa", "hidden", "personality"):
         o[k] = None
+    o["best_role"] = None
     if view == "moneyball":
-        o["attributes"], o["best_role"] = None, None
+        o["attributes"] = None
     elif x.get("attributes"):
         spread = round((100 - x["knowledge"]) / 20)
         o["attributes"] = {k: [max(1, v - spread), min(20, v + spread)] for k, v in x["attributes"].items()}
@@ -192,8 +193,8 @@ async def profile(uid: int, view: View = "full"):
     seasons = await db.stat_history.find({"career_id": c["id"], "unique_id": uid}, {"_id": 0, "career_id": 0}).sort("season", 1).to_list(50)
     reports = await db.dof_reports.find({"career_id": c["id"], "unique_id": uid}, {"_id": 0}).sort("at", -1).to_list(5)
     sim = sm.similar(data, x)
-    return mask(x, view) | {"similar": sim if view != "fair" else [s | {} for s in sim], "report": _report(x) if view == "full" else None,
-                            "role_ratings": roles.role_ratings(x)[:5] if view != "moneyball" and x.get("attributes") else [],
+    return mask(x, view) | {"similar": sim, "report": _report(x) if view == "full" else None,
+                            "role_ratings": roles.role_ratings(x)[:5] if view == "full" and x.get("attributes") else [],
                             "seasons": seasons, "dof_reports": reports, "labels": {k: v[0] for k, v in sm.METRICS.items()},
                             "profile_keys": [sm.LABEL2KEY[m["metric"]] for m in sorted(sm.WEIGHTS.get(x["cohort"], []), key=lambda m: -m["weight"])
                                              if m["metric"] in sm.LABEL2KEY][:12]}
@@ -354,7 +355,7 @@ async def tactical(key: str, in_w: int = Query(5, ge=0, le=10), out_w: int = Que
     outs = {m: w for m, w in a["metrics"].items() if a["phases"].get(m) == "out"}
     rows = []
     for x in data["players"]:
-        if not x["pct"] or x["gender"] != gender or (group and x["group"] != group):
+        if not x["pct"] or x["gender"] != gender or (group and x["group"] != group) or (not group and a.get("groups") and x["group"] not in a["groups"]):
             continue
         si, so = sm._score(x, ins) if ins else None, sm._score(x, outs) if outs else None
         parts = [(si, in_w), (so, out_w)]
@@ -534,7 +535,7 @@ async def import_html(files: list[UploadFile] = File(...)):
 @router.get("/imports")
 async def imports():
     c = await active_career()
-    rows = await db.html_imports.find({"career_id": c["id"]}, {"_id": 0, "players": 0}).sort("at", -1).to_list(50)
+    rows = await db.html_imports.find({"career_id": c["id"], "status": "active"}, {"_id": 0, "players": 0}).sort("at", -1).to_list(50)
     for r in rows:
         r["count"] = len((await db.html_imports.find_one({"id": r["id"]}, {"_id": 0, "players.name": 1}))["players"])
     return rows
@@ -583,7 +584,7 @@ async def dof_report(uid: int):
         raise HTTPException(409, "Add your OpenAI key in Settings to get reports from your Director of Football")
     top = sorted(x["pct"].items(), key=lambda kv: -kv[1])
     facts = (f"Player: {x['name']}, {x['age']}, {x['cohort']} at {x['club']} ({x['league']}). Minutes {x['minutes']}. Global grade {x['grade_global']} "
-             f"(league multiplier {x['league_mult']}). Value £{x['value']:,}. Fair price {'£' + format(x['fair_price'], ',') if x['fair_price'] else 'not enough minutes'}. "
+             f"(league multiplier {x['league_mult']}). Value £{x['value'] or 0:,}. Fair price {'£' + format(x['fair_price'], ',') if x['fair_price'] else 'not enough minutes'}. "
              f"Contract months left: {x['months_left']}. Percentiles vs same position: " + "; ".join(f"{sm.METRICS[k][0]} {v}" for k, v in top)
              + ". Archetype scores: " + "; ".join(f"{data['archetypes'][k]['name']} {v}" for k, v in x["computed"].items() if v is not None))
     chat = LlmChat(api_key=key, session_id=f"dof-report-{uid}-{new_id()}", system_message=(

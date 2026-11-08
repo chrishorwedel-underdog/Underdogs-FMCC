@@ -84,7 +84,7 @@ const Body = ({ p, view }) => {
 
 export const ProfileSheet = ({ uid, onClose }) => {
   const { view } = useScout();
-  const { data } = useGet("scout-player", `/scout/player/${uid}`, { view }, { enabled: !!uid });
+  const { data } = useGet("scout-player", `/scout/player/${uid}`, { view, uid }, { enabled: !!uid });
   return (
     <Sheet open={!!uid} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="overflow-y-auto" style={{ width: 620, maxWidth: "100vw", background: "var(--s1)", borderColor: "var(--line)" }} data-testid="profile-sheet">

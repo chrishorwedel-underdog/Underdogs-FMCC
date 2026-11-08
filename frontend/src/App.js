@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ComingSoon } from "@/components/ComingSoon";
+import { ModuleGuide } from "@/components/ModuleGuide";
 import Setup from "@/pages/Setup";
 import Home from "@/pages/Home";
 import Squad from "@/pages/Squad";
@@ -42,6 +43,7 @@ const Shell = ({ state }) => {
       <section className="main">
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
         <div className="content">
+          <ModuleGuide />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/squad" element={<Squad />} />

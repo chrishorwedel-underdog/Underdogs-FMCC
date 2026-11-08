@@ -278,6 +278,12 @@ async def _read_upload(file: UploadFile, size: int) -> bytes:
 
 
 @router.post("/faces/{uid}")
+async def stored_upload(c: dict, file: UploadFile, size: int) -> str:
+    """FM can only load pictures from its own graphics folder on the user's PC, so they're kept there (desktop app)."""
+    return _store(fm_dirs(c), await _read_upload(file, size))
+
+
+@router.post("/faces/{uid}")
 async def upload_face(uid: int, file: UploadFile = File(...)):
     c = await active_career()
     p = next((x for x in await people(c) if x["unique_id"] == uid), None)

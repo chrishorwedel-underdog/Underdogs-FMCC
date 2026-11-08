@@ -19,7 +19,7 @@ const Filters = ({ f, setF, meta, prefs }) => {
       <select className="inp" style={{ width: 230 }} value={f.preset || ""} onChange={set("preset")} data-testid="sp-preset"><option value="">Ready-made searches</option>{Object.entries(meta?.presets || {}).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
       <input className="inp" style={{ width: 130 }} type="number" placeholder="Max value (m)" onChange={cap("max_value", 1e6)} data-testid="sp-max-value" />
       <input className="inp" style={{ width: 130 }} type="number" placeholder="Max wage (k/wk)" onChange={cap("max_wage", 1e3)} data-testid="sp-max-wage" />
-      <input className="inp" style={{ width: 80 }} type="number" value={f.max_age} title="Max age" onChange={set("max_age", Number)} data-testid="sp-max-age" />
+      <input className="inp" style={{ width: 80 }} type="number" defaultValue={f.max_age} title="Max age" onBlur={(e) => { const v = Math.min(50, Math.max(14, Number(e.target.value) || 45)); e.target.value = v; setF({ ...f, max_age: v }); }} data-testid="sp-max-age" />
       <input className="inp" style={{ width: 110 }} type="number" placeholder="Min minutes" onChange={set("min_minutes", (v) => Number(v) || 0)} data-testid="sp-min-minutes" />
       <div className="seg" data-testid="sp-gender">{[["M", "Men"], ["F", "Women"]].map(([k, l]) => <button key={k} className={f.gender === k ? "on" : ""} onClick={() => setF({ ...f, gender: k })} data-testid={`sp-gender-${k}`}>{l}</button>)}</div>
       {meta?.html_imports > 0 && <div className="seg">{[["save", "From the save"], ["html", "HTML imports"]].map(([k, l]) => <button key={k} className={f.source === k ? "on" : ""} onClick={() => setF({ ...f, source: k })} data-testid={`sp-source-${k}`}>{l}</button>)}</div>}
@@ -62,6 +62,7 @@ export const PlayersTab = () => {
   const act = useAct();
   const statKeys = cols === "all" ? meta?.metrics.map((m) => m.key) || [] : cols === "key" ? KEY_STATS : [];
   const label = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.label]));
+  const isPct = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.kind === "pct"]));
   const sortBy = (k) => setF({ ...f, sort: k, dir: f.sort === k && f.dir === "desc" ? "asc" : "desc" });
   const Th = ({ k, children, title }) => <th onClick={() => sortBy(k)} style={{ cursor: "pointer", whiteSpace: "nowrap", color: f.sort === k ? "var(--acc)" : undefined }} title={title}>{children}{f.sort === k ? (f.dir === "desc" ? " ↓" : " ↑") : ""}</th>;
   const star = (r) => act(() => api.post("/scouting/shortlist", { unique_id: r.unique_id, action: "add" }), `${r.name} added to the shortlist`, ["rankings"]);
@@ -93,7 +94,7 @@ export const PlayersTab = () => {
                 <td className="mono">{r.value ? fmtMoney(r.value, prefs) : "—"}</td>
                 <td className="mono" title={r.fair_price ? `Confidence: ${r.confidence}` : "Not enough minutes"}>{r.fair_price ? fmtMoney(r.fair_price, prefs) : "—"}</td>
                 <td className="mono">{fmtWage(r.wage, prefs)}</td><td className="mono">{r.minutes}</td>
-                {statKeys.map((k) => <Pct key={k} v={r.stats[k]} p={r.pct[k]} marker={marker} />)}
+                {statKeys.map((k) => <Pct key={k} v={r.stats[k]} p={r.pct[k]} marker={isPct[k] ? null : marker} />)}
                 {cols === "computed" && meta?.archetypes.map((a) => <Pct key={a.key} v={r.computed?.[a.key]} p={r.computed?.[a.key]} />)}
                 {cols === "actions" && ["Defensive actions", "Progressive actions", "Box involvement"].map((a) => <td key={a} className="mono">{num(r.actions?.[a])}</td>)}
                 <td onClick={(e) => e.stopPropagation()}><button className={`btn${compare.includes(r.unique_id) ? " btn-p" : ""}`} onClick={() => toggleCompare(r.unique_id)} title="Compare" data-testid={`sp-compare-${r.unique_id}`}><Scale size={13} /></button></td>

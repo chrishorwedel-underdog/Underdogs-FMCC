@@ -110,7 +110,7 @@ export const PacksTab = () => {
   const [pack, setPack] = useState(null);
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
-  const { data } = useGet("pack", `/editor/packs/${encodeURIComponent(pack)}`, { q, offset, limit: 60 }, { enabled: !!pack });
+  const { data } = useGet("pack", `/editor/packs/${encodeURIComponent(pack)}`, { pack, q, offset, limit: 60 }, { enabled: !!pack });
   return (
     <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }} data-testid="packs-tab">
       <div className="card">{packs.map((p) => <div key={p.name} className="row" style={{ cursor: "pointer", color: pack === p.name ? "var(--acc)" : undefined }} onClick={() => { setPack(p.name); setOffset(0); }} data-testid={`pack-${p.name}`}>

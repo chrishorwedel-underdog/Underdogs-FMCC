@@ -67,6 +67,8 @@ ARCHETYPES = {
     "overlap_fb": ("Overlapping Full-back", {"acr": (8, "in"), "crc": (6, "in"), "xa": (6, "in"), "spr": (6, "in"), "tkr": (5, "out"), "intc": (4, "out")}),
     "sweeper_keeper": ("Sweeper Keeper", {"progp": (8, "in"), "passc": (7, "in"), "xgp": (7, "out"), "savep": (5, "out")}),
 }
+ARCH_GROUPS = {"bpd": ["CB"], "box_crasher": ["CM", "AM", "W", "ST"], "pressing_fwd": ["ST", "W", "AM"], "dlp": ["DM", "CM"], "ball_winner": ["DM", "CM"],
+               "inverted_winger": ["W", "AM"], "overlap_fb": ["FB"], "sweeper_keeper": ["GK"]}
 HIDDEN = ["consistency", "important_matches", "injury_proneness", "versatility", "professionalism", "ambition", "pressure", "temperament", "loyalty", "controversy"]
 
 
@@ -132,7 +134,8 @@ def _med_mad(vals: list) -> tuple:
 async def _state_key(c: dict) -> tuple:
     import leagues_api
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "save_no": 1, "game_date": 1})
-    counts = [await db[x].count_documents({"career_id": c["id"]}) for x in ("possession", "computed_stats", "html_imports")]
+    counts = [await db[x].count_documents({"career_id": c["id"]}) for x in ("possession", "computed_stats")]
+    counts.append(",".join(sorted([d["id"] async for d in db.html_imports.find({"career_id": c["id"], "status": "active"}, {"id": 1})])))
     mult = await leagues_api.multipliers(c)
     return (c["id"], (pool or {}).get("save_no"), *counts, json.dumps(mult, sort_keys=True)), mult
 
@@ -145,7 +148,7 @@ async def latest_docs(col: str, career_id: str, key: str) -> dict:
 async def archetypes(career_id: str) -> dict:
     """Built-in archetypes (with your weight edits) plus up to 6 custom computed stats."""
     edits = await latest_docs("computed_stats", career_id, "key")
-    out = {k: {"key": k, "name": n, "metrics": {m: w for m, (w, _) in ms.items()}, "phases": {m: ph for m, (_, ph) in ms.items()}, "builtin": True,
+    out = {k: {"key": k, "name": n, "metrics": {m: w for m, (w, _) in ms.items()}, "phases": {m: ph for m, (_, ph) in ms.items()}, "builtin": True, "groups": ARCH_GROUPS[k],
                "defaults": {m: w for m, (w, _) in ms.items()}} for k, (n, ms) in ARCHETYPES.items()}
     for k, e in edits.items():
         if e.get("status") == "deleted":
@@ -189,7 +192,7 @@ async def build(c: dict) -> dict:
             adj[k] = v if kind == "pct" else round(v * (pa if kind == "att" else 1 / pa), 3)
         r = _rng(p.get("unique_id") or 0, "know")
         players.append({**{k: p.get(k) for k in ("unique_id", "name", "age", "nationality", "club", "league", "positions", "ca", "pa", "value", "wage",
-                                                 "minutes", "appearances", "attributes", "own", "source", "import_id", "contract_end")},
+                                                 "minutes", "appearances", "attributes", "own", "source", "import_id", "contract_end", "linked")},
                         "gender": p.get("gender", "M"), "group": GROUP.get(p["positions"][0], "CM") if p.get("positions") else "CM", "cohort": cohort_of(p) if p.get("positions") else "Central midfielder",
                         "p90": p90, "adj": adj, "poss_mult": round(pa, 3), "league_mult": round(lm, 3), "hidden": hidden,
                         "personality": personality(hidden) if hidden else None, "knowledge": 100 if p["own"] else 20 + r.randint(0, 80),
@@ -198,14 +201,16 @@ async def build(c: dict) -> dict:
     arch = await archetypes(c["id"])
     for x in players:
         x["phases"] = {ph: _avg([x["pct"].get(m) for m in ms]) for ph, ms in PHASES.items()} if x["pct"] else {}
-        x["computed"] = {k: _score(x, a["metrics"]) for k, a in arch.items()} if x["pct"] else {}
+        x["computed"] = {k: _score(x, a["metrics"]) if not a.get("groups") or x["group"] in a["groups"] else None for k, a in arch.items()} if x["pct"] else {}
         x["actions"] = {n: round(sum(x["p90"].get(m, 0) * w for m, w in ws.items()), 2) for n, ws in ACTIONS.items()} if x["p90"] else {}
         x["confidence"] = "Low" if x["minutes"] < MIN_PRICE else "Medium" if x["minutes"] < 1800 else "High"
         if x.get("attributes"):
             b = roles.best_role(x)
             x["best_role"] = f"{b['name']} ({b['duty']})"
     _fair_prices(players)
-    data = {"players": players, "by_uid": {p["unique_id"]: p for p in players if p.get("unique_id")}, "game_date": gd, "archetypes": arch,
+    by_uid = {p["unique_id"]: p for p in players if p.get("unique_id") and p["source"] == "html"}
+    by_uid |= {p["unique_id"]: p for p in players if p.get("unique_id") and p["source"] == "save"}
+    data = {"players": players, "by_uid": by_uid, "game_date": gd, "archetypes": arch,
             "possession": poss, "season": pool.get("season")}
     CACHE.update(key=key, data=data)
     return data
@@ -257,7 +262,7 @@ def _grade(players: list):
                     a = parts.setdefault(m["category"], [0, 0])
                     a[0] += m["weight"] * s
                     a[1] += m["weight"]
-            if not parts:
+            if not parts or x["minutes"] < MIN_PCT:
                 continue
             A = parts["Analytical"][0] / parts["Analytical"][1] if parts.get("Analytical", [0, 0])[1] else 50
             O = parts["Actual"][0] / parts["Actual"][1] if parts.get("Actual", [0, 0])[1] else A

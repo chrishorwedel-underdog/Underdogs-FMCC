@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from core import db, active_career, now_iso, new_id, logger
 from editor_api import (fm_dirs, _png, _store, _draw, _cut_background, latest, add_revision, rebuild, people, clubs, club, KIT_SLOTS, DraftIn,
-                        _read_upload)
+                        stored_upload)
 
 router = APIRouter(prefix="/api/editor")
 MAX_ITEMS, MAX_TOTAL, MAX_ONE = 5000, 500 * 1024 * 1024, 5 * 1024 * 1024
@@ -58,7 +58,7 @@ async def upload_kit(uid: int, slot: str, file: UploadFile = File(...)):
     _slot(slot)
     c = await active_career()
     cl = await club(c, uid)
-    img = _store(fm_dirs(c), await _read_upload(file, SIZES["kits"]))
+    img = await stored_upload(c, file, SIZES["kits"])
     await add_revision(c, f"kit_{slot}", uid, cl["name"], {"image": img, "source": "Uploaded"}, f"{slot.title()} kit uploaded for {cl['name']}")
     return await rebuild(c)
 

@@ -13,7 +13,7 @@ const LeagueRow = ({ l, rows }) => {
   return (
     <tr style={{ cursor: "default" }} data-testid={`league-row-${l.name}`}>
       <td><b>{l.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{l.country || "Country unknown"} · reputation {l.reputation ?? "—"}</small></td>
-      <td><span className={`st ${tone}`} data-testid={`league-status-${l.name}`}>{st}</span>{l.between && <small style={{ display: "block", color: "var(--dim)", marginTop: 4 }}>between {l.between.filter(Boolean).join(" and ") || "—"}</small>}</td>
+      <td><span className={`st ${tone}`} data-testid={`league-status-${l.name}`}>{st}</span>{l.between?.some(Boolean) && <small style={{ display: "block", color: "var(--dim)", marginTop: 4 }}>{l.between.every(Boolean) ? `between ${l.between.join(" and ")}` : `placed from ${l.between.filter(Boolean)[0]} (nearest on the list)`}</small>}</td>
       <td>{l.status !== "womens" && <select className="inp" style={{ width: 250, height: 32 }} value={l.status === "estimated" ? "" : l.opta_name || ""}
         onChange={(e) => act(() => api.put(`/leagues/${encodeURIComponent(l.name)}/match`, { opta_name: e.target.value || null }), "Match saved", KEYS)} data-testid={`league-match-${l.name}`}>
         <option value="">Not on the list</option>{[...new Set([...(l.candidates || []), ...(l.opta_name ? [l.opta_name] : [])])].map((c) => <option key={c}>{c}</option>)}

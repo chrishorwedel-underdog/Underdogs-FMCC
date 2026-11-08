@@ -1,0 +1,63 @@
+{
+  "summary": "Stage 10 test (ScoutSheet views, FMDataLab analytics, league strength, graphics tools, Hungarian Best XI). Setup: TEST_career, FM27, 3 saves read, 227 players (203 men, 24 women). New pytest file test_fmcc_stage10_scout.py: 39/43 pass on a clean DB. The 4 failures are real bugs: grades shown under 400 minutes, and 3 HTML import bugs. UI (Playwright, 1920x1080) checks all new screens. Working: Full, Fair play and Moneyball masking (table and profile); every filter and preset; the women's toggle; total/p90/adjusted modes; the 4 column sets; header sorting; saved searches; CSV export; star, compare and currency/wage prefs (kept after a reload); the profile sheet (pitch, fair price and confidence, grades, contract tags, pizza chart, phases, ranged attributes in Fair play, hidden attributes and report in Full only, similar players, seasons table); DOF report (API, 1 LLM call, about 5 s; under 400 minutes gives 409 and the button is disabled); My Club weakest first with improvers; Deal Finder (<80%); Offers buy/sell verdicts; Scatter with average lines and click-to-profile; Compare plus breakdown; the 8 built-in archetypes ('differs from default' warning and Default reset); custom computed stats (3-12 stats, limit of 6 gives 409); tactical in/out search; Role scores (Moneyball shows a message); Leagues (Serie A matched to Italian Serie A, Highland estimated, women's not adjusted, match change, multiplier edit and reset, recalculate preview and apply, CSV import and back to built-in, list search); Possession (20-80 check, versions, adjusted mode marker); Kits (upload, remove, ChatGPT kit with template, 1 generation, use draft); Bulk kits panel; Pack browser; Bulk import (add/not in save/skipped counts, write, 409 on a second write, undo); Pack check; Squad page; Settings credits; ScoutSheet 'No release page yet'. I fixed 3 frontend bugs where React Query keys left out the id: the profile sheet showed the first player for every later player, My Club improvers didn't change with the position, and the Pack browser didn't change with the pack.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/scout/import-html -> /api/scout/players, /api/scout/player/{uid}, /api/scout/offer, dof-report", "issue": "stats_model.build: by_uid = {p['unique_id']: p for p in players} lets an HTML row with a UID OVERWRITE the save player with the same UID. After importing an HTML file with UID 30500004, the profile, Offers verdict and DOF report use the HTML copy (source 'html', no attributes, different grade and fair price: 21.7m instead of 14.7m).", "priority": "HIGH"},
+      {"endpoint": "DELETE /api/scout/imports/{id}", "issue": "Stats cache not invalidated. _state_key counts html_imports documents per career no matter their status, so removing an import (status -> removed) leaves the count the same. Removed HTML players stay in the Players 'HTML imports' source and keep hijacking profiles until some other change (for example a possession edit) busts the cache. Fix: put the active import ids (or a max 'at'/revision) in the key.", "priority": "HIGH"},
+      {"endpoint": "POST /api/scout/players (HTML source)", "issue": "The 'linked' flag is never copied into the player dict (missing from the key list in stats_model.build, around line 190), so every HTML row has linked=None. In the UI, every row shows 'Not linked', even rows that have a UID.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "stats_model._grade", "issue": "Grades need 400 minutes, but grade_local/grade_global are still worked out for players under 400 minutes. Only pct is cleared. Example: Theo Clarke has 90 minutes and grade 48.2, and grades show in the table, profile, My Club and deals for 30+ players. Set the grades to None when minutes < MIN_PCT."},
+      {"endpoint": "POST /api/scout/player/{uid}/dof-report", "issue": "f\"£{x['value']:,}\" crashes with a TypeError (500) when value is None (possible for HTML or live rows)."},
+      {"endpoint": "GET /api/scout/player/{uid}?view=fair", "issue": "In Fair play, role_ratings and best_role are worked out from the exact attributes, so they leak exact information. Also, 'similar': [s | {} for s in sim] does nothing."},
+      {"endpoint": "GET /api/scout/imports", "issue": "Returns removed imports as well (the UI lists 4 imports after they were all removed). Filter by status or show the status."},
+      {"endpoint": "computed archetypes", "issue": "All 8 archetypes are scored for every player, whatever his position (for example Sweeper Keeper 94 for a full-back). The tactical search has no default position filter, so Box Crasher is topped by full-backs and centre-backs when the out-of-possession weight is high."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PlayersTab Max age input", "issue": "Clearing the field (or typing a single digit like '2') sends max_age 0 or 2. The backend returns 422 (ge=14), the table and the total vanish, and no error is shown. Treat an empty value as 45 and clamp it, or debounce.", "selector": "[data-testid='sp-max-age']", "priority": "MEDIUM"},
+      {"component": "Compare tab (CompareTable)", "issue": "Uses the old /scouting/compare and ignores the view. In Moneyball (and Fair play) it still shows exact attributes and best roles. It doesn't show ScoutSheet grade, fair price or stats.", "selector": "[data-testid='moneyball-compare']", "priority": "MEDIUM"},
+      {"component": "LeaguesTab estimated row", "issue": "The Highland label reads 'between Eredivisie' with the second league missing.", "selector": "[data-testid='league-status-Highland Football League']", "priority": "LOW"},
+      {"component": "Shortlist tab", "issue": "Ignores the currency pref (always £) and uses the old rankings score.", "selector": "[data-testid='rankings-table']", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "HTML import -> Players (HTML source)", "issue": "The linked row with a UID shows 'Not linked' (backend linked=None), and a removed import still shows (cache).", "affected_selectors": ["[data-testid='sp-source-html']", "[data-testid^='html-import-remove-']"]}
+    ],
+    "design_issues": [
+      {"screen": "Profile / table", "issues": ["Zero value shows as '£0k' (should be '£0' or '—')", "Adjusted mode puts the '×' marker on percentage stats too (pass completion 88.3×), but those aren't adjusted", "Sample pool reuses names a lot (5 'Caio Souza', 2 'Lucas Rocha'), which makes the similar and compare lists confusing (sample data only)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage10_scout.py", "/app/test_reports/pytest/pytest_stage10.xml"],
+  "action_items": [
+    "Stop HTML rows overwriting save players in data['by_uid'] (keep the save player, or key the HTML rows separately)",
+    "Make the stats cache key aware of active html_imports (ids/status), so removing an import takes effect at once",
+    "Copy 'linked' into the built player dict for HTML rows",
+    "Leave grade_local/grade_global as None under 400 minutes (MIN_PCT)",
+    "Guard x['value'] None in the dof-report prompt",
+    "Handle an empty or partial Max age input in PlayersTab (no 422 and blank table)",
+    "Make the Compare tab follow the view (no attributes or roles in Moneyball; ranges in Fair play) and show ScoutSheet grade and fair price",
+    "Fix the 'between X and Y' label for estimated leagues",
+    "Update the stale regression tests: stage2_3 (pool size 100-160 is now 204; /changes/apply now needs preview_id) and stage4 (/api/matchlens/install moved to /api/connections/matchlens/install). These fail on a fresh DB and are NOT caused by stage 10."
+  ],
+  "critical_code_review_comments": [
+    "scout_api.py is 600 lines with an HTML parser, prefs, DOF, analytics and CRUD all in one file. Split the HTML import and the DOF report into their own modules.",
+    "_filter's sort lambda calls _value_of 3 times per element. Work it out once.",
+    "league_estimates and league_lists docs are inserted without an 'id' (only _id). Make sure all reads exclude _id (they do now).",
+    "leagues /import sets reference = top opta of the imported list rather than the documented 92.789 reference. Fine, but it should be shown or documented.",
+    "useGet convention: the query key is [key, params], so any dynamic URL must also put its id in params. 3 new components missed this (fixed by testing agent)."
+  ],
+  "updated_files": [
+    "/app/frontend/src/components/scout/ProfileSheet.jsx (uid added to useGet params; the profile sheet was stuck on the first opened player)",
+    "/app/frontend/src/components/scout/ClubDeals.jsx (group added to the improvers useGet params)",
+    "/app/frontend/src/components/editor/GraphicsTabs.jsx (pack added to the pack grid useGet params)",
+    "/app/backend/tests/test_fmcc_stage10_scout.py (new)",
+    "/app/backend/tests/test_fmcc_stage1.py (test_13 now allows the new 'scoutsheet' component)"
+  ],
+  "success_rate": {"backend": "91% (39/43 stage10 tests; 4 real bugs)", "frontend": "~88% (core flows work after the 3 query-key fixes; Max age, Compare view leak and HTML 'Not linked' are open)"},
+  "seed_data_creation": "TEST_career setup plus 3 sample saves read; TEST_ saved search, TEST_ computed stats, TEST_ HTML imports, 1 ChatGPT kit, bulk face import. At the end the DB was wiped (all collections dropped, as allowed by the main agent) and /app/backend/preview_fm deleted.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run stage10 serially: cd /app/backend && pytest tests/test_fmcc_stage10_scout.py -p no:xdist -o addopts='' (needs setup first: POST /api/setup/complete with FM27 'Sample Club FC', then POST /api/saves/read 3x). The default -n parallel run across all files corrupts shared state (careers switch), so run each stage file on its own after a DB wipe. Stage1 test_14 depends on GitHub releases (FMMatchLens latest now equals v0.7.0, so 'up_to_date'). It's environmental. Stage2_3 and stage4 are stale (see action items). Credits used: 1 DOF report, 1 kit generation. Scout UI testids: scout-view-tab-*, scouting-tab-*, sp-*, profile-*, myclub-pos-*, offer-*, scatter-*, arch-*, tactical-*, league-*, poss-input-<club>, html-import-*, editor-tab-kits|packs|bulk|check, kit-upload-<uid>-<slot> (a button; use expect_file_chooser), bulk-file-input.",
+  "rca of the issue": "Profile sheet stuck on the first player: useGet builds queryKey [key, params], and ProfileSheet passed only {view}, so every uid shared one cache entry. Body render is gated on data.unique_id === uid, so the 2nd and later players showed the old name with an empty body. The same pattern hit My Club improvers and Pack browser. Fixed by adding the id to params. HTML hijack: html players are appended after save players, and by_uid is built with a dict comprehension, so the last one wins. Removed-import staleness: the _state_key count_documents doesn't filter by status."
+}

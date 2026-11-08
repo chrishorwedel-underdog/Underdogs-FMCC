@@ -167,7 +167,7 @@ class TestFMCCFlow:
         assert r.status_code == 200
         d = r.json()
         keys = [c["key"] for c in d["components"]]
-        assert keys == ["fmcc", "fmsave", "fmlibreeditor", "fmmatchlens", "bepinex"]
+        assert keys[:5] == ["fmcc", "fmsave", "fmlibreeditor", "fmmatchlens", "bepinex"] and "scoutsheet" in keys
         by = {c["key"]: c for c in d["components"]}
         assert by["fmcc"]["status"] == "no_source"
         CTX["statuses"] = {k: v["status"] for k, v in by.items()}

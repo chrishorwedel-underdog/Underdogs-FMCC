@@ -7,7 +7,7 @@ export const MyClubTab = () => {
   const { view, prefs, openPlayer } = useScout();
   const [g, setG] = useState(null);
   const { data = [] } = useGet("myclub", "/scout/myclub", { view });
-  const { data: imp } = useGet("myclub-improvers", `/scout/myclub/${g}`, { view }, { enabled: !!g });
+  const { data: imp } = useGet("myclub-improvers", `/scout/myclub/${g}`, { view, group: g }, { enabled: !!g });
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(260px,340px) 1fr", gap: 16 }}>
       <div className="card" data-testid="myclub-positions"><div className="ttl">Your squad by position<span className="st n">weakest first</span></div>

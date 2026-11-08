@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Star, Scale } from "lucide-react";
 import { api } from "@/lib/api";
-import { useGet, useAct, TabBar, PageHead, money } from "@/lib/ui";
+import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
 import { RulesTab } from "@/components/rules/RulesTab";
-import { ScoutCtx } from "@/components/scout/ctx";
+import { ScoutCtx, useScout, fmtMoney } from "@/components/scout/ctx";
 import { PlayersTab } from "@/components/scout/PlayersTab";
 import { ProfileSheet } from "@/components/scout/ProfileSheet";
 import { MyClubTab, DealsTab } from "@/components/scout/ClubDeals";
@@ -14,6 +14,7 @@ import { PossessionTab, ImportTab } from "@/components/scout/DataTabs";
 
 const Shortlist = ({ open }) => {
   const { data } = useGet("rankings", "/scouting/rankings", { shortlist_only: true, sort: "score" });
+  const { prefs } = useScout();
   const act = useAct();
   return (
     <div className="card" style={{ padding: 8, overflowX: "auto" }}>
@@ -22,7 +23,7 @@ const Shortlist = ({ open }) => {
         <tbody>{data?.rows.map((r) => (
           <tr key={r.unique_id} onClick={() => open(r.unique_id)} data-testid={`ranking-row-${r.unique_id}`}>
             <td onClick={(e) => e.stopPropagation()}><button className="ib" style={{ width: 28, height: 28, color: "var(--amb)" }} onClick={() => act(() => api.post("/scouting/shortlist", { unique_id: r.unique_id, action: "remove" }), "Removed from shortlist", ["rankings"])} data-testid={`shortlist-toggle-${r.unique_id}`}><Star size={14} fill="currentColor" /></button></td>
-            <td><b>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.nationality} · {r.positions.join(", ")}</small></td><td>{r.age}</td><td>{r.club}</td><td>{r.best_role}</td><td className="mono">{money(r.value)}</td><td className="mono" style={{ color: "var(--acc)" }}>{r.score}</td>
+            <td><b>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.nationality} · {r.positions.join(", ")}</small></td><td>{r.age}</td><td>{r.club}</td><td>{r.best_role}</td><td className="mono">{fmtMoney(r.value, prefs)}</td><td className="mono" style={{ color: "var(--acc)" }}>{r.score}</td>
           </tr>))}</tbody>
       </table>
       {data && !data.rows.length && <p className="note" style={{ padding: 10 }}>Star players in the Players tab to shortlist them.</p>}
@@ -31,15 +32,17 @@ const Shortlist = ({ open }) => {
 };
 
 const CompareTable = ({ ids, clear }) => {
+  const { view, prefs } = useScout();
   const { data = [] } = useGet("compare", "/scouting/compare", { ids: ids.filter((i) => i > 0).join(",") }, { enabled: ids.some((i) => i > 0) });
-  const keys = data[0] ? Object.keys(data[0].attributes) : [];
+  const keys = data[0] && view === "full" ? Object.keys(data[0].attributes) : [];
+  const money = (v) => fmtMoney(v, prefs);
   return (
     <div className="card" style={{ overflowX: "auto" }} data-testid="moneyball-compare">
       <div className="ttl">Side by side<span style={{ marginLeft: "auto" }} /><button className="btn" onClick={clear} data-testid="compare-clear">Clear</button></div>
       <table className="tbl" style={{ marginTop: 10 }}>
         <thead><tr><th></th>{data.map((p) => <th key={p.unique_id}>{p.name}</th>)}</tr></thead>
         <tbody>{[["Club", (p) => p.club], ["Age", (p) => p.age], ["Value", (p) => money(p.value)], ["Average rating", (p) => p.avg_rating ?? "—"], ["Value for money", (p) => p.vfm],
-          ["Best roles", (p) => p.roles.map((r) => `${r.name} ${r.rating}`).join(" · ")], ...keys.map((k) => [k.replace(/_/g, " "), (p) => p.attributes[k]])].map(([l, fn]) => (
+          ...(view === "full" ? [["Best roles", (p) => p.roles.map((r) => `${r.name} ${r.rating}`).join(" · ")]] : []), ...keys.map((k) => [k.replace(/_/g, " "), (p) => p.attributes[k]])].map(([l, fn]) => (
           <tr key={l} style={{ cursor: "default" }}><td style={{ color: "var(--mut)", textTransform: "capitalize" }}>{l}</td>{data.map((p) => <td key={p.unique_id} className="mono">{fn(p)}</td>)}</tr>))}</tbody>
       </table>
     </div>

@@ -12,6 +12,7 @@ export const fmtMoney = (v, prefs) => {
   if (v == null) return "—";
   const [sym, r] = RATE[prefs?.currency || "GBP"];
   const x = v * r;
+  if (!x) return `${sym}0`;
   return x >= 1e6 ? `${sym}${(x / 1e6).toFixed(1)}m` : `${sym}${Math.round(x / 1000)}k`;
 };
 export const fmtWage = (v, prefs) => {
