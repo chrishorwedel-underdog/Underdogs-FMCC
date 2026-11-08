@@ -1,0 +1,46 @@
+{
+  "summary": "Full Stage 1 E2E test of FMCC. Backend: 16 pytest flow tests (setup/409, detect, home, squad identity matching, save reading + auto backups, departures/joins, search, careers create/switch, folder, live GitHub updates check + apply/rollback, auto-install, backups + restore). Found & fixed 1 critical bug (POST /api/backups 500 due to Mongo _id leaking). After fix 16/16 pass. Frontend: setup wizard, Home cards/attention/next match, read-save toast & date advance, Same name / New tags, departed section, filters, player sheet + chart + ?player= deep link, command palette (Ctrl+K, players, actions), Settings careers/new career/switch/folder, updates apply/rollback, auto-install persistence, backup restore dialog + date rollback, placeholder routes, sidebar at 1920x800/1366x768, mobile 390. All requested flows work; a few minor issues listed. DB left cleared (fresh, setup not complete).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/backups", "issue": "FIXED: returned 500 (ObjectId not serializable) because create_backup() passed `doc` to insert_one which mutated it with _id, then returned doc. Backup was stored but the UI 'Back up now' showed an error. Fixed by insert_one(dict(doc)).", "priority": "CRITICAL"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/backups/{id}/restore", "issue": "Restoring also restores the 'settings' doc, so app preferences (auto_install_updates, last_update_check) revert to the backup's values. Consider excluding app prefs from restore (only careers/identities/snapshots/active_career_id/setup_complete)."},
+      {"endpoint": "POST /api/backups/{id}/restore", "issue": "Restore does delete_many then insert_many per collection without a transaction; a failure mid-restore leaves partial data (a pre-restore backup exists, so recoverable)."},
+      {"endpoint": "create_backup", "issue": "Only automatic backups are pruned (MAX 20). Manual and 'Before restoring a backup' backups hold a full data copy and are never pruned -> unbounded growth."},
+      {"endpoint": "POST /api/updates/check", "issue": "Unauthenticated GitHub API (60 req/hr/IP), 4 calls per check -> ~15 checks/hr before every component shows 'Couldn't check'. Not in io_lock either. Consider caching/throttling or a GITHUB_TOKEN env."},
+      {"endpoint": "Backups list", "issue": "Backup reason 'Before reading save #N' and counts.snapshots are global across careers, so with 2 careers the labels are ambiguous (e.g. 'Before reading save #1 · 4 saves'). Include career name in reason."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BackupsCard / UpdatesCard ?backup=1 / ?check=1 effect", "issue": "Command palette 'Back up my data now' created TWO Manual backups (two toasts). useEffect that calls backup() is not idempotent and React.StrictMode double-invokes effects in dev. Same pattern for ?check=1. Guard with a useRef flag (or remove param before acting).", "selector": "[data-testid='palette-item-0']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home at 1366x768", "issues": ["Home grid overflows .content by ~4px: Needs-your-attention card right edge at 1370px (cut off, no right gutter).", "Development card minute bars (.mbars .track) collapse to ~7px wide - unreadable.", "Card number captions wrap awkwardly ('Best XI / average ability', 'weeks to season / end'); Elite Training title wraps to 2 lines. Consider collapsing bento to 2 columns below ~1440px."]},
+      {"screen": "Settings Careers", "issues": ["'1 saves read' - pluralisation."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage1.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Make ?backup=1 / ?check=1 handlers in BackupsCard/UpdatesCard idempotent (useRef guard) so palette actions run once",
+    "Fix Home bento layout at ~1366px (overflow + 7px minute bars)",
+    "Decide whether backup restore should revert app settings (auto-install, last check); probably exclude",
+    "Prune manual/pre-restore backups or cap total backups",
+    "Throttle/cache GitHub release checks (rate limit 60/hr)"
+  ],
+  "critical_code_review_comments": [
+    "server.py create_backup: insert_one mutated returned dict (fixed).",
+    "read_next_save creates the backup and inserts the snapshot before the optimistic career update; on 409 the snapshot/identities are already written (io_lock makes this unlikely in practice).",
+    "rollback_update sets status 'update_available' unconditionally even if previous_version >= latest.",
+    "Frontend: Home/Squad queries have no error state (Home shows 'Loading your club…' forever on API error)."
+  ],
+  "updated_files": ["/app/backend/server.py (create_backup: insert_one(dict(doc)))", "/app/backend/tests/test_fmcc_stage1.py"],
+  "success_rate": {"backend": "100% (16/16 after fix; 15/16 before)", "frontend": "~95% (all requested flows pass; double-backup and 1366 layout issues)"},
+  "test_credentials": "None - no login",
+  "seed_data_creation": "Created test careers (TEST_Career A/B, TEST_Second career) during tests; all test collections cleared at the end as requested (settings, careers, identities, snapshots, backups, components are empty; /api/state shows setup_complete=false).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend test file test_fmcc_stage1.py requires an EMPTY DB (clear settings/careers/identities/snapshots/backups/components in test_database first) and runs sequentially in one class; run with `-n 0`. It mutates components.fmmatchlens to v0.7.0 to test apply/rollback via live GitHub (skips if GitHub rate-limited). Clear the DB again after running so the user sees first-run setup."
+}

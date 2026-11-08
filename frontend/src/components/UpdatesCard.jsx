@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { RefreshCw, ArrowUpCircle, Undo2 } from "lucide-react";
@@ -30,8 +30,9 @@ export const UpdatesCard = ({ autoInstall }) => {
     try { await fn(); toast.success(ok); qc.invalidateQueries({ queryKey: ["updates"] }); } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
   const check = () => act(() => api.post("/updates/check"), "Update check finished");
+  const fired = useRef(false);
   useEffect(() => {
-    if (params.get("check")) { setParams({}); check(); }
+    if (params.get("check") && !fired.current) { fired.current = true; setParams({}); check(); }
   }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
   const setAuto = (v) => act(() => api.put("/settings/auto-install", { auto_install: v }).then(() => qc.invalidateQueries({ queryKey: ["state"] })), v ? "Updates will install on their own" : "Updates will ask first");
   return (

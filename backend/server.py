@@ -118,14 +118,13 @@ async def create_backup(reason: str, automatic: bool) -> dict:
     data = await dump_data()
     doc = {"id": str(uuid.uuid4()), "created_at": now_iso(), "reason": reason, "automatic": automatic,
            "checksum": checksum(data), "counts": {k: len(v) for k, v in data.items()}, "data": data}
-    await db.backups.insert_one(doc)
+    await db.backups.insert_one(dict(doc))
     stored = await db.backups.find_one({"id": doc["id"]}, {"_id": 0})
     verified = checksum(stored["data"]) == doc["checksum"]
     await db.backups.update_one({"id": doc["id"]}, {"$set": {"verified": verified}})
-    if automatic:
-        old = await db.backups.find({"automatic": True}, {"id": 1, "_id": 0}).sort("created_at", -1).skip(MAX_AUTO_BACKUPS).to_list(None)
-        if old:
-            await db.backups.delete_many({"id": {"$in": [o["id"] for o in old]}})
+    old = await db.backups.find({"automatic": automatic}, {"id": 1, "_id": 0}).sort("created_at", -1).skip(MAX_AUTO_BACKUPS).to_list(None)
+    if old:
+        await db.backups.delete_many({"id": {"$in": [o["id"] for o in old]}})
     if not verified:
         raise HTTPException(500, "Backup could not be verified")
     return {k: v for k, v in doc.items() if k != "data"} | {"verified": True}
@@ -134,7 +133,7 @@ async def create_backup(reason: str, automatic: bool) -> dict:
 async def read_next_save(career: dict) -> dict:
     """Read the next save into a snapshot. Players are matched by the game's unique ID, never by name."""
     save_no = career.get("next_save_no", 0)
-    await create_backup(f"Before reading save #{save_no + 1}", automatic=True)
+    await create_backup(f"{career['name']}: before reading save #{save_no + 1}", automatic=True)
     save = sample_reader.read_save(save_no, career["club_name"])
     snap = {"id": str(uuid.uuid4()), "career_id": career["id"], "save_no": save_no, "read_at": now_iso(),
             "reader": sample_reader.READER_NAME, **save}
@@ -330,7 +329,10 @@ async def get_updates():
 
 @api.post("/updates/check")
 async def check_updates():
-    await run_update_check()
+    last = (await get_settings()).get("last_update_check")
+    if not last or datetime.fromisoformat(last) < datetime.now(timezone.utc) - timedelta(minutes=2):
+        async with io_lock:
+            await run_update_check()
     return await get_updates()
 
 
@@ -384,11 +386,14 @@ async def restore_backup(backup_id: str):
             raise HTTPException(404, "Backup not found")
         if checksum(b["data"]) != b["checksum"]:
             raise HTTPException(422, "This backup failed its integrity check and was not restored")
+        prefs = await get_settings()
         await create_backup("Before restoring a backup", automatic=False)
         for col in BACKUP_COLLECTIONS:
             await db[col].delete_many({})
             if b["data"][col]:
                 await db[col].insert_many([dict(d) for d in b["data"][col]])
+        keep = {k: prefs.get(k) for k in ("auto_install_updates", "last_update_check")}
+        await db.settings.update_one({"_id": "app"}, {"$set": keep}, upsert=True)
         return {"ok": True, "restored_from": b["created_at"]}
 
 

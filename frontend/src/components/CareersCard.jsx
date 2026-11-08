@@ -42,7 +42,7 @@ export const CareersCard = ({ career }) => {
       <div className="ttl">Careers<span style={{ marginLeft: "auto" }} /><button className="btn" onClick={() => setOpen(true)} data-testid="new-career-button"><Plus size={14} />New career</button></div>
       {data.map((c) => (
         <div className="row" key={c.id} data-testid={`career-row-${c.id}`}>
-          <div style={{ flex: 1 }}><b>{c.name}</b><small>{c.club_name} · {c.edition} · {gameDate(c.last_game_date)} · {c.next_save_no} saves read</small></div>
+          <div style={{ flex: 1 }}><b>{c.name}</b><small>{c.club_name} · {c.edition} · {gameDate(c.last_game_date)} · {c.next_save_no} {c.next_save_no === 1 ? "save" : "saves"} read</small></div>
           {c.active ? <span className="st ok">Active</span> : <button className="btn" onClick={() => activate(c.id)} data-testid={`career-activate-${c.id}`}>Switch</button>}
         </div>
       ))}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { DatabaseBackup, ShieldCheck } from "lucide-react";
@@ -16,8 +16,9 @@ export const BackupsCard = () => {
     setBusy(true);
     try { await api.post("/backups"); toast.success("Backup saved and verified"); qc.invalidateQueries({ queryKey: ["backups"] }); } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
+  const fired = useRef(false);
   useEffect(() => {
-    if (params.get("backup")) { setParams({}); backup(); }
+    if (params.get("backup") && !fired.current) { fired.current = true; setParams({}); backup(); }
   }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
   const doRestore = async () => {
     setBusy(true);
