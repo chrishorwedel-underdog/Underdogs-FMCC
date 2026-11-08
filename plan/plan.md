@@ -1,63 +1,70 @@
-# Saved Presets and Updatable Name Lists for Player Creator
+# FMCC on GitHub, with Automatic Windows Installer Releases
 
-Player Creator lets users save their own batch settings as named presets and reuse them in any career.
-FMCC's built-in names can also be topped up with name-list updates that FMCC publishes, and the added names mix in with the built-in ones.
+FMCC's code moves into a public GitHub repository. Every change saved there automatically builds a fresh Windows installer (FMCC-Setup.exe) and publishes it as the newest release.
+The website's download button always offers that newest installer, with its version number and date.
 
 ## Who it's for
-FM players who make new careers with created players. They want their usual batch setups one click away, and they want name variety that keeps growing without them editing files by hand.
+- The owner, who wants the code safely on GitHub and a new installer out after every change, without building anything by hand.
+- FM players visiting the website, who want one button that downloads the current version of FMCC for Windows.
 
 ## Core features and experience
 
-**Saved presets**
-- "Save as preset" stores the current form (count, nations, ages, ability, height, positions, ethnicities, skin range, face matching) under a name the user picks.
-- Saved presets show up next to the built-in ones (Academy intake, Wonderkids, and so on), marked "Yours", in every career.
-- Users can rename, overwrite with the current settings, or delete their presets. Built-in presets can't be changed, but they can be saved as a copy.
-- If a saved preset names a country FMCC no longer knows, the preset still loads. That country is left out, and a note says so.
+**Moving the code to GitHub**
+- The code is sent to GitHub with the "Save to GitHub" button in the Emergent chat box. It connects the owner's GitHub account and creates or picks a repository; there are no commands to type.
+- The repository is public, so anyone can see the code. This matches FMCC's GPL-3.0 open-source licence and the credits already shown in the app.
+- Each later "Save to GitHub" sends the newest changes to the same repository.
+- Private settings never go to GitHub. This covers keys, the database address and the preview environment files.
 
-**Layered name lists**
-- Names come from two layers, combined for each country:
-  1. Built-in names that ship with FMCC.
-  2. Name-list updates published by FMCC. These are added to the built-in names and never replace them. Duplicate names are only counted once.
-- Each country's name count shows how many names come from each layer, for example "Senegal: 24 built-in + 40 from update".
-- A country that gets names from an update stops borrowing from its closest neighbour's list.
-- "Check for name updates" compares the installed list with the latest published one. It shows what's new (countries added, names added) and installs it only after the user confirms. The previous version is kept so it can be rolled back.
-- Players already created keep their names. The new names only affect batches made later.
+**Automatic installer builds**
+- Every save to the main branch starts a build on GitHub's Windows machines. This uses the free GitHub Actions minutes that public repositories get.
+- The build packages FMCC into one installer, FMCC-Setup.exe. That includes the app, its built-in parts (fmsave, FMLibreEditor, FMMatchLens support files, the league strength data and the name lists) and a Start-menu shortcut.
+- Each successful build is published as a new GitHub release:
+  - It gets an automatic version number that goes up on every build, for example v0.2.14.
+  - Short release notes list the changes since the last release.
+- If a build fails, nothing is published, and the website keeps offering the last good installer. GitHub emails the owner about the failed build.
+- Name-list updates for the Player Creator (`fmcc-names.json`) are attached to the same releases. That turns on the name-update check already in the app.
 
-**Working alongside the sortitoutsi Real Name Fix**
-- The Real Name Fix changes the names of clubs, competitions, awards and stadiums. It doesn't contain names by nationality, so it can't fill FMCC's name lists.
-- FMCC and the Real Name Fix sit side by side without touching each other's files:
-  - The fix lives in the game's database folders.
-  - FMCC's created-player files go into editor data under FMCC's own file name.
-  - FMCC never deletes, moves or changes the fix's files.
-- FMCC's name updates are built and published by FMCC. They are not copied from sortitoutsi.
+**Website download**
+- The download button on the website's front page shows the latest version, the release date and the file size. It downloads FMCC-Setup.exe straight from GitHub.
+- The website is pointed at the repository once, through the existing release-repository setting.
+  - Until that setting is filled in, the button keeps saying the download isn't set up yet.
+- A short note under the button explains the warning Windows will show, because the installer is unsigned. It says to choose "More info", then "Run anyway", so first-time users aren't put off.
+- Inside the Windows program, the download button stays hidden. FMCC's existing update check uses the same releases to tell users when a newer version is out.
 
 ## User flow
-1. Open Player & Teams Editor, then Creator. Pick a preset or fill in the form.
-2. Click "Save as preset" and name it. It's now available in every career.
-3. Optionally click "Check for name updates", review what's new, then confirm or skip.
-4. Preview the batch. Each name shows which layer it came from. Then create.
+1. The owner clicks "Save to GitHub" in Emergent and connects GitHub the first time.
+2. GitHub builds the installer by itself. A few minutes later a new release appears with FMCC-Setup.exe attached.
+3. The owner gives FMCC the repository name once, in the secure keys card, then re-publishes the website.
+4. A visitor opens the website, clicks "Download for Windows" and runs the installer.
+5. Whenever the owner makes a change and saves to GitHub again, a new installer appears. The website and the installed app both pick it up.
 
 ## UI/UX feel
-- The same style as the current Creator tab. "Yours" presets appear in the existing preset row with a small tag.
-- The name-update panel works like the existing release-download box. It says plainly when no update channel is set up yet.
-- Every action gets a short confirmation. Deleting a preset asks first.
+- The download button keeps its current look. It adds a version tag, the release date and size, and the small Windows-warning note.
+- In the app, "a new version is available" uses the existing update card in Settings. There's no new screen.
 
 ## Implementation phases
 - **Phase 1 (built now, MVP):**
-  - Save, rename, overwrite and delete presets, available in every career.
-  - The two-layer name list with per-country counts and a per-name source tag.
-  - "Check for name updates" with preview, confirm and roll back.
+  - The repository setup guide in the app's docs.
+  - The automatic build-and-release on every save to main, with automatic version numbers and release notes.
+  - Name-list files attached to releases.
+  - The website download button showing the version, date and size, plus the unsigned-installer note.
+  - The in-app update check reading the same releases.
 - **Phase 2:**
-  - A personal layer on top, so users can add or hide names for any country themselves.
-  - Export and import presets as a file to share with friends.
+  - Code signing, to remove the Windows warning once a certificate is bought.
+  - A download count, and a "What's new" panel on the website built from the release notes.
 - **Phase 3:**
-  - Add names from a list the user supplies, such as a spreadsheet of names per country.
-  - Warn when a created player's name matches someone already in the user's game database.
+  - Separate test builds for trying changes before they go to everyone.
+  - Updates that install themselves inside the app with one click, plus a portable (no-install) zip.
 
 ## Assumptions
-- Presets are stored per FMCC install, not per user account (FMCC has no accounts).
-- Name updates use the same publishing channel as the Windows installer download. That channel isn't set up yet, so until it is, the update check says "not set up yet" and only built-in names are used.
-  - In this browser preview, the update check is shown with a sample update file, clearly labelled as a sample.
-- An update can only add names or countries. It never removes built-in names.
-- Names that match famous real players aren't added to FMCC's published lists, so batches don't accidentally create a real star.
-- Nothing is verified in the real game until it's tested on the user's PC.
+- The repository is public (chosen). There's no access key, and the website links straight to GitHub's download.
+- A new installer is built and published on every change saved to the main branch (chosen). Version numbers go up automatically, and there's no separate "beta" channel.
+- The installer is not code-signed for now (chosen). Windows SmartScreen will warn on first run.
+- The owner has, or will create, a free GitHub account. Moving the code is done with Emergent's "Save to GitHub" button, not by hand.
+- The repository name is given to FMCC once through the secure keys card. It is never written into the code.
+- GitHub's free Actions minutes for public repositories cover these builds.
+- The installer and its built-in parts follow their licences:
+  - FMLibreEditor is GPL-3.0, which fits FMCC's GPL-3.0 licence.
+  - fmsave and FMMatchLens are MIT, and BepInEx is LGPL-2.1.
+  - Third-party packs (NG_Regens, the sortitoutsi Real Name Fix, logo and kit packs) are never included. The app keeps sending users to their official downloads.
+- Installing and running on the owner's Windows PC is still unverified until the first real installer is tested there.

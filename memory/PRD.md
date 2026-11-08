@@ -154,3 +154,9 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Unverified on Windows: os.startfile for the installer, the real game folder layout (shared/data/database/db), FM27 Real Name Fix availability.
 - (2026-11-08) Missing pack reminder: `components/PackBanner.jsx` shows a small banner on Player faces (NG_Regens) and Licensing fix (Real Name Fix) when the pack isn't found, with Get it, Install it / Downloads you need, and a hide button (remembered per pack in this browser). Licensing tab refreshes the pack status after its scan. Self-tested with screenshots (desktop + 390px, NG_Regens missing simulated in the browser).
 
+
+## 2026-11-08 GitHub + automatic Windows installer releases
+- `.github/workflows/windows-installer.yml`: every push to main (or Run workflow) builds on windows-latest, version `v0.2.<run_number>`, writes `release_repo.txt` + `version.txt` into the package, builds FMCC-Setup.exe (Inno Setup), makes `fmcc-names.json` from `release/fmcc-names.json` with the release version, release notes from git log since the last tag + SmartScreen note, publishes a GitHub release (make_latest) with both files. Failed build = nothing published.
+- `desktop/launcher.py` sets FMCC_VERSION from version.txt; `updates.py` uses it for FMCC's own update check. `.gitignore` now ignores `.env` files. `desktop/README.md` is the setup guide (Save to GitHub, public repo, FMCC_RELEASE_REPO in the keys card, re-publish).
+- Website download box: version, release date, size, unsigned-installer note (checked with a mocked release response). Real release flow not run yet: needs the repository and FMCC_RELEASE_REPO.
+

@@ -5,7 +5,7 @@ from urllib.parse import unquote
 import httpx
 
 COMPONENTS = [  # key, name, role, GitHub repo (None = not published yet), bundled version
-    ("fmcc", "FMCC", "The program itself", os.environ.get("FMCC_RELEASE_REPO") or None, "v0.1.0"),
+    ("fmcc", "FMCC", "The program itself", os.environ.get("FMCC_RELEASE_REPO") or None, os.environ.get("FMCC_VERSION") or "dev"),
     ("fmsave", "fmsave", "Built-in save reader", "rhiever/fmsave", "v0.10.0"),
     ("fmlibreeditor", "FMLibreEditor", "Built-in game editor", "tozmoz/FMLibreEditor", "v0.5.0"),
     ("fmmatchlens", "FMMatchLens", "Match analytics add-on", "osnsyc/FMMatchLens", "v0.7.1"),

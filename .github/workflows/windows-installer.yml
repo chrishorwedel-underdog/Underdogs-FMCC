@@ -1,10 +1,17 @@
 name: Windows installer
 
+# Every save to main builds FMCC-Setup.exe on a Windows machine and publishes it as the newest release.
 on:
   push:
     branches: ["main"]
-    tags: ["v*"]
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-installer
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -12,12 +19,16 @@ jobs:
     env:
       MONGODB_VERSION: "7.0.14"
       FMLIBRE_TAG: "v0.5.0"
+      FMCC_VERSION: "0.2.${{ github.run_number }}"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Never ship preview settings or keys
         shell: pwsh
         run: Remove-Item -Force -ErrorAction SilentlyContinue backend/.env, frontend/.env
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -59,11 +70,16 @@ jobs:
           "FMLibreEditor $env:FMLIBRE_TAG command-line tool (fmlibre-probe), GPL-3.0. Source: https://github.com/tozmoz/FMLibreEditor/tree/$env:FMLIBRE_TAG" | Out-File desktop/fmlibre/SOURCE.txt
           desktop/fmlibre/fmlibre-probe.exe --help
 
+      - name: Record the repository and version
+        shell: pwsh
+        run: |
+          "${{ github.repository }}" | Out-File -Encoding ascii -NoNewline desktop/release_repo.txt
+          "v$env:FMCC_VERSION" | Out-File -Encoding ascii -NoNewline desktop/version.txt
+
       - name: Package the program
         run: >
-          echo ${{ github.repository }} > desktop/release_repo.txt &&
           pyinstaller desktop/launcher.py --name FMCC --noconsole --noconfirm --icon desktop/fmcc.ico
-          --add-data "desktop/release_repo.txt;."
+          --add-data "desktop/release_repo.txt;." --add-data "desktop/version.txt;."
           --add-data "backend;backend" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb" --add-data "desktop/fmlibre;fmlibre"
           --collect-all fmsave --collect-all emergentintegrations --collect-submodules uvicorn --hidden-import motor --hidden-import psutil
 
@@ -72,17 +88,34 @@ jobs:
 
       - name: Build the installer
         shell: pwsh
+        run: iscc desktop/fmcc.iss
+
+      - name: Name list for the Player Creator
+        shell: pwsh
         run: |
-          $env:FMCC_VERSION = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME.TrimStart("v") } else { "0.0.0-dev" }
-          iscc desktop/fmcc.iss
+          python -c "import json,os; d=json.load(open('release/fmcc-names.json',encoding='utf-8')); d['version']='v'+os.environ['FMCC_VERSION']; d.pop('sample',None); json.dump(d,open('dist-installer/fmcc-names.json','w',encoding='utf-8'),ensure_ascii=False)"
+
+      - name: Release notes
+        shell: pwsh
+        run: |
+          $prev = git describe --tags --abbrev=0 2>$null
+          $range = if ($prev) { "$prev..HEAD" } else { "HEAD~20..HEAD" }
+          $log = git log $range --no-merges --pretty="- %s" | Select-Object -First 40
+          @("FMCC v$env:FMCC_VERSION for Windows 10/11.", "", "Changes:") + $log + @("", "Windows may warn that the installer is from an unknown publisher (it isn't code-signed yet). Choose More info, then Run anyway.") | Out-File -Encoding utf8 notes.md
 
       - uses: actions/upload-artifact@v4
         with:
           name: FMCC-Setup
-          path: dist-installer/*.exe
+          path: dist-installer/*
 
       - name: Publish the release
-        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          files: dist-installer/*.exe
+          tag_name: v${{ env.FMCC_VERSION }}
+          name: FMCC v${{ env.FMCC_VERSION }}
+          target_commitish: ${{ github.sha }}
+          body_path: notes.md
+          make_latest: "true"
+          files: |
+            dist-installer/FMCC-Setup.exe
+            dist-installer/fmcc-names.json

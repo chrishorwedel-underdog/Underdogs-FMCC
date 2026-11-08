@@ -37,7 +37,8 @@ def start_server():
         os.environ.update({k: v for k, v in json.loads(cfg.read_text()).items() if isinstance(v, str)})
     os.environ.update({"MONGO_URL": f"mongodb://127.0.0.1:{DB_PORT}", "DB_NAME": "fmcc", "CORS_ORIGINS": f"http://127.0.0.1:{APP_PORT}",
                        "FMCC_READER": "fmsave", "FMCC_STATIC_DIR": str(BASE / "web"), "FMCC_PROBE": str(BASE / "fmlibre" / "fmlibre-probe.exe"),
-                       "FMCC_RELEASE_REPO": (BASE / "release_repo.txt").read_text().strip() if (BASE / "release_repo.txt").exists() else ""})
+                       "FMCC_RELEASE_REPO": (BASE / "release_repo.txt").read_text().strip() if (BASE / "release_repo.txt").exists() else "",
+                       "FMCC_VERSION": (BASE / "version.txt").read_text().strip() if (BASE / "version.txt").exists() else "dev"})
     sys.path.insert(0, str(BASE / "backend"))
     import uvicorn
     import connections_api
