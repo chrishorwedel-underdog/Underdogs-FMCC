@@ -1,0 +1,43 @@
+{
+  "summary": "Stage 4 (Matches + DOF chat) tested end to end: backend pytest (new test_fmcc_stage4.py, 12 tests) plus Playwright UI flows on Matches, chalkboard, Season per 90, Scouting 'Seen vs us', per-90 rule fields, and DOF chat with the real gpt-5.6-terra model (9 LLM calls). Almost everything works: install gating, 4 matches per read, score/xG/momentum, all 4 chalkboard layers, every filter, the hover tooltips, the disabled replay button, player cards, the season table with sparklines, the Seen vs us tags with tooltip, per-90 fields in the rule builder and test endpoint. In the DOF chat: status header, new conversation, typing indicator, word-by-word streaming, persistence after reload, switching conversations, earlier context used, lineup/plan/shortlist drafts accepted and checked in Squad, Development and Shortlist, dismiss, 409 on a second accept or dismiss, DP refusal, and per-career conversation lists. Regression: stage1 15/16 (test_14 is the known throttling test issue) and stage2_3 17/17. Found 2 real bugs: the conversation title doesn't refresh in the UI, and matches are generated for FM27 careers.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "server.py read_next_save -> sample_matches.play_month", "issue": "Matches are generated for FM27 careers too. The Setup card says FMMatchLens supports FM26 only ('on FM27 this screen waits for FM27 support') and install stores fm27_supported=False, but read_next_save only checks ml.installed. Reproduced: a new FM27 career (TEST_UI2) got 4 matches on its first read. Fix: skip generation when career.edition == 'FM27' and not ml.fm27_supported."},
+      {"endpoint": "dof_api.build_context", "issue": "The scouting context only includes the top 15 players by PA plus up to 8 'seen vs us' players. A question like 'best young striker in the scouting pool' got 'There is no striker in the scouting pool sample', though the pool has strikers. Consider adding the top N per position group or a short per-role list."},
+      {"endpoint": "dof_api.split_action", "issue": "If the model wraps the ACTION JSON in a multi-line ```json fence, tail.strip('`') leaves 'json\\n{...}', JSON parsing fails, and the draft is silently dropped. Strip a leading 'json' and newlines, or regex-extract the {...}."},
+      {"endpoint": "POST /api/dof/conversations/{id}/stream", "issue": "The user message is saved and the title renamed before the LLM call. If the stream errors, the conversation is left with a user message and no reply. Low impact."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Dof.jsx Thread.ask", "issue": "The conversation list (dof-conversations) is not refetched after a message streams, so the title stays 'New conversation' and the order/updated time stay stale until reload or creating another conversation. The backend renames it correctly. Fix: invalidate/refetch the 'dof-convs' query after the stream finishes.", "selector": "[data-testid^='dof-conv-']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Matches list", "issues": ["After a second save read, the selected match stays on the old one (25 Aug) instead of jumping to the newest (24 Sept), because the id still exists.", "Sample opponents repeat in the same order every month (Castleford, Kingsmere, Northbridge, Port Ellis), so pairs like 2-0 Port Ellis appear twice."]},
+      {"screen": "Chalkboard filters", "issue_note": "filter-player lists all 22 players from both teams in one flat list without team grouping. Optgroups per team would help.", "issues": ["Heat map uses a single blue colour for both teams even when 'Both teams' is selected."]},
+      {"screen": "Scouting sample data", "issues": ["Duplicate names in the pool (two 'Lucas Rocha', two 'Ade Eze', two 'Lucas Souza' at different clubs) make DOF answers and the Seen vs us list ambiguous. The DOF does use ids, so accepted drafts are still correct."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage4.py", "/app/test_reports/pytest/pytest_stage4.xml", "/app/backend/tests/test_fmcc_stage1.py", "/app/backend/tests/test_fmcc_stage2_3.py"],
+  "action_items": [
+    "Dof.jsx: refetch/invalidate 'dof-convs' after each stream completes so the conversation title and order update live.",
+    "server.py read_next_save: don't generate matches for FM27 careers while fm27_supported is False (or change the UI copy).",
+    "dof_api.build_context: give the DOF a per-position scouting sample so it can answer position-specific transfer questions.",
+    "dof_api.split_action: handle a ```json fenced ACTION block."
+  ],
+  "critical_code_review_comments": [
+    "Accept is idempotent with an atomic claim (pending->accepting) and rolls back on error. Good.",
+    "Career isolation of drafts and conversations is enforced via _conv(career). Verified 404 across careers.",
+    "The live bubble hides text after 'ACTION:', but a partial token like 'ACTI' can flash briefly during streaming. Cosmetic.",
+    "season_per90 is called without a team filter in own_contexts. Fine unless opponent ids could collide with squad ids."
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage4.py"],
+  "success_rate": {"backend": "100% of stage4 core (12/12 after test fixes; 1 FM27 gating bug found by review/UI)", "frontend": "~95% (1 stale conversation-title bug)"},
+  "seed_data_creation": "Created TEST_ careers (TEST_S4, TEST_S4b, TEST_UI, TEST_UI2) during testing. DB cleared at the end (all collections except status_checks) as requested.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_fmcc_stage4.py needs an EMPTY DB, -n 0, and makes 2 real LLM calls (lineup draft, shortlist draft). test_10 may fail if the LLM declines to draft. test_11 expects 4 matches for a new career because the install is app-wide (if FM27 gating is fixed and the new career is FM27, update it to expect 0; the test career is FM26 so 4 still applies). The stage1 test_14 failure is the known update-check throttle test issue. Clear the DB before each test file. Note: the container restarted once mid-test and /tmp was wiped.",
+  "rca of the issue": "Stale title: Thread.ask only calls refetch() for 'dof-msgs', and the 'dof-convs' query is never invalidated after the backend sets the title on first message. FM27 matches: read_next_save checks only matchlens.installed and ignores career.edition and fm27_supported."
+}

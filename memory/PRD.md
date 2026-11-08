@@ -40,10 +40,15 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Rules tab in every module: plain-sentence builder or parameter sentences, versions/history, reset, export/import, Test this rule.
 - Stage 3: change queue, Ask me first / Apply automatically per source, a verified backup before each batch, background batches with progress, pause/resume, undo, audit trail, idempotency keys. The game editor is the SAMPLE editor (MOCKED): changes reach the sample save on the next read.
 
+## Implemented (2026-11-08) — Stage 4 (browser preview)
+- Matches: one-click FMMatchLens + BepInEx install (MOCKED: install simulated, matches are SAMPLE FMMatchLens-shaped data, 4 per save read), match summary, xG timeline, momentum, chalkboard (shots, passes, defensive, heat map) with team/half/player/pass-type filters and hover details, player match cards, season per-90 table with trends. Replays: disabled button (FMMatchLens viewer in the Windows program).
+- Match evidence: 'Seen vs us' opponents in Scouting, per-90 fields (xG, xA, key passes, pressures, defensive actions) in every rule builder.
+- DOF chat (REAL): OpenAI gpt-5.6-terra via the Emergent universal key in the preview (OPENAI_API_KEY env overrides it). Streaming, typing indicator, saved per-career conversations, suggested questions, squad/plans/matches/scouting context, drafted actions (lineup, shortlist, nomination, plan) saved only on Accept, never reveals Dynamic Potential values.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
-- P1 Stage 4: FMMatchLens setup, Matches module, match evidence in modules, DOF chat (OpenAI gpt-5.6-terra, user's key).
+- P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.
 - P2: restore inside a transaction; GitHub token for update checks; user-saved named presets beyond export/import; registration presets per real league.
 
 ## Next tasks
-Stage 4 (match analytics + DOF chat), or Windows packaging with the real reader and editor.
+Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchLens data.

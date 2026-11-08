@@ -59,7 +59,7 @@ const MatchView = ({ id }) => {
           <TabBar id="layer" value={layer} onChange={setLayer} tabs={[["shots", "Shots"], ["passes", "Passes"], ["defensive", "Defensive"], ["heat", "Heat map"]]} />
           <select className="inp" style={{ width: 150 }} value={f.team} onChange={set("team")} data-testid="filter-team"><option value="both">Both teams</option><option value="us">{m.club_name}</option><option value="them">{m.opponent}</option></select>
           <select className="inp" style={{ width: 120 }} value={f.half} onChange={set("half")} data-testid="filter-half"><option value="all">Full match</option><option value="1">1st half</option><option value="2">2nd half</option></select>
-          <select className="inp" style={{ width: 190 }} value={f.player} onChange={set("player")} data-testid="filter-player"><option value="">All players</option>{m.players.map((p) => <option key={p.unique_id} value={p.unique_id}>{p.name}</option>)}</select>
+          <select className="inp" style={{ width: 190 }} value={f.player} onChange={set("player")} data-testid="filter-player"><option value="">All players</option>{[["us", m.club_name], ["them", m.opponent]].map(([t, n]) => <optgroup key={t} label={n}>{m.players.filter((p) => p.team === t).map((p) => <option key={p.unique_id} value={p.unique_id}>{p.name}</option>)}</optgroup>)}</select>
           {layer === "passes" && <select className="inp" style={{ width: 150 }} value={f.kind} onChange={set("kind")} data-testid="filter-pass-kind"><option value="all">All passes</option><option value="progressive">Progressive</option><option value="key">Key passes</option></select>}
         </div>
         <Chalkboard m={m} layer={layer} f={f} />
@@ -90,7 +90,7 @@ const Setup = ({ ml, edition }) => {
   return (
     <div className="card" data-testid="matchlens-setup">
       <div className="ttl">Match analytics add-on<span className={`st ${ml.installed ? "ok" : "a"}`} style={{ marginLeft: "auto" }} data-testid="matchlens-status">{ml.installed ? `Installed · FMMatchLens ${ml.fmmatchlens}` : "Not installed"}</span></div>
-      <p className="note" style={{ marginTop: 6 }}>One click installs BepInEx and FMMatchLens into FM's game folder (Steam version). Matches you play are then recorded automatically. FMMatchLens currently supports FM26{edition === "FM27" ? ", so on FM27 this screen waits for FM27 support" : ""}. Browser preview: the install is simulated and matches are sample data.</p>
+      <p className="note" style={{ marginTop: 6 }}>One click installs BepInEx and FMMatchLens into FM's game folder (Steam version). Matches you play are then recorded automatically. FMMatchLens currently supports FM26, so in the Windows program an FM27 career waits for FM27 support here. Browser preview: the install is simulated, and sample matches are shown for FM26 and FM27 so you can try the screen.</p>
       <div style={{ marginTop: 10 }}>{ml.installed
         ? <button className="btn btn-d" onClick={() => act(() => api.post("/matchlens/uninstall"), "Add-on removed", ["matches"])} data-testid="matchlens-uninstall"><Trash2 size={13} />Remove add-on</button>
         : <button className="btn btn-p" onClick={() => act(() => api.post("/matchlens/install"), "Installed. Matches are recorded from the next save.", ["matches"])} data-testid="matchlens-install"><Download size={13} />Install match analytics</button>}</div>
@@ -102,7 +102,8 @@ export default function Matches() {
   const { data } = useGet("matches", "/matches");
   const [tab, setTab] = useState("match");
   const [id, setId] = useState(null);
-  useEffect(() => { if (data?.matches?.length && !data.matches.some((m) => m.id === id)) setId(data.matches[0].id); }, [data, id]);
+  const newest = data?.matches?.[0]?.id;
+  useEffect(() => { if (newest) setId(newest); }, [newest]);
   if (!data) return <p className="note">Loading matches…</p>;
   return (
     <div data-testid="matches-page">

@@ -21,7 +21,7 @@ const Draft = ({ m, act }) => {
   );
 };
 
-const Thread = ({ conv, status }) => {
+const Thread = ({ conv, status, onDone }) => {
   const { data: msgs = [], refetch } = useGet("dof-msgs", `/dof/conversations/${conv}/messages`, { conv });
   const act = useAct();
   const [text, setText] = useState("");
@@ -49,7 +49,7 @@ const Thread = ({ conv, status }) => {
         }
       }
     } catch (e) { toast.error(e.message || errMsg(e)); }
-    await refetch(); setLive(null);
+    await refetch(); setLive(null); onDone();
   };
   return (
     <div className="card" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 230px)", minHeight: 480 }} data-testid="dof-thread">
@@ -73,7 +73,7 @@ const Thread = ({ conv, status }) => {
 
 export default function Dof() {
   const { data: status } = useGet("dof-status", "/dof/status");
-  const { data: convs = [] } = useGet("dof-convs", "/dof/conversations");
+  const { data: convs = [], refetch: refetchConvs } = useGet("dof-convs", "/dof/conversations");
   const act = useAct();
   const [conv, setConv] = useState(null);
   useEffect(() => { if (!conv && convs.length) setConv(convs[0].id); }, [convs, conv]);
@@ -89,7 +89,7 @@ export default function Dof() {
           {convs.length === 0 && <p className="note" style={{ padding: 8 }}>No conversations yet.</p>}
           {convs.map((c) => <div key={c.id} className={`pi${c.id === conv ? " sel" : ""}`} onClick={() => setConv(c.id)} data-testid={`dof-conv-${c.id}`}><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</span><small>{ago(c.updated_at)}</small></div>)}
         </div>
-        {conv ? <Thread key={conv} conv={conv} status={status} /> : <div className="soon">Start a new conversation to talk to your Director of Football.</div>}
+        {conv ? <Thread key={conv} conv={conv} status={status} onDone={refetchConvs} /> : <div className="soon">Start a new conversation to talk to your Director of Football.</div>}
       </div>
     </div>
   );

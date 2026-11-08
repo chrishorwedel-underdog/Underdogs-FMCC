@@ -1,6 +1,7 @@
 """DOF chat: a Director of Football that streams answers and can draft actions you must accept."""
 import json
 import os
+import re
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -11,6 +12,7 @@ import roles
 from core import db, active_career, latest_two, month_minutes, now_iso, new_id, logger
 from matches_api import season_per90
 from rules_api import current as current_rules
+from sample_reader import GROUP
 
 router = APIRouter(prefix="/api/dof")
 MODEL = ("openai", "gpt-5.6-terra")
@@ -46,6 +48,12 @@ async def build_context(c: dict) -> str:
     sl_ids = [d["_id"] async for d in db.shortlist.aggregate(sl_pipe)]
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {"players": []}
     pool_by = {p["unique_id"]: p for p in pool["players"]}
+    groups = {}
+    for p in sorted(pool["players"], key=lambda p: -(p["pa"] + p["ca"])):
+        g = GROUP[p["positions"][0]]
+        if len(groups.setdefault(g, [])) < 4:
+            groups[g].append(p)
+    pool_lines = "; ".join(f"id {p['unique_id']} {p['name']} {p['age']} {'/'.join(p['positions'])} {p['club']} CA {p['ca']} PA {p['pa']} value {p['value']}" for ps in groups.values() for p in ps)
     plans = await db.plans.find({"career_id": c["id"]}, {"_id": 0, "name": 1, "minutes_target": 1, "loan": 1, "revision": 1}).sort("revision", -1).to_list(30)
     pending = await db.changes.count_documents({"career_id": c["id"], "status": "queued"})
     return f"""Club: {c['club_name']} ({c['edition']}), game date {latest['game_date']}, season {latest['season']}.
@@ -57,7 +65,7 @@ DEVELOPMENT RULES: U21 monthly target {rules['target_minutes']} min, max {rules[
 RECENT MATCHES: {'; '.join(f"{m['date']} vs {m['opponent']} {m['score']['us']}-{m['score']['them']} (xG {m['xg']['us']}-{m['xg']['them']})" for m in matches) or 'none recorded'}
 OPPONENTS SEEN VS US (scouting ids): {'; '.join(f"id {a['unique_id']} {a['name']} ({a['club']}) rating {a['avg_rating']}" for a in seen) or 'none'}
 SHORTLIST: {', '.join(pool_by[i]['name'] + f" ({pool_by[i]['club']}, id {i})" for i in sl_ids if i in pool_by) or 'empty'}
-SCOUTING POOL SAMPLE (best by PA): {'; '.join(f"id {p['unique_id']} {p['name']} {p['age']} {'/'.join(p['positions'])} {p['club']} CA {p['ca']} PA {p['pa']}" for p in sorted(pool['players'], key=lambda p: -p['pa'])[:15])}
+SCOUTING POOL (best 4 per position group): {pool_lines}
 DEVELOPMENT PLANS: {'; '.join(f"{p['name']} {p['minutes_target']} min, {p['loan']}" for p in plans[:12]) or 'none'}
 GAME CHANGES WAITING FOR APPROVAL: {pending}"""
 
@@ -81,12 +89,12 @@ def split_action(text: str):
         return text.strip(), None
     body, _, tail = text.rpartition(MARK)
     try:
-        action = json.loads(tail.strip().strip("`"))
+        action = json.loads(re.search(r"\{.*\}", tail, re.S).group(0))
         if action.get("type") not in ("lineup", "shortlist", "nomination", "plan"):
             action = None
     except (json.JSONDecodeError, AttributeError):
         action = None
-    return body.strip(), action
+    return body.strip().rstrip("`").strip(), action
 
 
 class NewConv(BaseModel):

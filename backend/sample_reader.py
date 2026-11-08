@@ -99,7 +99,7 @@ def scouting_pool(save_no: int, game_date: date, months_played: int, edits: dict
     out, uid = [], 30500000
     for league, clubs in LEAGUES.items():
         for club in clubs:
-            for i in range(10):
+            for i in range(12):
                 uid += 1
                 rng = random.Random(uid)
                 nat = rng.choice(list(FIRST))
@@ -109,7 +109,7 @@ def scouting_pool(save_no: int, game_date: date, months_played: int, edits: dict
                 ca = int(max(60, min(pa, pa - rng.randint(0, 60) * (1 if age < 23 else 0.3) + growth * save_no)))
                 e = edits.get(uid, {})
                 ca, pa2 = max(1, min(200, ca + e.get("ca", 0))), max(1, min(200, pa + e.get("pa", 0)))
-                pos = POS_POOL[i % len(POS_POOL)] if i < 10 else rng.choice(POS_POOL)
+                pos = POS_POOL[i % len(POS_POOL)]
                 minutes = int(months_played * rng.uniform(40, 360))
                 exp = 6.0 + (ca - 100) / 100
                 out.append({"unique_id": uid, "name": f"{rng.choice(FIRST[nat])} {rng.choice(LAST[nat])}", "age": age, "nationality": nat,

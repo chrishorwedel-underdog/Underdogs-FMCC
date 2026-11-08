@@ -90,7 +90,7 @@ def play_month(save_no: int, game_date: str, club_name: str, players: list, pool
     out = []
     for m in range(4):
         rng = random.Random(save_no * 100 + m)
-        opp = opponents[(save_no * 4 + m) % len(opponents)]
+        opp = opponents[(save_no + m) % len(opponents)]
         opp_players = [p for p in pool if p["club"] == opp]
         theirs, their_str = _lineup(opp_players, form) if opp_players else ([], 60)
         s1, p1, d1, st1 = _team_events(rng, "us", ours, our_str, their_str)

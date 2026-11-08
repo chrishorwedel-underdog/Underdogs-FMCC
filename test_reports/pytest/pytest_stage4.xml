@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="12" time="12.007" timestamp="2026-11-08T01:32:57.453374+00:00" hostname="agent-env-7563821f-67e7-4883-817b-326c24cf0bc6"><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_01_setup" time="0.523" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_02_no_matches_before_install" time="0.363" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_03_install_and_generate" time="0.710" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_04_match_detail" time="0.304" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_05_season_per90" time="0.098" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_06_scouting_seen_vs_us" time="0.107" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_07_rules_per90" time="0.175" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_08_dof_status_conversations" time="0.577" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_09_dof_lineup_draft_accept" time="5.036" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_10_dof_shortlist_draft_dismiss" time="2.916" /><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_11_career_isolation" time="0.511"><failure message="AssertionError: assert [{'date': '20...Rovers', ...}] == []&#10;  &#10;  Left contains 4 more items, first extra item: {'date': '2027-07-25', 'home': False, 'id': 'bbe3476f-9f24-4e99-9f65-8e198afe0931', 'opponent': 'Port Ellis United', ...}&#10;  &#10;  Full diff: (-: missing in left side, +: extra in left side)&#10;  - []&#10;  + [&#10;  +     {...&#10;  &#10;  ...Full output truncated, use '-vv' to show">tests/test_fmcc_stage4.py:170: in test_11_career_isolation
+    assert S.get(f"{API}/matches").json()["matches"] == []
+E   AssertionError: assert [{'date': '20...Rovers', ...}] == []
+E     
+E     Left contains 4 more items, first extra item: {'date': '2027-07-25', 'home': False, 'id': 'bbe3476f-9f24-4e99-9f65-8e198afe0931', 'opponent': 'Port Ellis United', ...}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     - []
+E     + [
+E     +     {...
+E     
+E     ...Full output truncated, use '-vv' to show</failure></testcase><testcase classname="tests.test_fmcc_stage4.TestStage4" name="test_12_uninstall_stops_generation" time="0.518" /></testsuite></testsuites>

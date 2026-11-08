@@ -13,11 +13,11 @@ const Field = () => (
   </g>
 );
 
-const Heat = ({ pts }) => {
+const Heat = ({ pts, color }) => {
   const g = {};
   pts.forEach(([x, y]) => { const k = `${Math.min(11, Math.floor(x / (W / 12)))}-${Math.min(7, Math.floor(y / (H / 8)))}`; g[k] = (g[k] || 0) + 1; });
   const max = Math.max(1, ...Object.values(g));
-  return Object.entries(g).map(([k, v]) => { const [i, j] = k.split("-").map(Number); return <rect key={k} x={i * (W / 12)} y={j * (H / 8)} width={W / 12} height={H / 8} fill="#4C8DFF" opacity={(v / max) * 0.75} />; });
+  return Object.entries(g).map(([k, v]) => { const [i, j] = k.split("-").map(Number); return <rect key={k} x={i * (W / 12)} y={j * (H / 8)} width={W / 12} height={H / 8} fill={color} opacity={(v / max) * 0.6} />; });
 };
 
 export const Chalkboard = ({ m, layer, f }) => {
@@ -28,7 +28,7 @@ export const Chalkboard = ({ m, layer, f }) => {
     <div style={{ position: "relative" }} data-testid="chalkboard">
       <svg viewBox={`-2 -2 ${W + 4} ${H + 4}`} style={{ width: "100%", background: "radial-gradient(ellipse at 50% 40%,#0F1F19,#0A110E 70%)", borderRadius: 14 }}>
         <Field />
-        {layer === "heat" && <Heat pts={[...passes.map((p) => pos(p.team, p.x1, p.y1)), ...defs.map((d) => pos(d.team, d.x, d.y)), ...shots.map((s) => pos(s.team, s.x, s.y))]} />}
+        {layer === "heat" && ["us", "them"].map((t) => <Heat key={t} color={COL[t]} pts={[...passes.filter((p) => p.team === t).map((p) => pos(p.team, p.x1, p.y1)), ...defs.filter((d) => d.team === t).map((d) => pos(d.team, d.x, d.y)), ...shots.filter((s) => s.team === t).map((s) => pos(s.team, s.x, s.y))]} />)}
         {layer === "passes" && passes.map((p, i) => { const [a, b] = pos(p.team, p.x1, p.y1), [c, d] = pos(p.team, p.x2, p.y2); return <line key={i} x1={a} y1={b} x2={c} y2={d} stroke={p.completed ? COL[p.team] : "rgba(255,255,255,.35)"} strokeWidth={p.key ? 0.6 : 0.3} opacity={p.completed ? 0.8 : 0.5} strokeDasharray={p.completed ? "" : "1 1"} />; })}
         {layer === "defensive" && defs.map((d, i) => { const [x, y] = pos(d.team, d.x, d.y); return <text key={i} x={x} y={y} fontSize="2.4" fill={COL[d.team]} textAnchor="middle" onMouseEnter={() => setTip({ x, y, t: `${d.player} · ${d.type} · ${d.minute}'` })} onMouseLeave={() => setTip(null)}>{DEF[d.type]}</text>; })}
         {layer === "shots" && shots.map((s, i) => { const [x, y] = pos(s.team, s.x, s.y); return <circle key={i} cx={x} cy={y} r={0.8 + s.xg * 4} fill={s.outcome === "goal" ? COL[s.team] : "transparent"} stroke={COL[s.team]} strokeWidth=".35" style={{ cursor: "pointer" }}
