@@ -444,7 +444,7 @@ def _layer(slots: list, players: list, used: set) -> dict:
     out = {}
     for i, j in enumerate(roles._hungarian(cost)):
         if j is not None and j < n and rate[i][j] is not None:
-            out[slots[i]["key"]] = {"unique_id": cand[j]["unique_id"], "name": cand[j]["name"], "rating": rate[i][j], "natural": True}
+            out[slots[i]["key"]] = {"unique_id": cand[j]["unique_id"], "name": cand[j]["name"], "age": cand[j].get("age"), "club": cand[j].get("club"), "rating": rate[i][j], "natural": True}
     return out
 
 

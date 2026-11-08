@@ -4,7 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 
-const Who = ({ r, tag }) => <small style={{ display: "block" }}>{tag}: {r ? `${r.name} ${r.rating}` : "nobody"}</small>;
+const extra = (r) => [r.club, r.age != null ? `age ${r.age}` : null].filter(Boolean).join(", ");
+const Who = ({ r, tag, dup }) => <small style={{ display: "block" }} data-testid={r ? `fit-who-${r.unique_id}` : undefined}>{tag}: {r ? <>{r.name}{dup.has(r.name) && <span style={{ color: "var(--dim)" }}> ({extra(r)})</span>} {r.rating}</> : "nobody"}</small>;
+const dupNames = (slots = []) => {
+  const seen = new Map();
+  slots.flatMap((s) => [s.starter, s.backup, s.depth]).filter(Boolean).forEach((r) => seen.set(r.name, (seen.get(r.name) || 0) + 1));
+  return new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k));
+};
 
 export const TacticFit = () => {
   const [formation, setFormation] = useState("433");
@@ -21,11 +27,11 @@ export const TacticFit = () => {
         <label className="btn" data-testid="tactic-import"><FileUp size={13} />Import .fmf<input type="file" accept=".fmf" hidden onChange={(e) => { if (e.target.files[0]) upload(e.target.files[0]); e.target.value = ""; }} /></label>
         <button className="btn" onClick={() => act(() => api.post("/squad/tactics", { formation }), "Tactic saved", ["tactics"])} data-testid="tactic-save">Save as tactic</button></div>
         <p className="note" style={{ marginTop: 4 }}>{data?.note} Weakest slots first in Squad gaps.</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))", gap: 10, marginTop: 10 }}>{data?.slots.map((s) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))", gap: 10, marginTop: 10 }}>{(() => { const dup = dupNames(data?.slots); return data?.slots.map((s) => (
           <div key={s.slot} className="card" style={{ padding: 10, borderColor: data.gaps.some((g) => g.slot === s.slot) ? "var(--amb)" : undefined }} data-testid={`fit-slot-${s.slot}`}>
             <b>{s.label}</b><span className="st n">{s.score}</span><small style={{ display: "block", color: "var(--dim)" }}>{s.role_name}</small>
-            <Who r={s.starter} tag="Starter" /><Who r={s.backup} tag="Backup" /><Who r={s.depth} tag="Depth" />
-          </div>))}</div>
+            <Who r={s.starter} tag="Starter" dup={dup} /><Who r={s.backup} tag="Backup" dup={dup} /><Who r={s.depth} tag="Depth" dup={dup} />
+          </div>)); })()}</div>
       </div>
       <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
         <div className="card" data-testid="squad-gaps"><div className="ttl">Squad gaps</div>

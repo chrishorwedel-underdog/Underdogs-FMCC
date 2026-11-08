@@ -30,13 +30,13 @@ const FindStep = ({ form, set, next }) => {
   };
   return (
     <div>
-      <h2 className="ttl">Find Football Manager</h2>
-      <p className="note">FMCC finds FM and your save folder for you. In this browser preview it uses a sample save instead of your PC.</p>
+      <h2 className="ttl" style={{ justifyContent: "center", textAlign: "center" }} data-testid="setup-find-title">Find Football Manager</h2>
+      <p className="note" style={{ textAlign: "center" }} data-testid="setup-find-text">FMCC finds FM and your save folder for you. In this browser preview it uses a sample save instead of your PC.</p>
       <div className="wiz-row">
         <div className="seg">
           {["FM26", "FM27"].map((e) => <button key={e} className={form.edition === e ? "on" : ""} onClick={() => { set({ edition: e }); setFound(false); }} data-testid={`setup-edition-${e.toLowerCase()}`}>{e}</button>)}
         </div>
-        {!found && <button className="btn btn-p btn-l" onClick={detect} disabled={busy} data-testid="setup-detect-button">{busy ? <Loader2 size={18} className="animate-spin" /> : <FolderSearch size={18} />}Find {form.edition}</button>}
+        {!found && <button className="btn btn-g btn-l" onClick={detect} disabled={busy} data-testid="setup-detect-button">{busy ? <Loader2 size={18} className="animate-spin" /> : <FolderSearch size={18} />}Find {form.edition}</button>}
       </div>
       {found && (
         <div style={{ marginTop: 24 }}>

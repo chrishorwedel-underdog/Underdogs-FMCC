@@ -94,6 +94,8 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - First-run setup redesigned: bigger logo, title, step cards and card; edition selector and Find button on one line (also on mobile).
 - Tested: iteration_11 (14/14 new + 35/35 Stage 11 regression + UI). Fixed afterwards: starter pack limit handling, one-line selector at 390px.
 
+- (2026-11-08) Tactic fit cards add "(club, age N)" next to players whose name appears more than once. Setup: Find Football Manager title and text centred, Find button on the right and green. Self-checked with screenshots (desktop + 390px) and the API.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.
