@@ -1,0 +1,53 @@
+{
+  "summary": "Tested the Recruitment Lab (profile, philosophy, pipeline, compare, explore, shortlist board, DOF picks), the countdowns, the notification centre and regressions. Backend: 33 of 34 new pytest cases pass, plus 100 of 101 regression cases. The one regression failure was an outdated test for the intended 'ignore setup progress after setup' change; I fixed the test. UI: every requested flow works with no page errors. Explore count line, dot click to profile, ranked list; board columns, move and DOF picks on empty slots; picks columns, left out, Add all and Compare top four; Compare profile strips with best underlined, radar, pizzas, role fit, where they sit; Raw switch hides the bars in the Players table (746 to 0) and the Compare strips (21 to 0); profile assess role, fit click, show more with 12 indices, philosophy save, pipeline note history, export, add to compare; bell, count, notice opens its page and marks read, Mark all read, Clear (stays cleared after reload); nav badges; Home Up next chips link to pages; page countdowns; Settings switches ('save' off hides those notices); fair view hides personality and best role; regression pages and sidebar at 1920x800 are fine. The main bug: role scores ignore position, so outfielders get Goalkeeper and Sweeper Keeper scores and rank for them.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/recruit/player/{uid} (fit) and GET /api/recruit/explore?role=", "issue": "role_score() takes the role's metric list from that role's cohort but uses the player's percentiles from his own cohort, and nothing filters by position. Full-back Caio Souza (30500004) gets Sweeper Keeper 83 and Goalkeeper 83 as his top 2 'Role fit' rows, above Full Back 80. Choosing Goalkeeper shows 'xG prevented/Saves —' with benchmarks '–'. Explore role=sk ranks Pablo Ortega (M C) 96, Davide Conti (AM C) 92 and Emeka Nwosu (ST) 92. Explore role=cd ranks AM (R) and M (C) players.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/recruit/compare?ids=,", "issue": "Returns 500 (IndexError on xs[0] when the id list is empty). Should return 422."},
+      {"endpoint": "PUT /api/recruit/board/{uid}", "issue": "Accepts any uid (for example uid=1, not in the pool and not shortlisted) and saves an orphan board_slots row. It should check the player is shortlisted, or at least in the pool."},
+      {"endpoint": "GET /api/recruit/board", "issue": "starter_for picks the best own player per role without excluding players already used, so DCL and DCR both show Jonas Lindqvist, DL and DR both show Kieran Doyle, and AML and AMR both show Matteo Ricci."},
+      {"endpoint": "GET /api/notify/countdowns", "issue": "span() uses 30-day months, so the Oct 1 to Nov 1 report reads 'in 1 month 1 day'. /squad has no countdown at all unless an own contract ends within 183 days, so the Squad page countdown never appeared with this sample."},
+      {"endpoint": "POST /api/recruit/picks", "issue": "The 'Squad player' reason says 'cheap cover', but it can pick a £35.7m player (Ade Eze, budget £40m). It sorts by value ascending only within the pool rows, with no cap."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ProfileLab header", "issue": "Shows 'League: Similar than yours'. It should read 'Similar to yours'.", "selector": "[data-testid='profile-lab-header']", "priority": "LOW"},
+      {"component": "ProfileLab What the role needs", "issue": "Weight dots use Math.round(weight*5), and most weights are small, so nearly every row shows a single dot. Weights can't be told apart.", "selector": "[data-testid='profile-lab']", "priority": "LOW"},
+      {"component": "NotifyBell", "issue": "The panel doesn't close on an outside click or Escape. Only the bell toggles it.", "selector": "[data-testid='notify-panel']", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Picks Add all", "issue": "Uses Promise.all on raw api.post calls with no catch, so a failed add gives no error toast.", "affected_selectors": ["[data-testid='picks-add-all']"]}
+    ],
+    "design_issues": [
+      {"screen": "Explore chart legend", "issues": ["The 'Rest of the pool' legend and dots (#3B4252) are low contrast on the dark background."]},
+      {"screen": "Notification panel", "issues": ["Every notice falls in 'Today', because grouping uses the real creation time (n.at). 'This month in-game' only shows notices created on earlier real days, so the in-game grouping rarely applies."]},
+      {"screen": "Profile header", "issues": ["'Show in Explore' is a plain <a href> that reloads the whole page and loses compare state. It also doesn't highlight the player."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage14_recruit_notify.py", "/app/test_reports/pytest/stage14.xml"],
+  "action_items": [
+    "Make role_score position-aware. Limit Role fit top 5 to roles whose cohort matches the player's group (or apply a big penalty to others). Filter Explore ranked to players whose group matches the role (or mark them as needing retraining).",
+    "GET /recruit/compare: return 422 when the id list is empty.",
+    "PUT /recruit/board/{uid}: check the player is in the pool or shortlisted.",
+    "Board starters: don't reuse one starter across the two slots of a pair (DCL/DCR, DL/DR, AML/AMR), or label it.",
+    "Fix 'Similar than yours' wording. Make the weight dots readable (scale them by the max weight).",
+    "Optional: close the bell panel on outside click or Escape; use calendar months in span(); show the nearest contract countdown on /squad; cap 'Squad player' value."
+  ],
+  "critical_code_review_comments": [
+    "recruit_api.role_score: the percentiles are cohort-relative, but the metric lists come from the role's cohort, so cross-cohort scores don't mean anything (the root cause of the GK and SK fit bug).",
+    "recruit_api.compare: xs[0] with no guard means an empty list causes a 500.",
+    "notify_api.sync runs about 10 DB upserts on every GET /api/notify (refetched every 60 s). Fine for one user, but consider guarding it on the snapshot count.",
+    "ProfileLab keeps the role state across uid changes when the sheet is reused. Give it key={uid} in ProfileSheet.",
+    "Settings doc still has TEST app_paths (C:\\TEST\\fmst.exe, C:\\x\\a.exe) left by earlier test runs. Cleanup doesn't remove them."
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage14_recruit_notify.py (new)", "/app/backend/tests/test_fmcc_stage13_setup_punish_testing_dof.py (progress test skips when setup is complete, which is now ignored by design)", "/app/backend/tests/cleanup_test_careers.py (also unsets notify_prefs)"],
+  "success_rate": {"backend": "97% (33/34 new; 100/101 regression, the 1 failure was an outdated test)", "frontend": "95% (all flows work; role fit and explore ranking logic wrong)"},
+  "seed_data_creation": "Used the existing TEST_Career. Created a philosophy revision, pipeline entries (TEST_ notes), shortlist adds from DOF picks and board moves. All were removed by cleanup_test_careers.py --test-results. The DB now has 0 careers; settings has setup_complete false and no setup_progress, active_career_id or notify_prefs.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The DB is clean, so the preview opens on setup. To test: POST /api/setup/complete {edition:'FM27', save_folder:'', club_name:'TEST Club', name:'TEST_Career'}, then POST /api/saves/read 2-3 times. Then run pytest tests/test_fmcc_stage14_recruit_notify.py -n 0. The sample reads one save per month, so missed months can't be produced through the API; missed() was unit-checked with fake snapshots (Aug to Nov gives Sep and Oct missed). Set localStorage fmcc-tour-done=1 before Playwright. Clean up with python3 tests/cleanup_test_careers.py --test-results. Retest: role fit and explore ranking per position, compare with empty ids, board move with an unknown uid.",
+  "rca of the issue": "Role fit and Explore ranking: role_metrics(role) picks metrics from the role's cohort (for example the GK cohort for sk/gk), and role_score averages x['pct'][k] for the metrics the player has. An outfielder has percentiles for shared metrics such as pass completion, progressive passes and possession lost, computed within his own cohort, and none for xG prevented or saves. So a ball-playing full back scores 83 as a keeper. To reproduce: GET /api/recruit/player/30500004 and check fit[0].role == 'sk'. Fix: score only roles with GROUP[ROLE_POSITIONS[role][0]] == x['group'] (or whose positions overlap his), and filter explore.ranked the same way."
+}

@@ -75,6 +75,7 @@ export const NotifyBell = () => {
     <div style={{ position: "relative" }}>
       <button className="ib" onClick={() => setOpen(!open)} title="Notifications" data-testid="notify-bell"><Bell size={16} />
         {!!data?.unread && <span className="bell-n" data-testid="notify-count">{data.unread}</span>}</button>
+      {open && <div style={{ position: "fixed", inset: 0, zIndex: 79 }} onClick={() => setOpen(false)} data-testid="notify-backdrop" />}
       {open && <div className="bell-pop card" data-testid="notify-panel">
         <div className="ttl">Notifications<span style={{ marginLeft: "auto" }} />
           <button className="btn" onClick={() => act(() => api.post("/notify/read-all"), null, ["notices"])} data-testid="notify-read-all">Mark all read</button>

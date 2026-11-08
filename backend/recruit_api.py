@@ -64,11 +64,18 @@ def role_metrics(role: str) -> list:
     return [(sm.LABEL2KEY[m["metric"]], m["weight"]) for m in ms if m["metric"] in sm.LABEL2KEY][:8]
 
 
+def role_group(role: str) -> str:
+    return GROUP[roles.ROLE_POSITIONS[role][0]]
+
+
 def role_score(x: dict, role: str):
     pct = x.get("pct") or {}
     ws = [(k, w) for k, w in role_metrics(role) if pct.get(k) is not None]
     tot = sum(w for _, w in ws)
-    return round(sum(pct[k] * w for k, w in ws) / tot) if tot else None
+    if not tot:
+        return None
+    s = sum(pct[k] * w for k, w in ws) / tot
+    return round(s if x.get("group") == role_group(role) or role in natural_roles(x) else s * .6)
 
 
 def natural_roles(x: dict) -> list:
@@ -101,7 +108,8 @@ def character(label: Optional[str]) -> dict:
 
 def league_word(x: dict, ours: float) -> str:
     d = (x.get("league_mult") or 1) - ours
-    return "Much stronger" if d > .08 else "Slightly stronger" if d > .03 else "Similar" if d >= -.03 else "Slightly weaker" if d >= -.08 else "Much weaker"
+    return ("Much stronger than yours" if d > .08 else "Slightly stronger than yours" if d > .03 else "Similar to yours" if d >= -.03
+            else "Slightly weaker than yours" if d >= -.08 else "Much weaker than yours")
 
 
 async def _ctx():
@@ -122,9 +130,9 @@ def _get(data: dict, uid: int) -> dict:
     return x
 
 
-def starter_for(data: dict, role: str):
+def starter_for(data: dict, role: str, used: set | None = None):
     pos = set(roles.ROLE_POSITIONS[role])
-    own = [x for x in data["players"] if x["own"] and set(x.get("positions") or []) & pos]
+    own = [x for x in data["players"] if x["own"] and set(x.get("positions") or []) & pos and x["unique_id"] not in (used or set())]
     best = max(own, key=lambda x: role_score(x, role) or 0, default=None)
     return ({"unique_id": best["unique_id"], "name": best["name"], "score": role_score(best, role)} if best else None)
 
@@ -149,11 +157,14 @@ async def profile(uid: int, role: Optional[str] = None, view: View = "full"):
     role = role if role in roles.ROLES else nat[0]
     pct = x.get("pct") or {}
     needs = [{"key": k, "label": sm.METRICS[k][0], "raw": (x["p90"] or {}).get(k), "pct": pct.get(k), "weight": w} for k, w in role_metrics(role)]
+    top_w = max([n["weight"] for n in needs] or [1]) or 1
+    for n in needs:
+        n["dots"] = max(1, round(n["weight"] / top_w * 5))
     idx = indices(x)
     good = [v["label"] for v in idx.values() if (v["value"] or 0) >= 70]
     weak = [v["label"] for v in idx.values() if v["value"] is not None and v["value"] < 35]
-    fit = sorted(({"role": r, "name": f"{roles.ROLES[r][0]} ({roles.ROLES[r][1]})", "score": role_score(x, r), "philosophy": philosophy(x, data["_phil"])} for r in roles.ROLES),
-                 key=lambda r: -(r["score"] or 0))[:5]
+    fit = sorted(({"role": r, "name": f"{roles.ROLES[r][0]} ({roles.ROLES[r][1]})", "score": role_score(x, r), "philosophy": philosophy(x, data["_phil"])}
+                  for r in roles.ROLES if role_group(r) == x["group"] or r in nat), key=lambda r: -(r["score"] or 0))[:5]
     cohort = [o for o in data["players"] if o["cohort"] == x["cohort"] and o["league"] == x["league"] and o["p90"]]
     bench = {}
     for k, _ in role_metrics(role):
@@ -231,6 +242,8 @@ async def compare(ids: str = Query(..., max_length=120), view: View = "full"):
         uids = [int(i) for i in ids.split(",") if i][:4]
     except ValueError:
         raise HTTPException(422, "Bad player list")
+    if not uids:
+        raise HTTPException(422, "Pick at least one player to compare")
     xs = [_get(data, u) for u in uids]
     pool = [o for o in data["players"] if o["cohort"] == xs[0]["cohort"] and o["p90"]]
     groups = []
@@ -270,7 +283,7 @@ async def explore(x: str = "npxg", y: str = "xa", group: Optional[str] = None, r
         kind = "own" if o["own"] else "shortlist" if o["unique_id"] in sl else "target" if o["p90"][x] > mx and o["p90"][y] > my else "pool"
         out.append({"unique_id": o["unique_id"], "name": o["name"], "club": o["club"], "x": o["p90"][x], "y": o["p90"][y], "kind": kind})
     role = role if role in roles.ROLES else None
-    ranked = sorted((card(o, data, role, view) for o in pts if not o["own"]), key=lambda r: -(r["score"] or 0))[:15] if role else []
+    ranked = sorted((card(o, data, role, view) for o in pts if not o["own"] and o["group"] == role_group(role)), key=lambda r: -(r["score"] or 0))[:15] if role else []
     return {"points": out, "count": len(out), "target": sum(p["kind"] == "target" for p in out), "mx": mx, "my": my, "ranked": ranked,
             "labels": {x: sm.METRICS[x][0], y: sm.METRICS[y][0]}}
 
@@ -291,7 +304,12 @@ async def board(formation: str = "433", view: View = "full"):
     st = await stages(c["id"])
     moved_pipe = [{"$match": {"career_id": c["id"], "formation": formation}}, {"$sort": {"at": -1}}, {"$group": {"_id": "$unique_id", "slot": {"$first": "$slot"}}}]
     moved = {d["_id"]: d["slot"] async for d in db.board_slots.aggregate(moved_pipe)}
-    cols = [{"slot": s["key"], "label": s["label"], "role": s["role"], "role_name": s["role_name"], "starter": starter_for(data, s["role"]), "players": []} for s in slots]
+    cols, taken = [], set()
+    for s in slots:
+        st_ = starter_for(data, s["role"], taken)
+        if st_:
+            taken.add(st_["unique_id"])
+        cols.append({"slot": s["key"], "label": s["label"], "role": s["role"], "role_name": s["role_name"], "starter": st_, "players": []})
     by = {col["slot"]: col for col in cols}
     for uid in sl:
         x = data["by_uid"].get(uid)
@@ -308,7 +326,12 @@ async def board(formation: str = "433", view: View = "full"):
 
 @router.put("/board/{uid}")
 async def move(uid: int, body: SlotIn, formation: str = "433"):
+    import scouting_api
     c = await active_career()
+    if formation not in roles.FORMATIONS:
+        raise HTTPException(404, "Unknown formation")
+    if uid not in await scouting_api.shortlisted(c["id"]):
+        raise HTTPException(404, "That player isn't on your shortlist")
     if body.slot not in {s["key"] for s in roles.formation_meta(formation)["slots"]}:
         raise HTTPException(422, "Unknown slot")
     await db.board_slots.insert_one({"id": new_id(), "career_id": c["id"], "unique_id": uid, "formation": formation, "slot": body.slot, "at": now_iso()})

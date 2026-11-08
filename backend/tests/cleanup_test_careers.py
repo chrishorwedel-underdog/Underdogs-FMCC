@@ -26,7 +26,7 @@ if "--test-results" in sys.argv:
     print("test_results", db.test_results.delete_many({}).deleted_count)
 print("careers", db.careers.delete_many({"id": {"$in": ids}}).deleted_count)
 s = db.settings.find_one({"_id": "app"}) or {}
-unset = {"setup_progress": ""}
+unset = {"setup_progress": "", "notify_prefs": ""}
 if s.get("active_career_id") in ids:
     unset["active_career_id"] = ""
 db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": False}, "$unset": unset}, upsert=True)

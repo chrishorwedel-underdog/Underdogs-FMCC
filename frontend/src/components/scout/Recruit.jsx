@@ -167,7 +167,7 @@ export const ProfileLab = ({ uid, view, onCompare }) => {
       <div className="soon" style={{ display: "flex", gap: 14, flexWrap: "wrap" }} data-testid="profile-lab-header">
         <small>Age {P.age}{P.height ? ` · ${P.height} cm` : ""}{P.foot ? ` · ${P.foot} foot` : ""} · {P.nationality}</small>
         <small>{P.minutes} min{P.avg_rating ? ` · avg ${P.avg_rating}` : ""} · {P.best_role || "–"}</small>
-        <small>League: {P.league_word} than yours</small><span className={`st ${P.confidence === "High" ? "ok" : P.confidence === "Medium" ? "a" : "r"}`} style={{ margin: 0 }}>{P.confidence} confidence</span>
+        <small>League strength: {P.league_word}</small><span className={`st ${P.confidence === "High" ? "ok" : P.confidence === "Medium" ? "a" : "r"}`} style={{ margin: 0 }}>{P.confidence} confidence</span>
         {onCompare && <button className="btn" onClick={() => onCompare(uid)} data-testid="profile-add-compare"><Scale size={12} />Add to compare</button>}
         <a className="btn" href={`/scouting?tab=scatter`} data-testid="profile-show-explore">Show in Explore</a>
         <button className="btn" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: "application/json" })); a.download = `${P.name}.json`; a.click(); }} data-testid="profile-export"><Download size={12} />Export report</button>
@@ -182,7 +182,7 @@ export const ProfileLab = ({ uid, view, onCompare }) => {
         <div className="eyebrow" style={{ marginTop: 10 }}>What the role needs</div>
         {d.needs.map((n) => <div key={n.key} style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 4 }} title={`League average ${d.benchmarks[n.key]?.league_avg ?? "–"}, top 10% ${d.benchmarks[n.key]?.top10 ?? "–"}`}>
           <small style={{ width: 200 }}>{n.label}</small>{!raw && <Bar v={n.pct} />}<span className="mono" style={{ width: 50 }}>{num(n.raw)}</span>
-          <span style={{ color: "var(--acc)", letterSpacing: 1 }} title="Weight">{"●".repeat(Math.max(1, Math.round(n.weight * 5)))}</span>{!raw && <small className="mono">{n.pct ?? "–"}</small>}
+          <span style={{ color: "var(--acc)", letterSpacing: 1 }} title="Weight">{"●".repeat(n.dots || 1)}</span>{!raw && <small className="mono">{n.pct ?? "–"}</small>}
           {d.trend[n.key] != null && <small style={{ color: d.trend[n.key] >= 0 ? "var(--grn)" : "var(--red)" }}>{d.trend[n.key] >= 0 ? "↑" : "↓"}</small>}</div>)}
       </div>
       <div className="card" style={{ padding: 12 }} data-testid="profile-summary"><div className="ttl">Summary</div>
