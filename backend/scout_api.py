@@ -95,7 +95,7 @@ def _row(x: dict, view: str, mode: str) -> dict:
     m = mask(x, view)
     return {k: m.get(k) for k in ("unique_id", "name", "age", "nationality", "club", "league", "positions", "group", "cohort", "ca", "pa", "value", "wage", "minutes",
                                   "own", "source", "months_left", "contract_end", "grade_global", "grade_local", "fair_price", "confidence", "best_role",
-                                  "poss_mult", "league_mult", "computed", "phases", "actions", "linked", "f")} | {
+                                  "poss_mult", "league_mult", "league_scored", "league_note", "computed", "phases", "actions", "linked", "f")} | {
         "stats": {k: _value_of(x, k, mode) for k in sm.METRICS if x["p90"].get(k) is not None}, "pct": x["pct"]}
 
 

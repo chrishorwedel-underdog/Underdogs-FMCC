@@ -48,10 +48,12 @@ const Body = ({ p, view }) => {
       <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
         <MiniPitch positions={p.positions || []} />
         <div style={{ fontSize: 13, color: "var(--mut)", lineHeight: 1.7 }}>
-          <div>{p.age} · {p.nationality} · {p.club} ({p.league})<ContractTag m={p.months_left} /></div>
+          <div>{p.age} · {p.nationality} · {p.club} ({p.league})<ContractTag m={p.months_left} />{p.league_scored === false && <span className="tag st a" title={p.league_note} data-testid="profile-noscore">No strength score</span>}</div>
           <div>Value <b className="mono" style={{ color: "var(--text)" }}>{fmtMoney(p.value, prefs)}</b> · wage <span className="mono">{fmtWage(p.wage, prefs)}</span></div>
           <div data-testid="profile-fair-price">Fair price <b className="mono" style={{ color: "var(--acc)" }}>{p.fair_price ? fmtMoney(p.fair_price, prefs) : "Not enough minutes"}</b> · confidence <span className={`st ${p.confidence === "High" ? "ok" : p.confidence === "Medium" ? "a" : "r"}`} data-testid="profile-confidence">{p.confidence}</span></div>
-          <div data-testid="profile-grade">Grade {p.grade_global ?? "—"} global · {p.grade_local ?? "—"} local · league ×{p.league_mult}{view === "full" && ` · CA ${p.ca} / PA ${p.pa}`}</div>
+          <div data-testid="profile-grade">Grade {p.grade_global ?? "—"} global · {p.grade_local ?? "—"} local · league ×{p.league_mult}{view === "full" && ` · CA ${p.ca} / PA ${p.pa}`}
+            {p.league && <a style={{ marginLeft: 8, color: "var(--acc)" }} href={`/scouting?tab=leagues&from=${encodeURIComponent(p.league)}${p.grade_local != null ? `&grade=${p.grade_local}` : ""}`} data-testid="profile-compare-league">Compare his league</a>}</div>
+          {p.league_scored === false && <small style={{ display: "block", color: "var(--amb)" }} data-testid="profile-noscore-note">{p.league_note}</small>}
           {p.best_role && <div>Best role: {p.best_role}</div>}
           {p.contract_end && <div>Contract until {p.contract_end}</div>}
         </div>

@@ -13,7 +13,7 @@ const LeagueRow = ({ l, rows }) => {
   return (
     <tr style={{ cursor: "default" }} data-testid={`league-row-${l.name}`}>
       <td><b>{l.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{l.country || "Country unknown"} · reputation {l.reputation ?? "—"}</small></td>
-      <td><span className={`st ${tone}`} data-testid={`league-status-${l.name}`}>{st}</span>{l.between?.some(Boolean) && <small style={{ display: "block", color: "var(--dim)", marginTop: 4 }}>{l.between.every(Boolean) ? `between ${l.between.join(" and ")}` : `placed from ${l.between.filter(Boolean)[0]} (nearest on the list)`}</small>}</td>
+      <td><span className={`st ${tone}`} data-testid={`league-status-${l.name}`}>{st}</span>{!l.scored && <span className="st a" title={l.no_score} data-testid={`league-noscore-${l.name}`}>No strength score</span>}{!l.scored && <small style={{ display: "block", color: "var(--dim)", marginTop: 4 }}>{l.no_score}</small>}{l.between?.some(Boolean) && <small style={{ display: "block", color: "var(--dim)", marginTop: 4 }}>{l.between.every(Boolean) ? `between ${l.between.join(" and ")}` : `placed from ${l.between.filter(Boolean)[0]} (nearest on the list)`}</small>}</td>
       <td>{l.status !== "womens" && <select className="inp" style={{ width: 250, height: 32 }} value={l.status === "estimated" ? "" : l.opta_name || ""}
         onChange={(e) => act(() => api.put(`/leagues/${encodeURIComponent(l.name)}/match`, { opta_name: e.target.value || null }), "Match saved", KEYS)} data-testid={`league-match-${l.name}`}>
         <option value="">Not on the list</option>{[...new Set([...(l.candidates || []), ...(l.opta_name ? [l.opta_name] : [])])].map((c) => <option key={c}>{c}</option>)}
@@ -44,6 +44,46 @@ const Recalc = () => {
   );
 };
 
+const Side = ({ s, tag }) => (
+  <div className="chk" style={{ alignItems: "flex-start" }} data-testid={`lc-${tag}`}>
+    <div style={{ flex: 1 }}><small className="eyebrow">{tag === "source" ? "From" : "To"}</small><b style={{ display: "block", fontSize: 16 }}>{s.name}</b>
+      <small>{s.strength != null ? `Strength ${s.strength.toFixed(2)} · multiplier ×${s.multiplier}${s.rank ? ` · #${s.rank} on the list` : ""}` : "No strength score"}</small>
+      {!s.scored && <small style={{ color: "var(--amb)" }}>{s.note}</small>}</div>
+  </div>
+);
+
+const LeagueCompare = ({ data }) => {
+  const q = new URLSearchParams(window.location.search);
+  const own = data.leagues[0]?.name;
+  const [f, setF] = useState({ source: q.get("from") || own || "", target: q.get("to") || data.rows[0]?.key || "", grade: Number(q.get("grade")) || 70 });
+  const { data: r, error } = useGet("league-compare", "/leagues/compare", f, { enabled: !!(f.source && f.target) });
+  const opts = (id) => <select className="inp" style={{ width: 260 }} value={f[id]} onChange={(e) => setF({ ...f, [id]: e.target.value })} data-testid={`lc-${id}-select`}>
+    <optgroup label="Leagues in your save">{data.leagues.filter((l) => l.status !== "womens").map((l) => <option key={`s-${l.name}`} value={l.name}>{l.name}</option>)}</optgroup>
+    <optgroup label="Whole list">{data.rows.map((x) => <option key={`r-${x.key}`} value={x.key}>{x.rank}. {x.name} ({x.country})</option>)}</optgroup></select>;
+  return (
+    <div className="card" data-testid="league-compare">
+      <div className="ttl">Compare two leagues</div>
+      <p className="note" style={{ marginTop: 4 }}>See the strength gap between a player's league and where he'd go, and what it means for his grade.</p>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
+        {opts("source")}<span className="note">to</span>{opts("target")}
+        <button className="btn" onClick={() => setF({ ...f, source: f.target, target: f.source })} data-testid="lc-swap">Swap</button>
+        <label className="note" style={{ display: "flex", gap: 6, alignItems: "center" }}>Player's grade<input className="inp mono" style={{ width: 80, height: 32 }} type="number" min={20} max={100} value={f.grade} onChange={(e) => setF({ ...f, grade: Math.min(100, Math.max(20, Number(e.target.value) || 20)) })} data-testid="lc-grade" /></label>
+      </div>
+      {error && <p className="note" style={{ color: "var(--red)" }}>{error.response?.data?.detail || "Couldn't compare these leagues"}</p>}
+      {r && <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}><Side s={r.source} tag="source" /><Side s={r.target} tag="target" /></div>
+        <p className="sent" style={{ fontSize: 16 }} data-testid="lc-summary">{r.summary}{r.comparable && <span className="mono" style={{ marginLeft: 8, color: r.gap > 0 ? "var(--red)" : "var(--grn)" }}>{r.gap > 0 ? "+" : ""}{r.gap}</span>}</p>
+        {r.comparable && <>
+          <p className="note" data-testid="lc-meaning">{r.meaning}</p>
+          <div className="row" data-testid="lc-grades"><span style={{ flex: 1 }}>Grade {r.grade} in {r.source.name} → global {r.global_grade}</span><b className="mono">about {r.target_local} in {r.target.name}</b></div>
+          <div data-testid="lc-scenarios"><small className="eyebrow">Your workbook's scenario formula: grade + beta × (from − to strength)</small>
+            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>{r.scenarios.map((s) => <span key={s.beta} className="st n" style={{ margin: 0 }}>beta {s.beta}: {s.grade}</span>)}</div></div>
+          <small className="note">{r.caveat}</small></>}
+      </div>}
+    </div>
+  );
+};
+
 export const LeaguesTab = () => {
   const { data } = useGet("leagues", "/leagues");
   const act = useAct();
@@ -59,6 +99,7 @@ export const LeaguesTab = () => {
         <table className="tbl" style={{ marginTop: 8 }}><thead><tr><th>Save league</th><th>Status</th><th>On the list as</th><th>Opta</th><th>Multiplier</th></tr></thead>
           <tbody>{data.leagues.map((l) => <LeagueRow key={`${l.name}-${l.multiplier}`} l={l} rows={data.rows} />)}</tbody></table>
       </div>
+      <LeagueCompare data={data} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Recalc />
         <div className="card" data-testid="league-list-card"><div className="ttl">The ranking list</div>

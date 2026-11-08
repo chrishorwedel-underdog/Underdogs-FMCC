@@ -184,6 +184,7 @@ async def build(c: dict) -> dict:
         stats = p.get("stats") if p.get("stats") is not None else (None if LIVE or p["source"] == "html" else sample_stats(p))
         hidden = p.get("hidden") or (None if LIVE or p["source"] == "html" else sample_hidden(p))
         lm = mult.get(p["league"], {}).get("multiplier", 1.0) if p.get("league") else 1.0
+        lmeta = mult.get(p.get("league") or "", {})
         theirs = poss.get(p["club"])
         pa = ours / theirs if ours and theirs and not p["own"] else 1.0
         adj, p90 = {}, stats or {}
@@ -193,7 +194,7 @@ async def build(c: dict) -> dict:
         r = _rng(p.get("unique_id") or 0, "know")
         players.append({**{k: p.get(k) for k in ("unique_id", "name", "age", "nationality", "club", "league", "positions", "ca", "pa", "value", "wage",
                                                  "minutes", "appearances", "attributes", "own", "source", "import_id", "contract_end", "linked")},
-                        "gender": p.get("gender", "M"), "group": GROUP.get(p["positions"][0], "CM") if p.get("positions") else "CM", "cohort": cohort_of(p) if p.get("positions") else "Central midfielder",
+                        "gender": p.get("gender", "M"), "league_scored": lmeta.get("scored", True), "league_note": lmeta.get("no_score"), "group": GROUP.get(p["positions"][0], "CM") if p.get("positions") else "CM", "cohort": cohort_of(p) if p.get("positions") else "Central midfielder",
                         "p90": p90, "adj": adj, "poss_mult": round(pa, 3), "league_mult": round(lm, 3), "hidden": hidden,
                         "personality": personality(hidden) if hidden else None, "knowledge": 100 if p["own"] else 20 + r.randint(0, 80),
                         "months_left": months_left(p.get("contract_end"), gd) if gd else None, "minutes": p.get("minutes") or 0})

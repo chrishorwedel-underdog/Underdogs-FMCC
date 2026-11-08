@@ -9,7 +9,7 @@ import unicodedata
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from pydantic import BaseModel, Field
 
 import sample_reader
@@ -98,6 +98,18 @@ async def _latest_edits(cid: str, kind: str) -> dict:
     return {d["_id"]: d["doc"] async for d in db.league_edits.aggregate(pipeline)}
 
 
+def no_score(r: dict, unrated: list) -> dict:
+    """Whether the league's strength comes from the workbook, and if not, why (in plain words)."""
+    if r["status"] == "womens":
+        return {"scored": False, "no_score": "Women's league: your workbook only rates men's football, so grades aren't league-adjusted"}
+    if r["status"] != "estimated":
+        return {"scored": True, "no_score": None}
+    same = [u | {"rank": 9999} for u in unrated if r.get("country") and (u.get("country") or "").lower() == r["country"].lower()]
+    hit, st, _ = _match(r, same) if same else (None, None, None)
+    why = f"Your workbook lists {hit['name']} ({hit['country']}) but has no strength score for it" if hit and st == "matched" else "Not on your workbook's list"
+    return {"scored": False, "no_score": why + ("; strength estimated from the save's league reputation" if r.get("opta") else "; treated as 1.0"), "unrated_name": hit and st == "matched" and hit["name"]}
+
+
 async def resolve(c: dict, fresh_estimates: bool = False) -> dict:
     lst = await opta_list(c["id"])
     rows, dups = dedupe(lst["leagues"])
@@ -128,6 +140,7 @@ async def resolve(c: dict, fresh_estimates: bool = False) -> dict:
         if r["status"] == "estimated":
             est = placed.get(r["name"]) if fresh_estimates else ((stored or {}).get("values") or {}).get(r["name"]) or placed.get(r["name"])
             r |= {"opta": est and est["opta"], "between": est and [est["below"], est["above"]]}
+        r |= no_score(r, lst.get("unrated") or [])
         base = mult(r["opta"], ref, exp) if r["opta"] else 1.0
         e = medits.get(r["name"])
         r["auto_multiplier"] = base
@@ -138,7 +151,50 @@ async def resolve(c: dict, fresh_estimates: bool = False) -> dict:
 
 
 async def multipliers(c: dict) -> dict:
-    return {r["name"]: {"multiplier": r["multiplier"], "status": r["status"]} for r in (await resolve(c))["leagues"]}
+    return {r["name"]: {"multiplier": r["multiplier"], "status": r["status"], "scored": r["scored"], "no_score": r["no_score"]} for r in (await resolve(c))["leagues"]}
+
+
+def _strength_word(gap: float, pct: float, target: str) -> str:
+    if abs(gap) < 2:
+        return f"{target} is about the same strength"
+    return f"{target} is {abs(gap):.1f} points {'stronger' if gap > 0 else 'weaker'} ({abs(pct):.0f}% {'higher' if gap > 0 else 'lower'})"
+
+
+@router.get("/compare")
+async def compare_leagues(source: str = Query(..., max_length=120), target: str = Query(..., max_length=120), grade: float = Query(70, ge=20, le=100)):
+    """Strength gap between two leagues and what FMCC's multiplier does to a player's grade. Arithmetic, not a prediction."""
+    c = await active_career()
+    d = await resolve(c)
+    ref, exp = d["list"]["reference"], d["list"]["exponent"]
+    save = {r["name"]: r for r in d["leagues"]}
+    listed = {row_key(r): r for r in d["rows"]}
+
+    def pick(name: str) -> dict:
+        if name in save:
+            r = save[name]
+            return {"name": name, "in_save": True, "strength": r["opta"], "multiplier": r["multiplier"], "scored": r["scored"], "note": r["no_score"],
+                    "listed_as": r["opta_name"], "rank": r.get("rank") if r["scored"] else None}
+        if name in listed:
+            r = listed[name]
+            return {"name": f"{r['name']} ({r['country']})", "in_save": False, "strength": r["opta"], "multiplier": mult(r["opta"], ref, exp), "scored": True, "note": None,
+                    "listed_as": f"{r['name']} ({r['country']})", "rank": r["rank"]}
+        raise HTTPException(404, f"{name} isn't in your save or on the list")
+    s, t = pick(source), pick(target)
+    if s["strength"] is None or t["strength"] is None:
+        missing = s if s["strength"] is None else t
+        return {"source": s, "target": t, "comparable": False, "summary": f"{missing['name']} has no strength score, so FMCC can't compare these leagues."}
+    gap, pct = round(t["strength"] - s["strength"], 2), (t["strength"] - s["strength"]) / s["strength"] * 100
+    glob = round(20 + (grade - 20) * s["multiplier"], 1)
+    tl_raw = 20 + (glob - 20) / t["multiplier"] if t["multiplier"] else None
+    tl = round(min(100, max(20, tl_raw)), 1) if tl_raw is not None else None
+    diff = round(tl - grade, 1) if tl is not None else None
+    meaning = (f"A grade {grade:g} player in {s['name']} has a global grade of {glob:g}. In {t['name']} that global grade equals a local grade of about {tl:g}"
+               + (" (capped at 100)" if tl_raw > 100 else " (floor of 20)" if tl_raw < 20 else "")
+               + (f", so expect his grade to {'rise' if diff > 0 else 'drop'} by about {abs(diff):g} against the players there." if diff else ", about the same as now.")) if tl is not None else ""
+    return {"source": s, "target": t, "comparable": True, "gap": gap, "gap_pct": round(pct, 1), "grade": grade, "global_grade": glob, "target_local": tl,
+            "summary": _strength_word(gap, pct, t["name"]) + f" than {s['name']}.", "meaning": meaning,
+            "scenarios": [{"beta": b, "grade": round(min(100, max(20, grade + b * (s["strength"] - t["strength"]))), 1)} for b in (0, .5, 1)],
+            "caveat": "These follow FMCC's league multiplier and your workbook's scenario formula. Neither has been tested against real transfers, so treat them as a guide."}
 
 
 @router.get("")
@@ -146,8 +202,12 @@ async def get_leagues():
     c = await active_career()
     d = await resolve(c)
     ref, exp = d["list"]["reference"], d["list"]["exponent"]
-    d["rows"] = [r | {"multiplier": mult(r["opta"], ref, exp)} for r in d["rows"]]
+    d["rows"] = [r | {"multiplier": mult(r["opta"], ref, exp), "key": row_key(r)} for r in d["rows"]]
     return d
+
+
+def row_key(r: dict) -> str:
+    return r.get("id") or f"{r['name']}|{r.get('country') or ''}"
 
 
 class MatchIn(BaseModel):

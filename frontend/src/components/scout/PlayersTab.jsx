@@ -97,7 +97,7 @@ export const PlayersTab = () => {
             return (
               <tr key={r.unique_id} onClick={() => openPlayer(r.unique_id)} data-testid={`sp-row-${r.unique_id}`}>
                 <td onClick={(e) => e.stopPropagation()}>{!r.own && r.source === "save" && <button className="ib" style={{ width: 26, height: 26 }} onClick={() => star(r)} title="Add to shortlist" data-testid={`sp-star-${r.unique_id}`}><Star size={13} /></button>}</td>
-                <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.own && <span className="tag st g">Your club</span>}<ContractTag m={r.months_left} />{r.source === "html" && !r.linked && <span className="tag st n">Not linked</span>}
+                <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.own && <span className="tag st g">Your club</span>}<ContractTag m={r.months_left} />{r.league_scored === false && <span className="tag st a" title={r.league_note} data-testid={`sp-noscore-${r.unique_id}`}>No strength score</span>}{r.source === "html" && !r.linked && <span className="tag st n">Not linked</span>}
                   <small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.positions?.join(", ")}</small></td>
                 <td>{r.age}</td>{view === "full" && <td className="mono">{r.ca ?? "—"}/{r.pa ?? "—"}</td>}
                 <td className="mono" style={{ color: "var(--acc)" }} title={r.minutes < 400 ? "Not enough minutes" : `Local ${r.grade_local} · league ×${r.league_mult}`}>{r.minutes < 400 ? "—" : r.grade_global ?? "—"}</td>

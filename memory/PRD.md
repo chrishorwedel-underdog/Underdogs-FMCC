@@ -120,6 +120,12 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Matching now also uses each competition's aliases (e.g. "English Premier League"). Highland Football League now matches "Highland / Lowland Leagues" instead of being estimated.
 - Stage 10 tests updated to the new names and count; 43/43 pass.
 
+## Implemented (2026-11-08) — No-strength-score tag and league comparison
+- `leagues_api.no_score()`: every save league gets `scored` and a plain `no_score` reason (women's league; not on the workbook's list; listed in the workbook but unrated, matched within the same country only). Passed to players as `league_scored` / `league_note`.
+- "No strength score" tag (with the reason on hover) in the Players table, the player profile (plus a note line), the Leagues table, and DOF pick tags; the profile's league-strength line says "Not known" for these players.
+- GET /api/leagues/compare?source=&target=&grade= (save league names or list keys = competition IDs, so same-named leagues like "Premier League" stay distinct): both strengths, multipliers, ranks, gap and %, the grade's global value and the equivalent local grade in the target league, plus the workbook's beta scenarios (0, 0.5, 1) with a caveat. Leagues tab "Compare two leagues" card (swap, grade input); profile link "Compare his league" pre-fills it.
+- Self-tested: API checks, screenshots, Stage 10 suite 42/43 (test_offer_verdicts passes on its own; order-dependent flake).
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.

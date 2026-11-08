@@ -107,6 +107,8 @@ def character(label: Optional[str]) -> dict:
 
 
 def league_word(x: dict, ours: float) -> str:
+    if x.get("league_scored") is False:
+        return "Not known (his league has no strength score)"
     d = (x.get("league_mult") or 1) - ours
     return ("Much stronger than yours" if d > .08 else "Slightly stronger than yours" if d > .03 else "Similar to yours" if d >= -.03
             else "Slightly weaker than yours" if d >= -.08 else "Much weaker than yours")
@@ -405,6 +407,8 @@ async def picks_for(data: dict, b: PicksIn) -> dict:
             t.append("Final year")
         if refuse_likely(x, data):
             t.append("Might refuse (estimate)")
+        if x.get("league_scored") is False:
+            t.append("No strength score")
         return t
     out = {k: [card(x, data, b.role, b.view, base) | {"reason": reasons[k], "tags": tags(x, role_score(x, b.role))} for x in v] for k, v in cols.items()}
     strong = sorted(left, key=lambda r: -r[1])[:3]
