@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 import { api, ago, gameDate, errMsg } from "@/lib/api";
 import { CareersCard } from "@/components/CareersCard";
 import { UpdatesCard } from "@/components/UpdatesCard";
 import { BackupsCard } from "@/components/BackupsCard";
 
-const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor"], ["FMMatchLens", "MIT", "Match analytics"],
+const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
   ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"]];
 
 const SavesCard = () => {
@@ -23,6 +24,19 @@ const SavesCard = () => {
           </div>
         ))}
       </div>
+    </div>
+  );
+};
+
+const AutoReadCard = ({ on, sample }) => {
+  const qc = useQueryClient();
+  const set = async (v) => {
+    try { await api.put("/settings/auto-read", { auto_read: v }); qc.invalidateQueries({ queryKey: ["state"] }); } catch (e) { toast.error(errMsg(e)); }
+  };
+  return (
+    <div className="card rise d4" data-testid="auto-read-card">
+      <div className="row" style={{ borderTop: 0 }}><div style={{ flex: 1 }}><b>Read new saves automatically</b><small>{sample ? "Windows program: while FMCC is open, each new save is read once FM finishes writing it. Here, use the refresh button." : "While FMCC is open, each new save is read once FM finishes writing it. The refresh button still works."}</small></div>
+        <Switch checked={on} onCheckedChange={set} data-testid="auto-read-switch" /></div>
     </div>
   );
 };
@@ -51,7 +65,7 @@ export default function Settings({ state }) {
         <span>Browser preview: FMCC is reading a built-in sample save, not your PC. Each refresh in the top bar reads the next month of that sample. The real fmsave reader is packaged in the Windows program.</span>
       </div>}
       <div className="sgrid">
-        <div style={{ display: "grid", gap: 20, alignContent: "start" }}><CareersCard career={state.career} key={state.career.id} /><SavesCard /></div>
+        <div style={{ display: "grid", gap: 20, alignContent: "start" }}><CareersCard career={state.career} key={state.career.id} /><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /></div>
         <div style={{ display: "grid", gap: 20, alignContent: "start" }}>
           <UpdatesCard autoInstall={state.auto_install_updates} />
           <BackupsCard />

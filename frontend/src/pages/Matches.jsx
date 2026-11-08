@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { PlayCircle, Download, Trash2 } from "lucide-react";
-import { api, gameDate } from "@/lib/api";
-import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
+import { PlayCircle, Plug } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { gameDate } from "@/lib/api";
+import { useGet, TabBar, PageHead } from "@/lib/ui";
 import { Chalkboard } from "@/components/matches/Chalkboard";
 
 const TT = { background: "#121519", border: "1px solid rgba(255,255,255,.13)", borderRadius: 10, fontSize: 12 };
@@ -85,15 +86,13 @@ const Season = () => {
   );
 };
 
-const Setup = ({ ml, edition }) => {
-  const act = useAct();
+const Setup = ({ ml }) => {
+  const nav = useNavigate();
   return (
     <div className="card" data-testid="matchlens-setup">
-      <div className="ttl">Match analytics add-on<span className={`st ${ml.installed ? "ok" : "a"}`} style={{ marginLeft: "auto" }} data-testid="matchlens-status">{ml.installed ? `Installed · FMMatchLens ${ml.fmmatchlens}` : "Not installed"}</span></div>
-      <p className="note" style={{ marginTop: 6 }}>One click installs BepInEx and FMMatchLens into FM's game folder (Steam version). Matches you play are then recorded automatically. FMMatchLens currently supports FM26, so in the Windows program an FM27 career waits for FM27 support here. Browser preview: the install is simulated, and sample matches are shown for FM26 and FM27 so you can try the screen.</p>
-      <div style={{ marginTop: 10 }}>{ml.installed
-        ? <button className="btn btn-d" onClick={() => act(() => api.post("/matchlens/uninstall"), "Add-on removed", ["matches"])} data-testid="matchlens-uninstall"><Trash2 size={13} />Remove add-on</button>
-        : <button className="btn btn-p" onClick={() => act(() => api.post("/matchlens/install"), "Installed. Matches are recorded from the next save.", ["matches"])} data-testid="matchlens-install"><Download size={13} />Install match analytics</button>}</div>
+      <div className="ttl">Match add-on<span className={`st ${ml.installed ? "ok" : "a"}`} style={{ marginLeft: "auto" }} data-testid="matchlens-status">{ml.installed ? `Installed · FMMatchLens ${ml.fmmatchlens}` : "Not installed"}</span></div>
+      <p className="note" style={{ marginTop: 6 }}>The FMMatchLens add-on is installed, checked and removed in Connections, and its own dashboard shows your live and saved matches. This page shows labelled sample matches: reading .fmlens files here waits until their format is known.</p>
+      <div style={{ marginTop: 10 }}><button className="btn btn-p" onClick={() => nav("/connections")} data-testid="matchlens-open-connections"><Plug size={13} />Open Connections</button></div>
     </div>
   );
 };
@@ -107,12 +106,12 @@ export default function Matches() {
   if (!data) return <p className="note">Loading matches…</p>;
   return (
     <div data-testid="matches-page">
-      <PageHead eyebrow="Sofascore/Opta-style view of every match you play" title="Matches">
+      <PageHead eyebrow="Sample matches · Sofascore/Opta-style view" title="Matches">
         <TabBar id="matches" value={tab} onChange={setTab} tabs={[["match", "Match"], ["season", "Season per 90"], ["setup", "Setup"]]} />
       </PageHead>
-      {tab === "setup" && <Setup ml={data.matchlens} edition={data.edition} />}
+      {tab === "setup" && <Setup ml={data.matchlens} />}
       {tab === "season" && <Season />}
-      {tab === "match" && (!data.matches.length ? <div style={{ display: "grid", gap: 16 }}><div className="soon" data-testid="matches-empty">No matches recorded yet. Install match analytics, then read a save.</div>{!data.matchlens.installed && <Setup ml={data.matchlens} edition={data.edition} />}</div> : (
+      {tab === "match" && (!data.matches.length ? <div style={{ display: "grid", gap: 16 }}><div className="soon" data-testid="matches-empty">No matches yet. Sample matches appear here after the match add-on is installed (in Connections) and a save is read.</div>{!data.matchlens.installed && <Setup ml={data.matchlens} />}</div> : (
         <div className="homegrid" style={{ gridTemplateColumns: "260px minmax(0,1fr)" }}>
           <div className="card" style={{ padding: 8, alignSelf: "start" }} data-testid="match-list">
             {data.matches.map((m) => <div key={m.id} className={`pi${m.id === id ? " sel" : ""}`} onClick={() => setId(m.id)} data-testid={`match-item-${m.id}`}>

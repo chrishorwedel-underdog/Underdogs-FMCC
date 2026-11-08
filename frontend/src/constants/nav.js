@@ -1,14 +1,21 @@
-import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Trophy } from "lucide-react";
+import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins, Sprout, ShieldCheck, Palette } from "lucide-react";
+
+export const TOP_LINKS = [
+  { to: "/safety", key: "safety", label: "Project Safety", Icon: ShieldCheck },
+  { to: "/appearance", key: "appearance", label: "Appearance", Icon: Palette },
+];
 
 export const NAV = [
   { to: "/", key: "home", label: "Home", sub: "Your club at a glance", c: "#A3E635", Icon: Home },
+  { to: "/dynamic-potential", key: "dp", label: "Dynamic Potential", sub: "Review development", c: "#4C8DFF", Icon: TrendingUp },
+  { to: "/breakout", key: "breakout", label: "Breakout Player", sub: "This season's breakout nominations", c: "#FACC15", Icon: Star },
+  { to: "/scouting", key: "scouting", label: "Scout Players", sub: "Scout Window", c: "#22D3EE", Icon: Search },
+  { to: "/reports", key: "reports", label: "Monthly Reports", sub: "See the bigger picture", c: "#A78BFA", Icon: BarChart3 },
+  { to: "/moneyball", key: "moneyball", label: "Moneyball", sub: "Compare transfer options", c: "#F2B54A", Icon: Coins },
   { to: "/squad", key: "squad", label: "Squad", sub: "Lineups and depth charts", c: "#2DD4BF", Icon: Users },
-  { to: "/development", key: "development", label: "Development", sub: "Minutes and growth plans", c: "#4C8DFF", Icon: TrendingUp },
-  { to: "/scouting", key: "scouting", label: "Scouting", sub: "Targets and Moneyball", c: "#22D3EE", Icon: Search },
-  { to: "/matches", key: "matches", label: "Matches", sub: "Chalkboard and match stats", c: "#FB923C", Icon: Activity },
-  { to: "/reports", key: "reports", label: "Reports", sub: "See the bigger picture", c: "#A78BFA", Icon: BarChart3 },
+  { to: "/development", key: "development", label: "Development", sub: "Minutes and growth plans", c: "#34D399", Icon: Sprout },
   { to: "/elite-training", key: "elite", label: "Elite Training", sub: "Nurture your next generation", c: "#E879F9", Icon: Zap },
-  { to: "/awards", key: "awards", label: "Awards", sub: "Breakout and Dynamic Potential", c: "#FACC15", Icon: Trophy },
+  { to: "/matches", key: "matches", label: "Matches", sub: "Chalkboard and match stats", c: "#FB923C", Icon: Activity },
 ];
 
 export const STAGE_TEXT = {
@@ -17,6 +24,6 @@ export const STAGE_TEXT = {
   matches: "A Sofascore/Opta-style view of every match: xG timeline, chalkboard, player cards and replays from FMMatchLens.",
   reports: "An automatic squad snapshot each in-game month, with comparisons between months.",
   elite: "Nominations, training evidence from the save and PA boosts under your own rules.",
-  awards: "Annual Breakout and Dynamic Potential: nominations, reviews and official awards at season end.",
+  appearance: "Themes, colours and how FMCC looks on your screen.",
   dof: "Your Director of Football to talk to, using your own OpenAI key. It sees your squad, plans, reports and history.",
 };

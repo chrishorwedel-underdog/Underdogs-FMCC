@@ -1,7 +1,7 @@
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Search, RefreshCw, Settings, Wand2 } from "lucide-react";
-import { useState } from "react";
+import { Search, RefreshCw, Settings, Wand2, Plug } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api, ago, errMsg, gameDate } from "@/lib/api";
 
@@ -16,6 +16,18 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
   const [busy, setBusy] = useState(false);
   const { data: ch } = useQuery({ queryKey: ["changes"], queryFn: () => api.get("/changes").then((r) => r.data), refetchInterval: 5000 });
   const pending = ch?.queued?.length || 0;
+  const { data: notes = [] } = useQuery({ queryKey: ["notices"], queryFn: () => api.get("/notices").then((r) => r.data), refetchInterval: 5000 });
+  useEffect(() => {
+    notes.forEach((n) => {
+      api.post(`/notices/${n.id}/seen`);
+      if (n.kind === "save_read") {
+        toast.success(`New save read: ${gameDate(n.game_date, { day: "numeric", month: "long", year: "numeric" })} · ${n.players} players`, { id: n.id, duration: 12000, action: { label: "Check my save", onClick: () => nav(`/safety?save=${n.save_no}`) } });
+        qc.invalidateQueries();
+      } else {
+        toast.error(`FMCC couldn't read ${n.file_name}: ${n.message}`, { id: n.id, duration: 15000 });
+      }
+    });
+  }, [notes]); // eslint-disable-line react-hooks/exhaustive-deps
   const readSave = async () => {
     setBusy(true);
     try {
@@ -37,7 +49,7 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
       </div>
       <div className="srch" onClick={onSearch} data-testid="top-search-button"><Search size={15} />Search players, screens, actions…<kbd>Ctrl K</kbd></div>
       <div className="tr">
-        <div className={`link ${tone}`} data-testid="game-link-pill" title="Browser preview: reading a sample save">
+        <div className={`link ${tone}`} data-testid="game-link-pill" title={sample ? "Browser preview: reading a sample save" : "Open Connections"} onClick={() => nav("/connections")} style={{ cursor: "pointer" }}>
           <span className="pulse" /><span className="lt">{sample ? "Sample save" : "Game linked"} · save read {ago(career?.last_read_at)}</span>
         </div>
         <button className="ib" onClick={readSave} disabled={busy} title="Read latest save" data-testid="read-save-button">
@@ -46,6 +58,7 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
         <button className="ib" style={{ position: "relative", width: "auto", padding: "0 10px", gap: 6, display: "flex" }} onClick={() => nav("/changes")} title="Game changes" data-testid="top-changes-button">
           <Wand2 size={16} /><span style={{ fontSize: 12.5 }}>Game changes</span>{pending > 0 && <span className="st a mono" style={{ margin: 0 }} data-testid="top-changes-count">{pending}</span>}
         </button>
+        <button className="ib" onClick={() => nav("/connections")} title="Connections" data-testid="top-connections-button"><Plug size={16} /></button>
         <button className="ib" onClick={() => nav("/settings")} title="Settings" data-testid="top-settings-button"><Settings size={16} /></button>
       </div>
     </header>

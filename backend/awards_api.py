@@ -188,7 +188,7 @@ async def breakout_finalise():
         await _award(c, aw["award_key"], "breakout", x, r, rules["version"], "official", delta, aw.get("note", ""))
         await queue_changes(c, "breakout", aw["award_key"], [{"unique_id": uid, "name": x["name"], "field": r["action"]["target"], "delta": delta}])
         done += 1
-    await audit(c["id"], "awards official", "breakout", f"{done} Breakout award(s) made official for {snap['season']}")
+    await audit(c["id"], "breakout picks official", "breakout", f"{done} Breakout pick(s) made official for {snap['season']}")
     return {"official": done}
 
 

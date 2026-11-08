@@ -33,6 +33,7 @@ from rules_api import router as rules_router  # noqa: E402
 from changes_api import router as changes_router, resume_unfinished, stop_all  # noqa: E402
 from matches_api import router as matches_router  # noqa: E402
 from dof_api import router as dof_router  # noqa: E402
+from connections_api import router as connections_router  # noqa: E402
 import sample_matches  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
@@ -85,6 +86,10 @@ class FolderIn(BaseModel):
 
 class AutoInstallIn(BaseModel):
     auto_install: bool
+
+
+class AutoReadIn(BaseModel):
+    auto_read: bool
 
 
 # ---------- helpers ----------
@@ -161,7 +166,8 @@ async def state():
     if s.get("active_career_id"):
         career = await db.careers.find_one({"id": s["active_career_id"]}, {"_id": 0})
     return {"setup_complete": s.get("setup_complete", False), "career": career, "sample_mode": READER == "sample",
-            "auto_install_updates": s.get("auto_install_updates", False), "last_update_check": s.get("last_update_check")}
+            "auto_install_updates": s.get("auto_install_updates", False), "last_update_check": s.get("last_update_check"),
+            "auto_read_saves": s.get("auto_read_saves", True)}
 
 
 @api.post("/setup/detect")
@@ -179,9 +185,9 @@ async def setup_complete(body: SetupIn):
         await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True, "auto_install_updates": False}}, upsert=True)
     latest = (await latest_two(career["id"]))[0]
     return {"career": career, "health": [
-        {"key": "link", "label": "Game link ready", "ok": True, "detail": f"Read {len(latest['players'])} players from {latest['file_name']} (sample save)"},
-        {"key": "analytics", "label": "Match analytics", "ok": False, "detail": "Not set up yet. FMMatchLens setup arrives in stage 4."},
-        {"key": "dof", "label": "DOF chat", "ok": False, "detail": "Not set up yet. Your OpenAI key is added in stage 4."},
+        {"key": "link", "label": "Game link ready", "ok": True, "detail": f"Read {len(latest['players'])} players from {latest['file_name']}" + (" (sample save)" if READER == "sample" else "")},
+        {"key": "analytics", "label": "Match analytics", "ok": False, "detail": "Not set up yet. Install the match add-on from Connections."},
+        {"key": "dof", "label": "DOF chat", "ok": READER == "sample", "detail": "Ready (preview key)" if READER == "sample" else "Add your OpenAI key in Settings."},
     ]}
 
 
@@ -221,6 +227,82 @@ async def set_folder(body: FolderIn):
 async def read_save():
     async with io_lock:
         return await read_next_save(await active_career())
+
+
+@api.get("/saves/{save_no}/check")
+async def check_save(save_no: int):
+    """'Check my save': what FMCC read from one save, so a real-save read can be verified on your PC."""
+    c = await active_career()
+    snap = await db.snapshots.find_one({"career_id": c["id"], "save_no": save_no}, {"_id": 0})
+    if not snap:
+        raise HTTPException(404, "That save hasn't been read in this career")
+    prev = await db.snapshots.find_one({"career_id": c["id"], "save_no": {"$lt": save_no}}, {"_id": 0, "players.unique_id": 1, "players.name": 1}, sort=[("save_no", -1)])
+    before = {p["unique_id"]: p["name"] for p in prev["players"]} if prev else {}
+    now = {p["unique_id"]: p for p in snap["players"]}
+    gaps = {"birth date": sum(1 for p in snap["players"] if not p.get("birth_date")), "average rating": sum(1 for p in snap["players"] if p.get("avg_rating") is None),
+            "potential (PA)": sum(1 for p in snap["players"] if not p.get("pa")), "attributes": sum(1 for p in snap["players"] if not any((p.get("attributes") or {}).values()))}
+    renamed = [f"{before[u]} → {p['name']}" for u, p in now.items() if u in before and before[u] != p["name"]]
+    return {"save_no": save_no, "file_name": snap["file_name"], "game_date": snap["game_date"], "read_at": snap["read_at"], "reader": snap["reader"],
+            "club_name": snap.get("club_name"), "players": len(now), "same_ids": sum(1 for u in now if u in before),
+            "new_players": [p["name"] for u, p in now.items() if prev and u not in before], "left": [n for u, n in before.items() if u not in now],
+            "renamed": renamed, "gaps": {k: v for k, v in gaps.items() if v}, "first": prev is None}
+
+
+@api.get("/notices")
+async def notices():
+    c = await active_career()
+    return await db.notices.find({"career_id": c["id"], "seen": False}, {"_id": 0}).sort("at", 1).to_list(20)
+
+
+@api.post("/notices/{notice_id}/seen")
+async def notice_seen(notice_id: str):
+    await db.notices.update_one({"id": notice_id}, {"$set": {"seen": True}})
+    return {"ok": True}
+
+
+@api.put("/settings/auto-read")
+async def set_auto_read(body: AutoReadIn):
+    await db.settings.update_one({"_id": "app"}, {"$set": {"auto_read_saves": body.auto_read}}, upsert=True)
+    return {"ok": True}
+
+
+async def watch_saves():
+    """Windows program: reads each new save once FM has finished writing it (the file stops changing)."""
+    import time
+    import fmsave_reader
+    last_seen, failed = {}, set()
+    while True:
+        await asyncio.sleep(3)
+        try:
+            s = await get_settings()
+            if not s.get("auto_read_saves", True) or not s.get("active_career_id"):
+                continue
+            c = await db.careers.find_one({"id": s["active_career_id"]}, {"_id": 0})
+            path = c and await asyncio.to_thread(fmsave_reader.latest_save, c["save_folder"])
+            if not path:
+                continue
+            st = path.stat()
+            sig = f"{path.name}:{st.st_mtime}"
+            if sig == c.get("last_file") or sig in failed:
+                continue
+            if last_seen.get(sig) != st.st_size or time.time() - st.st_mtime < 5:
+                last_seen = {sig: st.st_size}
+                continue
+            async with io_lock:
+                c = await db.careers.find_one({"id": c["id"]}, {"_id": 0})
+                try:
+                    r = await read_next_save(c)
+                    note = {"kind": "save_read", **r}
+                except HTTPException as exc:
+                    if exc.status_code == 409:
+                        continue
+                    failed.add(sig)
+                    note = {"kind": "save_failed", "file_name": path.name, "message": exc.detail}
+            await db.notices.insert_one({"id": str(uuid.uuid4()), "career_id": c["id"], "at": now_iso(), "seen": False, **note})
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.warning("save watcher: %s", exc)
 
 
 @api.get("/saves")
@@ -389,14 +471,14 @@ async def restore_backup(backup_id: str):
             await db[col].delete_many({})
             if b["data"][col]:
                 await db[col].insert_many([dict(d) for d in b["data"][col]])
-        keep = {k: prefs.get(k) for k in ("auto_install_updates", "last_update_check")}
+        keep = {k: prefs.get(k) for k in ("auto_install_updates", "last_update_check", "matchlens", "auto_read_saves") if k in prefs}
         await db.settings.update_one({"_id": "app"}, {"$set": keep}, upsert=True)
         await resume_unfinished()
         return {"ok": True, "restored_from": b["created_at"]}
 
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse
@@ -418,6 +500,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 async def start_index_build():
     app.state.index_task = asyncio.create_task(ensure_indexes())
     asyncio.create_task(resume_unfinished())
+    if READER == "fmsave":
+        app.state.watcher = asyncio.create_task(watch_saves())
 
 
 @app.on_event("shutdown")

@@ -10,6 +10,7 @@ jobs:
     runs-on: windows-latest
     env:
       MONGODB_VERSION: "7.0.14"
+      FMLIBRE_TAG: "v0.5.0"
     steps:
       - uses: actions/checkout@v4
 
@@ -46,13 +47,24 @@ jobs:
           New-Item -ItemType Directory -Force desktop/mongodb | Out-Null
           Copy-Item "mongo/mongodb-win32-x86_64-windows-$env:MONGODB_VERSION/bin/mongod.exe" desktop/mongodb/
 
+      - name: Build FMLibreEditor's command-line tool (GPL-3.0)
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch $env:FMLIBRE_TAG https://github.com/tozmoz/FMLibreEditor.git fmlibre-src
+          cargo build --release -p fmlibre-probe --manifest-path fmlibre-src/Cargo.toml
+          New-Item -ItemType Directory -Force desktop/fmlibre | Out-Null
+          Copy-Item fmlibre-src/target/release/fmlibre-probe.exe desktop/fmlibre/
+          Copy-Item fmlibre-src/LICENSE* desktop/fmlibre/
+          "FMLibreEditor $env:FMLIBRE_TAG command-line tool (fmlibre-probe), GPL-3.0. Source: https://github.com/tozmoz/FMLibreEditor/tree/$env:FMLIBRE_TAG" | Out-File desktop/fmlibre/SOURCE.txt
+          desktop/fmlibre/fmlibre-probe.exe --help
+
       - name: Package the program
         run: >
           echo ${{ github.repository }} > desktop/release_repo.txt &&
           pyinstaller desktop/launcher.py --name FMCC --noconsole --noconfirm --icon desktop/fmcc.ico
           --add-data "desktop/release_repo.txt;."
-          --add-data "backend;backend" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb"
-          --collect-all fmsave --collect-all emergentintegrations --collect-submodules uvicorn --hidden-import motor
+          --add-data "backend;backend" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb" --add-data "desktop/fmlibre;fmlibre"
+          --collect-all fmsave --collect-all emergentintegrations --collect-submodules uvicorn --hidden-import motor --hidden-import psutil
 
       - name: Smoke test the reader import
         run: python -c "import fmsave, sys; sys.path.insert(0, 'backend'); import fmsave_reader; print('fmsave', fmsave.__version__)"

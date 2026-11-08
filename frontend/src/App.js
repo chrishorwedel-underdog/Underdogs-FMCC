@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { api } from "@/lib/api";
@@ -16,12 +16,15 @@ import Scouting from "@/pages/Scouting";
 import Development from "@/pages/Development";
 import Reports from "@/pages/Reports";
 import EliteTraining from "@/pages/EliteTraining";
-import Awards from "@/pages/Awards";
+import DynamicPotentialPage from "@/pages/DynamicPotentialPage";
+import BreakoutPage from "@/pages/BreakoutPage";
+import Connections from "@/pages/Connections";
+import Safety from "@/pages/Safety";
 import Changes from "@/pages/Changes";
 import Matches from "@/pages/Matches";
 import Dof from "@/pages/Dof";
 
-const LATER = [];
+const LATER = [["/appearance", "appearance"]];
 
 const Shell = ({ state }) => {
   const [pal, setPal] = useState(false);
@@ -42,11 +45,16 @@ const Shell = ({ state }) => {
             <Route path="/" element={<Home />} />
             <Route path="/squad" element={<Squad />} />
             <Route path="/settings" element={<Settings state={state} />} />
-            <Route path="/scouting" element={<Scouting />} />
+            <Route path="/scouting" element={<Scouting key="scouting" />} />
+            <Route path="/moneyball" element={<Scouting key="moneyball" initialTab="compare" />} />
             <Route path="/development" element={<Development />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/elite-training" element={<EliteTraining />} />
-            <Route path="/awards" element={<Awards />} />
+            <Route path="/dynamic-potential" element={<DynamicPotentialPage />} />
+            <Route path="/breakout" element={<BreakoutPage />} />
+            <Route path="/awards" element={<Navigate to="/dynamic-potential" replace />} />
+            <Route path="/connections" element={<Connections />} />
+            <Route path="/safety" element={<Safety />} />
             <Route path="/changes" element={<Changes />} />
             <Route path="/matches" element={<Matches />} />
             <Route path="/dof" element={<Dof />} />

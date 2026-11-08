@@ -61,8 +61,8 @@ const Compare = ({ ids, clear }) => {
   );
 };
 
-export default function Scouting() {
-  const [tab, setTab] = useState("rankings");
+export default function Scouting({ initialTab = "rankings" }) {
+  const [tab, setTab] = useState(initialTab);
   const [compare, setCompare] = useState([]);
   const toggle = (id) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id].slice(-4)));
   return (

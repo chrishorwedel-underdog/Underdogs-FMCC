@@ -2,8 +2,7 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 
-from core import db, active_career, now_iso, audit
-from updates import COMPONENTS
+from core import db, active_career
 
 router = APIRouter(prefix="/api")
 PER90 = ["goals", "assists", "xg", "xa", "shots", "key_passes", "prog_passes", "duels_won", "pressures", "def_actions"]
@@ -69,22 +68,3 @@ async def get_match(match_id: str):
         raise HTTPException(404, "Match not found")
     return m
 
-
-@router.post("/matchlens/install")
-async def install_matchlens():
-    """MOCKED in the browser preview: records the install. The Windows program copies BepInEx + FMMatchLens into FM's game folder."""
-    c = await active_career()
-    versions = {k: v for k, _, _, _, v in COMPONENTS}
-    state = {"installed": True, "at": now_iso(), "bepinex": versions["bepinex"], "fmmatchlens": versions["fmmatchlens"], "store": "Steam",
-             "fm27_supported": False}
-    await db.settings.update_one({"_id": "app"}, {"$set": {"matchlens": state}}, upsert=True)
-    await audit(c["id"], "installed", "matchlens", f"BepInEx {state['bepinex']} and FMMatchLens {state['fmmatchlens']} installed (preview)")
-    return state
-
-
-@router.post("/matchlens/uninstall")
-async def uninstall_matchlens():
-    c = await active_career()
-    await db.settings.update_one({"_id": "app"}, {"$set": {"matchlens": {"installed": False}}}, upsert=True)
-    await audit(c["id"], "removed", "matchlens", "Match analytics add-on removed (preview)")
-    return {"installed": False}

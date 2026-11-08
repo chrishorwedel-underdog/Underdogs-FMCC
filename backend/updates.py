@@ -1,4 +1,7 @@
 import os
+import re
+from urllib.parse import unquote
+
 import httpx
 
 COMPONENTS = [  # key, name, role, GitHub repo (None = not published yet), bundled version
@@ -6,8 +9,22 @@ COMPONENTS = [  # key, name, role, GitHub repo (None = not published yet), bundl
     ("fmsave", "fmsave", "Built-in save reader", "rhiever/fmsave", "v0.10.0"),
     ("fmlibreeditor", "FMLibreEditor", "Built-in game editor", "tozmoz/FMLibreEditor", "v0.5.0"),
     ("fmmatchlens", "FMMatchLens", "Match analytics add-on", "osnsyc/FMMatchLens", "v0.7.1"),
-    ("bepinex", "BepInEx", "Add-on loader for FM", "BepInEx/BepInEx", "v5.4.23.6"),
+    ("bepinex", "BepInEx 6", "Add-on loader for FM (IL2CPP bleeding edge)", "bepinex_be", "6.0.0-be.793"),
 ]
+BEPINEX_BUILDS = "https://builds.bepinex.dev"
+
+
+def bepinex_link(html: str) -> tuple[str, str]:
+    m = re.search(r'href="(/projects/bepinex_be/\d+/BepInEx-Unity\.IL2CPP-win-x64-([^"]+?)\.zip)"', html)
+    if not m:
+        raise ValueError("No BepInEx 6 IL2CPP x64 build found")
+    return BEPINEX_BUILDS + m.group(1), unquote(m.group(2)).split("+")[0]
+
+
+def bepinex_latest_sync(client: httpx.Client) -> tuple[str, str]:
+    r = client.get(f"{BEPINEX_BUILDS}/projects/bepinex_be")
+    r.raise_for_status()
+    return bepinex_link(r.text)
 
 
 def _ver(v: str) -> tuple:
@@ -24,6 +41,10 @@ def is_newer(latest: str, installed: str) -> bool:
 
 async def fetch_latest(repo: str) -> dict:
     async with httpx.AsyncClient(timeout=8) as client:
+        if repo == "bepinex_be":
+            r = await client.get(f"{BEPINEX_BUILDS}/projects/bepinex_be")
+            r.raise_for_status()
+            return {"tag": bepinex_link(r.text)[1], "published_at": None, "url": f"{BEPINEX_BUILDS}/projects/bepinex_be"}
         r = await client.get(f"https://api.github.com/repos/{repo}/releases/latest",
                              headers={"Accept": "application/vnd.github+json"})
         r.raise_for_status()

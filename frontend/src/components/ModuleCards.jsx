@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Users, TrendingUp, Search, BarChart3, Zap, Trophy, ArrowRight } from "lucide-react";
+import { Users, TrendingUp, Search, BarChart3, Zap, Star, ArrowRight } from "lucide-react";
 
 const Card = ({ icon: Icon, title, tag, to, delay, children, id, open }) => {
   const nav = useNavigate();
@@ -40,12 +40,12 @@ export const ModuleCards = ({ d }) => (
     </Card>
     <Card id="elite" icon={Zap} title="Game changes" to="/changes" delay="d6" open="Open game changes" tag={d.pending_changes ? <span className="st a">Waiting</span> : <span className="st ok">Clear</span>}>
       <div className="num" data-testid="home-pending-changes">{d.pending_changes}<small>changes waiting for you</small></div>
-      <p className="sent">Elite Training, Breakout and Dynamic Potential rewards.</p>
+      <p className="sent">Elite Training, Breakout Player and Dynamic Potential changes.</p>
     </Card>
-    <Card id="awards" icon={Trophy} title="Awards" to="/awards" delay="d7" open="Open awards">
+    <Card id="breakout" icon={Star} title="Breakout Player" to="/breakout" delay="d7" open="Open Breakout Player">
       <div className="num" data-testid="home-weeks-left">{d.awards.weeks_left}<small>weeks to season end</small></div>
       <div className="ticks">{Array.from({ length: 40 }, (_, i) => <i key={i} className={i < 40 - Math.min(40, d.awards.weeks_left) ? "past" : ""} style={{ height: i % 7 === 0 ? "100%" : "55%" }} />)}</div>
-      <p className="sent">Breakout reviews open at season end.</p>
+      <p className="sent">Breakout picks can be made official at season end.</p>
     </Card>
   </div>
 );

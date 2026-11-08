@@ -10,6 +10,8 @@ from pathlib import Path
 BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 DATA = Path(os.environ.get("APPDATA", Path.home())) / "FMCC"
 DB_PORT, APP_PORT = 27817, 8765
+RESTART_AS_ADMIN = {"wanted": False}
+WINDOW = {}
 
 
 def wait_port(port: int, timeout: float = 30) -> bool:
@@ -34,12 +36,21 @@ def start_server():
         import json
         os.environ.update({k: v for k, v in json.loads(cfg.read_text()).items() if isinstance(v, str)})
     os.environ.update({"MONGO_URL": f"mongodb://127.0.0.1:{DB_PORT}", "DB_NAME": "fmcc", "CORS_ORIGINS": f"http://127.0.0.1:{APP_PORT}",
-                       "FMCC_READER": "fmsave", "FMCC_STATIC_DIR": str(BASE / "web"),
+                       "FMCC_READER": "fmsave", "FMCC_STATIC_DIR": str(BASE / "web"), "FMCC_PROBE": str(BASE / "fmlibre" / "fmlibre-probe.exe"),
                        "FMCC_RELEASE_REPO": (BASE / "release_repo.txt").read_text().strip() if (BASE / "release_repo.txt").exists() else ""})
     sys.path.insert(0, str(BASE / "backend"))
     import uvicorn
+    import connections_api
     from server import app
+    connections_api.restart_hook = restart_as_admin
     uvicorn.run(app, host="127.0.0.1", port=APP_PORT, log_level="warning")
+
+
+def restart_as_admin():
+    """Close this window; main() then stops the database and starts FMCC again with Windows' admin prompt."""
+    RESTART_AS_ADMIN["wanted"] = True
+    if WINDOW.get("w"):
+        WINDOW["w"].destroy()
 
 
 def main():
@@ -49,11 +60,15 @@ def main():
     threading.Thread(target=start_server, daemon=True).start()
     wait_port(APP_PORT)
     import webview
-    webview.create_window("FMCC", f"http://127.0.0.1:{APP_PORT}", width=1600, height=960, min_size=(1200, 760))
+    WINDOW["w"] = webview.create_window("FMCC", f"http://127.0.0.1:{APP_PORT}", width=1600, height=960, min_size=(1200, 760))
     try:
         webview.start()
     finally:
         db.terminate()
+        db.wait(timeout=15)
+    if RESTART_AS_ADMIN["wanted"]:
+        import ctypes
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, None, None, 1)
 
 
 if __name__ == "__main__":
