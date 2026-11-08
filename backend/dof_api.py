@@ -166,6 +166,14 @@ async def stream(conv_id: str, body: Ask):
         raise HTTPException(503, "Add your OpenAI key in Settings to use the DOF chat")
     history = await db.dof_messages.find({"conversation_id": conv_id}, {"_id": 0, "role": 1, "content": 1}).sort("at", 1).to_list(500)
     context = await build_context(c)
+    try:
+        import lab_api
+        fs = await lab_api.formulas(c["id"])
+        gaps = (await lab_api.tactic_fit("433"))["gaps"]
+        context += ("\nMY FORMULAS: " + ("; ".join(f"{v['name']} = {v['expr']}" for v in fs.values()) or "none")
+                    + "\nTACTIC GAPS (4-3-3, weakest slots): " + "; ".join(f"{g['label']} {g['role_name']} score {g['score']}" for g in gaps))
+    except Exception:
+        pass
     transcript = "\n".join(f"{'Manager' if m['role'] == 'user' else 'DOF'}: {m['content']}" for m in history[-12:])
     await db.dof_messages.insert_one({"id": new_id(), "conversation_id": conv_id, "role": "user", "content": body.text, "at": now_iso()})
     if conv["title"] == "New conversation":

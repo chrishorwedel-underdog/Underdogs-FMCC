@@ -9,6 +9,7 @@ import { TopBar } from "@/components/TopBar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModuleGuide } from "@/components/ModuleGuide";
+import { Tour } from "@/components/Tour";
 import Setup from "@/pages/Setup";
 import Home from "@/pages/Home";
 import Squad from "@/pages/Squad";
@@ -40,6 +41,7 @@ const Shell = ({ state }) => {
   return (
     <div className="app grain">
       <Sidebar />
+      <Tour ready={!!state.career} />
       <section className="main">
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
         <div className="content">

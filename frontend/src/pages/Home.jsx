@@ -42,7 +42,7 @@ export default function Home() {
   if (isLoading || !d) return <p className="note">Loading your club…</p>;
   const n = d.attention.length;
   return (
-    <div data-testid="home-page">
+    <div className="home-v2" data-testid="home-page">
       <div className="hero">
         <div>
           <div className="eyebrow rise">{gameDate(d.game_date)} · Season {d.season}</div>
@@ -54,12 +54,10 @@ export default function Home() {
           <div className="hchip" data-testid="home-backup-chip"><Check size={15} /><b>Backup</b> saved {ago(d.last_backup)}</div>
         </div>
       </div>
-      <div className="homegrid">
-        <ModuleCards d={d} />
-        <div>
-          <Attention items={d.attention} />
-          {d.next_fixture && <NextMatch f={d.next_fixture} club={d.club_name} />}
-        </div>
+      <ModuleCards d={d} />
+      <div className="home-bottom" data-testid="home-bottom">
+        <Attention items={d.attention} />
+        {d.next_fixture && <NextMatch f={d.next_fixture} club={d.club_name} />}
       </div>
     </div>
   );

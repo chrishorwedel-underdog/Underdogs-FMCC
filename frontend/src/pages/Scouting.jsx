@@ -10,6 +10,7 @@ import { MyClubTab, DealsTab } from "@/components/scout/ClubDeals";
 import { ScatterTab, Breakdown } from "@/components/scout/Charts";
 import { ComputedTab, RoleScoresTab } from "@/components/scout/Computed";
 import { LeaguesTab } from "@/components/scout/LeaguesTab";
+import { FormulasTab, Quadrant } from "@/components/scout/Lab";
 import { PossessionTab, ImportTab } from "@/components/scout/DataTabs";
 
 const Shortlist = ({ open }) => {
@@ -71,7 +72,7 @@ export default function Scouting({ initialTab = "players" }) {
   const setPrefs = (p) => act(() => api.put("/scout/prefs", p), null, ["scout-prefs"]);
   const toggleCompare = (id) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id].slice(-4)));
   const tabs = [["players", "Players"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Scatter"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
-    ["computed", "Computed stats"], ["roles", "Role scores"], ["leagues", "Leagues"], ["possession", "Possession"], ["import", "HTML import"], ["shortlist", "Shortlist"], ["rules", "Rules"]];
+    ["computed", "Computed stats"], ["formulas", "Formulas"], ["roles", "Role scores"], ["leagues", "Leagues"], ["possession", "Possession"], ["import", "HTML import"], ["shortlist", "Shortlist"], ["rules", "Rules"]];
   return (
     <ScoutCtx.Provider value={{ view, prefs, openPlayer: setOpen, compare, toggleCompare }}>
       <div data-testid="scouting-page">
@@ -82,7 +83,8 @@ export default function Scouting({ initialTab = "players" }) {
         <div style={{ overflowX: "auto", marginBottom: 16 }}><TabBar id="scouting" value={tab} onChange={setTab} tabs={tabs} /></div>
         {tab === "players" && <PlayersTab />}
         {tab === "myclub" && <MyClubTab />}
-        {tab === "deals" && <DealsTab />}
+        {tab === "deals" && <><DealsTab /><Quadrant /></>}
+        {tab === "formulas" && <FormulasTab />}
         {tab === "scatter" && <ScatterTab />}
         {tab === "compare" && (compare.length ? <><CompareTable ids={compare} clear={() => setCompare([])} /><Breakdown ids={compare} /></>
           : <div className="soon">Pick up to 4 players with the scales button in Players or in a profile to compare them here.</div>)}

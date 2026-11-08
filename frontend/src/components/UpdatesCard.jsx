@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { api, ago, errMsg } from "@/lib/api";
 
-const LABEL = { up_to_date: ["Up to date", "ok"], update_available: ["Update available", "a"], check_failed: ["Couldn't check", "r"], no_source: ["No release page yet", "n"] };
+const LABEL = { up_to_date: ["Up to date", "ok"], update_available: ["Update available", "a"], check_failed: ["Couldn't check", "r"], no_source: ["No release page yet", "n"], manual: ["You update it yourself", "b"] };
 
 const Comp = ({ c, onApply, onRollback, busy }) => {
   const [text, tone] = LABEL[c.status] || ["Not checked", "n"];
@@ -14,6 +14,7 @@ const Comp = ({ c, onApply, onRollback, busy }) => {
     <div className="row" data-testid={`update-row-${c.key}`}>
       <div style={{ flex: 1 }}><b>{c.name}</b> <span className="mono" style={{ color: "var(--mut)", fontSize: 12 }}>{c.installed_version}</span><small>{c.role}{c.message ? ` · ${c.message}` : ""}</small></div>
       <span className={`st ${tone}`} data-testid={`update-status-${c.key}`}>{text}{c.status === "update_available" ? ` · ${c.latest_version}` : ""}</span>
+      {c.manual && c.release_url && <a className="btn" href={c.release_url} target="_blank" rel="noreferrer" data-testid={`update-download-${c.key}`}>Download page</a>}
       {c.status === "update_available" && <button className="btn btn-p" disabled={busy} onClick={() => onApply(c)} data-testid={`update-apply-${c.key}`}><ArrowUpCircle size={14} />Update now</button>}
       {c.previous_version && <button className="btn" disabled={busy} onClick={() => onRollback(c)} title={`Go back to ${c.previous_version}`} data-testid={`update-rollback-${c.key}`}><Undo2 size={14} /></button>}
     </div>

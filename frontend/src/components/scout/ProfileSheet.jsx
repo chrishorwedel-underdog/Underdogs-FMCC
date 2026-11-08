@@ -3,6 +3,7 @@ import { Sparkles, Star, Scale } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { Quadrant, Replacement, PriceExplained, HistoryChart } from "./Lab";
 import { useScout, fmtMoney, fmtWage, pctColor, ContractTag } from "./ctx";
 
 const XY = { GK: [50, 90], "D (C)": [50, 74], "D (L)": [14, 70], "D (R)": [86, 70], "WB (L)": [12, 56], "WB (R)": [88, 56], DM: [50, 60],
@@ -60,6 +61,8 @@ const Body = ({ p, view }) => {
         <button className="btn" disabled={busy || !pizza.length} onClick={dof} data-testid="profile-dof-report"><Sparkles size={13} />{busy ? "Writing…" : "DOF report from the numbers"}</button>
       </div>
       {p.report && <p className="note" style={{ lineHeight: 1.6 }} data-testid="profile-report">{p.report}</p>}
+      <Replacement uid={p.unique_id} />
+      <PriceExplained uid={p.unique_id} view={view} />
       {p.dof_reports?.map((r) => <div key={r.id} className="soon" style={{ marginTop: 0 }} data-testid="profile-dof-text"><b>Director of Football</b> · {r.season}<br />{r.text}</div>)}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
         <Pizza items={pizza} />
@@ -75,7 +78,7 @@ const Body = ({ p, view }) => {
         {p.similar.map((s) => <div key={s.unique_id} className="row" style={{ cursor: "pointer" }} onClick={() => openPlayer(s.unique_id)} data-testid={`similar-${s.unique_id}`}>
           <div style={{ flex: 1 }}>{s.name}<small>{s.club} · {s.age} · grade {s.grade}</small></div><span className="mono" title={`Style ${s.style} · ability ${s.ability}`}>{s.similarity}%</span><span className="mono" style={{ width: 70, textAlign: "right" }}>{fmtMoney(s.value, prefs)}</span></div>)}
         {!p.similar.length && <p className="note">Not enough match data to compare styles.</p>}</div>
-      {p.seasons?.length > 0 && <div className="card" style={{ padding: 12 }} data-testid="profile-seasons"><div className="ttl">Seasons in this career</div>
+      {p.seasons?.length > 0 && <div className="card" style={{ padding: 12 }} data-testid="profile-seasons"><div className="ttl">Seasons in this career</div><HistoryChart seasons={p.seasons} />
         <table className="tbl"><thead><tr><th>Season</th><th>Club</th><th>Mins</th><th>Grade</th><th>npxG/90</th><th>xA/90</th></tr></thead>
           <tbody>{p.seasons.map((s) => <tr key={s.season}><td>{s.season}</td><td>{s.club}</td><td className="mono">{s.minutes}</td><td className="mono">{s.grade ?? "—"}</td><td className="mono">{s.p90?.npxg ?? "—"}</td><td className="mono">{s.p90?.xa ?? "—"}</td></tr>)}</tbody></table></div>}
     </div>

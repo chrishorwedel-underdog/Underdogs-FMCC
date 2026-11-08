@@ -5,7 +5,7 @@ import { money } from "@/lib/ui";
 import { useScout } from "./ctx";
 
 const AXES = (meta) => [["grade", "Global grade"], ["value", "Value"], ["age", "Age"], ["minutes", "Minutes"], ...(meta?.metrics || []).map((m) => [m.key, m.label]),
-  ...(meta?.archetypes || []).map((a) => [`c:${a.key}`, `Computed: ${a.name}`])];
+  ...(meta?.archetypes || []).map((a) => [`c:${a.key}`, `Computed: ${a.name}`]), ...(meta?.formulas || []).map((f) => [`f:${f.key}`, `Formula: ${f.name}`])];
 
 const Tip = ({ active, payload }) => (active && payload?.[0] ? <div className="card" style={{ padding: 8, fontSize: 12 }}><b>{payload[0].payload.name}</b><br />{payload[0].payload.club}<br />x {payload[0].payload.x} · y {payload[0].payload.y}</div> : null);
 

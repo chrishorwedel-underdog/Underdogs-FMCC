@@ -3,10 +3,11 @@ import { Star, Scale, Download, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { api, errMsg } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
-import { useScout, usePost, fmtMoney, fmtWage, toGBP, ContractTag, Pct, num } from "./ctx";
+import { useScout, usePost, fmtMoney, fmtWage, toGBP, ContractTag, Pct, num, pctColor } from "./ctx";
+import { AdvFilter } from "./Lab";
 
 const KEY_STATS = ["npxg", "xa", "kp", "progp", "drb", "tkw", "intc", "passc"];
-const BASE = { mode: "p90", gender: "M", source: "save", q: "", group: null, league: null, preset: null, max_value: null, max_wage: null, min_age: 15, max_age: 45, min_minutes: 0, sort: "grade", dir: "desc" };
+const BASE = { mode: "p90", gender: "M", source: "save", q: "", group: new URLSearchParams(window.location.search).get("group"), league: null, preset: null, max_value: null, max_wage: null, min_age: 15, max_age: 45, min_minutes: 0, sort: "grade", dir: "desc", adv: null };
 
 const Filters = ({ f, setF, meta, prefs }) => {
   const set = (k, fn = (v) => v || null) => (e) => setF({ ...f, [k]: fn(e.target.value) });
@@ -56,6 +57,8 @@ export const PlayersTab = () => {
   const { view, prefs, openPlayer, compare, toggleCompare } = useScout();
   const [f, setF] = useState(BASE);
   const [cols, setCols] = useState("key");
+  const [adv, setAdv] = useState(false);
+  const [heat, setHeat] = useState(false);
   const { data: meta } = useGet("scout-meta", "/scout/meta");
   const body = { ...f, view, limit: 100 };
   const { data, isLoading } = usePost("scout-players", "/scout/players", body, { enabled: !!meta });
@@ -71,16 +74,20 @@ export const PlayersTab = () => {
       <Filters f={f} setF={setF} meta={meta} prefs={prefs} />
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
         <div className="seg" data-testid="sp-mode">{[["total", "Season totals"], ["p90", "Per 90"], ["adjusted", "Possession + league adjusted"]].map(([k, l]) => <button key={k} className={f.mode === k ? "on" : ""} onClick={() => setF({ ...f, mode: k })} data-testid={`sp-mode-${k}`}>{l}</button>)}</div>
-        <div className="seg" data-testid="sp-cols">{[["key", "Key stats"], ["all", `All stats (${meta?.metrics.length || 0})`], ["computed", "Computed"], ["actions", "Actions per 90"]].map(([k, l]) => <button key={k} className={cols === k ? "on" : ""} onClick={() => setCols(k)} data-testid={`sp-cols-${k}`}>{l}</button>)}</div>
+        <div className="seg" data-testid="sp-cols">{[["key", "Key stats"], ["all", `All stats (${meta?.metrics.length || 0})`], ["computed", "Computed"], ["formulas", `Formulas (${meta?.formulas.length || 0})`], ["actions", "Actions per 90"]].map(([k, l]) => <button key={k} className={cols === k ? "on" : ""} onClick={() => setCols(k)} data-testid={`sp-cols-${k}`}>{l}</button>)}</div>
+        <button className={`btn${adv || f.adv ? " btn-p" : ""}`} onClick={() => setAdv(!adv)} data-testid="sp-adv-toggle">Advanced filter{f.adv ? " (on)" : ""}</button>
+        <button className={`btn${heat ? " btn-p" : ""}`} onClick={() => setHeat(!heat)} data-testid="sp-heat-toggle">Heat colours</button>
         <span style={{ marginLeft: "auto" }} /><Searches f={f} setF={setF} />
         <button className="btn" onClick={() => exportCsv(body)} data-testid="sp-export-csv"><Download size={13} />Export CSV</button>
       </div>
+      {adv && <AdvFilter value={f.adv} meta={meta} onChange={(v) => setF({ ...f, adv: v })} />}
       <div className="card" style={{ padding: 8, overflowX: "auto" }}>
         <table className="tbl" data-testid="sp-table">
           <thead><tr><th></th><Th k="name">Player</Th><Th k="age">Age</Th>{view === "full" && <Th k="ca">CA/PA</Th>}<Th k="grade" title="Global grade: 20 + (local grade − 20) × league multiplier">Grade</Th>
             <Th k="value">Value</Th><Th k="fair_price">Fair price</Th><Th k="wage">Wage</Th><Th k="minutes">Mins</Th>
             {statKeys.map((k) => <Th key={k} k={k} title={label[k]}>{label[k]?.replace(" / 90", "").slice(0, 18)}</Th>)}
             {cols === "computed" && meta?.archetypes.map((a) => <Th key={a.key} k={`c:${a.key}`}>{a.name}</Th>)}
+            {cols === "formulas" && meta?.formulas.map((x) => <Th key={x.key} k={`f:${x.key}`}>{x.name}</Th>)}
             {cols === "actions" && ["Defensive actions", "Progressive actions", "Box involvement"].map((a) => <th key={a}>{a}</th>)}<th></th></tr></thead>
           <tbody>{data?.rows.map((r) => {
             const marker = f.mode === "adjusted" && (r.poss_mult !== 1 || r.league_mult !== 1) ? `Possession ×${r.poss_mult} · league ×${r.league_mult}` : null;
@@ -94,7 +101,9 @@ export const PlayersTab = () => {
                 <td className="mono">{r.value ? fmtMoney(r.value, prefs) : "—"}</td>
                 <td className="mono" title={r.fair_price ? `Confidence: ${r.confidence}` : "Not enough minutes"}>{r.fair_price ? fmtMoney(r.fair_price, prefs) : "—"}</td>
                 <td className="mono">{fmtWage(r.wage, prefs)}</td><td className="mono">{r.minutes}</td>
-                {statKeys.map((k) => <Pct key={k} v={r.stats[k]} p={r.pct[k]} marker={isPct[k] ? null : marker} />)}
+                {statKeys.map((k) => (heat && r.pct[k] != null ? <td key={k} className="mono" style={{ background: `color-mix(in srgb, ${pctColor(r.pct[k])} 22%, transparent)` }} title={`${r.pct[k]}th percentile`}>{num(r.stats[k])}</td>
+                  : <Pct key={k} v={r.stats[k]} p={r.pct[k]} marker={isPct[k] ? null : marker} />))}
+                {cols === "formulas" && meta?.formulas.map((x) => <td key={x.key} className="mono">{num(r.f?.[x.key])}</td>)}
                 {cols === "computed" && meta?.archetypes.map((a) => <Pct key={a.key} v={r.computed?.[a.key]} p={r.computed?.[a.key]} />)}
                 {cols === "actions" && ["Defensive actions", "Progressive actions", "Box involvement"].map((a) => <td key={a} className="mono">{num(r.actions?.[a])}</td>)}
                 <td onClick={(e) => e.stopPropagation()}><button className={`btn${compare.includes(r.unique_id) ? " btn-p" : ""}`} onClick={() => toggleCompare(r.unique_id)} title="Compare" data-testid={`sp-compare-${r.unique_id}`}><Scale size={13} /></button></td>

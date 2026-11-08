@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api, gameDate } from "@/lib/api";
+import { TacticFit } from "@/components/TacticApps";
 import { PlayerSheet } from "@/components/PlayerSheet";
 import { TabBar } from "@/lib/ui";
 import { LineupView } from "@/components/squad/LineupView";
@@ -26,7 +27,7 @@ const Row = ({ p, onOpen }) => (
   </tr>
 );
 
-const VIEWS = [["lineup", "Lineup"], ["depth", "Depth chart"], ["players", "Players"], ["registration", "Registration"], ["rules", "Rules"]];
+const VIEWS = [["lineup", "Lineup"], ["depth", "Depth chart"], ["fit", "Tactic fit"], ["players", "Players"], ["registration", "Registration"], ["rules", "Rules"]];
 
 export default function Squad() {
   const [params, setParams] = useSearchParams();
@@ -46,6 +47,7 @@ export default function Squad() {
       </div>
       {view === "lineup" && <LineupView formation={formation} setFormation={setFormation} />}
       {view === "depth" && <DepthView formation={formation} />}
+      {view === "fit" && <TacticFit />}
       {view === "registration" && <RegistrationView />}
       {view === "rules" && <RulesTab module="squad" title="Development XI and registration rules" />}
       {view === "players" && <>

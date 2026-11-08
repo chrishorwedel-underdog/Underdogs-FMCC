@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
+import lab_api
 import roles
 import stats_model as sm
 from core import db, active_career, now_iso, new_id, audit, next_revision, logger
@@ -39,6 +40,8 @@ def mask(x: dict, view: str) -> dict:
 
 
 def _value_of(x: dict, key: str, mode: str = "p90"):
+    if key.startswith("f:"):
+        return (x.get("f") or {}).get(key[2:])
     if key.startswith("c:"):
         return x["computed"].get(key[2:])
     if key in sm.METRICS:
@@ -78,6 +81,8 @@ def _filter(data: dict, f: dict, view: str) -> list:
             continue
         if p == "young_regulars" and not (x["age"] <= 23 and x["minutes"] >= 900):
             continue
+        if f.get("adv") and not lab_api.match(x, f["adv"], data):
+            continue
         out.append(x)
     key, desc = f.get("sort", "grade"), f.get("dir", "desc") == "desc"
     out.sort(key=lambda x: (_value_of(x, key, f.get("mode", "p90")) is None, -(_value_of(x, key, f.get("mode", "p90")) or 0) if desc else (_value_of(x, key, f.get("mode", "p90")) or 0)))
@@ -88,7 +93,7 @@ def _row(x: dict, view: str, mode: str) -> dict:
     m = mask(x, view)
     return {k: m.get(k) for k in ("unique_id", "name", "age", "nationality", "club", "league", "positions", "group", "cohort", "ca", "pa", "value", "wage", "minutes",
                                   "own", "source", "months_left", "contract_end", "grade_global", "grade_local", "fair_price", "confidence", "best_role",
-                                  "poss_mult", "league_mult", "computed", "phases", "actions", "linked")} | {
+                                  "poss_mult", "league_mult", "computed", "phases", "actions", "linked", "f")} | {
         "stats": {k: _value_of(x, k, mode) for k in sm.METRICS if x["p90"].get(k) is not None}, "pct": x["pct"]}
 
 
@@ -109,6 +114,7 @@ class Filters(BaseModel):
     sort: str = Field(default="grade", max_length=30)
     dir: Literal["asc", "desc"] = "desc"
     limit: int = Field(default=100, ge=1, le=500)
+    adv: Optional[dict] = None
 
 
 async def _data():
@@ -117,6 +123,7 @@ async def _data():
     if not data["players"]:
         raise HTTPException(404, "No scouting data yet. Read a save first.")
     await _record_seasons(c, data)
+    await lab_api.attach(c, data)
     return c, data
 
 
@@ -139,6 +146,7 @@ async def meta():
     return {"metrics": [{"key": k, "label": v[0], "kind": v[1]} for k, v in sm.METRICS.items()], "presets": PRESETS, "groups": GROUPS,
             "leagues": sorted({x["league"] for x in data["players"] if x["league"]}), "roles": [{"key": k, "name": f"{v[0]} ({v[1]})"} for k, v in roles.ROLES.items()],
             "archetypes": [{"key": a["key"], "name": a["name"]} for a in data["archetypes"].values()], "game_date": data["game_date"],
+            "formulas": [{"key": k, "name": v["name"]} for k, v in (data.get("formulas") or {}).items()],
             "min_minutes": {"percentiles": sm.MIN_PCT, "fair_price": sm.MIN_PRICE}, "sample": not sm.LIVE,
             "html_imports": await db.html_imports.count_documents({"status": "active"})}
 

@@ -39,6 +39,7 @@ from licensing_api import router as licensing_router  # noqa: E402
 from leagues_api import router as leagues_router  # noqa: E402
 from scout_api import router as scout_router  # noqa: E402
 from graphics_api import router as graphics_router  # noqa: E402
+from lab_api import router as lab_router  # noqa: E402
 import sample_matches  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
@@ -386,6 +387,13 @@ async def run_update_check() -> list:
         row = {"key": key, "name": name, "role": role, "repo": repo, "installed_version": installed, "checked_at": now_iso()}
         if not repo:
             row |= {"status": "no_source", "latest_version": None, "message": "Release page not set yet"}
+        elif repo.startswith("page:"):
+            try:
+                rel = await updates.fetch_page_version(repo[5:])
+                row |= {"latest_version": rel, "release_url": repo[5:], "status": "manual" if rel else "check_failed", "manual": True,
+                        "message": f"Latest {rel}. FMCC never installs it; download it from its page." if rel else "Couldn't read the version from its page"}
+            except Exception:
+                row |= {"status": "check_failed", "manual": True, "release_url": repo[5:], "message": "Couldn't reach its page"}
         else:
             try:
                 rel = await updates.fetch_latest(repo)
@@ -484,7 +492,7 @@ async def restore_backup(backup_id: str):
 
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse

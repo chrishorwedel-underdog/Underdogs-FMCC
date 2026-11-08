@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { api, ago, errMsg } from "@/lib/api";
 import { useGet, PageHead } from "@/lib/ui";
+import { AppsCard } from "@/components/TacticApps";
 
 const Status = ({ ok, label, id }) => <span className={`st ${ok ? "ok" : "a"}`} data-testid={`conn-status-${id}`}>{ok ? "Installed" : "Not installed"}{label ? ` · ${label}` : ""}</span>;
 const WORK = { ok: ["ok", "Working"], waiting: ["a", "Waiting for FM"], fail: ["r", "Not working"] };
@@ -32,6 +33,7 @@ export default function Connections() {
     <div data-testid="connections-page">
       <PageHead eyebrow={`Steam · ${d.edition}`} title="Connections" />
       {!d.desktop && <div className="banner" style={{ marginBottom: 20 }} data-testid="connections-preview-banner"><ShieldAlert size={16} style={{ flexShrink: 0, marginTop: 2 }} /><span>Browser preview: installing is simulated here. The Windows program downloads BepInEx 6 and FMMatchLens from their official release pages and copies them into your Steam FM folder.</span></div>}
+      <AppsCard />
       {(admin && d.desktop && !d.is_admin) && <div className="banner" style={{ marginBottom: 20 }} data-testid="admin-banner"><ShieldAlert size={16} /><span style={{ flex: 1 }}>Windows blocked access to the game. FMCC can restart itself as administrator.</span>
         <button className="btn btn-p" onClick={() => run("/connections/restart-admin", "Restarting FMCC as administrator…")} data-testid="restart-admin-button">Restart as administrator</button></div>}
       <div className="homegrid">

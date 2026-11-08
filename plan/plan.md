@@ -1,133 +1,139 @@
-# FMCC: ScoutSheet built in, FMDataLab-style analytics, league strength, and graphics tools
+# FMCC: guided tour, ideas from FMST26, FM Dossier and fmOS, and those apps in Updates
 
-FMCC takes in ScoutSheet's whole scouting app and rebuilds FMDataLab's analytics on top. The result is one deep scouting and Moneyball lab that runs from your own save.
-The Player & Teams Editor adds kits, bulk import of a whole folder of pictures, and a full check of every graphics pack.
+FMCC adds a click-through tour for new users and rebuilds the best ideas from three other Football Manager apps inside Scout Players and Squad.
+The apps themselves can be launched from FMCC when installed, and their new versions are tracked in Settings → Updates.
 
 ## Who it's for
-One manager running an FM26 or FM27 career next to the game. They want to find undervalued players, judge them on real match output across leagues of different strength, and keep their faces, logos and kits tidy.
+One manager running an FM26 or FM27 career next to the game. They want a deeper Moneyball engine (their own formulas and sharper filters), to know which signings fit their tactic, and a cheaper like-for-like replacement when a player leaves.
 
 ## Core features and experience
 
-### 1. ScoutSheet, built in completely (Scout Players)
-ScoutSheet's code is free to reuse (MIT licence) and is credited in Settings. Everything it offers, inside FMCC:
-- **Three views, switched with one click:**
-  - **Full:** everything, including CA, PA, hidden attributes, personality and a written scouting report;
-  - **Fair play:** only what your scouts would show you in the game;
-  - **Moneyball:** match stats and price only, with attributes switched off.
-- **Search:**
-  - FM-style search across every player in the save, men and women, with a switch between them;
-  - ready-made searches (for example wonderkids and expiring contracts) and saved searches of your own;
-  - caps on value and wage.
-- **Player profile:**
-  - positions on a pitch, phase scores (finishing, creating, carrying, defending) and best role;
-  - peer percentiles, a pizza chart, similar players, contract, price and wage;
-  - a confidence word: Low, Medium or High, based on minutes played;
-  - contract warnings in orange (12 months left) and red (6 months left).
-- **My Club:** each position in your squad is rated, weakest first. Clicking one lists the players who would improve it, with their cost.
-- **Fair price, Deal Finder and Offers:**
-  - each player gets a fair price from similar players in your save;
-  - Deal Finder lists the players selling well under it;
-  - Offers checks a bid against fair price before you accept or send it.
-- **Compare, shortlist and export:** compare players side by side, add them to the FMCC shortlist, and export any list to a CSV file.
-- **Currency and wages:** choose £, € or $, and wages per week, month or year.
-- **Left out on purpose:**
-  - ScoutSheet's usage statistics, which send data to its website;
-  - its own self-updater, because FMCC handles updates (below);
-  - it never writes to the save, and that stays true.
+### 1. Guided tour
+- Starts automatically the first time FMCC opens after setup.
+- Steps through every sidebar page in order (Home, Dynamic Potential, Breakout Player, Scout Players, Monthly Reports, Moneyball, Squad, Development, Elite Training, Matches, Player & Teams Editor), then Project Safety, Game changes and the Director of Football button.
+- On each step:
+  - FMCC opens that page;
+  - the menu item is highlighted;
+  - a small card says in two or three lines what the page does, with Back, Next and Skip tour.
+- It finishes on Home with "You're ready".
+- It can be replayed at any time from a "Take the tour" button in Settings and the help button in the top bar.
+- It uses the same wording as the "What this page does" cards, so the two always agree.
 
-### 2. ScoutSheet in the automatic updates list
-- ScoutSheet appears in Settings → Updates next to BepInEx and FMMatchLens. It shows its version, when FMCC last checked and what changed.
-- When ScoutSheet publishes a new release, FMCC:
-  - downloads it and checks the file's published checksum;
-  - runs its own compatibility checks: the new version must load your current save's players and give the same results on a set of test players;
-  - **if the checks pass,** installs it automatically and tells you what changed;
-  - **if they fail,** stays on the current version and shows "Update held back" with the reason.
-- The previous version is always kept, and "Go back to the previous version" is one click.
-- You can switch automatic updates off and check by hand instead.
+### 2. Formula builder (the FMST26 idea)
+- In Scout Players → a new **Formulas** tab, you write your own stat. For example: `(npxg + xa) / 2`, `tkw + intc * 0.8`, `npg - npxg`.
+- **What a formula can use:**
+  - every stat FMCC already has, plus minutes, age, value, wage, grade and computed stats;
+  - + − × ÷, brackets, min, max, abs and if.
+- **Chaining:** a formula can use another of your formulas.
+- **Where formulas appear:**
+  - as columns in the Players table;
+  - as X/Y on the Scatter chart;
+  - in filters and in the Compare tab.
+- **Percentiles:** each formula gets a percentile rank against a pool you pick:
+  - the whole save;
+  - the same position;
+  - the same league;
+  - your current filter.
+- **Checks and history:**
+  - a live preview shows the result for 5 sample players while you type;
+  - errors (unknown stat, division by zero, a formula that uses itself) are shown in plain words;
+  - every saved formula is kept as a new version, never overwritten.
+- **Limit:** up to 30 formulas.
 
-### 3. Everything that can be taken from FMDataLab (rebuilt, as it has no source code)
-- **Stats table:** every stat the save holds (FMDataLab shows 169 columns), as season totals, per 90, and with possession and league adjustments.
-- **Percentiles** against players in the same position.
-- **Computed stats:** archetype scores built from weighted percentiles, for example Ball-Playing Defender, Box Crasher or Pressing Forward.
-  - Each weight goes from 0 to 10, and a warning shows when a weight differs from the default.
-  - You can make up to 6 custom computed stats from 3 to 12 stats each.
-- **Actions per 90:** weighted sums of raw per-90 stats, for example defensive actions, progressive actions and box involvement.
-- **Possession adjustment:**
-  - attacking stats are multiplied by your possession ÷ his club's possession;
-  - defensive stats are multiplied by his club's possession ÷ your possession;
-  - percentage stats are not adjusted;
-  - each club's possession is entered in a table, and a marker on each adjusted number shows the multiplier used;
-  - a "show raw" toggle shows the numbers before and after adjustment.
-- **League multipliers:** your Opta ranking (section 4).
-- **Scatter chart:** any two stats on the X and Y axes, with average lines, hovering and click-to-open profiles.
-- **Player details compare chart:** each computed stat broken down into its parts, for up to 4 players.
-- **Role scores:** an attribute-based suitability for every role, sortable across the whole save.
-- **Best XI:** tries every lineup of eligible players for your formation and roles and picks the highest-scoring one. This upgrades the existing Best XI in Squad.
-- **Import FM's HTML exports:** an alternative to reading the save, for when the save can't be read. You can import several files at once.
-- **Minutes rule:** percentiles and scores need at least 400 minutes, and a fair price needs at least 900. Below that, the player shows "Not enough minutes".
+### 3. Advanced filters and percentile filters (FMST26)
+- **A filter builder:**
+  - conditions joined with AND / OR;
+  - groups inside groups.
+- **Kinds of conditions:**
+  - **Value:** for example, "minutes ≥ 900".
+  - **Stat against stat:** for example, "npg < npxg" (finishing below expectation).
+  - **Percentile:** for example, "top 10% of central midfielders for progressive passes".
+- **Percentile settings:** you pick the pool (whole save, same position or same league). Every stat cell can show a green-to-red heat colour by percentile.
+- **Saving:** filters save with the existing saved searches and work in every view (Full, Fair play, Moneyball).
+- **Fair play:** filters only use what your scouts know, so nothing hidden can be found by filtering.
 
-### 4. League strength (Scout Players → Leagues)
-- **Your ranking:** your 208-league Opta list from 6 November 2026 comes built in.
-  - Formula: multiplier = (Opta rating ÷ 92.1)^1.5. The Premier League is 1.000.
-  - Every multiplier can be edited, and edits are kept in the career's history.
-- **Matching leagues:** each league in the save is matched to a league on the list automatically, by country and name. Matches FMCC isn't sure about are shown for you to confirm or change.
-- **Leagues not on the list:** placed by their reputation in the save.
-  - FMCC takes the two leagues on the list whose save reputation is nearest above and below.
-  - It fills in an Opta rating between theirs and applies the formula.
-  - These leagues are marked "Estimated from reputation".
-- **Recalculate from reputations:**
-  - re-places every estimated league using the save's current reputations;
-  - it shows old and new values before saving;
-  - your hand edits stay unless you tick "also reset my edits".
-- **Duplicate entries in the list:** Kenyan Premier League (3×); Faroe Islands Premier League, Congolese Ligue 1, Jordanian Pro League and Hong Kong Premier League (2× each); and the Grenadian rows (3 near-identical). FMCC uses the highest-ranked entry for each and lists the rest for you to review.
+### 4. Quadrant chart and replacement search (fmOS)
+- **Quadrant chart** (Deals & Offers → Quadrant):
+  - performance is on one axis and total cost (fee + wages over the contract) on the other;
+  - for performance you pick the global grade, a computed stat or one of your formulas;
+  - the four zones are labelled Hidden gems, Stars, Overpriced and Avoid;
+  - you click any dot to open the profile.
+- **Replacement search:**
+  - a "Find a replacement" button sits on every profile;
+  - it lists players with the same playing style (the workbook's similarity engine), filtered by your caps (max fee, max wage, max age);
+  - results are sorted by similarity and cheapness, with the saving shown against the player being replaced;
+  - from My Club you can do the same for any of your own players who are leaving or ageing.
 
-### 5. Graphics tools (Player & Teams Editor)
-- **Kits:** home, away and third kit pictures for any club. Upload them, or create them with ChatGPT from the club colours with a preview first.
-- **Pack browser:** a picture grid for any graphics pack, showing each image with the player or club it belongs to.
-- **Bulk import a folder or zip:**
-  - Files are matched by the ID in their name: a player ID or the `r-` form for faces, and a club ID for logos and kits. Kit files also need a word such as "home" in the name.
-  - Everything is staged first: you see what will be added, what will be replaced, and which IDs aren't in the save. Nothing is written until you press "Write to FM", and each item can be undone afterwards.
-- **Check my graphics packs:** scans every pack (NG_Regens, logo packs, kit packs and FMCC's own) and lists:
-  - missing or broken pictures;
-  - IDs set by more than one pack, and which pack's picture FM is likely to show;
-  - IDs that aren't in the current save.
-  - It only reports. It never edits another pack's files.
+### 5. Tactic fit and squad gaps (FM Dossier)
+- **Importing:** in Squad → a new **Tactic fit** tab, you import an FM tactic file (.fmf) or pick one of FMCC's formations. FMCC reads the formation, positions and roles from the file.
+- **Fit:** every player in your squad is rated for every slot of that tactic:
+  - for both the in-possession and out-of-possession role where the file has them;
+  - using the same role ratings as Squad.
+- **Squad gaps:** each slot gets a rating for the starter, the backup and depth. The weakest slots are listed first.
+- **Fixing a gap:** clicking a gap opens Scout Players with a ready-made search for that role, within reach of your club's budget and reputation.
+- **History:** every imported tactic is kept, so you can switch between tactics and compare them.
+
+### 6. The three apps inside FMCC
+- **Connections** gets a card for each app:
+  - **FMST26 and FM Dossier** (Windows programs): FMCC looks for them on the PC, shows Installed / Not installed and a version, and offers an **Open** button. If either isn't installed, a **Get it** link goes to its official page.
+  - **fmOS** (a website): it opens in your browser.
+- **Settings → Updates** lists FMST26, FM Dossier and fmOS next to ScoutSheet, BepInEx and FMMatchLens. For each, FMCC:
+  - checks their official page or changelog once a week (and when you press Check);
+  - shows the installed and latest version and what changed, with a link to download.
+- **No automatic installs for these three:** their files aren't FMCC's to redistribute, so FMCC never downloads or installs them. You update them yourself; FMCC tells you when.
+- Credits in Settings name all three as feature inspiration.
+
+### 7. A cleaner, symmetrical Home page
+- **Today:** the six module cards sit on the left, with a narrower column on the right for Needs your attention and Next match. This leaves the page lopsided and empty at the edges.
+- **New layout:** the page fills the screen width, and everything is balanced on one centre line.
+  - **Top:** a full-width welcome band, with the greeting and today's status on the left and the backup and next-match chips on the right, aligned to the same height.
+  - **Middle:** the six module cards in an even 3 × 2 grid. All cards are the same size, with their numbers lined up.
+  - **Bottom:** two equal halves side by side, Needs your attention and Next match, at the same height.
+- **Bigger throughout:** text, numbers, icons, card padding and spacing all go up about one size, so the page reads comfortably on a large monitor without feeling empty.
+- **Smaller screens:** the grid steps down to 2 columns, then 1, and the two bottom halves stack.
+- **Nothing removed:** the same information and links stay; only the arrangement and sizes change.
 
 ## User flow
-1. Open Scout Players. ScoutSheet's views are there, and the save is read automatically as it is now.
-2. Under Leagues, confirm the unsure league matches and optionally press Recalculate. Enter possession for your club and the rivals you care about.
-3. Pick Full, Fair play or Moneyball. Search, sort the stats table, build or tune computed stats, and use the scatter chart to spot outliers.
-4. Open a profile, compare up to 4 players, check the fair price, use Deal Finder or Offers, and add targets to the shortlist.
-5. In Squad, run Best XI for your formation.
-6. In the Player & Teams Editor, add kits, bulk import pictures, then run "Check my graphics packs".
-7. Settings → Updates shows ScoutSheet's version and installs new ones by itself after the checks pass.
+1. A new user finishes setup and lands on the new, balanced Home page; the tour starts. They click Next through each page, or skip it and replay it later from Settings.
+2. In Scout Players → Formulas, they write `npg - npxg`, check the preview and save it. It appears as a column and on the Scatter chart.
+3. In Players, they build a filter: central midfielders, top 10% for progressive passes, AND npg below npxg, AND age ≤ 24. Then they save it.
+4. In Squad → Tactic fit, they import their .fmf tactic. The left-back slot shows as the biggest gap, so they click it and get a search for that role within budget.
+5. They open a target's profile, press Find a replacement on their ageing striker, and check the Quadrant chart for hidden gems.
+6. Settings → Updates shows that FM Dossier has a new version; they click through to download it.
 
 ## UI/UX feel
-The same dark FMCC look. The scouting screens are dense and analytical: a sortable table with percentile colour bars, a pizza chart and profile panel, and a scatter chart with average lines. Small markers show where an adjustment was applied. The Full, Fair play and Moneyball switch sits at the top so it is always clear what information is showing.
+The same dark FMCC look. The tour is a soft spotlight on the menu item, with a compact card beside it and a step counter (4 of 14). The formula editor is a monospace box with stat suggestions as you type and a live result strip underneath. The filter builder uses nested rounded groups with AND/OR pills. The quadrant chart has four faintly tinted zones with their labels in the corners.
 
 ## Implementation phases
 **Phase 1 (built now)**
-- All of ScoutSheet inside Scout Players, plus ScoutSheet in the automatic updates list.
-- All the FMDataLab-style analytics, including Role scores, the upgraded Best XI and HTML import.
-- The league-strength table with your ranking, matching, reputation placement and Recalculate.
-- Kits, the pack browser, staged bulk import and the graphics pack check.
+- The cleaner, symmetrical and larger Home page.
+- The guided tour (first launch, replayable).
+- The formula builder with chaining, percentiles and versions.
+- Advanced and percentile filters, and percentile heat colours.
+- The quadrant chart and replacement search.
+- Tactic fit and squad gaps from .fmf files.
+- The three apps in Connections (detect, Open, Get it) and in Settings → Updates (version checks, no installs).
 
 **Phase 2**
-- Tracking stats across several seasons in the same career, which FM itself deletes.
-- Possession figures taken automatically from FMMatchLens matches.
-- Tactical archetype searches with weights for in possession and out of possession.
+- fmOS-style "price explained": a fee broken into age, potential, position, club reputation, contract and form.
+- FM Dossier's Shape Advisor: ranking many formations against your squad.
+- Formulas shared as files you can import and export.
 
 **Phase 3**
-- Kit design templates and bulk ChatGPT creation.
-- Scouting reports written by your Director of Football from the Moneyball numbers.
+- Value and form history charts per player across seasons.
+- The Director of Football uses your formulas and tactic gaps when it answers.
 
 ## Assumptions
-- **Save support:** ScoutSheet officially supports FM26 saves. FM27 support depends on the shared save reader and will be marked "Unverified" until it is shown to work on a real FM27 save. In the browser preview, players and stats are SAMPLE data.
-- **Possession:** the save doesn't hold club possession, so you enter it. Until then, nothing is possession-adjusted.
-- **FMDataLab:** none of its code is used. Its features and published possession method are rebuilt.
-- **FM Pack Manager:** left out completely, as you chose. FMCC's own graphics tools cover its features.
-- **ScoutSheet updates:** an update that changes how ScoutSheet works so much that the checks fail is held back, never forced. It is then reported in Updates.
-- **Opta list:** built in exactly as you gave it. Only the matching to FM's league names is added.
-- **Kit file layout:** kits use FM's usual `club/<ID>/kits/home` style layout in FMCC's own config file. This will be checked on your PC like the other graphics features.
-- **Bulk import limit:** up to 5,000 pictures and 500 MB per import, each picture up to 5 MB.
-- **History:** every league multiplier edit, possession value, computed-stat weight change and imported picture is kept as a new version, never overwritten.
+- **No code from the three apps:** none of their code is used, because their licences aren't confirmed. FMST26 and FM Dossier are closed Windows programs, and fmOS is a website. "Incorporate" therefore means:
+  - their ideas are rebuilt inside FMCC;
+  - FMCC launches them when they're installed;
+  - FMCC tracks their versions.
+- **Update checks:** these read each app's public page or changelog. If a page changes its layout, that app shows "Couldn't check" rather than a wrong version.
+- **Finding the installed apps:** FMCC looks in their usual install folders. If one is installed somewhere else, you can point FMCC at it once.
+- **Tactic files:** reading .fmf files depends on FM's tactic file format. The format will be checked on a real FM26/FM27 file. Until then, picking one of FMCC's formations does the same job, and the browser preview uses a SAMPLE tactic.
+- **Live game reading:** FMST26 and FM Dossier read the game live; FMCC keeps reading your saves as it does now. Live reading isn't part of this plan.
+- **Total cost:** the quadrant chart uses value plus wage × contract months left. Bonuses aren't in the save, so they're left out.
+- **Formula safety:** formulas are calculated by FMCC's own maths parser, never run as code. Up to 30 formulas, each up to 300 characters.
+- **Preview data:** match stats and players are SAMPLE data, as they are now.
+- **The tour:** it runs once per FMCC install. Replaying it never changes any data.
+- **Home sizes:** "a little bigger" is read as about one size up for text and spacing on Home only. Other pages keep their current sizes.

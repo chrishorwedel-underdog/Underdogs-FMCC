@@ -7,11 +7,14 @@ import { api, ago, gameDate, errMsg } from "@/lib/api";
 import { CareersCard } from "@/components/CareersCard";
 import { UpdatesCard } from "@/components/UpdatesCard";
 import { BackupsCard } from "@/components/BackupsCard";
+import { startTour } from "@/components/Tour";
 
 const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
   ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"],
   ["ScoutSheet", "MIT", "Scouting views, fair price, Deal Finder and Offers, rebuilt inside Scout Players"], ["FMDataLab", "No code used", "Its analytics ideas and published possession method, rebuilt"],
-  ["FM26 Player Rating & Similarity Model", "Your workbook", "League list (Opta averages, 10 Aug 2026), position weights, grades and similarity"]];
+  ["FM26 Player Rating & Similarity Model", "Your workbook", "League list (Opta averages, 10 Aug 2026), position weights, grades and similarity"],
+  ["FMST26", "No code used", "Inspiration for formulas and advanced filters"], ["fmOS", "No code used", "Inspiration for the quadrant chart, replacement search and price explained"],
+  ["FM Dossier", "No code used", "Inspiration for tactic fit, squad gaps and the shape advisor"]];
 
 const SavesCard = () => {
   const { data = [] } = useQuery({ queryKey: ["saves"], queryFn: () => api.get("/saves").then((r) => r.data) });
@@ -72,6 +75,7 @@ export default function Settings({ state }) {
           <UpdatesCard autoInstall={state.auto_install_updates} />
           <BackupsCard />
           {!state.sample_mode && <KeyCard />}
+          <div className="card rise d5" data-testid="tour-settings-card"><div className="ttl">Guided tour</div><p className="note" style={{ marginTop: 4 }}>A click-through of every page. Replaying it never changes any data.</p><button className="btn btn-p" style={{ marginTop: 8 }} onClick={startTour} data-testid="settings-take-tour">Take the tour</button></div>
           <div className="card rise d5" data-testid="credits-card">
             <div className="ttl">Credits</div>
             {CREDITS.map(([n, l, r]) => <div className="row" key={n}><div style={{ flex: 1 }}>{n}<small>{r}</small></div><span className="st n">{l}</span></div>)}
