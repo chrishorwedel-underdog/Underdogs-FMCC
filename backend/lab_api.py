@@ -301,12 +301,15 @@ class StarterIn(BaseModel):
 @router.post("/scout/formulas/starter")
 async def add_starter(body: StarterIn):
     have = await formulas((await active_career())["id"])
+    want = [s for s in STARTER if s[0] in body.keys and s[0] not in have]
+    free = MAX_FORMULAS - len(have)
+    if want and free <= 0:
+        raise HTTPException(409, f"You already have {MAX_FORMULAS} formulas. Delete one first.")
     done = []
-    for k, n, e, _ in STARTER:
-        if k in body.keys and k not in have:
-            await save_formula(k, FormulaIn(name=n, expr=e))
-            done.append(k)
-    return {"added": done}
+    for k, n, e, _ in want[:free]:
+        await save_formula(k, FormulaIn(name=n, expr=e))
+        done.append(k)
+    return {"added": done, "skipped": [s[0] for s in want[free:]]}
 
 
 class ImportIn(BaseModel):

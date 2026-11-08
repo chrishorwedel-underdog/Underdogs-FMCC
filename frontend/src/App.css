@@ -193,7 +193,7 @@ h1.h .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
 .wiz-row{display:flex;align-items:center;gap:16px;margin-top:28px;flex-wrap:wrap}
 .wiz-row .seg button{height:46px;padding:0 26px;font-size:15px}
 .wiz-card .btn-l{height:54px;padding:0 28px;font-size:15.5px;border-radius:13px}
-@media (max-width:760px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.wiz-card{padding:26px 22px!important}.wiz-logo{height:110px}}
+@media (max-width:760px){.wiz-row{flex-wrap:nowrap;gap:10px}.wiz-row .seg button{padding:0 14px}.wiz-row .btn-l{padding:0 16px;white-space:nowrap}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.wiz-card{padding:26px 22px!important}.wiz-logo{height:110px}}
 .stp.done{color:var(--grn);border-color:rgba(52,211,153,.3)}
 .stp i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 13px 'Geist Mono';font-style:normal;background:var(--s3);flex-shrink:0}
 .stp.on i{background:var(--acc);color:#fff}

@@ -87,6 +87,13 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Tested: iteration_10 (33/35 + Stage 10 regression 42/42 + UI). Fixed afterwards: field whitelist in filters/quadrant, CA/PA sort blocked outside Full view, bad filter values no longer crash, similar players same gender, replacement caps of 0, Squad gap links filter Scout Players, quadrant axis, formula preview reset. Remaining 2 test failures are test-order/revision-count artifacts.
 - Known limit: Tactic fit ranks each slot separately, so one player can be the starter in two slots. .fmf reading only finds the formation text; FMST26/fmOS release pages unverified.
 
+## Implemented (2026-11-08) — Smarter Tactic fit, app pages, formula starter pack, setup page
+- Tactic fit uses optimal assignment in three layers (starters, then backups, then depth), so each player appears once.
+- FMST26 (https://www.fmscout.com/a-fmst-26.html) and fmOS (https://fmos.it/, Windows/Mac app) official pages are linked in Connections and checked in Updates (shows the latest version; you update it yourself).
+- Formula starter pack: 10 ready-made formulas in Scout Players > Formulas (Try, Add, Add all; respects the 30 limit and reports skipped ones).
+- First-run setup redesigned: bigger logo, title, step cards and card; edition selector and Find button on one line (also on mobile).
+- Tested: iteration_11 (14/14 new + 35/35 Stage 11 regression + UI). Fixed afterwards: starter pack limit handling, one-line selector at 390px.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.

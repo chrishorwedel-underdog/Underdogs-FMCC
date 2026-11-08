@@ -1,0 +1,40 @@
+{
+  "summary": "Stage 12 test: Smarter Tactic fit, official app pages, Formula starter pack, first-run setup redesign. Setup was done in the UI (TEST_Career / TEST Club, FM26), then 2 more saves were read (3 in total). New pytest file test_fmcc_stage12_fit_starter_apps.py passes 14/14, plus a limit test. Stage 11 regression passes 35/35 after 2 asserts were updated for the new fmOS spec (kind 'web' to 'windows'). UI tested with Playwright at 1920 and 390 with no page errors.\n\nWorking:\n- Setup: logo 150px, title 44-68px, step cards 62px high, card 1080px wide. At 1920, FM26/FM27 and Find share a vertical center (788.8px). Find label follows the edition ('Find FM26'). Clicking Find shows 'Found FM26 ✓', then Continue > Skip > career/club > Skip > Health check > Open FMCC goes to Home. No horizontal scroll at 1920 or 390.\n- Tactic fit 433 and 4231: no unique_id repeats across starter, backup and depth, and every pick is natural. The starters' rating sum equals an exhaustive search (the assignment is truly optimal). 11 slots, 3 gaps, 404 for an unknown formation. /squad/shapes returns 200.\n- Starter pack: GET lists 10 formulas with all fields, and all 10 preview fine. POST adds only the missing ones (a second call only added goal_threat). Unknown keys are ignored, an empty list gives 422. Added formulas show in /scout/formulas, /scout/meta and the Players rows f{}. Edit adds a revision and delete brings back 'not added'. UI: the pack card shows 'n/10 added'. Try fills key, name and expr with a live preview without saving. Add shows the Added badge. Add all reaches 10/10 and disables itself. Edit, save and delete from the list work, and the Add button comes back.\n- /api/apps: fmst26 and fmos urls are correct and all 3 are kind windows. The Connections 'Official page' links (app-get-*) have the right hrefs and target=_blank.\n- Settings > Updates: FMST26 v2.1.0, fmOS v1.5 and FM Dossier v1.15.3 show 'You update it yourself' with a Download page link and no Update now button.\n- Regression: all 13 Scout tabs switch cleanly. The advanced filter cuts 100 rows to 40 and shows '(on)'. The quadrant has 4 zones with a formula perf. The Formulas (9) column group shows. The guided tour runs to the end and sets fmcc-tour-done.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/scout/formulas/starter", "issue": "Not atomic near the 30 limit. With 28 formulas and 4 keys sent, it saves 2 and then returns 409 'You already have 30 formulas'. The UI shows only an error toast even though 2 were added. Cap the list to the free slots first, or return {added, skipped:'limit'} with 200."},
+      {"endpoint": "formulas revisions", "issue": "Revisions are append-only per key, so re-adding a starter formula after deleting it shows 'version 6'. The 'version 2 after edit' only holds the first time. Consider restarting the visible version after a delete, or label it as history."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Setup FindStep at 390px", "issue": "The FM26/FM27 selector and the Find button wrap onto two lines on mobile (seg y=667, Find y=734). They are on one line at 1920. The fixed sizes are 94+93+16+160 = 363px, wider than the ~306px card content box. Shrink the seg padding or button padding under 760px if one line is wanted on mobile too.", "selector": "[data-testid='setup-detect-button']", "priority": "LOW"},
+      {"component": "StarterPack Try", "issue": "Try on an already-added formula puts its key in the editor. Saving then silently overwrites the user's edited version with the pack default.", "selector": "[data-testid^='starter-try-']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Squad > Tactic fit", "issues": ["The sample has two different players called 'Luca Romano' (uid 20481105 and 20481106), so a name shows twice (CB backups 65 and 56). This is correct data, but users can't tell them apart: show age or a short id next to the name."]},
+      {"screen": "Players formula columns", "issues": ["'Cost per grade point' shows a raw number (232759) instead of money format", "'-0.00' still shows (negative zero)", "The 'Formulas (0)' toggle label is stale until meta loads"]},
+      {"screen": "Settings > Updates", "issues": ["The 'not tracked' text after the app name reads like a status. Use '—' or leave it out."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage12_fit_starter_apps.py", "/app/backend/tests/test_fmcc_stage12_limit.py", "/app/backend/tests/test_fmcc_stage11_lab.py", "/app/test_reports/pytest/pytest_stage12.xml"],
+  "action_items": [
+    "Make POST /scout/formulas/starter respect the limit without a partial save plus 409 (cap the keys to the free slots and report the skipped ones)",
+    "Optional: keep the setup edition selector and Find on one line at 390px",
+    "Optional: tell same-name players apart in the Tactic fit cards, money-format the cost formulas, fix -0.00"
+  ],
+  "critical_code_review_comments": [
+    "lab_api._layer: the cost matrix adds n+len(slots) columns with dummy cost 0, and ineligible players cost 10000. Correct, but every layer re-runs an O(n^2 m) Hungarian. Fine for 23 to 40 players, but a big squad (60+) times 3 layers times the formations in /squad/shapes could be slow.",
+    "add_starter calls the route function save_formula directly. Each call rebuilds _ctx (scout data plus attach), which is heavy for Add all. Build it once.",
+    "fit(): 'all' in the response is still every player's rating (natural first), which is fine. But the score uses top[0..2] weights, so a slot with no natural depth scores low even when the squad is small by design."
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage12_fit_starter_apps.py (new)", "/app/backend/tests/test_fmcc_stage12_limit.py (new)", "/app/backend/tests/test_fmcc_stage11_lab.py (fmOS asserts updated: kind windows, .exe path 200)"],
+  "success_rate": {"backend": "100% (15/15 stage12, 35/35 stage11 after spec update)", "frontend": "~95% (all requested flows work; only the mobile one-line layout for the setup selector is missing)"},
+  "seed_data_creation": "Created TEST_Career / TEST Club through the setup UI, 3 saves, starter-pack formulas, test_lim_* formulas, TEST_ tactics and app paths during the stage11 rerun. All cleaned up: deleted by career_id from audit, identities, league_estimates, pools, formulas, stat_history, snapshots and tactics, plus the career itself, the 3 backups whose reason starts with 'TEST_Career:', settings.app_paths, and /app/backend/preview_fm (made during the session). settings.setup_complete=false; /api/state confirms setup_complete false and career null. The components collection (9) is untouched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: export REACT_APP_BACKEND_URL=...; pytest tests/test_fmcc_stage12_fit_starter_apps.py tests/test_fmcc_stage11_lab.py -p no:xdist -o addopts=''. You need a career with 3 saves first: do setup in the UI or POST /api/setup/complete, then POST /api/saves/read {} twice. The stage12 optimal test reads the latest snapshot from Mongo and brute-forces the assignment. The update-version test depends on the live pages (v2.1.0, v1.5, v1.15.3) and will need changing when those apps release. The sample data has two different 'Luca Romano' players. Set localStorage fmcc-tour-done=1 before navigating in Playwright.",
+  "rca of the issue": "Starter limit partial save: add_starter loops and calls save_formula, which raises HTTPException(409) when len(fs) >= 30 after earlier inserts were already made. Setup wrap at 390: .wiz-row has flex-wrap:wrap with fixed button sizes (seg buttons 46px high and 26px padding, btn-l 28px padding), wider than the mobile card's content box."
+}

@@ -10,7 +10,7 @@ const FKEYS = ["formulas", "formulas-starter", "scout-meta", "scout-players", "s
 const StarterPack = ({ act, onTry }) => {
   const { data } = useGet("formulas-starter", "/scout/formulas/starter");
   const left = (data || []).filter((x) => !x.added);
-  const add = (keys) => act(() => api.post("/scout/formulas/starter", { keys }), (r) => `${r.added.length} formula${r.added.length === 1 ? "" : "s"} added`, FKEYS);
+  const add = (keys) => act(() => api.post("/scout/formulas/starter", { keys }), (r) => `${r.added.length} formula${r.added.length === 1 ? "" : "s"} added${r.skipped?.length ? ` (${r.skipped.length} skipped: limit reached)` : ""}`, FKEYS);
   if (!data) return null;
   return (
     <div className="card" style={{ gridColumn: "1 / -1" }} data-testid="formula-starter-pack">

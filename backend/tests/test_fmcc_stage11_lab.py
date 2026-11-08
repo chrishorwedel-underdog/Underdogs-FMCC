@@ -195,11 +195,11 @@ class TestApps:
     def test_apps(self):
         d = S.get(f"{API}/apps").json()
         a = {x["key"]: x for x in d["apps"]}
-        assert a["fmdossier"]["url"] == "https://fmdossier.dev/" and a["fmos"]["kind"] == "web"
+        assert a["fmdossier"]["url"] == "https://fmdossier.dev/" and a["fmos"]["kind"] == "windows"  # stage 12: fmOS is a Windows app
 
     def test_path(self):
         assert S.put(f"{API}/apps/fmdossier/path", json={"path": "C:\\x\\dossier.txt"}).status_code == 422
-        assert S.put(f"{API}/apps/fmos/path", json={"path": "C:\\x\\a.exe"}).status_code == 404
+        assert S.put(f"{API}/apps/fmos/path", json={"path": "C:\\x\\a.exe"}).status_code == 200  # stage 12: fmos is a Windows app now
         assert S.put(f"{API}/apps/fmst26/path", json={"path": "C:\\TEST\\fmst.exe"}).status_code == 200
         assert {x["key"]: x for x in S.get(f"{API}/apps").json()["apps"]}["fmst26"]["path"] == "C:\\TEST\\fmst.exe"
 
