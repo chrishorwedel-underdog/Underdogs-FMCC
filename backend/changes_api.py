@@ -52,10 +52,10 @@ async def queue_changes(career: dict, source: str, award_id: str, items: list, h
 async def start_batch(career: dict, ids: list) -> dict:
     if not sample_reader.editor_supports(career["edition"]):
         raise HTTPException(422, f"The game editor doesn't support {career['edition']}")
+    backup = await create_backup(f"{career['name']}: before game change batch ({len(ids)})", automatic=False)
     claimed = await db.changes.update_many({"id": {"$in": ids}, "career_id": career["id"], "status": "queued"}, {"$set": {"status": "approved"}})
     if claimed.modified_count == 0:
         raise HTTPException(409, "These changes were already applied or are being applied")
-    backup = await create_backup(f"{career['name']}: before game change batch ({claimed.modified_count})", automatic=False)
     batch = {"id": new_id(), "career_id": career["id"], "created_at": now_iso(), "status": "running", "total": claimed.modified_count,
              "done": 0, "backup_id": backup["id"], "change_ids": ids}
     await db.batches.insert_one(dict(batch))
@@ -96,6 +96,15 @@ async def run_batch(batch_id: str):
 async def resume_unfinished():
     await db.batches.update_many({"status": "running"}, {"$set": {"status": "paused"}})
     await db.changes.update_many({"status": "applying"}, {"$set": {"status": "approved"}})
+    await db.changes.update_many({"status": "approved", "batch_id": None}, {"$set": {"status": "queued"}})
+
+
+async def stop_all():
+    """Called before a restore so no batch keeps writing into restored data."""
+    await db.batches.update_many({"status": "running"}, {"$set": {"status": "paused"}})
+    for t in list(_tasks.values()):
+        t.cancel()
+    _tasks.clear()
 
 
 class IdsIn(BaseModel):

@@ -1,0 +1,52 @@
+{
+  "summary": "Stage 2 (planning modules + Rules) and Stage 3 (game change queue/batches/audit/undo) tested end-to-end on a fresh DB. Backend: new regression file test_fmcc_stage2_3.py, 16/17 pass. The one failure is a real bug: restoring a 'before game change batch' backup leaves changes stuck. Stage 1 regression: 15/16 pass after I updated outdated backup-reason assertions. The remaining failure (test_14) comes from the 2-minute update-check throttle in the test sequence, not an app bug. Frontend: I fixed one crash (switching to 4-2-3-1 crashed the app). After that every requested flow works in the UI: wizard, saves, lineup pitch with Best/Dev XI, swaps, error toast, saved versions, depth chart, weakest positions, registration, Best role column, player role ratings, every Rules tab (params and cards, test rule, save, stale 409 toast, reset, export/import, history), Scouting (130 players, filters, shortlist, Moneyball limited to 4 with flags), Development plans with append-only history, Reports (joined Mateus Costa, left Pablo Navarro), Elite (nominate, sparkline, preview, queue, duplicate skipped, withdraw), Breakout (nominate by ID, provisional, revision count, finalise, official), DP (scope toggles, overlap counted once, search, review/untick, values hidden, reveal switch), Changes (apply, 409 on second apply, backup, pause/resume, undo, audit shows 'included', auto mode), the next save shows the change (Noah PA 162 -> 167 after +5 breakout; Samuel back to 168 after undo), Ctrl+K 'Game changes', Home pending card, Settings backups. DB left cleared.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/backups/{id}/restore (with backups made by start_batch)", "issue": "start_batch (changes_api.py) claims changes as 'approved' BEFORE calling create_backup, so the 'before game change batch' backup holds those changes as status 'approved' with batch_id None. After restoring it, Home says '15 changes waiting for you' but the Game changes queue shows 0 rows and the top badge is empty. No batch owns them, so they can never be applied or rejected. Reproduced both in the API (test_17) and in the UI.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "sample_reader.scouting_pool value", "issue": "The value formula int(max(150_000, (ca-60)**2.4 * ...)) gives about 49k for CA 150, so every scouting player is valued at the 150k floor (80/80 rows). Moneyball 'Value' is the same for everyone, so the value weight / value-for-money mean nothing. The exponent or scale needs fixing (e.g. multiply by about 100)."},
+      {"endpoint": "BACKUP_COLLECTIONS (core.py)", "issue": "The 'pools' collection (scouting/DP pool, season_start_ca) is not in backups. After a restore, the pool stays on the newer save while snapshots go back to the older one."},
+      {"endpoint": "POST /api/backups/{id}/restore", "issue": "Restore does not pause or cancel in-memory running batch tasks (_tasks). A batch running during a restore keeps writing game_edits and audit rows into the restored data."},
+      {"endpoint": "POST /api/elite/queue", "issue": "Each click writes a new award revision (_award) even when the queue step skips it as a duplicate, so award history grows with no-op revisions."},
+      {"endpoint": "GET /api/home pending_changes", "issue": "Counts 'approved' and 'queued' together, but /changes lists only 'queued'. The Home card and the queue disagree while a batch runs (and after the restore bug above)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LineupView/Pitch formation switch", "issue": "FIXED by testing agent. Switching 4-3-3 to 4-2-3-1 crashed the app: 'Cannot read properties of undefined (reading find)'. The 4-3-3 slots state was still in use for one render against the 4-2-3-1 depth (keys like DMCL/AMC). I added optional chaining at depth[k]?.find in LineupView.strengthOf and in Pitch Token. A cleaner fix: reset slots when the formation changes, keyed by formation.", "selector": "[data-testid=formation-tab-4231]", "priority": "HIGH (fixed)"},
+      {"component": "DynamicPotential run button", "issue": "'Queue for N players' subtracts only unticked players, not unticked clubs. It still said 73 after a whole club was unticked. N is also the covered count, not the number matching rules: the toast said 14 queued.", "selector": "[data-testid=dp-run-button]", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Restore 'before game change batch' backup", "issue": "Home card shows 15 pending, the Game changes queue is empty, and the changes are stuck (backend bug above).", "affected_selectors": ["[data-testid=home-pending-changes]", "[data-testid=change-queue]", "[data-testid=top-changes-count]"]}
+    ],
+    "design_issues": [
+      {"screen": "Game changes > Batches", "issues": ["A paused batch row is cramped: the progress bar disappears (only a dot shows) and 'backup saved · just now' wraps onto 3 lines next to the status, Resume and Undo controls.", "Undo reverses a whole batch with one click and no confirm dialog. Restore has a confirm, Undo does not."]},
+      {"screen": "Rules reset", "issues": ["'Reset to default' has no confirmation, while restore does."]},
+      {"screen": "Depth chart", "issues": ["The two players both named Luca Romano look identical in the depth cards and pitch options. No age or ID hint, though the Players table has a shared-name flag."]},
+      {"screen": "DP toggle lists", "issues": ["The search inputs in the Leagues/Nations lists have no data-testid."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage2_3.py", "/app/backend/tests/test_fmcc_stage1.py", "/app/test_reports/pytest/stage23.xml", "/app/test_reports/pytest/stage1.xml"],
+  "action_items": [
+    "Fix the restore + batch backup inconsistency. Either create the backup before claiming changes in start_batch, or on restore reset changes in status approved/applying that have no running batch back to 'queued' with batch_id None. Also pause running batches before restoring.",
+    "Fix the scouting pool value formula: every player currently sits at the £150k floor.",
+    "Add 'pools' to BACKUP_COLLECTIONS, or rebuild the pool from the latest snapshot after a restore.",
+    "Optional: reset slots on formation change in LineupView. Optional chaining is already added.",
+    "Optional: subtract excluded clubs in the DP run button count. Add confirm dialogs for batch Undo and Rules reset. Tidy the paused batch row layout."
+  ],
+  "critical_code_review_comments": [
+    "changes_api.start_batch: backup is created after the claim (status approved). A failed backup (HTTPException 500) also leaves the changes approved with no batch. Wrap the claim and backup in a try block and roll back to queued.",
+    "changes_api.undo_batch on a 'paused' batch: a change caught mid-step in 'applying' (game_edit already $inc'd, status not yet 'applied') is neither undone nor re-queued.",
+    "awards_api.elite_queue: _award is written before the duplicate check, creating no-op award revisions.",
+    "server.restore_backup: does not touch _tasks or the pools collection.",
+    "Home pending count (queued+approved) differs from the /changes queue (queued only)."
+  ],
+  "updated_files": ["/app/frontend/src/components/squad/LineupView.jsx", "/app/frontend/src/components/squad/Pitch.jsx", "/app/backend/tests/test_fmcc_stage2_3.py", "/app/backend/tests/test_fmcc_stage1.py"],
+  "success_rate": {"backend": "94% (16/17 stage 2/3; stage 1 15/16, the 1 failure is a test-throttle issue)", "frontend": "95% (all flows work after the formation crash fix; restore-queue integration bug open)"},
+  "seed_data_creation": "Created TEST_ careers via the setup wizard and API in the test DB. Cleared all collections at the end, as requested, so the app opens on first-run setup.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Both backend test files need an EMPTY DB and must run with -n 0. Clear the DB (all collections except status_checks) before each file and after the run. test_fmcc_stage2_3.py test_17 reproduces the restore/batch bug and will pass once it is fixed. test_fmcc_stage1 test_14 fails because POST /updates/check is throttled to 2 minutes and test_13 already checked, so mutating installed_version is not re-evaluated. Consider making the test call GET /updates after setting last_update_check old. Player IDs: 20481109 Noah (breakout only, not in DP), 20481111 Samuel (Elite plus DP Stalled). Moneyball limits to 4. The DP review toggle is ON by default.",
+  "rca of the issue": "Formation crash: LineupView keeps the slots state for the previous formation. When plan data for 4-2-3-1 arrives, the render runs before the useEffect resets slots, so strengthOf calls depth['DCL'...] on the 4-2-3-1 depth, which has no such key: undefined.find. Restore bug: start_batch runs update_many(status queued -> approved) and then create_backup, so the snapshot holds approved changes with batch_id None. Restoring it puts them in a state no code path handles, because list_changes shows only queued and start_batch claims only queued."
+}

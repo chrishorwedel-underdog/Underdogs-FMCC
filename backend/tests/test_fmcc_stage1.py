@@ -107,7 +107,7 @@ class TestFMCCFlow:
             assert r.json()["game_date"] == expected
         bk = S.get(f"{API}/backups").json()
         assert len(bk) == backups_before + 3
-        assert bk[0]["reason"] == "Before reading save #4" and bk[0]["verified"] is True
+        assert bk[0]["reason"].lower().endswith("before reading save #4") and bk[0]["verified"] is True
         # save_no now 3 -> Navarro left, Costa joined
         sq = S.get(f"{API}/squad").json()
         assert sq["save_no"] == 3
@@ -209,7 +209,7 @@ class TestFMCCFlow:
         assert r.status_code == 200 and r.json()["verified"] is True and "data" not in r.json()
         bk = S.get(f"{API}/backups").json()
         assert bk[0]["reason"] == "Manual backup"
-        target = [b for b in bk if b["reason"] == "Before reading save #3"][0]
+        target = [b for b in bk if b["reason"].lower().endswith("before reading save #3")][0]
         r = S.post(f"{API}/backups/{target['id']}/restore")
         assert r.status_code == 200, r.text
         st = S.get(f"{API}/state").json()

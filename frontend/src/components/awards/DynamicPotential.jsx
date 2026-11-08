@@ -63,7 +63,8 @@ export const DynamicPotential = () => {
         <div className="card"><div className="ttl"><EyeOff size={15} />Run Dynamic Potential</div>
           <p className="note" style={{ marginTop: 6 }}>Changes stay hidden: FMCC never shows who goes up or down, or by how much. You find out by playing FM.</p>
           <div className="row"><div style={{ flex: 1 }}>Review before applying</div><Switch checked={review} onCheckedChange={setReview} data-testid="dp-review-toggle" /></div>
-          <button className="btn btn-p btn-l" style={{ marginTop: 10 }} onClick={run} disabled={!data.covered} data-testid="dp-run-button"><Play size={14} />Queue for {data.covered - exIds.length} players</button>
+          <button className="btn btn-p btn-l" style={{ marginTop: 10 }} onClick={run} disabled={!data.covered} data-testid="dp-run-button"><Play size={14} />Queue changes for selected players</button>
+          <p className="note" style={{ marginTop: 6 }} data-testid="dp-selection-note">{data.covered} covered · {exIds.length} players and {exClubs.length} clubs unticked. Only players who meet a rule are changed.</p>
           {data.runs.map((r) => <div className="row" key={r.id}><small style={{ margin: 0 }}>{r.detail}</small></div>)}
         </div>
         {review && <ReviewList exIds={exIds} setExIds={setExIds} exClubs={exClubs} setExClubs={setExClubs} />}

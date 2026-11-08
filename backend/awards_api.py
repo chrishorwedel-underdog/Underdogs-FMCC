@@ -85,6 +85,9 @@ async def elite_queue():
             items_total["not_qualified"] += 1
             continue
         award_id = f"elite-{month}"
+        if await db.changes.find_one({"key": f"{c['id']}:elite:{award_id}:{x['unique_id']}:{r['action']['target']}"}, {"_id": 1}):
+            items_total["skipped_duplicates"] += 1
+            continue
         delta = RE.capped(x[r["action"]["target"]], RE.roll(r, f"{c['id']}:{award_id}:{x['unique_id']}"), r["max_value"])
         await _award(c, f"elite:{month}:{x['unique_id']}", "elite", x, r, rules["version"], "awarded", delta)
         res = await queue_changes(c, "elite", award_id, [{"unique_id": x["unique_id"], "name": x["name"], "field": r["action"]["target"], "delta": delta}])

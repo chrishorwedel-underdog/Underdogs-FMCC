@@ -48,14 +48,14 @@ const Batches = ({ d, act }) => (
     {d.batches.length === 0 && <p className="note" style={{ marginTop: 8 }}>No batches yet.</p>}
     {d.batches.map((b, i) => (
       <div className="row" key={b.id} data-testid={`batch-row-${i}`}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 160 }}>
           <div className="mb" style={{ gridTemplateColumns: "1fr 60px" }}><div className="track"><i style={{ width: `${(b.done / b.total) * 100}%`, background: b.status === "undone" ? "var(--mut)" : "var(--acc)" }} /></div><span className="mono">{b.done}/{b.total}</span></div>
           <small><ShieldCheck size={11} style={{ display: "inline", color: "var(--grn)" }} /> backup saved · {ago(b.created_at)}{b.error ? ` · ${b.error}` : ""}</small>
         </div>
         <span className={`st ${b.status === "done" ? "ok" : b.status === "running" ? "g" : b.status === "paused" ? "a" : "n"}`} data-testid={`batch-status-${i}`}>{b.status}</span>
         {b.status === "running" && <button className="btn" onClick={() => act(() => api.post(`/changes/batches/${b.id}/pause`), "Paused", ["changes"])} data-testid={`batch-pause-${i}`}><Pause size={13} /></button>}
         {b.status === "paused" && <button className="btn" onClick={() => act(() => api.post(`/changes/batches/${b.id}/resume`), "Resumed", ["changes"])} data-testid={`batch-resume-${i}`}><Play size={13} /></button>}
-        {["done", "paused"].includes(b.status) && <button className="btn" onClick={() => act(() => api.post(`/changes/batches/${b.id}/undo`), (r) => `${r.undone} change(s) undone`, ["changes", "audit", "home"])} data-testid={`batch-undo-${i}`}><Undo2 size={13} />Undo</button>}
+        {["done", "paused"].includes(b.status) && <button className="btn" onClick={() => window.confirm(`Undo all ${b.done} applied change(s) in this batch?`) && act(() => api.post(`/changes/batches/${b.id}/undo`), (r) => `${r.undone} change(s) undone`, ["changes", "audit", "home"])} data-testid={`batch-undo-${i}`}><Undo2 size={13} />Undo</button>}
       </div>
     ))}
   </div>

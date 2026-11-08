@@ -115,7 +115,7 @@ def scouting_pool(save_no: int, game_date: date, months_played: int, edits: dict
                 exp = 6.0 + (ca - 100) / 100
                 out.append({"unique_id": uid, "name": f"{rng.choice(FIRST[nat])} {rng.choice(LAST[nat])}", "age": age, "nationality": nat,
                             "club": club, "league": league, "positions": pos, "ca": ca, "pa": pa2,
-                            "value": int(max(150_000, (ca - 60) ** 2.4 * (1.6 if age < 23 else 1) * rng.uniform(0.6, 1.5)) // 50_000 * 50_000),
+                            "value": int(max(150_000, (ca - 60) ** 2.4 * 400 * (1.6 if age < 23 else 1) * rng.uniform(0.6, 1.5)) // 50_000 * 50_000),
                             "wage": int((ca - 50) * 160 * rng.uniform(0.7, 1.3)), "minutes": minutes, "appearances": minutes // 80,
                             "avg_rating": round(exp + rng.uniform(-0.5, 0.5), 2) if minutes else None,
                             "goals": int(minutes / 90 * (0.45 if "ST" in pos else 0.15) * rng.uniform(0.3, 1.4)),

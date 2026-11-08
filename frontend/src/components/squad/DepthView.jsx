@@ -13,7 +13,7 @@ export const DepthView = ({ formation }) => {
             <div className="mbars">
               {plan.depth[s.key].slice(0, 4).map((r, i) => (
                 <div className="mb" key={r.unique_id} style={{ gridTemplateColumns: "110px 1fr 30px" }}>
-                  <span style={{ color: i === 0 ? "var(--text)" : undefined }}>{i + 1}. {plan.players[r.unique_id].name}</span>
+                  <span style={{ color: i === 0 ? "var(--text)" : undefined }}>{i + 1}. {plan.players[r.unique_id].name} ({plan.players[r.unique_id].age})</span>
                   <div className="track"><i style={{ width: `${r.rating}%`, background: i === 0 ? "var(--acc)" : "var(--mut)" }} /></div><span className="mono">{r.rating}</span>
                 </div>
               ))}

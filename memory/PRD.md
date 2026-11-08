@@ -30,12 +30,20 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Settings: live update check (weekly auto + manual), update now / rollback (records only in preview), auto-install toggle, backups with verify and restore (pre-restore backup), credits.
 - Sidebar tightened to fit at 768px height.
 
+## Implemented (2026-11-08) — Stages 2 and 3 (browser preview, sample save)
+- Squad: role ratings (14 roles, 0–100), 4-3-3 / 4-2-3-1 pitch with Best XI and Development XI, swap from the depth chart, saved lineups (append-only versions, stale-save and concurrency checks), depth chart, weakest positions, registration check (senior size, homegrown, U21).
+- Scouting: about 130 sample players at other clubs ranked by role fit, potential, age and value; shortlist (append-only); Moneyball comparison of up to 4 players with over/under-performance flags.
+- Squad Development plans (minutes, loan, CA goal, append-only history). Monthly Reports comparing months.
+- Elite Training: nominations, training evidence, PA boosts queued (blocked from being queued twice in a month).
+- Annual Breakout: nominations, provisional reviews (revisions), official awards that queue game changes.
+- Dynamic Potential: My club / leagues / nations scope with an overlap-safe count, review list, caps, values hidden unless revealed.
+- Rules tab in every module: plain-sentence builder or parameter sentences, versions/history, reset, export/import, Test this rule.
+- Stage 3: change queue, Ask me first / Apply automatically per source, a verified backup before each batch, background batches with progress, pause/resume, undo, audit trail, idempotency keys. The game editor is the SAMPLE editor (MOCKED): changes reach the sample save on the next read.
+
 ## Backlog
-- P0 Stage 2: role ratings, depth charts, saved lineups, Best/Development XI, registration check, Scouting rankings, Moneyball, Squad Development plans, Monthly Reports, Elite Training, Breakout, Dynamic Potential scope, Rules builder, append-only history.
-- P0 Windows packaging: real fmsave reader adapter, save-folder watcher, installer (GitHub Actions), real file swap for updates.
-- P1 Stage 3: hidden game editor, change queue, audit trail, undo, protection against applying twice.
-- P1 Stage 4: FMMatchLens setup, Matches module, DOF chat (OpenAI gpt-5.6-terra, user's key).
-- P2: restore inside a transaction; GitHub token for update-check rate limits.
+- P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
+- P1 Stage 4: FMMatchLens setup, Matches module, match evidence in modules, DOF chat (OpenAI gpt-5.6-terra, user's key).
+- P2: restore inside a transaction; GitHub token for update checks; user-saved named presets beyond export/import; registration presets per real league.
 
 ## Next tasks
-Stage 2 planning modules, or Windows packaging with the real fmsave reader.
+Stage 4 (match analytics + DOF chat), or Windows packaging with the real reader and editor.

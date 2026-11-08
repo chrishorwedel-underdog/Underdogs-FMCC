@@ -30,7 +30,7 @@ from scouting_api import router as scouting_router  # noqa: E402
 from plans_api import router as plans_router  # noqa: E402
 from awards_api import router as awards_router  # noqa: E402
 from rules_api import router as rules_router  # noqa: E402
-from changes_api import router as changes_router, resume_unfinished  # noqa: E402
+from changes_api import router as changes_router, resume_unfinished, stop_all  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
     "careers": [IndexModel([("id", ASCENDING)], name="id", unique=True)],
@@ -207,7 +207,7 @@ async def home():
     if not snaps:
         raise HTTPException(404, "No save read yet")
     b = await db.backups.find_one({}, {"_id": 0, "created_at": 1}, sort=[("created_at", -1)])
-    pending = await db.changes.count_documents({"career_id": c["id"], "status": {"$in": ["queued", "approved"]}})
+    pending = await db.changes.count_documents({"career_id": c["id"], "status": "queued"})
     return dashboard.compute(snaps[0], snaps[1] if len(snaps) > 1 else None, b["created_at"] if b else None) | {"read_at": snaps[0]["read_at"], "pending_changes": pending}
 
 
@@ -353,6 +353,7 @@ async def restore_backup(backup_id: str):
         if checksum(b["data"]) != b["checksum"]:
             raise HTTPException(422, "This backup failed its integrity check and was not restored")
         prefs = await get_settings()
+        await stop_all()
         await create_backup("Before restoring a backup", automatic=False)
         for col in BACKUP_COLLECTIONS:
             await db[col].delete_many({})
@@ -360,6 +361,7 @@ async def restore_backup(backup_id: str):
                 await db[col].insert_many([dict(d) for d in b["data"][col]])
         keep = {k: prefs.get(k) for k in ("auto_install_updates", "last_update_check")}
         await db.settings.update_one({"_id": "app"}, {"$set": keep}, upsert=True)
+        await resume_unfinished()
         return {"ok": True, "restored_from": b["created_at"]}
 
 

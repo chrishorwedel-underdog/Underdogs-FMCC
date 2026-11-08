@@ -6,7 +6,7 @@ import { useGet, useAct, TabBar } from "@/lib/ui";
 import { Pitch } from "@/components/squad/Pitch";
 
 const strengthOf = (slots, depth) => {
-  const v = Object.entries(slots).map(([k, u]) => depth[k].find((r) => r.unique_id === u)?.rating || 0);
+  const v = Object.entries(slots).map(([k, u]) => depth[k]?.find((r) => r.unique_id === u)?.rating || 0);
   return Math.round(v.reduce((a, b) => a + b, 0) / Math.max(1, v.length));
 };
 

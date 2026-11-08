@@ -11,7 +11,7 @@ const Lines = () => (
 
 const Token = ({ slot, uid, plan, onPick }) => {
   const p = plan.players[uid];
-  const rating = plan.depth[slot.key].find((r) => r.unique_id === uid)?.rating;
+  const rating = plan.depth[slot.key]?.find((r) => r.unique_id === uid)?.rating;
   return (
     <div className="p" style={{ left: `${slot.x}%`, top: `${slot.y}%` }} data-testid={`pitch-slot-${slot.key}`}>
       <div className="tip"><b>{p?.name}</b><span>{slot.role_name} · rating {rating}</span></div>
@@ -23,7 +23,7 @@ const Token = ({ slot, uid, plan, onPick }) => {
           <div className="gl" style={{ fontSize: 10.5, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--dim)", padding: "6px 8px" }}>{slot.label} · {slot.role_name}</div>
           {plan.depth[slot.key].map((r) => (
             <div key={r.unique_id} className={`pi${r.unique_id === uid ? " sel" : ""}`} onClick={() => onPick(slot.key, r.unique_id)} data-testid={`pitch-pick-${slot.key}-${r.unique_id}`}>
-              {plan.players[r.unique_id].name}{plan.players[r.unique_id].u21 && <span className="tag st g">U21</span>}<small className="mono">{r.rating}</small>
+              {plan.players[r.unique_id].name} <span style={{ color: "var(--dim)", fontSize: 11.5 }}>{plan.players[r.unique_id].age}</span>{plan.players[r.unique_id].u21 && <span className="tag st g">U21</span>}<small className="mono">{r.rating}</small>
             </div>
           ))}
         </PopoverContent>

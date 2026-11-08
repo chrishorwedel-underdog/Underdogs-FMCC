@@ -79,7 +79,7 @@ export const RulesTab = ({ module, title, extra }) => {
   const data = draft?.version === doc.version ? draft.data : doc.data;
   const setData = (d) => setDraft({ version: doc.version, data: d });
   const save = () => act(() => api.put(`/rules/${module}`, { data, expected_version: doc.version, note: "Edited" }), (d) => `Rules saved as version ${d.version}`, ["rules", "plan", "registration", "elite", "breakout", "dp", "rankings", "development", "report"]);
-  const reset = () => act(() => api.post(`/rules/${module}/reset`, { expected_version: doc.version }), "Rules reset to the default preset", null);
+  const reset = () => window.confirm("Reset these rules to the default preset? Your current version stays in the history.") && act(() => api.post(`/rules/${module}/reset`, { expected_version: doc.version }), "Rules reset to the default preset", null);
   const imp = (d) => act(() => api.post(`/rules/${module}/import`, { data: d, expected_version: doc.version, note: "Imported preset" }), "Rules imported", null);
   const runTest = async (r) => { const res = await act(() => api.post(`/rules/${module}/test`, { rule: r }), null, []); if (res) setTest({ name: r.name, ...res }); };
   const rules = data.rules || [];
