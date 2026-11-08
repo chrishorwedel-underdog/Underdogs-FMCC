@@ -43,7 +43,7 @@ ITEMS = [
 ]
 BUILT_IN = [("fmsave", "Reads your saves"), ("FMLibreEditor", "Makes FM27 game edits"), ("FMMatchLens + BepInEx", "Match analytics; FMCC installs it from Connections"),
             ("ScoutSheet", "Scouting engine inside Scout Players"), ("League strength workbook", "408 rated competitions")]
-_CHECK = {"at": 0.0, "data": None}
+_CHECK = {"data": {}, "at": {}}
 
 
 def _paths(c: dict) -> dict:
@@ -149,10 +149,16 @@ def _install_rnf(zpath: Path, p: dict, stamp: str) -> dict:
             ours = d / "lnc" / "all" / OURS_LNC
             keep = ours.read_bytes() if ours.exists() else None
             for s in ("dbc", "edt", "lnc"):
+                staged = d / f"{s}.fmcc-new"
+                if staged.exists():
+                    (backup / d.name).mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(staged), str(backup / d.name / f"{s}.stale"))
+                shutil.copytree(src / s, staged)
+            for s in ("dbc", "edt", "lnc"):
                 if (d / s).exists():
-                    shutil.copytree(d / s, backup / d.name / s)
-                    shutil.rmtree(d / s)
-                shutil.copytree(src / s, d / s)
+                    (backup / d.name).mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(d / s), str(backup / d.name / s))
+                (d / f"{s}.fmcc-new").rename(d / s)
             if keep is not None:
                 ours.parent.mkdir(parents=True, exist_ok=True)
                 ours.write_bytes(keep)
@@ -166,8 +172,10 @@ def _install_rnf(zpath: Path, p: dict, stamp: str) -> dict:
     return {"message": f"Real Name Fix installed into {len(dbs)} database folder(s) and {len(fmf)} .fmf file(s) copied. The old folders are backed up.", "backup": backup.name}
 
 
-def _install_graphics(zpath: Path, p: dict, word: str) -> dict:
+def _install_graphics(zpath: Path, p: dict, word: str, stamp: str) -> dict:
     g = p["graphics"]
+    backup = p["backups"] / f"{word}s-{stamp}"
+    replaced = 0
     with tempfile.TemporaryDirectory() as t:
         tmp = _extract(zpath, Path(t))
         tops = [x for x in tmp.iterdir()]
@@ -178,10 +186,16 @@ def _install_graphics(zpath: Path, p: dict, word: str) -> dict:
         n = 0
         for f in src.rglob("*"):
             if f.is_file():
-                (dest / f.relative_to(src)).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(f, dest / f.relative_to(src))
+                rel = f.relative_to(src)
+                if (dest / rel).exists():
+                    (backup / name / rel).parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(dest / rel, backup / name / rel)
+                    replaced += 1
+                (dest / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(f, dest / rel)
                 n += 1
-    return {"message": f"{n} file(s) unpacked into FM's graphics folder as \"{name}\". Restart FM (or reload skin) to see them.", "backup": None}
+    return {"message": f"{n} file(s) unpacked into FM's graphics folder as \"{name}\"{f' ({replaced} replaced file(s) backed up)' if replaced else ''}. Restart FM (or reload skin) to see them.",
+            "backup": backup.name if replaced else None}
 
 
 @router.post("/{key}/install")
@@ -195,21 +209,32 @@ async def install(key: str):
     if not f:
         raise HTTPException(409, f"No {it['name']} download found in your Downloads folder yet. Use \"Get it\" first.")
     sample = f.name.startswith("SAMPLE")
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + new_id()[:6]
+    try:
+        res = await _run(it, key, f, p, sample, stamp)
+    except zipfile.BadZipFile:
+        raise HTTPException(422, f"{f.name} isn't a complete zip. Download it again.")
+    except PermissionError:
+        raise HTTPException(409, "Windows wouldn't let FMCC change those files. Close FM and try again.")
+    except OSError as exc:
+        logger.warning("Extra install failed: %s", type(exc).__name__)
+        raise HTTPException(409, f"The install stopped: {exc.strerror or type(exc).__name__}. Nothing already in place was removed without a backup.")
+    seen = None if sample else (_CHECK["data"].get(c["edition"]) or {}).get(key, {}).get("latest")
+    await db.extras_installs.insert_one({"id": new_id(), "key": key, "career_id": c["id"], "edition": c["edition"], "at": now_iso(), "file": f.name, "sample": sample,
+                                         "backup": res["backup"], "version_seen": seen})
+    await audit(c["id"], "extra installed", "extras", f"{it['name']} from {f.name}{' (sample)' if sample else ''}")
+    return res | {"sample": sample, "file": f.name}
+
+
+async def _run(it: dict, key: str, f: Path, p: dict, sample: bool, stamp: str) -> dict:
     if it["kind"] == "installer":
         if LIVE and not sample:
             os.startfile(str(f))  # noqa: S606 (Windows only)
-            res = {"message": "The NG_Regens Manager installer has started. Follow its steps; FMCC reads the faces once they're in FM's graphics folder.", "backup": None}
-        else:
-            res = {"message": "Browser preview: this is a SAMPLE file, so nothing was started. In the Windows program this opens the NG_Regens Manager installer.", "backup": None}
-    elif key == "real_name_fix":
-        res = await asyncio.to_thread(_install_rnf, f, p, stamp)
-    else:
-        res = await asyncio.to_thread(_install_graphics, f, p, key[:-1])
-    await db.extras_installs.insert_one({"id": new_id(), "key": key, "career_id": c["id"], "at": now_iso(), "file": f.name, "sample": sample,
-                                         "backup": res["backup"], "version_seen": (_CHECK["data"] or {}).get(key, {}).get("latest")})
-    await audit(c["id"], "extra installed", "extras", f"{it['name']} from {f.name}{' (sample)' if sample else ''}")
-    return res | {"sample": sample, "file": f.name}
+            return {"message": "The NG_Regens Manager installer has started. Follow its steps; FMCC reads the faces once they're in FM's graphics folder.", "backup": None}
+        return {"message": "Browser preview: this is a SAMPLE file, so nothing was started. In the Windows program this opens the NG_Regens Manager installer.", "backup": None}
+    if key == "real_name_fix":
+        return await asyncio.to_thread(_install_rnf, f, p, stamp)
+    return await asyncio.to_thread(_install_graphics, f, p, key[:-1], stamp)
 
 
 async def _ng_latest(client: httpx.AsyncClient) -> dict:
@@ -231,7 +256,8 @@ async def _page_check(client: httpx.AsyncClient, url: str) -> dict:
 @router.get("/updates")
 async def updates():
     c = await active_career()
-    if not _CHECK["data"] or time.time() - _CHECK["at"] > 6 * 3600:
+    ed = c["edition"]
+    if ed not in _CHECK["data"] or time.time() - _CHECK["at"][ed] > 6 * 3600:
         data = {}
         async with httpx.AsyncClient(timeout=8, follow_redirects=True, headers={"User-Agent": "FMCC update check"}) as client:
             try:
@@ -240,11 +266,12 @@ async def updates():
                 logger.warning("NG_Regens check failed: %s", type(exc).__name__)
                 data["ng_regens"] = {"latest": None, "how": "manual", "message": "Couldn't reach ngregens.org"}
             data["real_name_fix"] = await _page_check(client, RNF_PAGE.get(c["edition"], RNF_PAGE["FM26"]))
-        _CHECK.update(at=time.time(), data=data)
+        _CHECK["data"][ed] = data
+        _CHECK["at"][ed] = time.time()
     out = {}
-    for key, v in _CHECK["data"].items():
-        last = await db.extras_installs.find_one({"key": key}, {"_id": 0}, sort=[("at", -1)])
+    for key, v in _CHECK["data"][ed].items():
+        last = await db.extras_installs.find_one({"key": key, "sample": {"$ne": True}}, {"_id": 0}, sort=[("at", -1)])
         seen = (last or {}).get("version_seen")
         out[key] = v | {"installed_at": (last or {}).get("at"), "update": bool(v["latest"] and last and seen and seen != v["latest"]),
                         "unknown_installed": bool(v["latest"] and (not last or not seen))}
-    return {"checked_at": datetime.fromtimestamp(_CHECK["at"], timezone.utc).isoformat(), "items": out}
+    return {"checked_at": datetime.fromtimestamp(_CHECK["at"][ed], timezone.utc).isoformat(), "items": out}

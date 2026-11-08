@@ -2,7 +2,7 @@ import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins,
 
 export const TOP_LINKS = [
   { to: "/safety", key: "safety", label: "Project Safety", Icon: ShieldCheck },
-  { to: "/extras", key: "extras", label: "Downloads you need", Icon: Package },
+  { to: "/extras", key: "extras", label: "Downloads", Icon: Package },
   { to: "/appearance", key: "appearance", label: "Appearance", Icon: Palette },
 ];
 

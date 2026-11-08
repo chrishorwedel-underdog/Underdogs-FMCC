@@ -5,7 +5,7 @@ import { useGet, useAct } from "@/lib/ui";
 
 const confirmText = (it) => (it.key === "real_name_fix"
   ? `Install ${it.download.file}? FMCC backs up the game's dbc, edt and lnc folders, replaces them with the fix's folders and copies its .fmf files into editor data. Close FM first.`
-  : it.kind === "installer" ? `Start ${it.download.file}?` : `Unpack ${it.download.file} into FM's graphics folder?`);
+  : it.kind === "installer" ? `Start ${it.download.file}?` : `Unpack ${it.download.file} into FM's graphics folder? Files it replaces are backed up first.`);
 
 const Update = ({ u }) => {
   if (!u) return null;
@@ -40,7 +40,7 @@ export const ExtrasCard = ({ compact }) => {
   if (!data) return null;
   const items = compact ? data.items.filter((i) => i.kind !== "app") : data.items;
   return (
-    <div className="card" style={{ textAlign: "left" }} data-testid="extras-card">
+    <div className="card extras-card" style={{ textAlign: "left" }} data-testid="extras-card">
       <div className="ttl"><Package size={14} />Packs to download<span className={`st ${data.needed_missing.length ? "a" : "g"}`} data-testid="extras-missing">{data.needed_missing.length ? `${data.needed_missing.length} needed pack(s) missing` : "All needed packs found"}</span></div>
       <p className="note" style={{ marginTop: 6 }}>These belong to their authors, so FMCC can't ship them. Click "Get it" to open the official page, download as normal, then let FMCC install it from your Downloads folder.{!data.desktop && " In this browser preview the downloads are SAMPLE files."}</p>
       <div style={{ marginTop: 8 }}>{items.map((it) => <Item key={it.key} it={it} u={upd?.items[it.key]} act={act} />)}</div>

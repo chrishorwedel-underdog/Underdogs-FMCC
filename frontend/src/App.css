@@ -19,7 +19,8 @@ body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--text);-webk
 .ngtile .used{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.72);color:#F3DFB5;font-size:10.5px;padding:3px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ngtile .tick{position:absolute;top:6px;right:6px;background:var(--acc);color:#fff;border-radius:50%;width:22px;height:22px;display:grid;place-items:center}
 .logo:hover{transform:rotate(-4deg) scale(1.04)}
-.toplinks{display:flex;justify-content:center;gap:6px;padding:0 0 clamp(4px,.9vh,12px)}
+.toplinks{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 6px;padding:0 0 clamp(4px,.9vh,12px)}
+.toplinks .tl{white-space:nowrap}
 .tl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--mut);text-decoration:none;padding:4px 10px;border-radius:8px;transition:color .2s,background-color .2s}
 .tl:hover,.tl.on{color:var(--text);background:rgba(255,255,255,.05)}
 .sec{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:0 12px 6px;font-weight:600}
@@ -129,6 +130,9 @@ h1.h .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
 .btn:hover{border-color:rgba(255,255,255,.22);background:#1F242B}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-g:disabled{background:transparent;color:var(--mut,#94A3B8);border-color:currentColor;box-shadow:none;opacity:.6}
+.wiz-card .extras-card .ttl{font-size:15px!important}
+.wiz-card .extras-card .note{font-size:13px;margin-top:4px!important}
 .btn-p{background:linear-gradient(180deg,#6FA4FF,var(--acc));color:#fff;border-color:transparent;box-shadow:0 0 0 1px rgba(76,141,255,.5),0 8px 24px -8px rgba(76,141,255,.55),inset 0 1px 0 rgba(255,255,255,.4)}
 .btn-p:hover{background:linear-gradient(180deg,#86B3FF,#5E99FF)}
 .btn-l{height:42px;padding:0 20px;font-size:13.5px;border-radius:11px}

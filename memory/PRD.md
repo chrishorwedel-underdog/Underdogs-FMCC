@@ -146,3 +146,10 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - P1: reading .fmlens into Matches once the format is known; live changes beyond PA/CA.
 - P2: signed installer; merging Squad and Development; real Appearance settings.
 Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchLens data.
+
+## 2026-11-08 Saved presets, name-list updates, Downloads you need
+- Player Creator: saved presets per FMCC install (`creator_extras.py`, db.creator_presets, soft delete), rename/overwrite/delete, "Yours" tag, unknown nations dropped with a note. Two-layer names: built-in + installed update (db.name_layers) with per-country counts, per-name "update" tag, check/install/roll back. Update channel = `fmcc-names.json` on the FMCC_RELEASE_REPO latest release (not set up); browser preview uses SAMPLE `data/names_update_sample.json`.
+- Downloads you need (`extras_api.py`, page /extras, top link "Downloads", compact card in Setup's last step): NG_Regens (needed; starts the NG_Regens Manager installer from Downloads), sortitoutsi Real Name Fix (needed; backs up and swaps dbc/edt/lnc in every db version folder, keeps fmcc_club_names.lnc, copies .fmf to editor data), logo/kit packs (optional; unzipped into graphics with backups of replaced files), FMST26/fmOS/FM Dossier (optional apps, links only), built-in list. Update check: NG_Regens version read from ngregens.org; sortitoutsi blocks automatic checks (403), so it's manual. Packs aren't bundled (third-party rights).
+- Tested: iteration_14 and iteration_15 (backend 33/34; the same-second backup clash was fixed afterwards and checked with curl).
+- Unverified on Windows: os.startfile for the installer, the real game folder layout (shared/data/database/db), FM27 Real Name Fix availability.
+

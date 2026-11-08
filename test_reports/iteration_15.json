@@ -1,0 +1,43 @@
+{
+  "summary": "Retest A (Player Creator presets/name lists) all PASS. New Extras feature ('Downloads you need') tested end-to-end in backend (pytest, 34 tests incl. stage15 regression) and UI (desktop, 390px mobile, command palette, Setup Health step via mocked /api/state). 1 backend bug: Real Name Fix install returns 500 when run twice within the same second (backup folder name collision). Everything else works.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/extras/real_name_fix/install", "issue": "500 FileExistsError when two installs happen in the same second (double-click, or retry right after an install). Backup folder is real_name_fix-YYYYmmdd-HHMMSS; shutil.copytree(d/s, backup/...) fails because the folder already exists. Game folders stay intact (copytree fails before rmtree), but the user sees a server error. Reproduced: 2 quick POSTs -> [500, 500]; log: FileExistsError .../extras-backups/real_name_fix-20261108-203524/2700/dbc", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/extras/{key}/install", "issue": "OS errors (PermissionError when FM is running and files are locked, disk full, bad zip -> zipfile.BadZipFile) are not caught, so they come back as a bare 500 with no friendly message. Real Name Fix install is also not atomic: if copytree fails halfway through a folder, that folder is already deleted (rmtree happens before the new copy)."},
+      {"endpoint": "POST /api/extras/kits|logos/install", "issue": "Graphics unpack overwrites existing files in the same folder with no backup (the confirm text doesn't mention this)."},
+      {"endpoint": "GET /api/extras/updates", "issue": "Results are cached for 6h in a global, whatever the edition, so after switching to a career with another edition you still see the old RNF page result. Also, an NG_Regens 'install' counts as 'up to date' (version_seen = latest) as soon as FMCC starts the installer, even with a SAMPLE file or if the user cancels the installer."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Sidebar top links (desktop 1920)", "issues": ["Three top links ('Project Safety', 'Downloads you need', 'Appearance') don't fit the sidebar width: labels wrap onto two lines and 'Appearance' is cut off at the right edge"]},
+      {"screen": "/extras at 390px", "issues": ["No horizontal overflow (card scrollWidth 356 = clientWidth). But the sidebar is hidden on mobile and there's no menu button, so the 'Downloads you need' link can only be reached from the command palette. The mobile top bar is also cramped: the date wraps onto 3 lines and the 'Raw' toggle is cut off (pre-existing)."]},
+      {"screen": "/extras + Setup ExtrasCard", "issues": ["The disabled 'Install from Downloads' button (Logo pack, nothing downloaded) still looks almost like the enabled green button. Make the disabled state clearer.", "In Setup, the card's title and the 'how' note text are much bigger than the item text (they pick up .setup typography), so the text sizes look uneven"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage16_extras.py", "/app/backend/tests/test_fmcc_stage15_creator_presets_names.py", "/app/test_reports/pytest/stage16.xml"],
+  "action_items": [
+    "Fix the backup name collision in _install_rnf: add microseconds or a counter to the stamp, or use copytree(dirs_exist_ok=True) on a unique folder; also hold a per-key lock or disable the button while an install is running",
+    "Catch OSError/BadZipFile in the install endpoint and return 409/422 with a message like 'Close FM and try again'. Copy the new folder to a temp name before deleting the old one",
+    "Sidebar top links: fit 3 links (icon-only, a 2-row layout or shorter labels); give mobile a way to reach the top links",
+    "Optional: make the disabled install button look disabled; only set version_seen for NG_Regens when the install is real; key the update cache by edition"
+  ],
+  "critical_code_review_comments": [
+    "extras_api._install_rnf: the stamp is only accurate to the second, so backups collide -> 500 (confirmed)",
+    "extras_api._install_rnf: rmtree runs before copytree of the new folder, so a failure halfway leaves the game without dbc/edt/lnc. Keep the backup and restore it if the copy fails",
+    "extras_api.install: no try/except around the file work; it runs in a thread with no concurrency guard",
+    "extras_api.extras(): _sample_downloads makes game/data/database/db/2700 on every GET in preview (harmless)",
+    "Retest A code is correct: PresetIn/PresetPatch strip+blank validators, model_validator rejects an empty PATCH"
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage16_extras.py"],
+  "success_rate": {"backend": "97% (33/34; 1 fail = same-second RNF install 500)", "frontend": "100% of requested flows"},
+  "seed_data_creation": "None kept. Removed: TEST_ presets (soft and hard deleted), name layer (rolled back to built-in), db.extras_installs sample:true records (10, including the main agent's earlier ones), audit source 'extras' (10), extras-backups/*, graphics/'Sample Kits', 'editor data/sample_fix.fmf', game/.../2700/dbc and edt. Left: 2700/lnc/all/sample_real_names_fix.lnc (used by the Licensing fix sample), so real_name_fix still shows found=true. Audit entries with source 'creator' from the preset tests remain.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=... pytest tests/test_fmcc_stage15_creator_presets_names.py tests/test_fmcc_stage16_extras.py -n 0. test_rnf_install_same_second is the regression for the backup collision. To view Setup's HealthStep without creating a career, intercept GET /api/state (set setup_complete false), GET /api/setup/progress (step 2) and POST /api/setup/complete (fake {ok:true}), then click setup-skip-key. Sidebar link testid: nav-extras. Confirm dialogs must be accepted. Mobile: there's no sidebar, so use the command palette (Ctrl+K, 'Downloads you need').",
+  "rca of the issue": "Same-second RNF install: stamp = strftime('%Y%m%d-%H%M%S'), so a second install within 1s reuses backup/real_name_fix-<stamp>/<db>/dbc, and shutil.copytree raises FileExistsError -> unhandled -> 500. Reproduce: POST /api/extras/real_name_fix/install twice back to back. Fix: unique backup name (uuid or microseconds) plus an install lock."
+}
