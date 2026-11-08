@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FileUp, ScanSearch, Check, Undo2, Trash2, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -105,6 +106,8 @@ const Manual = ({ act }) => {
 export const LicensingTab = () => {
   const act = useAct();
   const { data: d } = useGet("licensing", "/editor/licensing/scan");
+  const qc = useQueryClient();
+  useEffect(() => { if (d) { qc.invalidateQueries({ queryKey: ["extras"] }); } }, [d, qc]);
   if (!d) return <p className="note">Scanning your fix files and logo packs…</p>;
   return (
     <div className="homegrid" data-testid="licensing-tab">

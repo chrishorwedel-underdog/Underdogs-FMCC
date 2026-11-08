@@ -7,6 +7,7 @@ import { ClubsTab } from "@/components/editor/ClubsTab";
 import { LicensingTab } from "@/components/editor/LicensingTab";
 import { KitsTab, PacksTab, BulkImportTab, PackCheckTab } from "@/components/editor/GraphicsTabs";
 import { CreatorTab } from "@/components/editor/CreatorTab";
+import { PackBanner } from "@/components/PackBanner";
 
 const Files = ({ s }) => {
   const act = useAct();
@@ -28,7 +29,7 @@ export default function PlayerTeamsEditor() {
       <PageHead eyebrow="Faces, logos, names and club attributes" title="Player & Teams Editor">
         <TabBar id="editor" value={tab} onChange={setTab} tabs={[["faces", "Player faces"], ["creator", "Player Creator"], ["clubs", "Clubs"], ["kits", "Kits"], ["licensing", "Licensing fix"], ["packs", "Pack browser"], ["bulk", "Bulk import"], ["check", "Pack check"]]} />
       </PageHead>
-      {!s ? <p className="note">Loading…</p> : <><Files s={s} />{tab === "faces" ? <FacesTab s={s} /> : tab === "creator" ? <CreatorTab /> : tab === "clubs" ? <ClubsTab /> : tab === "kits" ? <KitsTab /> : tab === "packs" ? <PacksTab /> : tab === "bulk" ? <BulkImportTab /> : tab === "check" ? <PackCheckTab /> : <LicensingTab />}</>}
+      {!s ? <p className="note">Loading…</p> : <><Files s={s} />{tab === "faces" && <PackBanner pack="ng_regens" feature="Player faces" />}{tab === "licensing" && <PackBanner pack="real_name_fix" feature="The Licensing fix" />}{tab === "faces" ? <FacesTab s={s} /> : tab === "creator" ? <CreatorTab /> : tab === "clubs" ? <ClubsTab /> : tab === "kits" ? <KitsTab /> : tab === "packs" ? <PacksTab /> : tab === "bulk" ? <BulkImportTab /> : tab === "check" ? <PackCheckTab /> : <LicensingTab />}</>}
     </div>
   );
 }
