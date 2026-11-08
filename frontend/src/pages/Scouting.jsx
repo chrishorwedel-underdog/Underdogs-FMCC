@@ -28,7 +28,7 @@ const Rankings = ({ shortlistOnly, compare, toggleCompare }) => {
           <tbody>{data?.rows.map((r) => (
             <tr key={r.unique_id} style={{ cursor: "default" }} data-testid={`ranking-row-${r.unique_id}`}>
               <td><button className="ib" style={{ width: 28, height: 28, color: r.shortlisted ? "var(--amb)" : undefined }} onClick={() => star(r)} data-testid={`shortlist-toggle-${r.unique_id}`}><Star size={14} fill={r.shortlisted ? "currentColor" : "none"} /></button></td>
-              <td><b style={{ color: "var(--text)" }}>{r.name}</b><Flag f={r.flag} /><small style={{ display: "block", color: "var(--dim)" }}>{r.nationality} · {r.positions.join(", ")}</small></td>
+              <td><b style={{ color: "var(--text)" }}>{r.name}</b><Flag f={r.flag} />{r.seen_vs_us > 0 && <span className="tag st b" title={`Match rating ${r.match_rating} vs us · xG/90 ${r.per90?.xg} · pressures/90 ${r.per90?.pressures}`} data-testid={`seen-vs-us-${r.unique_id}`}>Seen vs us</span>}<small style={{ display: "block", color: "var(--dim)" }}>{r.nationality} · {r.positions.join(", ")}</small></td>
               <td>{r.age}</td><td>{r.club}<small style={{ display: "block", color: "var(--dim)" }}>{r.league}</small></td><td>{r.best_role}</td>
               <td className="mono">{r.fit}</td><td className="mono">{r.ca}/{r.pa}</td><td className="mono">{money(r.value)}</td><td className="mono">{r.avg_rating ?? "—"}</td>
               <td className="mono" style={{ color: "var(--acc)" }}>{r.score}</td><td className="mono">{r.vfm}</td>

@@ -7,6 +7,8 @@ FIELDS = {
     "ca": ("current ability", "number"), "pa": ("potential ability", "number"), "ca_growth": ("ability growth this season", "number"),
     "training_rating": ("training rating", "number"), "position": ("position group", "text"), "nationality": ("nationality", "text"),
     "league": ("league", "text"), "club": ("club", "text"),
+    "xg90": ("xG per 90", "number"), "xa90": ("xA per 90", "number"), "key_passes90": ("key passes per 90", "number"),
+    "pressures90": ("pressures per 90", "number"), "def_actions90": ("defensive actions per 90", "number"),
 }
 REWARD_MODULES = {"elite", "breakout", "dp"}
 PARAM_MODULES = {"squad", "scouting", "reports", "development"}

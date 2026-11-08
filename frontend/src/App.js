@@ -18,8 +18,10 @@ import Reports from "@/pages/Reports";
 import EliteTraining from "@/pages/EliteTraining";
 import Awards from "@/pages/Awards";
 import Changes from "@/pages/Changes";
+import Matches from "@/pages/Matches";
+import Dof from "@/pages/Dof";
 
-const LATER = [["/matches", "matches"], ["/dof", "dof"]];
+const LATER = [];
 
 const Shell = ({ state }) => {
   const [pal, setPal] = useState(false);
@@ -46,6 +48,8 @@ const Shell = ({ state }) => {
             <Route path="/elite-training" element={<EliteTraining />} />
             <Route path="/awards" element={<Awards />} />
             <Route path="/changes" element={<Changes />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/dof" element={<Dof />} />
             {LATER.map(([p, k]) => <Route key={k} path={p} element={<ComingSoon k={k} />} />)}
             <Route path="*" element={<Home />} />
           </Routes>

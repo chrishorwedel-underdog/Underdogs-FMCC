@@ -69,8 +69,7 @@ SQUAD = [
     (20481124, "Mateus Costa", "2008-05-05", "Brazil", ["AM (L)", "ST"], 110, 166, 2.1, 70, "2031-06-30", 2500, 3, None),
 ]
 
-OPPONENTS = ["Northbridge Athletic", "Castleford Rovers", "Port Ellis United", "Kingsmere Town",
-             "Redhill Albion", "Westvale City", "Harrow Bay FC", "Ashdown Wanderers"]
+OPPONENTS = ["Northbridge Athletic", "Castleford Rovers", "Port Ellis United", "Kingsmere Town"]
 
 
 def _add_months(d: date, months: int) -> date:

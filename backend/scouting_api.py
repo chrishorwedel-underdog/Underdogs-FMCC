@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 import roles
 from core import db, active_career, latest_snapshot, now_iso, new_id
+from matches_api import season_per90
 from rules_api import current as current_rules
 
 router = APIRouter(prefix="/api/scouting")
@@ -68,8 +69,10 @@ async def rankings(role: str | None = None, league: str | None = None, max_age: 
     players = [p for p in pool["players"] if (not role or set(p["positions"]) & set(roles.ROLE_POSITIONS[role]))]
     scored = score_players(players, params, role)
     sl = await shortlisted(c["id"])
+    seen = await season_per90(c["id"], pool.get("season"), "them")
     ql = q.lower().strip()
-    rows = [r | {"shortlisted": r["unique_id"] in sl} for r in scored if r["age"] <= max_age and (not league or r["league"] == league)
+    rows = [r | {"shortlisted": r["unique_id"] in sl, "seen_vs_us": seen.get(r["unique_id"], {}).get("matches", 0),
+                 "match_rating": seen.get(r["unique_id"], {}).get("avg_rating"), "per90": seen.get(r["unique_id"], {}).get("per90")} for r in scored if r["age"] <= max_age and (not league or r["league"] == league)
             and (not ql or ql in r["name"].lower() or ql in r["club"].lower()) and (not shortlist_only or r["unique_id"] in sl)]
     rows.sort(key=lambda r: r[sort] if sort != "value" else -r["value"], reverse=True)
     return {"total": len(rows), "rows": rows[:80], "weights": params}

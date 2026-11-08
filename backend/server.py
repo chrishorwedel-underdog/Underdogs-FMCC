@@ -31,6 +31,9 @@ from plans_api import router as plans_router  # noqa: E402
 from awards_api import router as awards_router  # noqa: E402
 from rules_api import router as rules_router  # noqa: E402
 from changes_api import router as changes_router, resume_unfinished, stop_all  # noqa: E402
+from matches_api import router as matches_router  # noqa: E402
+from dof_api import router as dof_router  # noqa: E402
+import sample_matches  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
     "careers": [IndexModel([("id", ASCENDING)], name="id", unique=True)],
@@ -101,6 +104,12 @@ async def read_next_save(career: dict) -> dict:
         start.setdefault(str(p["unique_id"]), p["ca"])
     await db.pools.update_one({"career_id": career["id"]}, {"$set": {"save_no": save_no, "season": save["season"], "game_date": save["game_date"],
                                                                     "players": pool, "season_start_ca": start}}, upsert=True)
+    ml = (await db.settings.find_one({"_id": "app"}, {"_id": 0, "matchlens": 1}) or {}).get("matchlens") or {}
+    if ml.get("installed"):
+        opponents = sorted({p["club"] for p in pool if p["league"] == "Premier Division"})
+        for m in sample_matches.play_month(save_no, save["game_date"], career["club_name"], save["players"], pool, opponents):
+            await db.matches.update_one({"career_id": career["id"], "save_no": save_no, "match_no": m["match_no"]},
+                                        {"$setOnInsert": m | {"id": str(uuid.uuid4()), "career_id": career["id"], "season": save["season"]}}, upsert=True)
     for p in save["players"]:
         await db.identities.update_one(
             {"career_id": career["id"], "unique_id": p["unique_id"]},
@@ -366,7 +375,7 @@ async def restore_backup(backup_id: str):
 
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router):
     app.include_router(r)
 app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
                    allow_methods=["*"], allow_headers=["*"])

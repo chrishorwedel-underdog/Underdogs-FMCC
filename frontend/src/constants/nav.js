@@ -5,7 +5,7 @@ export const NAV = [
   { to: "/squad", key: "squad", label: "Squad", sub: "Lineups and depth charts", c: "#2DD4BF", Icon: Users },
   { to: "/development", key: "development", label: "Development", sub: "Minutes and growth plans", c: "#4C8DFF", Icon: TrendingUp },
   { to: "/scouting", key: "scouting", label: "Scouting", sub: "Targets and Moneyball", c: "#22D3EE", Icon: Search },
-  { to: "/matches", key: "matches", label: "Matches", sub: "Chalkboard and match stats", c: "#FB923C", Icon: Activity, stage: 4 },
+  { to: "/matches", key: "matches", label: "Matches", sub: "Chalkboard and match stats", c: "#FB923C", Icon: Activity },
   { to: "/reports", key: "reports", label: "Reports", sub: "See the bigger picture", c: "#A78BFA", Icon: BarChart3 },
   { to: "/elite-training", key: "elite", label: "Elite Training", sub: "Nurture your next generation", c: "#E879F9", Icon: Zap },
   { to: "/awards", key: "awards", label: "Awards", sub: "Breakout and Dynamic Potential", c: "#FACC15", Icon: Trophy },
