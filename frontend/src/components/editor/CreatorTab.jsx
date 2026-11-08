@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { UserPlus, Download, Trash2, Eye, Plus, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { MyPresets, NameUpdates } from "./CreatorExtras";
 
 const KEYS = ["creator-batches", "editor-state"];
 const DEFAULT = { name: "", count: 20, nations: [{ nation: "England", weight: 1 }], ethnicities: [], skin_lo: 1, skin_hi: 20, age_lo: 16, age_hi: 21,
@@ -24,7 +26,8 @@ const Nations = ({ f, set, meta }) => {
   return (
     <div style={{ display: "grid", gap: 6 }} data-testid="pc-nations">
       {f.nations.map((x, i) => <div key={x.nation} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <b style={{ width: 160 }}>{x.nation}</b>{!meta.name_lists.includes(x.nation) && <small className="st n" style={{ margin: 0 }}>names from {meta.closest[x.nation] || "England"}</small>}
+        <b style={{ width: 160 }}>{x.nation}</b>{!meta.name_lists.includes(x.nation) ? <small className="st n" style={{ margin: 0 }}>names from {meta.closest[x.nation] || "England"}</small>
+          : <small className="note" data-testid={`pc-count-${x.nation}`}>{meta.name_counts[x.nation].builtin} built-in{meta.name_counts[x.nation].update ? ` + ${meta.name_counts[x.nation].update} from update` : ""}</small>}
         <label className="note">share<input type="range" min={1} max={10} value={x.weight} onChange={(e) => upd(i, { weight: Number(e.target.value) })} data-testid={`pc-weight-${x.nation}`} /></label>
         <button className="ib" disabled={f.nations.length === 1} onClick={() => set({ nations: f.nations.filter((_, j) => j !== i) })} data-testid={`pc-remove-${x.nation}`}><X size={13} /></button></div>)}
       <div style={{ display: "flex", gap: 6 }}><select className="inp" style={{ width: 220, height: 32 }} value={n} onChange={(e) => setN(e.target.value)} data-testid="pc-nation-select">
@@ -52,7 +55,9 @@ export const CreatorTab = () => {
   const act = useAct();
   const [f, setF] = useState(DEFAULT);
   const [prev, setPrev] = useState(null);
+  const [copy, setCopy] = useState("");
   const set = (p) => { setF((x) => ({ ...x, ...p })); setPrev(null); };
+  const load = (s, name, note) => { set({ ...DEFAULT, nations: f.nations, ethnicities: f.ethnicities, ...s, name, seed: f.seed }); if (note) { toast.info(note); } };
   const toggle = (k) => (v) => set({ [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v] });
   if (!meta) return null;
   return (
@@ -60,10 +65,11 @@ export const CreatorTab = () => {
       <div className="card">
         <div className="ttl"><UserPlus size={14} />Player Creator<span className="st b">New careers only</span></div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }} data-testid="pc-presets">
-          {meta.presets.map((p) => <button key={p.key} className="btn" title={p.about} onClick={() => set({ ...DEFAULT, nations: f.nations, ethnicities: f.ethnicities, ...p.settings, name: p.name, seed: f.seed })} data-testid={`pc-preset-${p.key}`}>{p.name}</button>)}
-          <button className="btn" onClick={() => set(DEFAULT)} data-testid="pc-reset">Reset</button>
+          {meta.presets.map((p) => <button key={p.key} className="btn" title={p.about} onClick={() => { load(p.settings, p.name); setCopy(`${p.name} (copy)`); }} data-testid={`pc-preset-${p.key}`}>{p.name}</button>)}
+          <MyPresets f={f} load={(s, n, note) => { load(s, n, note); setCopy(""); }} copyName={copy} />
+          <button className="btn" onClick={() => { set(DEFAULT); setCopy(""); }} data-testid="pc-reset">Reset</button>
         </div>
-        <p className="note" style={{ marginTop: 8 }}>Presets fill in the settings below; you can change anything before you preview. Makes a batch of new free-agent players as an FMCC editor data file. Pick it from FM's database list when you start a new career. Players already in the game keep their clubs; in a running career you can only rename players.</p>
+        <p className="note" style={{ marginTop: 8 }}>Presets fill in the settings below; you can change anything before you preview. Built-in presets can't be changed, but saving one makes your own copy. Makes a batch of new free-agent players as an FMCC editor data file. Pick it from FM's database list when you start a new career. Players already in the game keep their clubs; in a running career you can only rename players.</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 14 }}>
           <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
             <label className="note" style={{ display: "grid", gap: 4 }}>Batch name<input className="inp" maxLength={60} placeholder="e.g. Academy wonderkids" value={f.name} onChange={(e) => set({ name: e.target.value })} data-testid="pc-name" /></label>
@@ -97,9 +103,10 @@ export const CreatorTab = () => {
         <div className="ttl">Preview: {prev.count} players<span className="st n">{Object.entries(prev.by_nation).map(([k, v]) => `${k} ${v}`).join(" · ")}</span></div>
         {!!prev.borrowed_names.length && <p className="note">FMCC has no name list for {prev.borrowed_names.join(", ")}, so their names come from the closest list.</p>}
         <table className="tbl" style={{ marginTop: 8 }}><thead><tr><th>Name</th><th>Nation</th><th>Ethnicity · skin</th><th>Age</th><th>Pos</th><th>CA/PA</th><th>Foot</th><th>Height</th></tr></thead>
-          <tbody>{prev.players.map((p) => <tr key={p.id} data-testid={`pc-row-${p.id}`}><td><b>{p.name}</b></td><td>{p.nationality}</td><td>{p.ethnicity} · {p.skin_tone}</td><td>{p.age}</td><td>{p.position}</td><td className="mono">{p.ca}/{p.pa}</td><td>{p.foot}</td><td>{p.height}</td></tr>)}</tbody></table>
+          <tbody>{prev.players.map((p) => <tr key={p.id} data-testid={`pc-row-${p.id}`}><td><b>{p.name}</b>{p.name_source === "update" && <small className="st g" style={{ marginLeft: 6 }} data-testid={`pc-row-update-${p.id}`}>update</small>}</td><td>{p.nationality}</td><td>{p.ethnicity} · {p.skin_tone}</td><td>{p.age}</td><td>{p.position}</td><td className="mono">{p.ca}/{p.pa}</td><td>{p.foot}</td><td>{p.height}</td></tr>)}</tbody></table>
         {prev.count > prev.players.length && <p className="note">Showing the first {prev.players.length}.</p>}
       </div>}
+      <NameUpdates />
       <Batches act={act} />
     </div>
   );

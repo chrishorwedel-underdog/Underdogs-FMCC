@@ -1,0 +1,12 @@
+{
+ "version": "sample-2026.1",
+ "sample": true,
+ "names": {
+  "Senegal": {"first": ["Mamadou", "Ousmane", "Ibrahima", "Cheikh", "Moussa", "Abdoulaye", "Pape", "Alioune", "Babacar", "Lamine", "Modou", "Serigne"], "last": ["Thiam", "Mbaye", "Niang", "Gning", "Sy", "Kane", "Wade", "Dieng", "Touré", "Ndour", "Sène", "Faye"]},
+  "England": {"first": ["Archie", "Freddie", "Theo", "Reuben", "Ollie", "Finley"], "last": ["Harrison", "Cooper", "Marshall", "Lawson", "Barker", "Fletcher"]},
+  "Jamaica": {"ethnicity": "African / Caribbean", "first": ["Andre", "Damion", "Kemar", "Shamar", "Javain", "Tyreek", "Rohan", "Oneil", "Kevaughn", "Dwayne"], "last": ["Campbell", "Brown", "Reid", "Morgan", "Grant", "McKenzie", "Gordon", "Bailey", "Francis", "Henry"]},
+  "Peru": {"ethnicity": "Mixed race", "first": ["Renato", "Piero", "Joao", "Bryan", "Gianluca", "Jesús", "Sebastián", "Kevin", "Franco", "Martín"], "last": ["Quispe", "Huamán", "Mamani", "Flores", "Chávez", "Rojas", "Vargas", "Castro", "Ramos", "Salazar"]},
+  "Venezuela": {"ethnicity": "Mixed race", "first": ["Yeferson", "Jhon", "Eduardo", "Luis", "Andrés", "Daniel", "Carlos", "Wilker", "Jefferson", "Samuel"], "last": ["Hernández", "Rivas", "Mendoza", "Blanco", "Paredes", "Medina", "Guzmán", "Contreras", "Peña", "Suárez"]},
+  "Slovenia": {"ethnicity": "Northern European", "first": ["Luka", "Žan", "Nejc", "Jaka", "Rok", "Miha", "Tilen", "Matic", "Gašper", "Jan"], "last": ["Novak", "Horvat", "Kovačič", "Krajnc", "Zupančič", "Potočnik", "Kovač", "Mlakar", "Vidmar", "Golob"]}
+ }
+}

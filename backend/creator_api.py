@@ -107,17 +107,41 @@ class BatchIn(BaseModel):
         return self
 
 
-def generate(b: BatchIn, game_date: str, start_id: int) -> list:
+async def layer() -> dict:
+    d = await db.name_layers.find_one({"_id": "installed"}, {"_id": 0, "names": 1}) or {}
+    return d.get("names") or {}
+
+
+def pools(nation: str, extra: dict) -> tuple:
+    src = nation if nation in NAMES or nation in extra else CLOSEST.get(nation, "England")
+    out = []
+    for i, part in enumerate(("first", "last")):
+        base = list(NAMES[src][i]) if src in NAMES else []
+        have = set(base)
+        out.append([(n, "built-in") for n in base] + [(n, "update") for n in (extra.get(src) or {}).get(part, []) if n not in have])
+    return src, out[0], out[1]
+
+
+def counts(extra: dict) -> dict:
+    res = {}
+    for n in sorted(set(NAMES) | set(extra)):
+        _, first, last = pools(n, extra)
+        res[n] = {"builtin": sum(s == "built-in" for _, s in first + last), "update": sum(s == "update" for _, s in first + last)}
+    return res
+
+
+def generate(b: BatchIn, game_date: str, start_id: int, extra: Optional[dict] = None) -> list:
+    extra = extra or {}
     rng = random.Random(b.seed * 7919 + b.count)
     gd = date.fromisoformat(game_date[:10])
     pool = [n.nation for n in b.nations for _ in range(n.weight)]
     out, seen = [], set()
     for i in range(b.count):
         nation = rng.choice(pool)
-        src = nation if nation in NAMES else CLOSEST.get(nation, "England")
-        first, last = NAMES[src]
+        src, first, last = pools(nation, extra)
         for _ in range(20):
-            name = (rng.choice(first), rng.choice(last))
+            fn, ln = rng.choice(first), rng.choice(last)
+            name = (fn[0], ln[0])
             if name not in seen:
                 break
         seen.add(name)
@@ -125,10 +149,10 @@ def generate(b: BatchIn, game_date: str, start_id: int) -> list:
         ca = rng.randint(b.ca_lo, b.ca_hi)
         pa = max(ca, rng.randint(b.pa_lo, b.pa_hi))
         foot = b.foot if b.foot != "any" else rng.choices(["right", "left", "both"], [70, 24, 6])[0]
-        eth = rng.choice(b.ethnicities) if b.ethnicities else DEFAULT_ETH.get(nation, "Northern European")
+        eth = rng.choice(b.ethnicities) if b.ethnicities else DEFAULT_ETH.get(nation) or (extra.get(nation) or {}).get("ethnicity") or "Northern European"
         lo, hi = ETH_SKIN.get(eth, (1, 20)) if (b.skin_lo, b.skin_hi) == (1, 20) else (b.skin_lo, b.skin_hi)
         out.append({"id": start_id + i, "first_name": name[0], "last_name": name[1], "name": f"{name[0]} {name[1]}", "nationality": nation,
-                    "names_from": src if src != nation else None, "ethnicity": eth,
+                    "names_from": src if src != nation else None, "name_source": "update" if "update" in (fn[1], ln[1]) else "built-in", "ethnicity": eth,
                     "skin_tone": rng.randint(lo, hi), "age": age, "dob": date(gd.year - age, rng.randint(1, 12), rng.randint(1, 28)).isoformat(),
                     "position": rng.choice(b.positions), "ca": ca, "pa": pa, "foot": foot, "height": rng.randint(b.height_lo, b.height_hi), "club": "Free agent", "face": None})
     return out
@@ -171,15 +195,17 @@ async def _next_id(cid: str) -> int:
 async def meta():
     c = await active_career()
     ng = await editor_api.ng_index(c)
-    return {"presets": [{"key": k, "name": n, "about": a, "settings": s} for k, (n, a, s) in PRESETS.items()], "edition": c["edition"], "ethnicities": ETHNICITIES, "positions": POSITIONS, "name_lists": sorted(NAMES), "closest": CLOSEST,
-            "nations": sorted(set(NAMES) | set(CLOSEST) | set(ng.get("folders") or {})), "ng_installed": ng["installed"],
+    extra = await layer()
+    return {"presets": [{"key": k, "name": n, "about": a, "settings": s} for k, (n, a, s) in PRESETS.items()], "edition": c["edition"], "ethnicities": ETHNICITIES, "positions": POSITIONS,
+            "name_lists": sorted(set(NAMES) | set(extra)), "closest": {k: v for k, v in CLOSEST.items() if k not in extra}, "name_counts": counts(extra),
+            "nations": sorted(set(NAMES) | set(CLOSEST) | set(extra) | set(ng.get("folders") or {})), "ng_installed": ng["installed"],
             "ng_folders": sorted(ng.get("folders") or {}), "desktop": editor_api.LIVE}
 
 
 @router.post("/preview")
 async def preview(body: BatchIn):
     c = await active_career()
-    players = generate(body, await _game_date(c), await _next_id(c["id"]))
+    players = generate(body, await _game_date(c), await _next_id(c["id"]), await layer())
     by = lambda k: {v: sum(p[k] == v for p in players) for v in sorted({p[k] for p in players})}  # noqa: E731
     return {"players": players[:60], "count": len(players), "by_nation": by("nationality"), "by_position": by("position"),
             "borrowed_names": sorted({p["nationality"] for p in players if p["names_from"]})}
@@ -206,7 +232,7 @@ async def _faces(c: dict, players: list) -> dict:
 @router.post("/batches")
 async def create(body: BatchIn):
     c = await active_career()
-    players = generate(body, await _game_date(c), await _next_id(c["id"]))
+    players = generate(body, await _game_date(c), await _next_id(c["id"]), await layer())
     faces = await _faces(c, players) if body.faces else {"given": 0, "missing": len(players), "why": "Faces switched off"}
     bid = new_id()
     name = body.name.strip() or f"{len(players)} new players"
