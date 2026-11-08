@@ -53,7 +53,7 @@ class TestEditor:
         s = S.get(f"{API}/editor/status").json()
         assert s["ngregens"]["installed"] is True and s["ngregens"]["faces"] > 0
         assert "Italy" in s["ngregens"]["folders"] and s["desktop"] is False
-        assert len(s["not_editable"]) == 3
+        assert len(s["not_editable"]) == 4  # nickname added in stage 9
 
     # players list: search + missing filter
     def test_02_players_filters(self):

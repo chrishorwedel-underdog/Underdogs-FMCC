@@ -110,9 +110,11 @@ async def scan():
                 continue
             seen.add(uid)
             cur = by_uid.get(uid)
-            applied = ((names.get(uid) or {}).get("value") or {}).get("long") == real
+            mine = ((names.get(uid) or {}).get("value") or {}).get("long")
+            applied = mine == real[:60]
             club_out.append({"uid": uid, "current": cur["name"] if cur else None, "in_save": bool(cur), "real_long": real, "real_short": n.get("short") or real,
                              "source": f["name"], "active_in_fm": f["active"], "applied": applied, "unlicensed": bool(cur) and cur["name"] != real,
+                             "conflict": mine if mine and not applied else None,
                              "logo_pack": logos.get(uid), "fmcc_logo": bool((mine_logos.get(uid) or {}).get("value"))})
         for uid, n in f["comps"].items():
             if uid in {x["uid"] for x in comp_out}:
@@ -120,9 +122,14 @@ async def scan():
             comp_out.append({"uid": uid, "real_long": n.get("long") or n.get("short"), "real_short": n.get("short") or n.get("long"), "source": f["name"],
                              "active_in_fm": f["active"], "applied": ((comps_done.get(uid) or {}).get("value") or {}).get("long") == (n.get("long") or n.get("short"))})
     club_out.sort(key=lambda x: (not x["unlicensed"], x["current"] or x["real_long"]))
+    listed = {x["uid"] for x in comp_out}
+    stadiums = await latest(c["id"], "stadium")
+    my_fixes = [{"kind": "comp", "uid": u, "name": r["value"]["long"], "short": r["value"]["short"]} for u, r in comps_done.items() if r.get("value") and u not in listed]
+    my_fixes += [{"kind": "stadium", "uid": u, "name": r["value"]["long"], "short": None} for u, r in stadiums.items() if r.get("value")]
     return {"desktop": LIVE, "lnc_folder": str(lnc) if lnc else None, "import_folder": str(imported),
             "files": [{"name": f["name"], "active": f["active"], "clubs": len(f["clubs"]), "comps": len(f["comps"]), "stadiums": len(f["stadiums"])} for f in files],
-            "clubs": club_out, "comps": comp_out, "logo_packs": packs}
+            "clubs": club_out, "comps": comp_out, "logo_packs": packs, "my_fixes": my_fixes,
+            "to_fix": sum(1 for x in club_out if x["unlicensed"] and not x["applied"] and not x["active_in_fm"])}
 
 
 @router.post("/import")
@@ -169,13 +176,13 @@ async def apply(body: ApplyIn):
     want_c, want_k = set(body.clubs), set(body.comps)
     n = 0
     for x in s["clubs"]:
-        if x["uid"] in want_c and not x["applied"] and not x["active_in_fm"]:
-            await add_revision(c, "name", x["uid"], x["current"] or x["real_long"], {"long": x["real_long"], "short": x["real_short"], "fix": x["source"]},
+        if x["uid"] in want_c and x["in_save"] and x["unlicensed"] and not x["applied"] and not x["active_in_fm"]:
+            await add_revision(c, "name", x["uid"], x["current"], {"long": x["real_long"][:60], "short": x["real_short"][:30], "fix": x["source"]},
                                f"Real name from {x['source']}: {x['real_long']}")
             n += 1
     for x in s["comps"]:
         if x["uid"] in want_k and not x["applied"] and not x["active_in_fm"]:
-            await add_revision(c, "comp", x["uid"], x["real_long"], {"long": x["real_long"], "short": x["real_short"], "fix": x["source"]},
+            await add_revision(c, "comp", x["uid"], x["real_long"], {"long": x["real_long"][:60], "short": x["real_short"][:30], "fix": x["source"]},
                                f"Real competition name from {x['source']}: {x['real_long']}")
             n += 1
     if not n:

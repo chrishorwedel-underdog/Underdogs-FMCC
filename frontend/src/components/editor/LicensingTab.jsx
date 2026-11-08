@@ -1,10 +1,14 @@
 import { useRef, useState } from "react";
 import { FileUp, ScanSearch, Check, Undo2, Trash2, PenLine } from "lucide-react";
+import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 
 const KEYS = ["licensing", "editor-clubs", "editor-status", "changes"];
+const n = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`;
+const BAD = /["\u0000-\u001f]/;
+const clean = (...v) => { if (v.some((x) => x && BAD.test(x))) { toast.error("Names can't contain double quotes or line breaks"); return false; } return true; };
 
 const Sources = ({ d, act }) => {
   const ref = useRef(null);
@@ -14,7 +18,7 @@ const Sources = ({ d, act }) => {
       <div className="ttl"><ScanSearch size={15} />Real-names fix files</div>
       <p className="note" style={{ marginTop: 4 }}>FMCC scans the .lnc files in FM's name-file folder and any fix file you import, such as sortitoutsi's real names fix. Files already in FM's folder are active in FM; imported ones only count once you apply them.{!d.desktop && " Browser preview: a SAMPLE fix file and logo pack are used."}</p>
       {d.files.map((f) => (
-        <div className="row" key={f.name + f.active} data-testid={`fix-file-${f.name}`}><div style={{ flex: 1 }}><b>{f.name}</b><small>{f.clubs} clubs · {f.comps} competitions · {f.stadiums} stadiums</small></div>
+        <div className="row" key={f.name + f.active} data-testid={`fix-file-${f.name}`}><div style={{ flex: 1 }}><b>{f.name}</b><small>{n(f.clubs, "club")} · {n(f.comps, "competition")} · {n(f.stadiums, "stadium")}</small></div>
           <span className={`st ${f.active ? "ok" : "n"}`}>{f.active ? "Active in FM" : "Imported"}</span>
           {!f.active && <button className="btn btn-d" onClick={() => act(() => api.delete(`/editor/licensing/import/${encodeURIComponent(f.name)}`), "Imported file removed", KEYS)} data-testid={`fix-file-remove-${f.name}`}><Trash2 size={13} /></button>}</div>))}
       {!d.files.length && <p className="note" style={{ marginTop: 8 }}>No fix files found yet.</p>}
@@ -34,7 +38,7 @@ const Clubs = ({ d, act }) => {
   const target = sel.length ? sel : open.map((c) => c.uid);
   return (
     <div className="card" style={{ padding: 8 }} data-testid="fix-clubs-card">
-      <div className="ttl" style={{ padding: 10 }}>Unlicensed clubs<span className="st a mono">{d.clubs.filter((c) => c.unlicensed).length}</span><span style={{ marginLeft: "auto" }} />
+      <div className="ttl" style={{ padding: 10 }}>Unlicensed clubs to fix<span className="st a mono" data-testid="fix-to-fix-count">{d.to_fix}</span><span style={{ marginLeft: "auto" }} />
         <button className="btn btn-p" disabled={!target.length} onClick={() => act(() => api.post("/editor/licensing/apply", { clubs: target, comps: [] }), (r) => `${r.applied} real name(s) applied`, KEYS).then(() => setSel([]))} data-testid="fix-apply-clubs"><Check size={13} />Apply real names ({target.length})</button></div>
       <table className="tbl"><thead><tr><th /><th>Name in your save</th><th>Real name</th><th>Logo</th><th>Status</th></tr></thead>
         <tbody>{d.clubs.map((c) => (
@@ -44,7 +48,8 @@ const Clubs = ({ d, act }) => {
             <td><b style={{ color: "var(--text)" }}>{c.real_long}</b><small style={{ display: "block", color: "var(--dim)" }}>{c.real_short} · {c.source}</small></td>
             <td>{c.logo_pack ? <span className="st ok">{c.logo_pack}</span> : c.fmcc_logo ? <span className="st b">FMCC logo</span> : <span className="st a" data-testid={`fix-club-nologo-${c.uid}`}>No logo</span>}</td>
             <td>{c.applied ? <><span className="st ok">Applied</span> <button className="btn" title="Undo" onClick={() => act(() => api.delete(`/editor/licensing/name/${c.uid}`), "Fix removed", KEYS)} data-testid={`fix-club-undo-${c.uid}`}><Undo2 size={13} /></button></>
-              : c.active_in_fm ? <span className="st ok">Active in FM</span> : c.unlicensed ? <span className="st a">Unlicensed</span> : <span className="st n">Already real</span>}</td>
+              : c.conflict ? <span className="st r" title={`Your rename "${c.conflict}" differs from this fix; FM may show either`} data-testid={`fix-club-conflict-${c.uid}`}>Your rename differs</span>
+              : c.active_in_fm ? <span className="st ok">Active in FM</span> : !c.in_save ? <span className="st n">Not in this save</span> : c.unlicensed ? <span className="st a">Unlicensed</span> : <span className="st n">Already real</span>}</td>
           </tr>))}</tbody></table>
       {!d.clubs.length && <p className="note" style={{ padding: 10 }}>No clubs in your fix files.</p>}
     </div>
@@ -60,6 +65,10 @@ const Comps = ({ d, act }) => (
           : c.active_in_fm ? <span className="st ok">Active in FM</span>
             : <button className="btn btn-p" onClick={() => act(() => api.post("/editor/licensing/apply", { clubs: [], comps: [c.uid] }), "Competition name applied", KEYS)} data-testid={`fix-comp-apply-${c.uid}`}>Apply</button>}</div>))}
     {!d.comps.length && <p className="note" style={{ marginTop: 6 }}>None in your fix files.</p>}
+    {d.my_fixes.length > 0 && <><div className="eyebrow" style={{ marginTop: 14 }}>Your own fixes</div>
+      {d.my_fixes.map((x) => (
+        <div className="row" key={x.kind + x.uid} data-testid={`my-fix-${x.kind}-${x.uid}`}><div style={{ flex: 1 }}><b>{x.name}</b><small>{x.kind === "comp" ? `Competition ${x.uid} · ${x.short}` : `Stadium ${x.uid}`}</small></div>
+          <button className="btn" onClick={() => act(() => api.delete(`/editor/licensing/${x.kind}/${x.uid}`), "Fix removed", KEYS)} data-testid={`my-fix-undo-${x.kind}-${x.uid}`}><Undo2 size={13} />Undo</button></div>))}</>}
   </div>
 );
 
@@ -68,7 +77,7 @@ const Manual = ({ act }) => {
   const [f, setF] = useState({ uid: "", long: "", short: "", founded: "", stadium_id: "", stadium_name: "" });
   const [k, setK] = useState({ uid: "", long: "", short: "" });
   const num = (v) => (v === "" ? null : Number(v));
-  const save = () => act(() => api.post(`/editor/licensing/manual/club/${f.uid}`, { long: f.long, short: f.short, founded: num(f.founded), stadium_id: num(f.stadium_id), stadium_name: f.stadium_name || null }),
+  const save = () => clean(f.long, f.short, f.stadium_name) && act(() => api.post(`/editor/licensing/manual/club/${f.uid}`, { long: f.long, short: f.short, founded: num(f.founded), stadium_id: num(f.stadium_id), stadium_name: f.stadium_name || null }),
     (r) => `Fix saved${r.founded_queued ? "; year founded added to Game changes" : ""}`, KEYS).then((r) => r && setF({ uid: "", long: "", short: "", founded: "", stadium_id: "", stadium_name: "" }));
   const inp = (o, set, key, ph, extra = {}) => <input className="inp" placeholder={ph} value={o[key]} onChange={(e) => set({ ...o, [key]: e.target.value })} data-testid={`manual-${set === setK ? "comp-" : ""}${key}`} {...extra} />;
   return (
@@ -78,7 +87,7 @@ const Manual = ({ act }) => {
         <select className="inp" value={f.uid} onChange={(e) => setF({ ...f, uid: e.target.value })} data-testid="manual-club">
           <option value="">Choose a club</option>{clubs.map((c) => <option key={c.uid} value={c.uid}>{c.rename?.long || c.name}</option>)}</select>
         <div className="sgrid">{inp(f, setF, "long", "Real name")}{inp(f, setF, "short", "Short name")}</div>
-        <div className="sgrid">{inp(f, setF, "founded", "Year founded (optional)", { type: "number" })}{inp(f, setF, "stadium_id", "Stadium ID (optional)", { type: "number" })}</div>
+        <div className="sgrid">{inp(f, setF, "founded", "Founded", { type: "number" })}{inp(f, setF, "stadium_id", "Stadium ID", { type: "number" })}</div>
         {inp(f, setF, "stadium_name", "Real stadium name (with its ID)")}
         <button className="btn btn-p" disabled={!f.uid || f.long.trim().length < 2 || f.short.trim().length < 2} onClick={save} data-testid="manual-save">Save fix</button>
       </div>
@@ -86,7 +95,7 @@ const Manual = ({ act }) => {
       <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
         {inp(k, setK, "uid", "Competition ID", { type: "number" })}
         <div className="sgrid">{inp(k, setK, "long", "Real name")}{inp(k, setK, "short", "Short name")}</div>
-        <button className="btn" disabled={!k.uid || k.long.trim().length < 2 || k.short.trim().length < 2} onClick={() => act(() => api.post(`/editor/licensing/manual/comp/${k.uid}`, { long: k.long, short: k.short }), "Competition fix saved", KEYS).then((r) => r && setK({ uid: "", long: "", short: "" }))} data-testid="manual-comp-save">Save competition fix</button>
+        <button className="btn" disabled={!k.uid || k.long.trim().length < 2 || k.short.trim().length < 2} onClick={() => clean(k.long, k.short) && act(() => api.post(`/editor/licensing/manual/comp/${k.uid}`, { long: k.long, short: k.short }), "Competition fix saved", KEYS).then((r) => r && setK({ uid: "", long: "", short: "" }))} data-testid="manual-comp-save">Save competition fix</button>
       </div>
       <p className="note" style={{ marginTop: 12 }}>Nicknames can't be changed yet: FM's name files have no nickname command and FMLibreEditor can't write them.</p>
     </div>

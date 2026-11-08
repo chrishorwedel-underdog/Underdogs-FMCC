@@ -224,7 +224,7 @@ async def status():
     ng = await ng_index(c)
     files = (await db.settings.find_one({"_id": "app"}, {"_id": 0, "branding_files": 1}) or {}).get("branding_files")
     lnc_ok = None
-    if files and files["lnc"].get("file") and files["lnc"].get("renames"):
+    if files and files["lnc"].get("file") and (files["lnc"].get("lines") or files["lnc"].get("renames")):
         lnc_ok = await asyncio.to_thread(Path(files["lnc"]["file"]).exists)
     mapping = (await db.settings.find_one({"_id": "app"}, {"_id": 0, "nation_folders": 1}) or {}).get("nation_folders") or {}
     return {"desktop": LIVE, "ngregens": {"installed": ng["installed"], "folder": ng["folder"], "faces": len(ng["faces"]), "folders": sorted(ng["folders"])},
