@@ -1,0 +1,36 @@
+{
+  "summary": "Tested the Logo Creator (ChatGPT club badges with GPT Image 1.5 through the Emergent key) through the API and the UI, plus an editor regression. New pytest file test_fmcc_stage8_logo_creator.py: 13/13 pass, including 1 real generation. These 422 cases pass: an empty colours list, 4 colours, an unknown style, notes over 300 characters, and missing colours. An unknown club gives 404. use-draft with a bad image name gives 422, and an unknown draft or unknown club gives 404. The real draft took about 20 s. It is a 360x360 RGBA PNG; all 4 corner pixels have alpha 0, the badge itself stays opaque, and about 48% of the picture is covered. I composited it on dark grey and it is a clean crest ('CASTLEFORD ROVERS' spelled correctly, a lighthouse from the notes, no halo). The logo draft is refused as a face for a player and for the club's own uid (404), and for another club (404). A face-kind draft row is refused by logo use-draft (404). use-draft adds a revision with the note 'Logo created with ChatGPT: classic, #C8102E, #FFFFFF, ...' and source 'Created with ChatGPT', sets logo_rev, serves the image and adds club/UID/logo to FMCC/config.xml. UI (Playwright, 1920x1080): Clubs tab > Kingsmere Town > club-logo-create opens logo-creator with the title 'Create a badge for Kingsmere Town'. 'Use this logo' is disabled before a draft. Add colour stops at 3 and Remove stops at 1. Colour pickers 0 and 1 take new values. Only the selected style gets btn-p. The with-name switch goes from checked to unchecked. The payload carried all of this. Generate is disabled while busy. Both the dark and light drafts render at 360 px, and the button changes to 'Try again'. 'Use this logo' closes the dialog, shows the toast 'New logo for Kingsmere Town', the list shows 'Premier Division · logo', the logo card shows the badge, and the history has 'Logo created with ChatGPT: roundel, #1b5e20, #ffd700, TEST_ an oak tree'. Regression: the stage6 and stage7 pytest files give 35 passed and 1 skipped (the AI test). In the UI, the face picker opens with 3 NG tiles and the ChatGPT tab works. Upload logo, remove logo, rename, rename remove and the attribute queue (to /changes, 'Training facilities → 19') all work. I used 2 generations in total. No bugs found in scope.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/editor/clubs/{uid}/logo/generate", "issue": "Colours are free strings, with no hex or name check. A list of blank strings like [' '] passes validation and gives the prompt 'Club colours: .'. Consider requiring at least one non-blank colour."},
+      {"endpoint": "_cut_background", "issue": "The corner flood fill (thresh 40) also clears any white or near-white badge outline that touches the white background, so white rims can disappear on dark FM skins. It also does nothing if the model returns an off-white or gradient background. It worked well on both real samples. Optional: make the alpha edges soft or check how much of the image was cleared."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Logo Creator close during generation", "issue": "Closing the dialog while it is generating doesn't cancel the request. The credits are spent and the draft is left unused (drafts are never cleaned up, same as faces).", "affected_selectors": ["[data-testid=logo-create-generate]", "[data-testid=logo-creator]"]}
+    ],
+    "design_issues": [
+      {"screen": "Player faces tab", "issues": ["The console fills with many 404s, one image request for each player without a face. This was already there and is cosmetic."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage8_logo_creator.py", "/app/test_reports/pytest/pytest_stage8.xml"],
+  "action_items": [
+    "Optional: reject blank-only colour lists (and maybe check the colour format) in LogoGenIn",
+    "Optional: cancel the generate request, or warn, when the Logo Creator is closed while busy; clean up unused drafts",
+    "Optional: make the background cutout keep light outlines (for example, look at edge distance or check the share of pixels cleared)"
+  ],
+  "critical_code_review_comments": [
+    "use_logo_draft filters on kind 'logo' and use_draft filters on kind != 'logo', both scoped to career and uid. The draft isolation holds (verified both ways).",
+    "The order is right: the club 404 check runs before _draw, so unknown clubs never spend credits. The GENERATING lock per club stops parallel double clicks within one process.",
+    "The prompt uses the renamed long name when there is one. Good."
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage8_logo_creator.py"],
+  "success_rate": {"backend": "100% (13/13 new + 35/35 regression)", "frontend": "100% of the flows asked for"},
+  "seed_data_creation": "None. What's left (branding revisions are append-only): Castleford Rovers 978596 has a ChatGPT logo revision and then a removal (ends with no logo). Kingsmere Town 998880 has a ChatGPT logo and then a removal through the API (ends with no logo). AC Valdora 910757 has upload, remove, rename and rename-removed revisions (ends clean). I rejected the club edit I queued (AC Valdora training 19). 2 logo face_drafts docs and their PNGs are left in preview_fm/store. The stage6 and stage7 regression runs added their usual face revisions. 7 Dynamic Potential changes were already queued; they weren't created by this test and I left them alone. I didn't touch the main agent's logo on Northbridge Athletic.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && pytest tests/test_fmcc_stage8_logo_creator.py -n 0. Set FMCC_RUN_AI=1 for the one real generation (costs credits). test_12 adds and removes a fake face_drafts doc 'TEST_fake_face_draft' through pymongo. UI testids: club-logo-create, logo-creator, logo-colour-N, logo-colour-add/remove, logo-style-*, logo-with-name (Radix switch, data-state), logo-create-notes/generate/use, logo-create-draft-dark/light. I used 2 generations this round."
+}

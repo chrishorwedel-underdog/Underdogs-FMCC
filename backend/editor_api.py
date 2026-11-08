@@ -26,8 +26,9 @@ GENERATING: set[str] = set()
 SAMPLE_CLUB_FIELDS = [("reputation", "Reputation", 0, 10000), ("balance", "Cash balance (£)", -500_000_000, 2_000_000_000),
                       ("transfer_budget", "Transfer budget (£)", 0, 2_000_000_000), ("wage_budget", "Wage budget (£/week)", 0, 50_000_000),
                       ("training", "Training facilities", 1, 20), ("youth_facilities", "Youth facilities", 1, 20), ("youth_coaching", "Youth coaching", 1, 20),
-                      ("youth_recruitment", "Youth recruitment", 1, 20), ("corporate", "Corporate facilities", 1, 20), ("season_tickets", "Season tickets", 0, 200_000)]
-NOT_EDITABLE = ["Owner and board personality or type", "Separate world, continental and national reputation", "Club name (use Rename instead)"]
+                      ("youth_recruitment", "Youth recruitment", 1, 20), ("corporate", "Corporate facilities", 1, 20), ("season_tickets", "Season tickets", 0, 200_000),
+                      ("founded", "Year founded", 1800, 2100)]
+NOT_EDITABLE = ["Owner and board personality or type", "Separate world, continental and national reputation", "Club name (use Rename instead)", "Nickname (no FM name-file command and no FMLibreEditor support yet)"]
 
 
 # ---------- folders ----------
@@ -153,7 +154,7 @@ def _q(s: str) -> str:
     return s.replace('"', "'")
 
 
-def _write_lnc(dirs: dict, names: dict) -> dict:
+def _write_lnc(dirs: dict, names: dict, comps: dict | None = None, stadiums: dict | None = None) -> dict:
     d = _lnc_dir(dirs["game"])
     if not d:
         return {"ok": False, "message": "FM's game folder wasn't found, so renames can't be written"}
@@ -163,11 +164,18 @@ def _write_lnc(dirs: dict, names: dict) -> dict:
     for uid, r in names.items():
         if r.get("value"):
             lines += [f'"CLUB_LONG_NAME_CHANGE" {uid} "{_q(r["value"]["long"])}" ""', f'"CLUB_SHORT_NAME_CHANGE" {uid} "{_q(r["value"]["short"])}" ""']
+    renames = len(lines) // 2
+    for uid, r in (comps or {}).items():
+        if r.get("value"):
+            lines += [f'"COMP_LONG_NAME_CHANGE" {uid} "{_q(r["value"]["long"])}" ""', f'"COMP_SHORT_NAME_CHANGE" {uid} "{_q(r["value"]["short"])}" ""']
+    for uid, r in (stadiums or {}).items():
+        if r.get("value"):
+            lines.append(f'"STADIUM_NAME_CHANGE" {uid} "{_q(r["value"]["long"])}" ""')
     if lines:
         f.write_text("\n".join(lines) + "\n", encoding="utf-8")
     elif f.exists():
         f.unlink()
-    return {"ok": True, "file": str(f), "renames": len(lines) // 2}
+    return {"ok": True, "file": str(f), "renames": renames, "lines": len(lines)}
 
 
 async def rebuild(c: dict) -> dict:
@@ -175,7 +183,7 @@ async def rebuild(c: dict) -> dict:
     faces, logos, names = await latest(c["id"], "face"), await latest(c["id"], "logo"), await latest(c["id"], "name")
     try:
         g = await asyncio.to_thread(_write_graphics, dirs, faces, logos)
-        lnc = await asyncio.to_thread(_write_lnc, dirs, names)
+        lnc = await asyncio.to_thread(_write_lnc, dirs, names, await latest(c["id"], "comp"), await latest(c["id"], "stadium"))
     except PermissionError:
         raise HTTPException(403, "Windows blocked access to FM's folders. Restart FMCC as administrator.")
     await db.settings.update_one({"_id": "app"}, {"$set": {"branding_files": {"graphics": g, "lnc": lnc, "at": now_iso()}}}, upsert=True)
@@ -465,6 +473,8 @@ async def generate_logo(uid: int, body: LogoGenIn):
     names = (await latest(c["id"], "name")).get(uid)
     name = ((names or {}).get("value") or {}).get("long") or cl["name"]
     cols = ", ".join(x.strip()[:30] for x in body.colours if x.strip())
+    if not cols:
+        raise HTTPException(422, "Pick at least one club colour")
     prompt = (f"Design {STYLES[body.style]} for a fictional football club called '{name}'. Club colours: {cols}. "
               + (f"Include the text '{name}' clearly and spelled exactly. " if body.with_name else "No text or letters. ")
               + "Centred, filling most of a square canvas, flat vector look with clean edges, on a plain solid white background, "
@@ -587,6 +597,8 @@ async def history(kind: str, uid: int):
 
 # ---------- routes: club attributes ----------
 def sample_value(uid: int, key: str, lo: int, hi: int) -> int:
+    if key == "founded":
+        return 1870 + zlib.crc32(f"{uid}{key}".encode()) % 120
     span = min(hi, 20 if hi <= 20 else 9000 if key == "reputation" else 40_000 if key == "season_tickets" else 60_000_000) - max(lo, 0)
     return max(lo, 0) + 1 + zlib.crc32(f"{uid}{key}".encode()) % span
 

@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
 import { FacesTab } from "@/components/editor/FacesTab";
 import { ClubsTab } from "@/components/editor/ClubsTab";
+import { LicensingTab } from "@/components/editor/LicensingTab";
 
 const Files = ({ s }) => {
   const act = useAct();
@@ -23,9 +24,9 @@ export default function PlayerTeamsEditor() {
   return (
     <div data-testid="editor-page">
       <PageHead eyebrow="Faces, logos, names and club attributes" title="Player & Teams Editor">
-        <TabBar id="editor" value={tab} onChange={setTab} tabs={[["faces", "Player faces"], ["clubs", "Clubs"]]} />
+        <TabBar id="editor" value={tab} onChange={setTab} tabs={[["faces", "Player faces"], ["clubs", "Clubs"], ["licensing", "Licensing fix"]]} />
       </PageHead>
-      {!s ? <p className="note">Loading…</p> : <><Files s={s} />{tab === "faces" ? <FacesTab s={s} /> : <ClubsTab />}</>}
+      {!s ? <p className="note">Loading…</p> : <><Files s={s} />{tab === "faces" ? <FacesTab s={s} /> : tab === "clubs" ? <ClubsTab /> : <LicensingTab />}</>}
     </div>
   );
 }
