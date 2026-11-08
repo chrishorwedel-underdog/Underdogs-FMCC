@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, Trash2, Save, ListPlus, Ban } from "lucide-react";
+import { Upload, Trash2, Save, ListPlus, Ban, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { Pic } from "@/components/editor/FacesTab";
+import { LogoCreator } from "@/components/editor/LogoCreator";
 
 const Names = ({ c, act }) => {
   const [n, setN] = useState({ long: c.rename?.long || c.name, short: c.rename?.short || c.name.split(" ")[0] });
@@ -24,6 +25,7 @@ const Names = ({ c, act }) => {
 
 const Logo = ({ c, act }) => {
   const ref = useRef(null);
+  const [creating, setCreating] = useState(false);
   const upload = (f) => { const fd = new FormData(); fd.append("file", f); act(() => api.post(`/editor/clubs/${c.uid}/logo`, fd), "Logo saved", ["editor-clubs", "editor-status"]); };
   return (
     <div className="card" data-testid="club-logo-card"><div className="ttl">Logo</div>
@@ -31,8 +33,10 @@ const Logo = ({ c, act }) => {
         <Pic kind="logo" uid={c.uid} rev={c.logo_rev} size={72} label={c.name} />
         <input ref={ref} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => e.target.files[0] && upload(e.target.files[0])} data-testid="club-logo-file" />
         <button className="btn" onClick={() => ref.current.click()} data-testid="club-logo-upload"><Upload size={13} />Upload logo</button>
+        <button className="btn" onClick={() => setCreating(true)} data-testid="club-logo-create"><Sparkles size={13} />Create with ChatGPT</button>
         {c.logo && <button className="btn btn-d" onClick={() => act(() => api.delete(`/editor/clubs/${c.uid}/logo`), "Logo removed", ["editor-clubs", "editor-status"])} data-testid="club-logo-remove"><Trash2 size={13} /></button>}
       </div>
+      {creating && <LogoCreator c={c} onClose={() => setCreating(false)} />}
     </div>
   );
 };

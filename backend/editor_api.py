@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/editor")
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
 ROOT = Path(__file__).parent
 MAX_UPLOAD = 5 * 1024 * 1024
-GENERATING: set[int] = set()
+GENERATING: set[str] = set()
 SAMPLE_CLUB_FIELDS = [("reputation", "Reputation", 0, 10000), ("balance", "Cash balance (£)", -500_000_000, 2_000_000_000),
                       ("transfer_budget", "Transfer budget (£)", 0, 2_000_000_000), ("wage_budget", "Wage budget (£/week)", 0, 50_000_000),
                       ("training", "Training facilities", 1, 20), ("youth_facilities", "Youth facilities", 1, 20), ("youth_coaching", "Youth coaching", 1, 20),
@@ -395,37 +395,98 @@ class DraftIn(BaseModel):
     image: str = Field(pattern=r"^[0-9a-f]{24}\.png$")
 
 
-@router.post("/faces/{uid}/generate")
-async def generate_face(uid: int, body: GenerateIn):
-    """ChatGPT (GPT Image 1.5) draws a draft face for a made-up person; nothing changes until you press 'Use this face'."""
+async def _draw(prompt: str, lock: str, what: str) -> bytes:
+    """One picture from ChatGPT (GPT Image 1.5). One request at a time per player or club, so repeated clicks don't spend credits twice."""
     from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
     from dof_api import api_key
+    key = api_key()
+    if not key:
+        raise HTTPException(409, f"Add your OpenAI key in Settings to create {what}s with ChatGPT")
+    if lock in GENERATING:
+        raise HTTPException(409, f"A {what} is already being created here")
+    GENERATING.add(lock)
+    try:
+        images = await OpenAIImageGeneration(api_key=key).generate_images(prompt=prompt, model="gpt-image-1.5", number_of_images=1)
+    except Exception as exc:
+        logger.warning("%s generation failed: %s", what, exc)
+        raise HTTPException(502, f"ChatGPT couldn't create a {what} just now. Please try again.")
+    finally:
+        GENERATING.discard(lock)
+    if not images:
+        raise HTTPException(502, "ChatGPT didn't return a picture. Please try again.")
+    return images[0]
+
+
+@router.post("/faces/{uid}/generate")
+async def generate_face(uid: int, body: GenerateIn):
+    """ChatGPT draws a draft face for a made-up person; nothing changes until you press 'Use this face'."""
     c = await active_career()
     p = next((x for x in await people(c) if x["unique_id"] == uid), None)
     if not p:
         raise HTTPException(404, "Player not found in this save")
-    key = api_key()
-    if not key:
-        raise HTTPException(409, "Add your OpenAI key in Settings to create faces with ChatGPT")
-    if uid in GENERATING:
-        raise HTTPException(409, "A face for this player is already being created")
-    GENERATING.add(uid)
     prompt = (f"Photorealistic head-and-shoulders portrait of a fictional {p.get('age') or 22}-year-old professional footballer from {p.get('nationality') or 'Europe'}, "
               "facing the camera, plain dark training top, neutral light-grey studio background, soft even lighting, square crop, "
               "in the style of a Football Manager facepack. No text, no logos, no watermark, not a real person."
               + (f" Details: {body.notes.strip()}" if body.notes.strip() else ""))
-    try:
-        images = await OpenAIImageGeneration(api_key=key).generate_images(prompt=prompt, model="gpt-image-1.5", number_of_images=1)
-    except Exception as exc:
-        logger.warning("face generation failed: %s", exc)
-        raise HTTPException(502, "ChatGPT couldn't create a face just now. Please try again.")
-    finally:
-        GENERATING.discard(uid)
-    if not images:
-        raise HTTPException(502, "ChatGPT didn't return a picture. Please try again.")
-    img = _store(fm_dirs(c), await asyncio.to_thread(_png, images[0], 250))
-    await db.face_drafts.insert_one({"id": new_id(), "career_id": c["id"], "uid": uid, "image": img, "notes": body.notes.strip(), "at": now_iso()})
+    raw = await _draw(prompt, f"p{uid}", "face")
+    img = _store(fm_dirs(c), await asyncio.to_thread(_png, raw, 250))
+    await db.face_drafts.insert_one({"id": new_id(), "career_id": c["id"], "uid": uid, "kind": "face", "image": img, "notes": body.notes.strip(), "at": now_iso()})
     return {"draft": img}
+
+
+STYLES = {"classic": "a classic heraldic football crest with a shield outline", "modern": "a modern minimal flat football badge with simple geometric shapes",
+          "roundel": "a retro circular roundel football badge with a ring around the emblem", "animal": "a football crest built around a bold animal emblem"}
+
+
+class LogoGenIn(BaseModel):
+    colours: list[str] = Field(min_length=1, max_length=3)
+    style: str = Field(pattern="^(classic|modern|roundel|animal)$")
+    notes: str = Field(default="", max_length=300)
+    with_name: bool = True
+
+
+def _cut_background(raw: bytes) -> bytes:
+    """Makes the plain background around the badge transparent (flood fill from the corners), so it sits cleanly in FM."""
+    from PIL import Image, ImageDraw
+    im = Image.open(io.BytesIO(raw)).convert("RGBA")
+    w, h = im.size
+    for xy in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
+        ImageDraw.floodfill(im, xy, (0, 0, 0, 0), thresh=40)
+    out = io.BytesIO()
+    im.save(out, "PNG")
+    return out.getvalue()
+
+
+@router.post("/clubs/{uid}/logo/generate")
+async def generate_logo(uid: int, body: LogoGenIn):
+    """ChatGPT designs a draft badge from the club's name and your colours; nothing changes until you press 'Use this logo'."""
+    c = await active_career()
+    cl = await club(c, uid)
+    names = (await latest(c["id"], "name")).get(uid)
+    name = ((names or {}).get("value") or {}).get("long") or cl["name"]
+    cols = ", ".join(x.strip()[:30] for x in body.colours if x.strip())
+    prompt = (f"Design {STYLES[body.style]} for a fictional football club called '{name}'. Club colours: {cols}. "
+              + (f"Include the text '{name}' clearly and spelled exactly. " if body.with_name else "No text or letters. ")
+              + "Centred, filling most of a square canvas, flat vector look with clean edges, on a plain solid white background, "
+              "no mock-up, no shadow, no watermark, not a copy of any real club's badge."
+              + (f" Details: {body.notes.strip()}" if body.notes.strip() else ""))
+    raw = await _draw(prompt, f"c{uid}", "logo")
+    png = await asyncio.to_thread(_png, await asyncio.to_thread(_cut_background, raw), 360)
+    img = _store(fm_dirs(c), png)
+    await db.face_drafts.insert_one({"id": new_id(), "career_id": c["id"], "uid": uid, "kind": "logo", "image": img,
+                                     "notes": f"{body.style}, {cols}" + (f", {body.notes.strip()}" if body.notes.strip() else ""), "at": now_iso()})
+    return {"draft": img}
+
+
+@router.post("/clubs/{uid}/logo/use-draft")
+async def use_logo_draft(uid: int, body: DraftIn):
+    c = await active_career()
+    cl = await club(c, uid)
+    d = await db.face_drafts.find_one({"career_id": c["id"], "uid": uid, "kind": "logo", "image": body.image}, {"_id": 0})
+    if not d:
+        raise HTTPException(404, "That draft wasn't made for this club")
+    await add_revision(c, "logo", uid, cl["name"], {"image": body.image, "source": "Created with ChatGPT"}, f"Logo created with ChatGPT: {d['notes']}")
+    return await rebuild(c)
 
 
 @router.get("/drafts/{image}")
@@ -439,7 +500,7 @@ async def draft_image(image: str):
 @router.post("/faces/{uid}/use-draft")
 async def use_draft(uid: int, body: DraftIn):
     c = await active_career()
-    d = await db.face_drafts.find_one({"career_id": c["id"], "uid": uid, "image": body.image}, {"_id": 0})
+    d = await db.face_drafts.find_one({"career_id": c["id"], "uid": uid, "kind": {"$ne": "logo"}, "image": body.image}, {"_id": 0})
     if not d:
         raise HTTPException(404, "That draft wasn't made for this player")
     p = next((x for x in await people(c) if x["unique_id"] == uid), None)
