@@ -45,6 +45,13 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - Match evidence: 'Seen vs us' opponents in Scouting, per-90 fields (xG, xA, key passes, pressures, defensive actions) in every rule builder.
 - DOF chat (REAL): OpenAI gpt-5.6-terra via the Emergent universal key in the preview (OPENAI_API_KEY env overrides it). Streaming, typing indicator, saved per-career conversations, suggested questions, squad/plans/matches/scouting context, drafted actions (lineup, shortlist, nomination, plan) saved only on Accept, never reveals Dynamic Potential values.
 
+## Implemented (2026-11-08) — Windows program build setup (not yet run)
+- `.github/workflows/windows-installer.yml`: on a Windows GitHub runner it builds the screens, packages the server with Python 3.12 + fmsave 0.10.0 + MongoDB mongod.exe + pywebview using PyInstaller, and builds `FMCC-Setup-<version>.exe` with Inno Setup (artifact; a release on `v*` tags). Preview .env files are deleted before the build.
+- `desktop/launcher.py`: starts the local database in %APPDATA%\FMCC, the server on 127.0.0.1:8765 serving the built screens, and the program window.
+- `backend/fmsave_reader.py`: real save reader (UNVERIFIED with real saves). It reads the newest .fm in the career's folder and skips an unchanged file. Real-mode FM folder detection.
+- The desktop mode hides the sample banners and adds an OpenAI key field (stored in %APPDATA%\FMCC\config.json).
+- Not built: FMMatchLens .fmlens archive reading and the real BepInEx 6 + FMMatchLens install (format undocumented; FMMatchLens needs BepInEx 6 IL2CPP bleeding edge, not the 5.x release tracked in Updates), the real FMLibreEditor writes, a save-folder watcher, code signing.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.

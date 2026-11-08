@@ -25,6 +25,24 @@ def api_key():
     return os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
 
 
+class KeyIn(BaseModel):
+    key: str = Field(min_length=20, max_length=300)
+
+
+@router.put("/key")
+async def set_key(body: KeyIn):
+    """Windows program only: saves your own OpenAI key on this PC (never shown again)."""
+    if os.environ.get("FMCC_READER") != "fmsave":
+        raise HTTPException(403, "In the browser preview the DOF uses the Emergent universal key")
+    from pathlib import Path
+    cfg = Path(os.environ.get("APPDATA", Path.home())) / "FMCC" / "config.json"
+    data = json.loads(cfg.read_text()) if cfg.exists() else {}
+    data["OPENAI_API_KEY"] = body.key.strip()
+    cfg.write_text(json.dumps(data))
+    os.environ["OPENAI_API_KEY"] = body.key.strip()
+    return {"ok": True}
+
+
 async def build_context(c: dict) -> str:
     snaps = await latest_two(c["id"])
     latest = snaps[0]
@@ -107,7 +125,7 @@ class Ask(BaseModel):
 
 @router.get("/status")
 async def status():
-    return {"ready": bool(api_key()), "model": MODEL[1], "suggested": SUGGESTED,
+    return {"ready": bool(api_key()), "model": MODEL[1], "suggested": SUGGESTED, "desktop": os.environ.get("FMCC_READER") == "fmsave",
             "key_source": "Your OpenAI key" if os.environ.get("OPENAI_API_KEY") else "Emergent universal key (preview)"}
 
 

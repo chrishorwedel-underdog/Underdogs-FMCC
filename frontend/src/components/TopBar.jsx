@@ -10,7 +10,7 @@ const linkTone = (iso) => {
   return Date.now() - new Date(iso).getTime() > 6 * 3600 * 1000 ? "warn" : "ok";
 };
 
-export const TopBar = ({ career, onSearch }) => {
+export const TopBar = ({ career, onSearch, sample = true }) => {
   const qc = useQueryClient();
   const nav = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -38,7 +38,7 @@ export const TopBar = ({ career, onSearch }) => {
       <div className="srch" onClick={onSearch} data-testid="top-search-button"><Search size={15} />Search players, screens, actions…<kbd>Ctrl K</kbd></div>
       <div className="tr">
         <div className={`link ${tone}`} data-testid="game-link-pill" title="Browser preview: reading a sample save">
-          <span className="pulse" /><span className="lt">Sample save · read {ago(career?.last_read_at)}</span>
+          <span className="pulse" /><span className="lt">{sample ? "Sample save" : "Game linked"} · save read {ago(career?.last_read_at)}</span>
         </div>
         <button className="ib" onClick={readSave} disabled={busy} title="Read latest save" data-testid="read-save-button">
           <RefreshCw size={16} className={busy ? "animate-spin" : ""} />

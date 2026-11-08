@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
-import { api, ago, gameDate } from "@/lib/api";
+import { toast } from "sonner";
+import { api, ago, gameDate, errMsg } from "@/lib/api";
 import { CareersCard } from "@/components/CareersCard";
 import { UpdatesCard } from "@/components/UpdatesCard";
 import { BackupsCard } from "@/components/BackupsCard";
@@ -25,19 +27,35 @@ const SavesCard = () => {
   );
 };
 
+const KeyCard = () => {
+  const [key, setKey] = useState("");
+  const save = async () => {
+    try { await api.put("/dof/key", { key }); setKey(""); toast.success("OpenAI key saved on this PC"); } catch (e) { toast.error(errMsg(e)); }
+  };
+  return (
+    <div className="card rise d5" data-testid="openai-key-card">
+      <div className="ttl">DOF chat key</div>
+      <p className="note" style={{ marginTop: 6 }}>Your own OpenAI key. It is stored only on this PC and never shown again.</p>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input className="inp mono" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sk-..." data-testid="openai-key-input" />
+        <button className="btn btn-p" style={{ height: 40 }} disabled={key.length < 20} onClick={save} data-testid="openai-key-save">Save</button></div>
+    </div>
+  );
+};
+
 export default function Settings({ state }) {
   return (
     <div data-testid="settings-page">
       <div className="head rise"><div><div className="eyebrow">Careers, updates and backups</div><h1 className="h">Settings</h1></div></div>
-      <div className="banner rise" style={{ marginBottom: 20 }} data-testid="sample-mode-banner">
+      {state.sample_mode && <div className="banner rise" style={{ marginBottom: 20 }} data-testid="sample-mode-banner">
         <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
         <span>Browser preview: FMCC is reading a built-in sample save, not your PC. Each refresh in the top bar reads the next month of that sample. The real fmsave reader is packaged in the Windows program.</span>
-      </div>
+      </div>}
       <div className="sgrid">
         <div style={{ display: "grid", gap: 20, alignContent: "start" }}><CareersCard career={state.career} key={state.career.id} /><SavesCard /></div>
         <div style={{ display: "grid", gap: 20, alignContent: "start" }}>
           <UpdatesCard autoInstall={state.auto_install_updates} />
           <BackupsCard />
+          {!state.sample_mode && <KeyCard />}
           <div className="card rise d5" data-testid="credits-card">
             <div className="ttl">Credits</div>
             {CREDITS.map(([n, l, r]) => <div className="row" key={n}><div style={{ flex: 1 }}>{n}<small>{r}</small></div><span className="st n">{l}</span></div>)}

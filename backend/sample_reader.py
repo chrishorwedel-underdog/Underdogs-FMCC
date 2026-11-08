@@ -171,6 +171,14 @@ def editor_supports(edition: str) -> bool:
 
 
 def detect_install(edition: str) -> dict:
+    import os
+    from pathlib import Path
+    docs = Path(os.environ.get("USERPROFILE", "")) / "Documents" / "Sports Interactive"
+    for name in ([f"Football Manager {edition[2:]}", f"Football Manager 20{edition[2:]}"] if os.environ.get("FMCC_READER") == "fmsave" else []):
+        if (docs / name / "games").is_dir():
+            return {"found": True, "edition": edition, "sample": False, "save_folder": str(docs / name / "games")}
+    if os.environ.get("FMCC_READER") == "fmsave":
+        return {"found": False, "edition": edition, "sample": False, "save_folder": str(docs / f"Football Manager {edition[2:]}" / "games")}
     year = "2027" if edition == "FM27" else "2026"
     return {"found": True, "edition": edition, "sample": True,
             "save_folder": f"C:\\Users\\[You]\\Documents\\Sports Interactive\\Football Manager {year}\\games"}

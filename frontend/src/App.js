@@ -36,7 +36,7 @@ const Shell = ({ state }) => {
     <div className="app grain">
       <Sidebar />
       <section className="main">
-        <TopBar career={state.career} onSearch={() => setPal(true)} />
+        <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
         <div className="content">
           <Routes>
             <Route path="/" element={<Home />} />

@@ -88,13 +88,33 @@ class AutoInstallIn(BaseModel):
 
 
 # ---------- helpers ----------
+READER = os.environ.get("FMCC_READER", "sample")
+
+
+def _read_save_file(career: dict, save_no: int, edits: dict) -> dict:
+    if READER != "fmsave":
+        return sample_reader.read_save(save_no, career["club_name"], edits)
+    import fmsave_reader
+    path = fmsave_reader.latest_save(career["save_folder"])
+    if not path:
+        raise HTTPException(404, "No .fm save found in your save folder")
+    if career.get("last_file") == f"{path.name}:{path.stat().st_mtime}":
+        raise HTTPException(409, "No new save since the last read")
+    try:
+        return fmsave_reader.read_save(path, career["club_name"])
+    except Exception as exc:
+        logger.error("fmsave read failed: %s", exc)
+        raise HTTPException(422, f"FMCC couldn't read {path.name}: {exc}")
+
+
 async def read_next_save(career: dict) -> dict:
     """Read the next save into a snapshot. Players are matched by the game's unique ID, never by name."""
     save_no = career.get("next_save_no", 0)
     await create_backup(f"{career['name']}: before reading save #{save_no + 1}", automatic=True)
     edits = {e["unique_id"]: e for e in await db.game_edits.find({"career_id": career["id"]}, {"_id": 0}).to_list(None)}
-    save = sample_reader.read_save(save_no, career["club_name"], edits)
+    save = await asyncio.to_thread(_read_save_file, career, save_no, edits)
     pool = save.pop("pool")
+    file_mtime = save.pop("file_mtime", None)
     snap = {"id": str(uuid.uuid4()), "career_id": career["id"], "save_no": save_no, "read_at": now_iso(),
             "reader": sample_reader.READER_NAME, **save}
     await db.snapshots.insert_one(dict(snap))
@@ -105,7 +125,7 @@ async def read_next_save(career: dict) -> dict:
     await db.pools.update_one({"career_id": career["id"]}, {"$set": {"save_no": save_no, "season": save["season"], "game_date": save["game_date"],
                                                                     "players": pool, "season_start_ca": start}}, upsert=True)
     ml = (await db.settings.find_one({"_id": "app"}, {"_id": 0, "matchlens": 1}) or {}).get("matchlens") or {}
-    if ml.get("installed"):
+    if ml.get("installed") and READER == "sample":
         opponents = sorted({p["club"] for p in pool if p["league"] == "Premier Division"})
         for m in sample_matches.play_month(save_no, save["game_date"], career["club_name"], save["players"], pool, opponents):
             await db.matches.update_one({"career_id": career["id"], "save_no": save_no, "match_no": m["match_no"]},
@@ -116,7 +136,8 @@ async def read_next_save(career: dict) -> dict:
             {"$set": {"name": p["name"], "last_seen_save": save_no, "last_seen_date": save["game_date"]},
              "$setOnInsert": {"first_seen_save": save_no, "first_seen_date": save["game_date"]}}, upsert=True)
     res = await db.careers.update_one({"id": career["id"], "next_save_no": save_no},
-                                      {"$set": {"next_save_no": save_no + 1, "last_read_at": snap["read_at"], "last_game_date": save["game_date"]}})
+                                      {"$set": {"next_save_no": save_no + 1, "last_read_at": snap["read_at"], "last_game_date": save["game_date"],
+                                                "last_file": f"{save['file_name']}:{file_mtime}" if file_mtime else None}})
     if res.modified_count != 1:
         raise HTTPException(409, "This career changed while the save was being read. Try again.")
     return {"save_no": save_no, "file_name": save["file_name"], "game_date": save["game_date"], "players": len(save["players"])}
@@ -139,7 +160,7 @@ async def state():
     career = None
     if s.get("active_career_id"):
         career = await db.careers.find_one({"id": s["active_career_id"]}, {"_id": 0})
-    return {"setup_complete": s.get("setup_complete", False), "career": career, "sample_mode": True,
+    return {"setup_complete": s.get("setup_complete", False), "career": career, "sample_mode": READER == "sample",
             "auto_install_updates": s.get("auto_install_updates", False), "last_update_check": s.get("last_update_check")}
 
 
@@ -377,6 +398,17 @@ async def restore_backup(backup_id: str):
 app.include_router(api)
 for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router):
     app.include_router(r)
+if os.environ.get("FMCC_STATIC_DIR"):
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
+    _static = Path(os.environ["FMCC_STATIC_DIR"])
+    app.mount("/static", StaticFiles(directory=_static / "static"), name="static")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    async def spa(path: str):
+        f = _static / path
+        return FileResponse(f if path and f.is_file() else _static / "index.html")
+
 app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
                    allow_methods=["*"], allow_headers=["*"])
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

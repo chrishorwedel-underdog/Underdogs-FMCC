@@ -25,7 +25,7 @@ const FindStep = ({ form, set, next }) => {
     try {
       const { data } = await api.post("/setup/detect", { edition: form.edition });
       set({ save_folder: data.save_folder });
-      setFound(true);
+      setFound(data.found ? "yes" : "no");
     } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
   return (
@@ -39,7 +39,7 @@ const FindStep = ({ form, set, next }) => {
         <div style={{ marginTop: 18 }}><button className="btn btn-p btn-l" onClick={detect} disabled={busy} data-testid="setup-detect-button">{busy ? <Loader2 size={16} className="animate-spin" /> : <FolderSearch size={16} />}Find {form.edition}</button></div>
       ) : (
         <div style={{ marginTop: 18 }}>
-          <div className="row" style={{ borderTop: 0, padding: 0 }}><span className="st ok" style={{ margin: 0 }} data-testid="setup-found-label">Found {form.edition} ✓</span><button className="btn" onClick={() => setEdit(!edit)} data-testid="setup-change-folder-button">Change</button></div>
+          <div className="row" style={{ borderTop: 0, padding: 0 }}><span className={`st ${found === "yes" ? "ok" : "a"}`} style={{ margin: 0 }} data-testid="setup-found-label">{found === "yes" ? `Found ${form.edition} ✓` : "Save folder not found. Check the path"}</span><button className="btn" onClick={() => setEdit(!edit)} data-testid="setup-change-folder-button">Change</button></div>
           {edit ? <input className="inp" style={{ marginTop: 10 }} value={form.save_folder} onChange={(e) => set({ save_folder: e.target.value })} data-testid="setup-folder-input" />
             : <p className="note mono" style={{ marginTop: 10, wordBreak: "break-all" }} data-testid="setup-folder-path">{form.save_folder}</p>}
           <div style={{ marginTop: 18 }}><button className="btn btn-p btn-l" disabled={form.save_folder.trim().length < 3} onClick={next} data-testid="setup-next-1">Continue</button></div>

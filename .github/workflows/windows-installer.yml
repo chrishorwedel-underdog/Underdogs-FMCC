@@ -1,0 +1,75 @@
+name: Windows installer
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      MONGODB_VERSION: "7.0.14"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Never ship preview settings or keys
+        shell: pwsh
+        run: Remove-Item -Force -ErrorAction SilentlyContinue backend/.env, frontend/.env
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build the screens
+        working-directory: frontend
+        env:
+          REACT_APP_BACKEND_URL: ""
+          CI: "false"
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the server and save reader
+        run: |
+          pip install -r desktop/requirements-desktop.txt
+          pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
+
+      - name: Download the local database
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-$env:MONGODB_VERSION.zip" -OutFile mongo.zip
+          Expand-Archive mongo.zip -DestinationPath mongo
+          New-Item -ItemType Directory -Force desktop/mongodb | Out-Null
+          Copy-Item "mongo/mongodb-win32-x86_64-windows-$env:MONGODB_VERSION/bin/mongod.exe" desktop/mongodb/
+
+      - name: Package the program
+        run: >
+          echo ${{ github.repository }} > desktop/release_repo.txt &&
+          pyinstaller desktop/launcher.py --name FMCC --noconsole --noconfirm --icon desktop/fmcc.ico
+          --add-data "desktop/release_repo.txt;."
+          --add-data "backend;backend" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb"
+          --collect-all fmsave --collect-all emergentintegrations --collect-submodules uvicorn --hidden-import motor
+
+      - name: Smoke test the reader import
+        run: python -c "import fmsave, sys; sys.path.insert(0, 'backend'); import fmsave_reader; print('fmsave', fmsave.__version__)"
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $env:FMCC_VERSION = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME.TrimStart("v") } else { "0.0.0-dev" }
+          iscc desktop/fmcc.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FMCC-Setup
+          path: dist-installer/*.exe
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-installer/*.exe
