@@ -122,7 +122,8 @@ async def download_info():
     """Latest FMCC-Setup.exe from the GitHub release set in FMCC_RELEASE_REPO (owner/repo). Hidden inside the Windows program."""
     import time
     import httpx
-    repo = (os.environ.get("FMCC_RELEASE_REPO") or "").strip().removeprefix("https://").removeprefix("github.com/").strip("/")
+    from updates import release_repo
+    repo = release_repo()
     if LIVE:
         return {"show": False}
     if not repo:

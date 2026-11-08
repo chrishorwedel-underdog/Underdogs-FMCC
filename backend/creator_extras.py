@@ -148,7 +148,8 @@ def _clean(raw) -> dict:
 
 
 async def _published() -> dict:
-    repo = (os.environ.get("FMCC_RELEASE_REPO") or "").strip().removeprefix("https://").removeprefix("github.com/").strip("/")
+    from updates import release_repo
+    repo = release_repo()
     if not repo:
         if editor_api.LIVE:
             return {"set_up": False, "message": "The name update channel isn't set up yet, so only FMCC's built-in names are used"}

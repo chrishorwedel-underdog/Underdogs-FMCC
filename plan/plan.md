@@ -1,76 +1,55 @@
-# One-Time Code Download Link, Then Push to GitHub as "Underdogs-FMCC"
+# Connecting the Website Download Button to Underdogs-FMCC Releases
 
-Emergent has no zip download, so FMCC's preview gets a temporary link that downloads the project's code as one zip, with keys left out.
-The owner unzips it and pushes it to a new public GitHub repository called Underdogs-FMCC, which starts the automatic Windows installer builds.
+FMCC's code is now on GitHub at chrishorwedel-underdog/Underdogs-FMCC, and its first automatic Windows installer build is running.
+This step points the website's download button and FMCC's update check at that repository's releases. It also makes sure the first build finishes and publishes FMCC-Setup.exe.
 
 ## Who it's for
-- The owner (Pro plan, computer browser, Windows PC), who can't find Save to GitHub and wants the code on GitHub.
-- FM players visiting the website, who will download FMCC-Setup.exe once releases exist.
+- The owner, who wants the website's download button live and a new installer after every GitHub save.
+- FM players visiting the website, who click "Download FMCC for Windows".
 
 ## Core features and experience
-**The download link**
-- A single link to a zip of FMCC's code (`Underdogs-FMCC-source.zip`), shared in the chat. It isn't shown anywhere in FMCC's screens or on the published website.
-- The link carries a long random code, so it can't be guessed. It stops working after 24 hours, and any extra copies can be made on request.
-- What's inside:
-  - All of FMCC's code and data files, including the hidden `.github` folder that builds the installer.
-  - The `release` name list, the docs and `.gitignore`.
-- Left out:
-  - Keys and private settings (`.env` files).
-  - The test login file, test reports and the preview sandbox folders.
-  - Installed packages (`node_modules`) and build caches. GitHub's build installs these itself.
-- Before the link is shared, the zip is checked to confirm that no `.env` file or key-like value is inside.
+**Release repository setting**
+- FMCC is told the repository is `chrishorwedel-underdog/Underdogs-FMCC`. This is set as the release-repository setting in the app's secure settings, never written into the code.
+- FMCC accepts the repository in any of the usual forms, such as the full address with `https://github.com/` or with `.git` on the end. A pasted link always works.
+- The same setting turns on two other things:
+  - The Player Creator's name-update check, which reads `fmcc-names.json` from the newest release.
+  - FMCC's own "new version available" check in Settings.
 
-**Pushing it to GitHub (owner, one time)**
-1. Install Git for Windows (git-scm.com) with the default options.
-2. On github.com, create an empty **public** repository named **Underdogs-FMCC**. Leave README, .gitignore and licence unticked.
-3. Open the link, save the zip, and unzip it to a folder such as `Documents\Underdogs-FMCC`.
-4. In that folder, type `cmd` in the address bar, then run these commands, with your GitHub username in place of YOUR-NAME:
-   ```
-   git init
-   git add .
-   git commit -m "FMCC first upload"
-   git branch -M main
-   git remote add origin https://github.com/YOUR-NAME/Underdogs-FMCC.git
-   git push -u origin main
-   ```
-5. Sign in to GitHub in the browser window that opens.
+**Website download button**
+- **While the first build is still running:** the button says "No release has been published yet".
+- **Once a release exists:** it shows the version (v0.2.1 first), the release date and the size, plus the note about Windows' "More info → Run anyway" warning. It downloads FMCC-Setup.exe straight from GitHub.
+- The website must be re-published once for the setting to reach the live site.
 
-**After the push**
-- The installer build starts on GitHub by itself. A few minutes later, release v0.2.1 with FMCC-Setup.exe appears under **Releases**. The **Actions** tab shows progress or errors.
-- The builder opens the secure keys card for `YOUR-NAME/Underdogs-FMCC`. After the website is re-published, the download button shows the version, date and size.
-
-**Later updates**
-- Ask the builder for a fresh link and unzip it over the same folder, so the hidden `.git` folder stays.
-- Then run `git add .`, `git commit -m "FMCC update"` and `git push`. Each push makes a new release.
-- If the Save to GitHub button appears later, it replaces these manual steps.
+**First build check**
+- If the first GitHub build fails, the owner shares the error from the Actions tab and the builder fixes the build. The next GitHub save then retries it.
+- Nothing is published until a build succeeds.
 
 ## User flow
-1. The builder shares the download link in the chat.
-2. The owner installs Git, creates the empty repository, unzips the code and runs the commands.
-3. The owner checks Actions, then Releases, and tells the builder it's done.
-4. The owner enters `YOUR-NAME/Underdogs-FMCC` in the secure card and re-publishes the website.
-5. The download button goes live.
+1. The builder saves the release-repository setting and confirms the preview's download button can read the repository.
+2. The owner waits for the GitHub build to finish, then checks that Releases shows FMCC-Setup.exe.
+3. If the build fails, the owner shares the error, the builder fixes it, and the owner saves to GitHub again.
+4. The owner re-publishes the website. The live download button shows the newest release.
+5. The owner downloads and installs FMCC-Setup.exe on their PC to try it.
 
 ## UI/UX feel
-- No change to FMCC's screens. The link is a plain file download in the browser.
+- No new screens. The existing download button fills in with the version, date and size.
 
 ## Implementation phases
 - **Phase 1 (now, MVP):**
-  - The temporary code-download link, with keys and test files left out and checked.
-  - Push guidance.
-  - Setting the release repository through the secure card.
-  - Fixing the first GitHub build if it fails.
+  - Set the release repository.
+  - Accept full GitHub addresses.
+  - Confirm the download button and update checks read the repository.
+  - Fix the first build if it fails.
 - **Phase 2:**
-  - "What's new" from the release notes under the website's download button.
+  - "What's new" from the release notes under the download button.
   - A download count.
 - **Phase 3:**
   - Code signing to remove the Windows warning.
   - Separate test builds.
 
 ## Assumptions
-- The link is served from the preview app, which must be running when it's opened. It lasts 24 hours.
-- Sharing the link in chat is acceptable, because the same code becomes public on GitHub anyway. Keys are never in the zip.
-- The repository is Underdogs-FMCC (a hyphen instead of the space), public, on main, and created empty.
-- The app keeps the name "FMCC". Only the repository is called Underdogs-FMCC.
-- The owner uses Windows and the Command Prompt.
-- Installing on the owner's PC remains unverified until the first real installer is tested.
+- The repository is `chrishorwedel-underdog/Underdogs-FMCC`, taken from the address the owner gave. It stays public.
+- The release-repository setting is used for both the preview and the published website.
+- The repository name isn't a secret, but it is stored with the other settings rather than in the code, as agreed earlier.
+- The first build may take 10–20 minutes because it builds FMLibreEditor's tool from source.
+- Installing and running FMCC on the owner's PC remains unverified until the first installer is tested there.

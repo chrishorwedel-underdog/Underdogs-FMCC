@@ -4,8 +4,17 @@ from urllib.parse import unquote
 
 import httpx
 
+
+def release_repo() -> str:
+    """FMCC_RELEASE_REPO as owner/repo, whether pasted as owner/repo, a github.com link or a .git address."""
+    v = (os.environ.get("FMCC_RELEASE_REPO") or "").strip()
+    v = re.sub(r"^(?:https?://)?(?:www\.)?github\.com[/:]", "", v, flags=re.I).removeprefix("git@github.com:")
+    v = v.split("?")[0].split("#")[0].strip("/").removesuffix(".git")
+    parts = v.split("/")
+    return "/".join(parts[:2]) if len(parts) >= 2 and all(re.fullmatch(r"[A-Za-z0-9_.-]+", p) for p in parts[:2]) else ""
+
 COMPONENTS = [  # key, name, role, GitHub repo (None = not published yet), bundled version
-    ("fmcc", "FMCC", "The program itself", os.environ.get("FMCC_RELEASE_REPO") or None, os.environ.get("FMCC_VERSION") or "dev"),
+    ("fmcc", "FMCC", "The program itself", release_repo() or None, os.environ.get("FMCC_VERSION") or "dev"),
     ("fmsave", "fmsave", "Built-in save reader", "rhiever/fmsave", "v0.10.0"),
     ("fmlibreeditor", "FMLibreEditor", "Built-in game editor", "tozmoz/FMLibreEditor", "v0.5.0"),
     ("fmmatchlens", "FMMatchLens", "Match analytics add-on", "osnsyc/FMMatchLens", "v0.7.1"),

@@ -88,7 +88,11 @@ jobs:
 
       - name: Build the installer
         shell: pwsh
-        run: iscc desktop/fmcc.iss
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          & $iscc desktop/fmcc.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Name list for the Player Creator
         shell: pwsh
@@ -99,8 +103,8 @@ jobs:
         shell: pwsh
         run: |
           $prev = git describe --tags --abbrev=0 2>$null
-          $range = if ($prev) { "$prev..HEAD" } else { "HEAD~20..HEAD" }
-          $log = git log $range --no-merges --pretty="- %s" | Select-Object -First 40
+          $log = if ($prev) { git log "$prev..HEAD" --no-merges --pretty="- %s" } else { git log -n 20 --no-merges --pretty="- %s" }
+          $log = $log | Where-Object { $_ -notmatch '(?i)checkpoint|auto-generated' } | ForEach-Object { $_ -replace '^- #+\s*', '- ' } | Select-Object -Unique -First 40
           @("FMCC v$env:FMCC_VERSION for Windows 10/11.", "", "Changes:") + $log + @("", "Windows may warn that the installer is from an unknown publisher (it isn't code-signed yet). Choose More info, then Run anyway.") | Out-File -Encoding utf8 notes.md
 
       - uses: actions/upload-artifact@v4

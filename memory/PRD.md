@@ -160,3 +160,7 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - `desktop/launcher.py` sets FMCC_VERSION from version.txt; `updates.py` uses it for FMCC's own update check. `.gitignore` now ignores `.env` files. `desktop/README.md` is the setup guide (Save to GitHub, public repo, FMCC_RELEASE_REPO in the keys card, re-publish).
 - Website download box: version, release date, size, unsigned-installer note (checked with a mocked release response). Real release flow not run yet: needs the repository and FMCC_RELEASE_REPO.
 
+
+- (2026-11-08) Repo: chrishorwedel-underdog/Underdogs-FMCC (public). First build run 42532773413 succeeded: release v0.2.1 with FMCC-Setup.exe (73.5 MB) + fmcc-names.json. `updates.release_repo()` normalises FMCC_RELEASE_REPO (owner/repo, github.com link, .git, git@) and is used by setup download, name updates and FMCC's update check. Workflow tweaks for the next build: Inno Setup install fallback, release notes skip checkpoint/auto-generated lines. FMCC_RELEASE_REPO must be entered in the keys card (requested), then re-publish. Installer not yet run on a real PC.
+- (2026-11-08) FMCC_RELEASE_REPO saved. Preview checked: download box shows v0.2.1 · Nov 8, 2026 · 73.5 MB with the SmartScreen note; name-update check reads the real fmcc-names.json (v0.2.1); FMCC update check reads the repo (installed version now always the running build's version, "dev" in preview).
+

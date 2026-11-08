@@ -391,7 +391,7 @@ async def player_detail(unique_id: int):
 async def run_update_check() -> list:
     for key, name, role, repo, bundled in updates.COMPONENTS:
         existing = await db.components.find_one({"key": key}, {"_id": 0}) or {}
-        installed = existing.get("installed_version", bundled)
+        installed = bundled if key == "fmcc" else existing.get("installed_version", bundled)
         row = {"key": key, "name": name, "role": role, "repo": repo, "installed_version": installed, "checked_at": now_iso()}
         if not repo:
             row |= {"status": "no_source", "latest_version": None, "message": "Release page not set yet"}
