@@ -34,6 +34,7 @@ from changes_api import router as changes_router, resume_unfinished, stop_all  #
 from matches_api import router as matches_router  # noqa: E402
 from dof_api import router as dof_router  # noqa: E402
 from connections_api import router as connections_router  # noqa: E402
+from editor_api import router as editor_router  # noqa: E402
 import sample_matches  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
@@ -119,6 +120,7 @@ async def read_next_save(career: dict) -> dict:
     edits = {e["unique_id"]: e for e in await db.game_edits.find({"career_id": career["id"]}, {"_id": 0}).to_list(None)}
     save = await asyncio.to_thread(_read_save_file, career, save_no, edits)
     pool = save.pop("pool")
+    club_list = save.pop("clubs", None)
     file_mtime = save.pop("file_mtime", None)
     snap = {"id": str(uuid.uuid4()), "career_id": career["id"], "save_no": save_no, "read_at": now_iso(),
             "reader": sample_reader.READER_NAME, **save}
@@ -128,7 +130,7 @@ async def read_next_save(career: dict) -> dict:
     for p in pool:
         start.setdefault(str(p["unique_id"]), p["ca"])
     await db.pools.update_one({"career_id": career["id"]}, {"$set": {"save_no": save_no, "season": save["season"], "game_date": save["game_date"],
-                                                                    "players": pool, "season_start_ca": start}}, upsert=True)
+                                                                    "players": pool, "season_start_ca": start} | ({"clubs": club_list} if club_list else {})}, upsert=True)
     ml = (await db.settings.find_one({"_id": "app"}, {"_id": 0, "matchlens": 1}) or {}).get("matchlens") or {}
     if ml.get("installed") and READER == "sample":
         opponents = sorted({p["club"] for p in pool if p["league"] == "Premier Division"})
@@ -478,7 +480,7 @@ async def restore_backup(backup_id: str):
 
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse

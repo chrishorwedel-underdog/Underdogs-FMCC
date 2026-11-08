@@ -52,6 +52,7 @@ def read_save(path: Path, club_name_hint: str) -> dict:
             raise ValueError("You aren't managing a club in this save")
         club = clubs[0]
         club_lookup = {c.club_uid: c.name for c in save.clubs()} if hasattr(save, "clubs") else {}
+        club_rows = [{"uid": int(u), "name": n, "league": None} for u, n in club_lookup.items() if u is not None and n]
         club_name = club_lookup.get(club.club_uid) or _get(club, "name") or club_name_hint
         squad = [_player(p, club_name, club_lookup) for p in save.players().where(club_uid=club.club_uid)]
         stats = {}
@@ -75,4 +76,4 @@ def read_save(path: Path, club_name_hint: str) -> dict:
                      avg_rating=round(sum(s["ratings"]) / len(s["ratings"]), 2) if s["ratings"] else None)
     season_year = gd.year if gd.month >= 7 else gd.year - 1
     return {"file_name": path.name, "club_name": club_name, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
-            "players": squad, "next_fixture": None, "pool": [], "file_mtime": path.stat().st_mtime}
+            "players": squad, "next_fixture": None, "pool": [], "clubs": club_rows, "file_mtime": path.stat().st_mtime}

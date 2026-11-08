@@ -20,6 +20,7 @@ import DynamicPotentialPage from "@/pages/DynamicPotentialPage";
 import BreakoutPage from "@/pages/BreakoutPage";
 import Connections from "@/pages/Connections";
 import Safety from "@/pages/Safety";
+import PlayerTeamsEditor from "@/pages/PlayerTeamsEditor";
 import Changes from "@/pages/Changes";
 import Matches from "@/pages/Matches";
 import Dof from "@/pages/Dof";
@@ -55,6 +56,7 @@ const Shell = ({ state }) => {
             <Route path="/awards" element={<Navigate to="/dynamic-potential" replace />} />
             <Route path="/connections" element={<Connections />} />
             <Route path="/safety" element={<Safety />} />
+            <Route path="/editor" element={<PlayerTeamsEditor />} />
             <Route path="/changes" element={<Changes />} />
             <Route path="/matches" element={<Matches />} />
             <Route path="/dof" element={<Dof />} />

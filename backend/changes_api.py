@@ -13,7 +13,7 @@ import sample_reader
 from core import db, active_career, create_backup, audit, now_iso, new_id, get_settings, logger, latest_two
 
 router = APIRouter(prefix="/api")
-SOURCES = {"elite": "Elite Training", "breakout": "Breakout Player", "dp": "Dynamic Potential"}
+SOURCES = {"elite": "Elite Training", "breakout": "Breakout Player", "dp": "Dynamic Potential", "editor": "Player & Teams Editor"}
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
 HIDE = ("delta", "current", "new", "old_value", "new_value")
 STEP_DELAY = 0.12
@@ -94,8 +94,8 @@ async def current_values(c: dict, chs: list) -> dict:
         out = {}
         for ch in chs:
             try:
-                v, _ = await asyncio.to_thread(live_editor.read, ch["unique_id"], ch["field"])
-                out[ch["id"]] = v if v > 0 else None
+                v, _ = await asyncio.to_thread(live_editor.read, ch["unique_id"], ch["field"], ch.get("entity", "player"))
+                out[ch["id"]] = v if v > 0 or ch.get("entity") == "club" else None
             except Exception:
                 out[ch["id"]] = None
         return out
@@ -104,7 +104,29 @@ async def current_values(c: dict, chs: list) -> dict:
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {"players": []}
     for p in pool["players"]:
         players.setdefault(p["unique_id"], p)
-    return {ch["id"]: players.get(ch["unique_id"], {}).get(ch["field"]) for ch in chs}
+    clubs = {}
+    if any(ch.get("entity") == "club" for ch in chs):
+        from editor_api import club_values
+        for uid in {ch["unique_id"] for ch in chs if ch.get("entity") == "club"}:
+            clubs[uid] = {f["key"]: f["value"] for f in await club_values(c, uid)}
+    return {ch["id"]: (clubs.get(ch["unique_id"], {}) if ch.get("entity") == "club" else players.get(ch["unique_id"], {})).get(ch["field"]) for ch in chs}
+
+
+async def queue_club_edit(career: dict, cl: dict, field: str, label: str, value: int):
+    """A club attribute edit from the Player & Teams Editor: an absolute new value. A newer edit replaces a queued one."""
+    await db.changes.update_many({"career_id": career["id"], "entity": "club", "unique_id": cl["uid"], "field": field, "status": "queued"},
+                                 {"$set": {"status": "replaced"}})
+    doc = {"id": new_id(), "career_id": career["id"], "source": "editor", "award_id": None, "unique_id": cl["uid"], "player_name": cl["name"],
+           "club": cl.get("league"), "entity": "club", "field": field, "label": label, "target": value, "delta": None, "hidden": False,
+           "status": "queued", "created_at": now_iso(), "batch_id": None, "key": f"{career['id']}:editor:{new_id()}"}
+    await db.changes.insert_one(dict(doc))
+    await audit(career["id"], "queued", "editor", f"{label} → {value}", cl["uid"], cl["name"])
+
+
+def new_value(ch: dict, cur):
+    if cur is None:
+        return None
+    return ch["target"] if ch.get("entity") == "club" else clamp(cur + ch["delta"])
 
 
 async def queue_changes(career: dict, source: str, award_id: str, items: list, hidden: bool = False) -> dict:
@@ -182,7 +204,7 @@ async def run_batch(batch_id: str):
                 return
             await db.changes.update_one({"id": ch["id"]}, {"$set": {"status": "applied", "applied_at": now_iso(), "old_value": old, "new_value": new, "result": "read back OK" if LIVE else "sample save"}})
             await db.batches.update_one({"id": batch_id}, {"$inc": {"done": 1}})
-            detail = f"{ch['field'].upper()} {old} → {new}" if old is not None else f"{ch['field'].upper()} {'+' if ch['delta'] > 0 else ''}{ch['delta']}"
+            detail = f"{(ch.get('label') or ch['field']).upper() if ch.get('entity') != 'club' else ch['label']} {old} → {new}" if old is not None else f"{ch['field'].upper()} {'+' if ch['delta'] > 0 else ''}{ch['delta']}"
             await audit(ch["career_id"], "applied", ch["source"], detail, ch["unique_id"], ch["player_name"], batch_id, ch["hidden"])
             await asyncio.sleep(STEP_DELAY)
     except Exception as exc:
@@ -192,17 +214,21 @@ async def run_batch(batch_id: str):
 
 async def apply_one(ch: dict, b: dict) -> tuple:
     exp = (b.get("expected") or {}).get(ch["id"])
+    entity = ch.get("entity", "player")
     if not LIVE:
+        if entity == "club":
+            await db.club_edits.update_one({"career_id": ch["career_id"], "uid": ch["unique_id"]}, {"$set": {ch["field"]: ch["target"]}}, upsert=True)
+            return exp, ch["target"]
         await db.game_edits.update_one({"career_id": ch["career_id"], "unique_id": ch["unique_id"]}, {"$inc": {ch["field"]: ch["delta"]}}, upsert=True)
         return exp, (None if exp is None else clamp(exp + ch["delta"]))
     import live_editor
-    old, _ = await asyncio.to_thread(live_editor.read, ch["unique_id"], ch["field"])
+    old, _ = await asyncio.to_thread(live_editor.read, ch["unique_id"], ch["field"], entity)
     if exp is not None and old != exp:
         raise live_editor.EditorError("the value in the game changed since the preview")
-    if old <= 0:
+    if entity == "player" and old <= 0:
         raise live_editor.EditorError("this value is stored as a range in the game and can't be changed safely")
-    new = clamp(old + ch["delta"])
-    await asyncio.to_thread(live_editor.write, ch["unique_id"], ch["field"], new)
+    new = new_value(ch, old)
+    await asyncio.to_thread(live_editor.write, ch["unique_id"], ch["field"], new, entity)
     return old, new
 
 
@@ -296,7 +322,7 @@ async def preview_changes(body: PreviewIn):
     pid = new_id()
     await db.previews.insert_one({"id": pid, "career_id": c["id"], "ids": ids, "expected": cur, "at": now_iso(), "used": False, "ready": ready})
     reveal = await reveal_dp()
-    rows = [public(ch | {"current": cur.get(ch["id"]), "new": None if cur.get(ch["id"]) is None else clamp(cur[ch["id"]] + ch["delta"])}, reveal) for ch in chs]
+    rows = [public(ch | {"current": cur.get(ch["id"]), "new": new_value(ch, cur.get(ch["id"]))}, reveal) for ch in chs]
     return {"preview_id": pid, "rows": rows, "checks": checks, "ready": ready, "live": LIVE}
 
 
@@ -362,10 +388,10 @@ async def undo_batch(batch_id: str):
         if LIVE:
             import live_editor
             try:
-                cur, _ = await asyncio.to_thread(live_editor.read, ch["unique_id"], ch["field"])
+                cur, _ = await asyncio.to_thread(live_editor.read, ch["unique_id"], ch["field"], ch.get("entity", "player"))
                 if ch.get("old_value") is None or cur != ch.get("new_value"):
                     raise live_editor.EditorError("the value in the game changed since it was applied, so it was left alone")
-                await asyncio.to_thread(live_editor.write, ch["unique_id"], ch["field"], ch["old_value"])
+                await asyncio.to_thread(live_editor.write, ch["unique_id"], ch["field"], ch["old_value"], ch.get("entity", "player"))
             except Exception as exc:
                 msg = f"Undo stopped at {ch['player_name']}: {exc}. {undone} change(s) were put back."
                 await db.batches.update_one({"id": batch_id}, {"$set": {"status": "partly undone", "error": msg}})
@@ -374,7 +400,10 @@ async def undo_batch(batch_id: str):
         claimed = await db.changes.update_one({"id": ch["id"], "status": "applied"}, {"$set": {"status": "undone", "undone_at": now_iso()}})
         if claimed.modified_count:
             if not LIVE:
-                await db.game_edits.update_one({"career_id": c["id"], "unique_id": ch["unique_id"]}, {"$inc": {ch["field"]: -ch["delta"]}})
+                if ch.get("entity") == "club":
+                    await db.club_edits.update_one({"career_id": c["id"], "uid": ch["unique_id"]}, {"$set": {ch["field"]: ch["old_value"]}}, upsert=True)
+                else:
+                    await db.game_edits.update_one({"career_id": c["id"], "unique_id": ch["unique_id"]}, {"$inc": {ch["field"]: -ch["delta"]}})
             await audit(c["id"], "undone", ch["source"], f"{ch['field'].upper()} put back" + (f" to {ch['old_value']}" if ch.get("old_value") is not None else ""),
                         ch["unique_id"], ch["player_name"], batch_id, ch["hidden"])
             undone += 1

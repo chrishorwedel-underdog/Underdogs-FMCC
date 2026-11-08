@@ -40,7 +40,7 @@ const Queue = ({ d, act }) => {
           <tr key={q.id} style={{ cursor: "default" }} data-testid={`queue-row-${q.id}`}>
             <td><Checkbox checked={chosen.includes(q.id)} onCheckedChange={(v) => setSel(v ? [...chosen, q.id] : chosen.filter((x) => x !== q.id))} /></td>
             <td>{q.player_name}{q.club && <small style={{ display: "block", color: "var(--dim)" }}>{q.club}</small>}</td><td>{d.sources[q.source]}</td>
-            <td className="mono" data-testid={`queue-delta-${q.id}`}>{q.delta == null ? <span style={{ color: "var(--dim)" }}>Hidden</span> : `${q.field.toUpperCase()} ${q.delta > 0 ? "+" : ""}${q.delta}`}</td><td><small>{ago(q.created_at)}</small></td>
+            <td className="mono" data-testid={`queue-delta-${q.id}`}>{q.delta == null && q.entity !== "club" ? <span style={{ color: "var(--dim)" }}>Hidden</span> : q.entity === "club" ? `${q.label} → ${q.target}` : `${q.field.toUpperCase()} ${q.delta > 0 ? "+" : ""}${q.delta}`}</td><td><small>{ago(q.created_at)}</small></td>
           </tr>))}</tbody>
       </table>
       {!d.queued.length && <p className="note" style={{ padding: 10 }}>Nothing waiting.</p>}

@@ -46,7 +46,7 @@ export const BatchDialog = ({ ids, onClose, sources }) => {
               <thead><tr><th>Player</th><th>From</th><th>Field</th><th>Current</th><th>New</th></tr></thead>
               <tbody>{p.rows.map((r) => (
                 <tr key={r.id} style={{ cursor: "default" }} data-testid={`batch-preview-row-${r.id}`}>
-                  <td>{r.player_name}</td><td>{sources[r.source]}</td><td className="mono">{r.field.toUpperCase()}</td>
+                  <td>{r.player_name}</td><td>{sources[r.source]}</td><td className="mono">{r.label || r.field.toUpperCase()}</td>
                   <td className="mono">{p.ready ? val(r.current) : "—"}</td><td className="mono"><b>{p.ready ? val(r.new) : "—"}</b></td>
                 </tr>))}</tbody>
             </table>

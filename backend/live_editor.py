@@ -45,22 +45,28 @@ def health() -> dict:
             "failed_checks": [ln.strip() for ln in out.splitlines() if ln.strip().startswith("FAIL")]}
 
 
-def read(uid: int, field: str) -> tuple[int, str]:
-    key = FIELDS[field]
-    out = run("get", "player", uid, key)
-    head = re.match(r"^(.*) \(player \d+\)", out.strip())
+def read(uid: int, field: str, entity: str = "player") -> tuple[int, str]:
+    key = FIELDS.get(field, field) if entity == "player" else field
+    out = run("get", entity, uid, key)
+    head = re.match(rf"^(.*) \({entity} \d+\)", out.strip())
     m = re.search(rf"^\s*{key}\s+(-?\d+)\s*$", out, re.M)
     if not m:
         raise EditorError(f"{key} of player {uid} can't be read or isn't writable")
     return int(m.group(1)), head.group(1).strip() if head else ""
 
 
-def write(uid: int, field: str, value: int) -> int:
-    out = run("set", "player", uid, FIELDS[field], value)
+def write(uid: int, field: str, value: int, entity: str = "player") -> int:
+    out = run("set", entity, uid, FIELDS.get(field, field) if entity == "player" else field, value)
     m = re.search(r"reads back (-?\d+)", out)
     if not m or int(m.group(1)) != value:
         raise EditorError(f"The new value didn't read back as {value}")
     return value
+
+
+def read_all(entity: str, uid: int) -> dict:
+    """Every editable whole-number field FMLibreEditor can read for this club (or player)."""
+    out = run("get", entity, uid)
+    return {m.group(1): int(m.group(2)) for m in re.finditer(r"^\s{2}(\S+)\s+(-?\d+)\s*$", out, re.M)}
 
 
 def clamp(v: int) -> int:
