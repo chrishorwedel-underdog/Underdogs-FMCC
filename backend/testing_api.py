@@ -23,6 +23,7 @@ ITEMS = [
     ("matchlens", "FMMatchLens installs and is removed cleanly", "Connections: install FMMatchLens with FM closed, start FM and play a match, then remove it."),
     ("graphics", "Faces and logos appear in-game", "Give a player a face and a club a logo, then reload skins in FM and check they show."),
     ("punish", "Punish a Club file works", "Make a punishment, start a new career in FM, pick the FMCC file from the database list, and check the penalties took effect."),
+    ("creator", "Created players appear in a new career", "Make a batch in Player Creator, start a new career with the FMCC file, and search for a few of the players: free agents with the right nationality, age and face."),
 ]
 KEYS = {k for k, _, _ in ITEMS}
 

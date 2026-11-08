@@ -6,6 +6,7 @@ import { FacesTab } from "@/components/editor/FacesTab";
 import { ClubsTab } from "@/components/editor/ClubsTab";
 import { LicensingTab } from "@/components/editor/LicensingTab";
 import { KitsTab, PacksTab, BulkImportTab, PackCheckTab } from "@/components/editor/GraphicsTabs";
+import { CreatorTab } from "@/components/editor/CreatorTab";
 
 const Files = ({ s }) => {
   const act = useAct();
@@ -25,9 +26,9 @@ export default function PlayerTeamsEditor() {
   return (
     <div data-testid="editor-page">
       <PageHead eyebrow="Faces, logos, names and club attributes" title="Player & Teams Editor">
-        <TabBar id="editor" value={tab} onChange={setTab} tabs={[["faces", "Player faces"], ["clubs", "Clubs"], ["kits", "Kits"], ["licensing", "Licensing fix"], ["packs", "Pack browser"], ["bulk", "Bulk import"], ["check", "Pack check"]]} />
+        <TabBar id="editor" value={tab} onChange={setTab} tabs={[["faces", "Player faces"], ["creator", "Player Creator"], ["clubs", "Clubs"], ["kits", "Kits"], ["licensing", "Licensing fix"], ["packs", "Pack browser"], ["bulk", "Bulk import"], ["check", "Pack check"]]} />
       </PageHead>
-      {!s ? <p className="note">Loading…</p> : <><Files s={s} />{tab === "faces" ? <FacesTab s={s} /> : tab === "clubs" ? <ClubsTab /> : tab === "kits" ? <KitsTab /> : tab === "packs" ? <PacksTab /> : tab === "bulk" ? <BulkImportTab /> : tab === "check" ? <PackCheckTab /> : <LicensingTab />}</>}
+      {!s ? <p className="note">Loading…</p> : <><Files s={s} />{tab === "faces" ? <FacesTab s={s} /> : tab === "creator" ? <CreatorTab /> : tab === "clubs" ? <ClubsTab /> : tab === "kits" ? <KitsTab /> : tab === "packs" ? <PacksTab /> : tab === "bulk" ? <BulkImportTab /> : tab === "check" ? <PackCheckTab /> : <LicensingTab />}</>}
     </div>
   );
 }

@@ -126,6 +126,14 @@ See /app/plan/plan.md (stages 1–4, phases 2–3).
 - GET /api/leagues/compare?source=&target=&grade= (save league names or list keys = competition IDs, so same-named leagues like "Premier League" stay distinct): both strengths, multipliers, ranks, gap and %, the grade's global value and the equivalent local grade in the target league, plus the workbook's beta scenarios (0, 0.5, 1) with a caveat. Leagues tab "Compare two leagues" card (swap, grade input); profile link "Compare his league" pre-fills it.
 - Self-tested: API checks, screenshots, Stage 10 suite 42/43 (test_offer_verdicts passes on its own; order-dependent flake).
 
+## Implemented (2026-11-08) — Player Creator (new careers)
+- `backend/creator_api.py` + `components/editor/CreatorTab.jsx` (new "Player Creator" tab in Player & Teams Editor). Batch generator: count (1–200), weighted nationalities, ethnicity mix (11 FM groups; none = typical for the nation), skin tone range (1–20), age, positions, CA, PA (never below CA), height, preferred foot, a shuffle number (same number = same players). Preview first, then make.
+- All created players are free agents; existing players keep their clubs (running careers: names only, as agreed). IDs start at 2,100,000,000.
+- Built-in sample name lists for 15 nations; other nations borrow the closest list and the preview says so.
+- Faces: NG_Regens picture from the matching nationality folder (unused ones first), written to FMCC's graphics output; batches report how many got faces.
+- Output: FMCC XML editor data file (download in the preview; placed in the FM editor data folder in the Windows program). Format UNCONFIRMED; added to the Test checklist ("Created players appear in a new career"). Batches are saved with revisions; removing one deletes its file and releases its faces.
+- Self-tested: API (meta, preview, validation, create with 5/8 faces, file, delete) and screenshots.
+
 ## Backlog
 - P0 Windows packaging: real fmsave reader + FMLibreEditor hidden editor adapters, save-folder watcher, installer (GitHub Actions), real file swap for updates.
 - P1: per-90 trends in Monthly Reports; in-app OpenAI key field for the Windows build.
