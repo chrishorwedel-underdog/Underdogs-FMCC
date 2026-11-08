@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, Shuffle, Trash2, Wand2, FolderOpen } from "lucide-react";
+import { Upload, Shuffle, Trash2, Wand2, FolderOpen, Images } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { FacePicker } from "@/components/editor/FacePicker";
 
 const BASE = `${process.env.REACT_APP_BACKEND_URL}/api/editor/image`;
 
@@ -32,7 +33,7 @@ const NationFolders = ({ s, act }) => {
   );
 };
 
-const Row = ({ p, act, canPick }) => {
+const Row = ({ p, act, canPick, onPick, hasPack }) => {
   const ref = useRef(null);
   const upload = (f) => { const fd = new FormData(); fd.append("file", f); act(() => api.post(`/editor/faces/${p.unique_id}`, fd), `New face for ${p.name}`, ["editor-players", "editor-status", "editor-players-missing"]); };
   return (
@@ -44,6 +45,7 @@ const Row = ({ p, act, canPick }) => {
       <td style={{ whiteSpace: "nowrap" }}>
         <input ref={ref} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => e.target.files[0] && upload(e.target.files[0])} data-testid={`face-file-${p.unique_id}`} />
         <button className="btn" onClick={() => ref.current.click()} data-testid={`face-upload-${p.unique_id}`}><Upload size={13} />Upload</button>{" "}
+        <button className="btn" onClick={() => onPick(p)} data-testid={`face-pick-${p.unique_id}`}><Images size={13} />Pick face</button>{" "}
         {canPick && <button className="btn" onClick={() => act(() => api.post(`/editor/faces/${p.unique_id}/another`), "Another NG_Regens face picked", ["editor-players", "editor-players-missing"])} data-testid={`face-another-${p.unique_id}`}><Shuffle size={13} />Another NG_Regens</button>}{" "}
         {p.custom && <button className="btn btn-d" onClick={() => act(() => api.delete(`/editor/faces/${p.unique_id}`), "FMCC face removed", ["editor-players", "editor-status", "editor-players-missing"])} data-testid={`face-remove-${p.unique_id}`}><Trash2 size={13} /></button>}
       </td>
@@ -55,7 +57,9 @@ export const FacesTab = ({ s }) => {
   const act = useAct();
   const [q, setQ] = useState("");
   const [missing, setMissing] = useState(false);
+  const [picking, setPicking] = useState(null);
   const { data } = useGet("editor-players", "/editor/players", { q, missing });
+  const folderFor = (p) => s.nation_folders?.[p.nationality] || s.ngregens.folders.find((f) => f.toLowerCase() === (p.nationality || "").toLowerCase());
   const fill = () => act(() => api.post("/editor/fill-missing-faces"), (r) => `${r.filled} face(s) added${Object.keys(r.unmatched).length ? ` · no folder set for ${Object.keys(r.unmatched).join(", ")}` : ""}`, ["editor-players", "editor-status", "editor-players-missing"]);
   return (
     <div className="homegrid">
@@ -66,7 +70,8 @@ export const FacesTab = ({ s }) => {
           <span className="note" style={{ marginLeft: "auto", alignSelf: "center" }} data-testid="faces-total">{data?.total ?? "…"} players</span>
         </div>
         <table className="tbl"><thead><tr><th /><th>Player</th><th>Face</th><th>Change</th></tr></thead>
-          <tbody>{(data?.players || []).map((p) => <Row key={p.unique_id} p={p} act={act} canPick={!!(s.nation_folders?.[p.nationality] || s.ngregens.folders.some((f) => f.toLowerCase() === (p.nationality || "").toLowerCase()))} />)}</tbody></table>
+          <tbody>{(data?.players || []).map((p) => <Row key={p.unique_id} p={p} act={act} onPick={setPicking} hasPack={s.ngregens.installed && s.ngregens.folders.length > 0} canPick={!!folderFor(p)} />)}</tbody></table>
+        {picking && <FacePicker player={picking} folders={s.ngregens.folders} defaultFolder={folderFor(picking)} onClose={() => setPicking(null)} />}
       </div>
       <div className="card" style={{ alignSelf: "start" }} data-testid="ngregens-card">
         <div className="ttl"><FolderOpen size={15} />NG_Regens<span style={{ marginLeft: "auto" }} className={`st ${s.ngregens.installed ? "ok" : "a"}`} data-testid="ngregens-status">{s.ngregens.installed ? `${s.ngregens.faces} faces mapped` : "Not found"}</span></div>

@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 import sample_reader
-from core import db, active_career, latest_two, now_iso, new_id, audit, next_revision
+from core import db, active_career, latest_two, now_iso, new_id, audit, next_revision, logger
 
 router = APIRouter(prefix="/api/editor")
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
@@ -346,6 +346,116 @@ async def another_face(uid: int):
 
 
 # ---------- routes: clubs ----------
+def _ng_path(ng: dict, rel: str) -> Path:
+    base = Path(ng["folder"]).resolve()
+    p = (base / rel).resolve()
+    if not p.is_relative_to(base) or p.suffix.lower() != ".png" or not p.is_file():
+        raise HTTPException(404, "That NG_Regens picture wasn't found")
+    return p
+
+
+@router.get("/ng-folder/{folder}")
+async def ng_folder(folder: str, offset: int = 0, limit: int = 60):
+    """One NG_Regens nationality folder, page by page, with who already uses each picture."""
+    c = await active_career()
+    ng, mine = await ng_index(c), await latest(c["id"], "face")
+    files = ng["folders"].get(folder)
+    if files is None:
+        raise HTTPException(404, "That NG_Regens folder wasn't found")
+    names = {p["unique_id"]: p["name"] for p in await people(c)}
+    used = {}
+    for uid, f in ng["faces"].items():
+        if not (mine.get(uid) or {}).get("value"):
+            used[str(Path(f["file"]).resolve())] = names.get(uid, f"Player {uid}")
+    for uid, r in mine.items():
+        if r.get("value") and r["value"].get("ng_file"):
+            used[str(Path(r["value"]["ng_file"]).resolve())] = r["target_name"]
+    base = Path(ng["folder"]).resolve()
+    page = files[max(0, offset):max(0, offset) + min(limit, 120)]
+    return {"folder": folder, "total": len(files), "offset": offset,
+            "pictures": [{"id": str(Path(f).resolve().relative_to(base)).replace("\\", "/"), "used_by": used.get(str(Path(f).resolve()))} for f in page]}
+
+
+@router.get("/ng-picture")
+async def ng_picture(path: str):
+    c = await active_career()
+    return FileResponse(_ng_path(await ng_index(c), path), media_type="image/png")
+
+
+class PickIn(BaseModel):
+    path: str = Field(min_length=3, max_length=300)
+
+
+class GenerateIn(BaseModel):
+    notes: str = Field(default="", max_length=300)
+
+
+class DraftIn(BaseModel):
+    image: str = Field(pattern=r"^[0-9a-f]{24}\.png$")
+
+
+@router.post("/faces/{uid}/generate")
+async def generate_face(uid: int, body: GenerateIn):
+    """ChatGPT (GPT Image 1.5) draws a draft face for a made-up person; nothing changes until you press 'Use this face'."""
+    from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
+    from dof_api import api_key
+    c = await active_career()
+    p = next((x for x in await people(c) if x["unique_id"] == uid), None)
+    if not p:
+        raise HTTPException(404, "Player not found in this save")
+    key = api_key()
+    if not key:
+        raise HTTPException(409, "Add your OpenAI key in Settings to create faces with ChatGPT")
+    prompt = (f"Photorealistic head-and-shoulders portrait of a fictional {p.get('age') or 22}-year-old professional footballer from {p.get('nationality') or 'Europe'}, "
+              "facing the camera, plain dark training top, neutral light-grey studio background, soft even lighting, square crop, "
+              "in the style of a Football Manager facepack. No text, no logos, no watermark, not a real person."
+              + (f" Details: {body.notes.strip()}" if body.notes.strip() else ""))
+    try:
+        images = await OpenAIImageGeneration(api_key=key).generate_images(prompt=prompt, model="gpt-image-1.5", number_of_images=1)
+    except Exception as exc:
+        logger.warning("face generation failed: %s", exc)
+        raise HTTPException(502, "ChatGPT couldn't create a face just now. Please try again.")
+    if not images:
+        raise HTTPException(502, "ChatGPT didn't return a picture. Please try again.")
+    img = _store(fm_dirs(c), await asyncio.to_thread(_png, images[0], 250))
+    await db.face_drafts.insert_one({"id": new_id(), "career_id": c["id"], "uid": uid, "image": img, "notes": body.notes.strip(), "at": now_iso()})
+    return {"draft": img}
+
+
+@router.get("/drafts/{image}")
+async def draft_image(image: str):
+    c = await active_career()
+    if not re.fullmatch(r"[0-9a-f]{24}\.png", image) or not await db.face_drafts.find_one({"career_id": c["id"], "image": image}):
+        raise HTTPException(404, "No such draft")
+    return FileResponse(fm_dirs(c)["store"] / image, media_type="image/png")
+
+
+@router.post("/faces/{uid}/use-draft")
+async def use_draft(uid: int, body: DraftIn):
+    c = await active_career()
+    d = await db.face_drafts.find_one({"career_id": c["id"], "uid": uid, "image": body.image}, {"_id": 0})
+    if not d:
+        raise HTTPException(404, "That draft wasn't made for this player")
+    p = next((x for x in await people(c) if x["unique_id"] == uid), None)
+    await add_revision(c, "face", uid, p["name"] if p else str(uid), {"image": body.image, "source": "Created with ChatGPT"},
+                       "Face created with ChatGPT" + (f": {d['notes']}" if d["notes"] else ""))
+    return await rebuild(c)
+
+
+@router.post("/faces/{uid}/pick")
+async def pick_face(uid: int, body: PickIn):
+    c = await active_career()
+    p = next((x for x in await people(c) if x["unique_id"] == uid), None)
+    if not p:
+        raise HTTPException(404, "Player not found in this save")
+    ng = await ng_index(c)
+    src = _ng_path(ng, body.path)
+    folder = body.path.split("/")[0]
+    img = _store(fm_dirs(c), await asyncio.to_thread(src.read_bytes))
+    await add_revision(c, "face", uid, p["name"], {"image": img, "source": f"NG_Regens · {folder}", "ng_file": str(src)}, f"Face picked from NG_Regens: {body.path}")
+    return await rebuild(c)
+
+
 @router.get("/clubs")
 async def list_clubs(q: str = ""):
     c = await active_career()
