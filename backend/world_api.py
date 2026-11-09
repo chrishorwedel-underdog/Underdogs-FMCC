@@ -58,7 +58,10 @@ def _table(league: str, months: int, rows_by_club: dict) -> list:
     power = {c: sum(x.get("avg_rating") or 6.5 for x in rows_by_club.get(c, [])) / max(1, len(rows_by_club.get(c, []))) for c in clubs}
     for rnd in range(months * 4):
         rng = random.Random(f"{league}-{rnd}")
-        order = clubs[:]
+        n = len(clubs)
+        order = clubs[rnd % n:] + clubs[:rnd % n]
+        if n % 2:
+            order = order[1:]
         rng.shuffle(order)
         for h, a in zip(order[::2], order[1::2]):
             gh = max(0, round(rng.gauss(1.4 + (power[h] - power[a]) * 1.5, 1.1)))
@@ -141,9 +144,13 @@ def _money(v: int) -> str:
     return f"€{v / 1e6:.1f}m" if v >= 1e6 else f"€{v // 1000}k"
 
 
+def _nth(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
 def _news(rows: list, tables: list, transfers: list, awards: dict, scope: str) -> list:
     ev = []
-    for t in transfers[:20]:
+    for t in transfers[:4]:
         ev.append((50 + t["fee"] / 1e6, t["country"], "Transfer", f"{t['name']} joins {t['to_club']} from {t['from_club']} for {'about ' if t['estimated'] else ''}{_money(t['fee'])}"))
     for tb in tables:
         if not tb["rows"]:
@@ -155,7 +162,7 @@ def _news(rows: list, tables: list, transfers: list, awards: dict, scope: str) -
             ev.append((26 + (top["pts"] - second["pts"]), tb["country"], "Title race", f"{top['club']} stay top of the {tb['league']}, {top['pts'] - second['pts']} point(s) clear"))
         for t in tb["rows"]:
             if t["move"] >= 2:
-                ev.append((15 + t["move"] * 3, tb["country"], "On the rise", f"{t['club']} climb {t['move']} places to {t['pos']}th in the {tb['league']}"))
+                ev.append((15 + t["move"] * 3, tb["country"], "On the rise", f"{t['club']} climb {t['move']} places to {_nth(t['pos'])} in the {tb['league']}"))
     for r in rows:
         if r["m_goals"] >= 3:
             ev.append((18 + r["m_goals"] * 5, r["country"], "In form", f"{r['name']} scores {r['m_goals']} for {r['club']} this month"))
@@ -165,6 +172,8 @@ def _news(rows: list, tables: list, transfers: list, awards: dict, scope: str) -
         if a["picks"]:
             w = a["picks"][0]
             ev.append((36, country_of(w["league"]), "Award", f"{w['name']} ({w['club']}) is {scope} {a['label']}"))
+    for r in sorted([r for r in rows if r["m_apps"] >= 2 and r["m_rating"]], key=lambda r: -r["m_rating"])[:12]:
+        ev.append((8 + r["m_rating"], r["country"], "Top performer", f"{r['name']} averages {r['m_rating']} for {r['club']} this month"))
     ev.sort(key=lambda e: -e[0])
     return [{"tag": t, "country": c, "text": s} for _, c, t, s in ev]
 

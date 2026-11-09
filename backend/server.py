@@ -357,7 +357,7 @@ async def squad():
     players = []
     for p in latest["players"]:
         prior = before.get(p["unique_id"])
-        players.append(p | {"ca_change": p["ca"] - prior["ca"] if prior else None,
+        players.append({k: v for k, v in p.items() if k not in ("ca", "pa")} | {"ca_change": p["ca"] - prior["ca"] if prior else None,
                             "is_new": idents.get(p["unique_id"], {}).get("first_seen_save") == latest["save_no"] and latest["save_no"] > 0,
                             "shared_name": names[p["name"]] > 1, "in_best_xi": p["unique_id"] in xi_ids, "best_role": roles.best_role(p)})
     current = {p["unique_id"] for p in latest["players"]}

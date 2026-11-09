@@ -16,9 +16,9 @@ export const GUIDES = {
     how: ["Press Run Dynamic Potential after a save is read", "Untick anyone you want to leave alone", "Queue the changes; you confirm them in Game changes before anything touches FM"],
   },
   "/breakout": {
-    what: "Picks the season's Breakout Player: the player who performed furthest above what was expected. The winner is awarded a CA (current ability) bonus in FM.",
-    features: ["FMCC nominates candidates from match numbers and growth, and you pick the winner for each category", "The winner gets a CA bonus, rolled within your rule's range and queued in Game changes", "The reasons behind each nomination", "One award per player per season, so nobody is rewarded twice", "Your own rules, thresholds and bonus sizes"],
-    how: ["Open the nominations", "Pick the player you agree with", "Make it official at season end: his CA bonus goes to Game changes for you to confirm"],
+    what: "FMCC picks the season's Breakout Player: the player who performed furthest above what was expected. The winner is awarded a CA (current ability) bonus in FM.",
+    features: ["FMCC ranks the candidates from match numbers and growth and puts its pick first", "You confirm the pick (or choose someone else) for each category", "The winner gets a CA bonus, rolled within your rule's range and queued in Game changes", "The reasons behind each nomination", "One award per player per season, so nobody is rewarded twice", "Your own rules, thresholds and bonus sizes"],
+    how: ["Open the nominations: FMCC's pick is at the top", "Confirm it with Pick, or pick someone else", "Make it official at season end: the winner's CA bonus goes to Game changes for you to confirm"],
   },
   "/scouting": {
     what: "Finds and judges every player in your save using a combination of match stats and advanced analytics.",

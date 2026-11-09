@@ -61,7 +61,9 @@ const World = () => {
 };
 
 export default function Reports() {
-  const [tab, setTab] = useState("world");
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") || "world";
+  const setTab = (t) => { const n = new URLSearchParams(params); t === "world" ? n.delete("tab") : n.set("tab", t); setParams(n); };
   return (
     <div data-testid="reports-page">
       <PageHead eyebrow="Who's been making waves across every loaded league" title="World Monthly Reports">

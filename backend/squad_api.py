@@ -76,9 +76,9 @@ async def squad_plan(formation: Formation = "433"):
     weak = [{"slot": s["key"], "label": s["label"], "best": depth[s["key"]][0]["rating"] if depth[s["key"]] else 0,
              "options": len(depth[s["key"]])} for s in form["slots"]]
     saved = await db.lineups.find_one({"career_id": c["id"], "formation": formation}, {"_id": 0}, sort=[("revision", -1)])
-    youth = sorted([{"unique_id": u, **i} for u, i in info.items() if i["u21"]], key=lambda y: y["month_minutes"])
     for i in info.values():
         i.pop("ca", None)
+    youth = sorted([{"unique_id": u, **i} for u, i in info.items() if i["u21"]], key=lambda y: y["month_minutes"])
     return {"formation": form, "formations": {k: v[0] for k, v in roles.FORMATIONS.items()}, "all_formations": {k: v[0] for k, v in roles.ALL_FORMATIONS.items()},
             "save_no": latest["save_no"], "game_date": latest["game_date"], "players": info, "depth": depth, "rules": rules,
             **competition_xis(latest["players"], form, depth, best, info, params),

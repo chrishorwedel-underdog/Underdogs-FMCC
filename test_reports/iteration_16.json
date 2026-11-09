@@ -1,0 +1,41 @@
+{
+  "summary": "Tested hidden CA/PA, sidebar move, Breakout/Scout copy, Squad competition XIs and extra formations, Development columns and plans, Player Creator name/seed card, and World Monthly Reports, using a new backend pytest (21 tests) and Playwright at 1920 and 390 px. Almost everything works. No real CA or PA number appears anywhere in the UI (Squad players and sheet, Scout table, profile and CSV, Development, World and My squad reports, Creator preview). Sidebar order is right and 'Your workspace' is gone. All 5 lineup modes put 11 players on the pitch and save. The formation dropdown lists all 22 formations, caps at 3 extras, keeps them after reload, and remove works; Depth chart works with 3-5-2. World reports: country view, month and country selects, Back, 404 for an unknown country, and a new month after POST /saves/read all work. Problems: 1) GET /api/squad/plan youth_minutes[] still returns the real 'ca' (not shown in the UI). 2) The Breakout guide card contradicts the new eyebrow: the eyebrow says FMCC picks the winner, the guide says 'you pick the winner'. 3) The World news list fills with transfers when there are many moves.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/squad/plan", "issue": "youth_minutes[] items include the real 'ca' value (e.g. ca: 92). The UI doesn't show it, but it breaks the 'never exposed' rule that /scout already follows. Remove 'ca' from youth_minutes in squad_api.py."},
+      {"endpoint": "GET /api/squad, GET /api/scouting/rankings", "issue": "Still return raw ca/pa in JSON (not rendered). Consider stripping them for consistency."},
+      {"endpoint": "GET /api/world/report news", "issue": "Transfer stories score 50 + fee in millions, so they always outrank every other story (title race at most ~42). After save 3, all 12 world stories were transfers, repeating the transfers card with no title race, form or award stories. Cap transfers at 3-4 stories or weight them down. Before that read, save 2 produced only 10 stories while the heading says 'The 12 biggest stories'."},
+      {"endpoint": "GET /api/world/report _news", "issue": "Ordinal bug: f\"{t['pos']}th\" gives '1th/2th/3th' in 'On the rise' stories."},
+      {"endpoint": "GET /api/world/report tables (SAMPLE)", "issue": "Leagues with an odd number of clubs (Serie A with 3) give very uneven games played (P 11/4/9), and one league showed a 22-point lead after 3 months. Sample artefact only."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Breakout guide card (constants/guides.js '/breakout' features/how)", "issue": "The eyebrow, the 'what' text and the sidebar say FMCC picks the winner. The feature list says 'FMCC nominates candidates ... and you pick the winner for each category' and the steps say 'Pick the player you agree with'. The page also still has 'Pick' buttons and 'Make 0 pick(s) official'. Make one story: either FMCC auto-picks (and the user confirms), or rewrite the eyebrow.", "selector": "[data-testid='breakout-page']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Squad > Lineup formation picker", "issues": ["The remove (X) buttons for extra formations sit in a row after all the tabs, with no label showing which formation each one removes (only a title tooltip). Put the X inside or next to its own tab."]},
+      {"screen": "Reports page", "issues": ["The Reports tab (World/My squad/Rules) is local state, not in the URL, so a reload or back always returns to World."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage17_world_xis_ability.py", "/app/test_reports/pytest/stage17.xml"],
+  "action_items": [
+    "Remove 'ca' from /api/squad/plan youth_minutes items (and ideally strip ca/pa from /api/squad and /api/scouting/rankings responses).",
+    "Reconcile the Breakout wording: the guide features/how say 'you pick the winner', while the eyebrow, tour and sidebar say FMCC picks it.",
+    "World news: limit transfer stories so the 12 stories mix title races, form, awards and talent; fix the ordinal suffix (1st/2nd/3rd)."
+  ],
+  "critical_code_review_comments": [
+    "squad_api youth_minutes leaks the ca field (see above).",
+    "world_api._news: transfer weight 50+fee/1e6 swamps every other story type; pos+'th' ordinal bug.",
+    "world_api._table: with an odd club count one club sits out each round, so games played drift apart.",
+    "Breakout copy mismatch between PageHead eyebrow and GUIDES['/breakout'].features/how."
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage17_world_xis_ability.py"],
+  "success_rate": {"backend": "95% (20/21; the only failure is the youth_minutes CA leak)", "frontend": "95%"},
+  "seed_data_creation": "Ran POST /api/saves/read once (TEST_Shot moved from save 2 / Oct 2027 to save 3 / Nov 2027, as the review request asked). Created and then deleted by id/revision: 433 lineups (domestic, cup, uefa from pytest; cup and uefa from the UI) and plans for 20481123 (pytest 'TEST_plan', UI 'TEST_ui_plan'). After cleanup TEST_Shot has 0 lineups and 0 plans.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && REACT_APP_BACKEND_URL=... pytest tests/test_fmcc_stage17_world_xis_ability.py -n 0 (cleanup deletes the lineups and plans it creates, using pymongo and backend/.env). Career TEST_Shot is now on save 3 (2027-11), with world months 2027-09..11. Navigate via sidebar testids; extra formations are stored in localStorage 'fmcc-extra-formations'. Tour: click tour-skip. Lineup tabs: lineup-mode-tab-{best,dev,domestic,cup,uefa}; formation tabs: formation-tab-{key}."
+}
