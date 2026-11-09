@@ -25,10 +25,10 @@ GROUPS = {"GK": "Goalkeeper", "CB": "Centre-back", "FB": "Full-back", "DM": "Def
 
 def mask(x: dict, view: str) -> dict:
     """Fair play shows only what your scouts would; Moneyball switches attributes off completely."""
-    o = {k: v for k, v in x.items() if k not in ("z",)}
+    o = {k: v for k, v in x.items() if k not in ("z",)} | {"ca": None, "pa": None}
     if view == "full":
         return o
-    for k in ("ca", "pa", "hidden", "personality"):
+    for k in ("hidden", "personality"):
         o[k] = None
     o["best_role"] = None
     if view == "moneyball":
@@ -85,7 +85,7 @@ def _filter(data: dict, f: dict, view: str) -> list:
             continue
         out.append(x)
     key, desc = f.get("sort", "grade"), f.get("dir", "desc") == "desc"
-    if view != "full" and key in ("ca", "pa"):
+    if key in ("ca", "pa"):
         key = "grade"
     out.sort(key=lambda x: (_value_of(x, key, f.get("mode", "p90")) is None, -(_value_of(x, key, f.get("mode", "p90")) or 0) if desc else (_value_of(x, key, f.get("mode", "p90")) or 0)))
     return out
@@ -168,9 +168,9 @@ async def export(f: Filters):
     w = csv.writer(buf)
     keys = [k for k in sm.METRICS]
     hide = f.view != "full"
-    w.writerow(["Name", "Age", "Club", "League", "Positions"] + ([] if hide else ["CA", "PA"]) + ["Value", "Wage", "Minutes", "Global grade", "Fair price"] + [sm.METRICS[k][0] for k in keys])
+    w.writerow(["Name", "Age", "Club", "League", "Positions"] + ["Value", "Wage", "Minutes", "Global grade", "Fair price"] + [sm.METRICS[k][0] for k in keys])
     for x in rows:
-        w.writerow([x["name"], x["age"], x["club"], x["league"], ", ".join(x["positions"] or [])] + ([] if hide else [x["ca"], x["pa"]])
+        w.writerow([x["name"], x["age"], x["club"], x["league"], ", ".join(x["positions"] or [])]
                    + [x["value"], x["wage"], x["minutes"], x["grade_global"], x["fair_price"]] + [_value_of(x, k, f.mode) for k in keys])
     return Response(buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": 'attachment; filename="fmcc-scouting.csv"'})
 
@@ -188,7 +188,7 @@ def _report(x: dict) -> str:
     if x.get("personality"):
         out += f" Personality: {x['personality']}."
     if gap >= 25:
-        out += f" Plenty of room to grow ({x['ca']} now, {x['pa']} potential)."
+        out += " Plenty of room to grow."
     if x["months_left"] is not None and x["months_left"] <= 12:
         out += f" Only {x['months_left']} months left on his contract."
     return out

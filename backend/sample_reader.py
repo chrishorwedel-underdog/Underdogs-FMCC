@@ -123,13 +123,23 @@ def scouting_pool(save_no: int, game_date: date, months_played: int, edits: dict
                 exp = 6.0 + (ca - 100) / 100
                 female = league in WOMEN
                 first = (FIRST_F if female else FIRST)[nat]
+                home, moved = club, None
+                mv = random.Random(uid * 7 + 1)
+                move_at = mv.randint(1, 12)
+                if not female and mv.random() < 0.1 and save_no >= move_at:
+                    others = [x for lg, cs in LEAGUES.items() if lg not in WOMEN for x in cs if x != club]
+                    club = others[uid % len(others)]
+                    league = next(lg for lg, cs in LEAGUES.items() if club in cs)
+                    moved = {"from_club": home, "fee": int(max(150_000, (ca - 60) ** 2.4 * 400 * mv.uniform(0.9, 1.8)) // 50_000 * 50_000),
+                             "date": _add_months(date(2027, 8, 1), move_at).isoformat()}
                 out.append({"unique_id": uid, "name": f"{rng.choice(first)} {rng.choice(LAST[nat])}", "age": age, "nationality": nat,
-                            "gender": "F" if female else "M", "contract_end": CONTRACTS[uid % len(CONTRACTS)],
+                            "gender": "F" if female else "M", "contract_end": CONTRACTS[uid % len(CONTRACTS)], "last_move": moved,
                             "club": club, "league": league, "positions": pos, "ca": ca, "pa": pa2,
                             "value": int(max(150_000, (ca - 60) ** 2.4 * 400 * (1.6 if age < 23 else 1) * rng.uniform(0.6, 1.5)) // 50_000 * 50_000),
-                            "wage": int((ca - 50) * 160 * rng.uniform(0.7, 1.3)), "minutes": minutes, "appearances": minutes // 80,
+                            "wage": int((ca - 50) * 160 * rng.uniform(0.7, 1.3)), "minutes": minutes, "appearances": -(-minutes // 85),
                             "avg_rating": round(exp + rng.uniform(-0.5, 0.5), 2) if minutes else None,
                             "goals": int(minutes / 90 * (0.45 if "ST" in pos else 0.15) * rng.uniform(0.3, 1.4)),
+                            "assists": int(minutes / 90 * (0.3 if any(x.startswith("AM") for x in pos) else 0.12 if "ST" in pos or "M (C)" in pos else 0.04) * rng.uniform(0.3, 1.4)),
                             "attributes": attributes(uid, pos, ca)})
     return out
 
@@ -152,7 +162,7 @@ def read_save(save_no: int, club_name: str, edits: dict | None = None) -> dict:
         played = 0
         for m in range(months_played):
             played += max(0, int(mins * random.Random(uid + m).uniform(0.6, 1.15)))
-        apps = played // 80
+        apps = -(-played // 85)
         players.append({
             "unique_id": uid, "name": name, "birth_date": birth, "age": _age(birth, game_date),
             "nationality": nat, "positions": pos, "ca": cur, "pa": pa,

@@ -16,19 +16,19 @@ export const GUIDES = {
     how: ["Press Run Dynamic Potential after a save is read", "Untick anyone you want to leave alone", "Queue the changes; you confirm them in Game changes before anything touches FM"],
   },
   "/breakout": {
-    what: "Picks this season's breakout players: the ones performing far above what was expected.",
-    features: ["Automatic nominations from match numbers and growth", "The reasons behind each nomination", "One award per player per season, so nobody is rewarded twice", "Your own rules and thresholds"],
-    how: ["Open the nominations", "Approve the players you agree with", "The award is queued in Game changes for you to confirm"],
+    what: "Picks the season's Breakout Player: the player who performed furthest above what was expected. The winner is awarded a CA (current ability) bonus in FM.",
+    features: ["FMCC nominates candidates from match numbers and growth, and you pick the winner for each category", "The winner gets a CA bonus, rolled within your rule's range and queued in Game changes", "The reasons behind each nomination", "One award per player per season, so nobody is rewarded twice", "Your own rules, thresholds and bonus sizes"],
+    how: ["Open the nominations", "Pick the player you agree with", "Make it official at season end: his CA bonus goes to Game changes for you to confirm"],
   },
   "/scouting": {
-    what: "Finds and judges every player in your save: ScoutSheet's scouting with deep FMDataLab-style stats.",
+    what: "Finds and judges every player in your save using a combination of match stats and advanced analytics.",
     features: ["Full, Fair play or Moneyball view (top right): see everything, only what your scouts would know, or just stats and price", "Players: search, ready-made searches, filters, a stats table, saved searches and CSV export", "Click any player for his profile: grade, fair price, pizza chart, similar players and a scouting report", "My Club (your weakest positions), Deals & Offers (bargains, bid checks and a quadrant chart of performance against cost), Scatter, Compare, Computed stats and your own Formulas", "Advanced filters with AND/OR groups and percentile conditions, heat colours, and Find a replacement on every profile", "Leagues (how strong each league is) and Possession (adjusts stats for team style)"],
     how: ["Pick a view at the top", "Search or pick a ready-made search in Players", "Click a player to open his profile, star him for the shortlist or tick the scales to compare"],
   },
   "/reports": {
-    what: "A snapshot of your squad every in-game month, so you can see the bigger picture over time.",
-    features: ["A report created automatically for each in-game month", "Compare any two months side by side", "Your own report rules"],
-    how: ["Keep playing and saving: reports appear once FMCC has read saves from two different months", "Open Compare months to see how the squad changed"],
+    what: "Who made waves across the world last month: news, tables, transfers, stat leaders and monthly awards for every loaded league.",
+    features: ["The 12 biggest world stories (3–5 per country)", "Updated league tables with position changes", "The 10 biggest transfers by fee", "Top 10 leaders in every stat and analytics category, plus top 5 under-21s", "Attacker, Defender, Goalkeeper and U21 Player of the Month, each with two runners-up", "A report for the whole world and for every loaded country", "My squad: compare any two months of your own squad"],
+    how: ["Keep playing and saving: each in-game month gets its own report", "Open the World report, or pick a country for its own report and winners"],
   },
   "/moneyball": {
     what: "Compares transfer options side by side, judged on numbers and price.",
@@ -37,7 +37,7 @@ export const GUIDES = {
   },
   "/squad": {
     what: "Plans your team: who plays where, who's next in line and the best lineup.",
-    features: ["Role ratings for every player", "Depth charts for each position", "Best XI: the highest-scoring lineup for your formation and roles", "Development XI: a lineup that gives your young players minutes", "Tactic fit: every player rated for every slot of a tactic (import an .fmf or pick a formation), squad gaps and a shape advisor", "Registration checks"],
+    features: ["Role ratings for every player", "Depth charts for each position", "Best XI: the highest-scoring lineup for your formation and roles", "Development XI: a lineup that gives your young players minutes", "Domestic, Cup and UEFA XI: league-registered, rotated and UEFA-registered lineups", "Up to 3 extra formations of your choice to experiment with", "Tactic fit: every player rated for every slot of a tactic (import an .fmf or pick a formation), squad gaps and a shape advisor", "Registration checks"],
     how: ["Pick a formation", "Look at Best XI and Development XI on the pitch", "Save a lineup to keep it in your history"],
   },
   "/development": {

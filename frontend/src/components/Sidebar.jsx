@@ -8,12 +8,6 @@ export const Sidebar = () => {
   return (
   <aside className="side" data-testid="sidebar">
     <div className="brand"><img className="logo" src="/fmcc-logo.png" alt="FMCC — From Underdog Podcasts" data-testid="sidebar-logo" /></div>
-    <div className="toplinks">
-      {TOP_LINKS.map(({ to, key, label, Icon }) => (
-        <NavLink key={key} to={to} className={({ isActive }) => `tl${isActive ? " on" : ""}`} data-testid={`nav-${key}`}><Icon size={14} />{label}</NavLink>
-      ))}
-    </div>
-    <div className="sec">Your workspace</div>
     <nav>
       {NAV.map(({ to, key, label, sub, c, Icon, stage }) => (
         <NavLink key={key} to={to} end={to === "/"} style={{ "--c": c }} data-testid={`nav-${key}`}
@@ -25,6 +19,11 @@ export const Sidebar = () => {
         </NavLink>
       ))}
     </nav>
+    <div className="botlinks">
+      {TOP_LINKS.map(({ to, key, label, Icon }) => (
+        <NavLink key={key} to={to} className={({ isActive }) => `tl${isActive ? " on" : ""}`} data-testid={`nav-${key}`}><Icon size={14} />{label}</NavLink>
+      ))}
+    </div>
     <div className="foot">
       <NavLink to="/dof" className="dofbtn" data-testid="nav-ask-dof">
         <b><Sparkles size={18} strokeWidth={2.3} />Chat with your</b>

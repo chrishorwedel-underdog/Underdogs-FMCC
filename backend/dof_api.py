@@ -44,6 +44,15 @@ async def set_key(body: KeyIn):
     return {"ok": True}
 
 
+def _tier(p: dict) -> str:
+    """Ability in words only: real CA/PA numbers never reach the model, so they can't be shown."""
+    ca, pa = p.get("ca") or 0, p.get("pa") or 0
+    level = "elite" if ca >= 170 else "top level" if ca >= 150 else "very good" if ca >= 130 else "good" if ca >= 110 else "squad level" if ca >= 90 else "developing"
+    room = "lots of room to grow" if pa - ca >= 30 else "some room to grow" if pa - ca >= 12 else "near his ceiling"
+    return f"ability {level}, {room}"
+
+
+
 async def build_context(c: dict) -> str:
     snaps = await latest_two(c["id"])
     latest = snaps[0]
@@ -56,7 +65,7 @@ async def build_context(c: dict) -> str:
     dev, _, _ = roles.development_xi(best, form, depth, info, rules)
     per90 = await season_per90(c["id"], latest["season"], "us")
     squad = "\n".join(
-        f"- id {p['unique_id']} | {p['name']} | age {p['age']} | {'/'.join(p['positions'])} | CA {p['ca']} PA {p['pa']} | best role {roles.best_role(p)['name']} {roles.best_role(p)['rating']} | "
+        f"- id {p['unique_id']} | {p['name']} | age {p['age']} | {'/'.join(p['positions'])} | {_tier(p)} | best role {roles.best_role(p)['name']} {roles.best_role(p)['rating']} | "
         f"season minutes {p['minutes']} (last month {mins[p['unique_id']]}) | avg rating {p.get('avg_rating')} | contract to {p['contract_end']}"
         + (f" | per90 xG {per90[p['unique_id']]['per90']['xg']} xA {per90[p['unique_id']]['per90']['xa']} pressures {per90[p['unique_id']]['per90']['pressures']} "
            f"goals {per90[p['unique_id']]['goals']}" if p["unique_id"] in per90 else "") for p in latest["players"])
@@ -72,7 +81,7 @@ async def build_context(c: dict) -> str:
         g = GROUP[p["positions"][0]]
         if len(groups.setdefault(g, [])) < 4:
             groups[g].append(p)
-    pool_lines = "; ".join(f"id {p['unique_id']} {p['name']} {p['age']} {'/'.join(p['positions'])} {p['club']} CA {p['ca']} PA {p['pa']} value {p['value']}" for ps in groups.values() for p in ps)
+    pool_lines = "; ".join(f"id {p['unique_id']} {p['name']} {p['age']} {'/'.join(p['positions'])} {p['club']} {_tier(p)} value {p['value']}" for ps in groups.values() for p in ps)
     plans = await db.plans.find({"career_id": c["id"]}, {"_id": 0, "name": 1, "minutes_target": 1, "loan": 1, "revision": 1}).sort("revision", -1).to_list(30)
     pending = await db.changes.count_documents({"career_id": c["id"], "status": "queued"})
     return f"""Club: {c['club_name']} ({c['edition']}), game date {latest['game_date']}, season {latest['season']}.
@@ -169,6 +178,7 @@ async def check_suggestions(c: dict, action: dict) -> Optional[dict]:
 SYSTEM = """You are the Director of Football inside FMCC, a companion app for Football Manager. The manager has final authority.
 Answer in plain, confident football language, short paragraphs or a few bullets, using player names and the numbers from the data below. Never invent players or numbers.
 Never reveal, estimate or discuss Dynamic Potential values or whether a player's potential was changed by it.
+Never state Current Ability or Potential Ability numbers (CA/PA), even if asked; describe ability in words only.
 You may draft ONE action when it clearly helps. Put it on the very last line, exactly in this form, with nothing after it:
 ACTION: {"type": "lineup", "kind": "dev" or "best", "formation": "433" or "4231", "summary": "..."}
 ACTION: {"type": "shortlist", "unique_id": <scouting id>, "summary": "..."}

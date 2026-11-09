@@ -7,7 +7,7 @@ export default function BreakoutPage() {
   const [tab, setTab] = useState("picks");
   return (
     <div data-testid="breakout-page">
-      <PageHead eyebrow="This season's breakout nominations" title="Breakout Player">
+      <PageHead eyebrow="FMCC picks the season's Breakout Player · the winner is awarded a CA bonus" title="Breakout Player">
         <TabBar id="breakout" value={tab} onChange={setTab} tabs={[["picks", "Nominations"], ["rules", "Rules"]]} />
       </PageHead>
       {tab === "picks" ? <Breakout /> : <RulesTab module="breakout" title="Categories, criteria and rewards" />}

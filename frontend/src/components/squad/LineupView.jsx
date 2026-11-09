@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct, TabBar } from "@/lib/ui";
 import { Pitch } from "@/components/squad/Pitch";
@@ -37,6 +37,26 @@ const Side = ({ plan, mode, slots }) => {
   );
 };
 
+const MODES = [["best", "Best XI"], ["dev", "Development XI"], ["domestic", "Domestic XI"], ["cup", "Cup XI"], ["uefa", "UEFA XI"]];
+const readExtra = () => { try { return JSON.parse(localStorage.getItem("fmcc-extra-formations") || "[]").slice(0, 3); } catch { return []; } };
+
+const Formations = ({ plan, formation, setFormation }) => {
+  const [extra, setExtra] = useState(readExtra);
+  const save = (next) => { setExtra(next); localStorage.setItem("fmcc-extra-formations", JSON.stringify(next)); };
+  const tabs = [...Object.entries(plan.formations), ...extra.filter((k) => plan.all_formations[k]).map((k) => [k, plan.all_formations[k]])];
+  const options = Object.entries(plan.all_formations).filter(([k]) => !plan.formations[k] && !extra.includes(k));
+  const add = (k) => { if (k) { save([...extra, k]); setFormation(k); } };
+  const remove = (k) => { save(extra.filter((x) => x !== k)); if (formation === k) setFormation("433"); };
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }} data-testid="formation-picker">
+      <TabBar id="formation" value={formation} onChange={setFormation} tabs={tabs} />
+      {extra.map((k) => <button key={k} className="ib" title={`Remove ${plan.all_formations[k]}`} onClick={() => remove(k)} data-testid={`formation-remove-${k}`}><X size={12} /></button>)}
+      {extra.length < 3 && <select className="inp" style={{ width: 190, height: 34 }} value="" onChange={(e) => add(e.target.value)} data-testid="formation-add-select">
+        <option value="">+ Add a tactic ({3 - extra.length} left)</option>{options.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>}
+    </div>
+  );
+};
+
 export const LineupView = ({ formation, setFormation }) => {
   const { data: plan } = useGet("plan", "/squad/plan", { formation });
   const act = useAct();
@@ -60,8 +80,8 @@ export const LineupView = ({ formation, setFormation }) => {
   return (
     <div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18, alignItems: "center" }}>
-        <TabBar id="lineup-mode" value={mode} onChange={switchMode} tabs={[["best", "Best XI"], ["dev", "Development XI"], ...(mode === "custom" ? [["custom", "My changes"]] : [])]} />
-        <TabBar id="formation" value={formation} onChange={setFormation} tabs={Object.entries(plan.formations)} />
+        <TabBar id="lineup-mode" value={mode} onChange={switchMode} tabs={[...MODES, ...(mode === "custom" ? [["custom", "My changes"]] : [])]} />
+        <Formations plan={plan} formation={formation} setFormation={setFormation} />
         {plan.saved && <span className="note" data-testid="lineup-saved-label">Saved: {plan.saved.name} · version {plan.saved.revision}</span>}
         <button className="btn btn-p btn-l" style={{ marginLeft: "auto" }} onClick={use} data-testid="use-lineup-button">Use this lineup <ArrowRight size={15} /></button>
       </div>

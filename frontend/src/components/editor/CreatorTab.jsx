@@ -50,6 +50,24 @@ const Batches = ({ act }) => {
   );
 };
 
+const NameSeed = ({ f, set }) => (
+  <div className="card" style={{ marginTop: 14, background: "var(--s2)", display: "grid", gap: 12 }} data-testid="pc-name-seed">
+    <div className="ttl" style={{ margin: 0 }}>Batch name and seed</div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: 16 }}>
+      <label className="note" style={{ display: "grid", gap: 4 }}><b style={{ color: "var(--text)" }}>Batch name</b>
+        <input className="inp" maxLength={60} placeholder="e.g. Academy wonderkids" value={f.name} onChange={(e) => set({ name: e.target.value })} data-testid="pc-name" />
+        <small>What this batch is called in Saved batches and in the file's name. It isn't given to any player.</small></label>
+      <label className="note" style={{ display: "grid", gap: 4 }}><b style={{ color: "var(--text)" }}>Seed (shuffle number)</b>
+        <span style={{ display: "flex", gap: 6 }}>
+          <input className="inp mono" style={{ width: 120 }} type="number" min={0} value={f.seed} onChange={(e) => set({ seed: Number(e.target.value) })} data-testid="pc-seed" />
+          <button type="button" className="btn" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })} data-testid="pc-seed-random">New seed</button>
+        </span>
+        <small>The seed decides which names, faces, ages and details are drawn. The same seed with the same settings makes exactly the same players; a new seed makes a different batch.</small></label>
+    </div>
+  </div>
+);
+
+
 export const CreatorTab = () => {
   const { data: meta } = useGet("creator-meta", "/creator/meta");
   const act = useAct();
@@ -70,9 +88,9 @@ export const CreatorTab = () => {
           <button className="btn" onClick={() => { set(DEFAULT); setCopy(""); }} data-testid="pc-reset">Reset</button>
         </div>
         <p className="note" style={{ marginTop: 8 }}>Presets fill in the settings below; you can change anything before you preview. Built-in presets can't be changed, but saving one makes your own copy. Makes a batch of new free-agent players as an FMCC editor data file. Pick it from FM's database list when you start a new career. Players already in the game keep their clubs; in a running career you can only rename players.</p>
+        <NameSeed f={f} set={set} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: 18, marginTop: 14 }}>
           <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
-            <label className="note" style={{ display: "grid", gap: 4 }}>Batch name<input className="inp" maxLength={60} placeholder="e.g. Academy wonderkids" value={f.name} onChange={(e) => set({ name: e.target.value })} data-testid="pc-name" /></label>
             <label className="note" style={{ display: "grid", gap: 4 }}>How many players<input className="inp mono" style={{ width: 100 }} type="number" min={1} max={200} value={f.count} onChange={(e) => set({ count: Number(e.target.value) })} data-testid="pc-count" /></label>
             <div><div className="eyebrow">Nationalities</div><Nations f={f} set={set} meta={meta} /></div>
             <div><div className="eyebrow">Ethnicity mix (none picked = typical for each nationality)</div><Chips all={meta.ethnicities} sel={f.ethnicities} toggle={toggle("ethnicities")} id="eth" /></div>
@@ -90,8 +108,6 @@ export const CreatorTab = () => {
               <option value="any">Natural mix</option><option value="right">Right</option><option value="left">Left</option><option value="both">Either</option></select></label>
             <label className="note" style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" checked={f.faces} onChange={(e) => set({ faces: e.target.checked })} data-testid="pc-faces" />
               Match a face from NG_Regens {meta.ng_installed ? "(by nationality folder)" : "(not installed, so players will have no face)"}</label>
-            <label className="note" style={{ display: "flex", gap: 8, alignItems: "center" }}>Shuffle<input className="inp mono" style={{ width: 90, height: 32 }} type="number" min={0} value={f.seed} onChange={(e) => set({ seed: Number(e.target.value) })} data-testid="pc-seed" />
-              <small>same number = same players</small></label>
           </div>
         </div>
         <div className="acts" style={{ marginTop: 16 }}>
@@ -102,8 +118,8 @@ export const CreatorTab = () => {
       {prev && <div className="card" data-testid="pc-preview-card">
         <div className="ttl">Preview: {prev.count} players<span className="st n">{Object.entries(prev.by_nation).map(([k, v]) => `${k} ${v}`).join(" · ")}</span></div>
         {!!prev.borrowed_names.length && <p className="note">FMCC has no name list for {prev.borrowed_names.join(", ")}, so their names come from the closest list.</p>}
-        <div style={{ overflowX: "auto" }}><table className="tbl" style={{ marginTop: 8 }}><thead><tr><th>Name</th><th>Nation</th><th>Ethnicity · skin</th><th>Age</th><th>Pos</th><th>CA/PA</th><th>Foot</th><th>Height</th></tr></thead>
-          <tbody>{prev.players.map((p) => <tr key={p.id} data-testid={`pc-row-${p.id}`}><td><b>{p.name}</b>{p.name_source === "update" && <small className="st g" style={{ marginLeft: 6 }} data-testid={`pc-row-update-${p.id}`}>update</small>}</td><td>{p.nationality}</td><td>{p.ethnicity} · {p.skin_tone}</td><td>{p.age}</td><td>{p.position}</td><td className="mono">{p.ca}/{p.pa}</td><td>{p.foot}</td><td>{p.height}</td></tr>)}</tbody></table></div>
+        <div style={{ overflowX: "auto" }}><table className="tbl" style={{ marginTop: 8 }}><thead><tr><th>Name</th><th>Nation</th><th>Ethnicity · skin</th><th>Age</th><th>Pos</th><th>Foot</th><th>Height</th></tr></thead>
+          <tbody>{prev.players.map((p) => <tr key={p.id} data-testid={`pc-row-${p.id}`}><td><b>{p.name}</b>{p.name_source === "update" && <small className="st g" style={{ marginLeft: 6 }} data-testid={`pc-row-update-${p.id}`}>update</small>}</td><td>{p.nationality}</td><td>{p.ethnicity} · {p.skin_tone}</td><td>{p.age}</td><td>{p.position}</td><td>{p.foot}</td><td>{p.height}</td></tr>)}</tbody></table></div>
         {prev.count > prev.players.length && <p className="note">Showing the first {prev.players.length}.</p>}
       </div>}
       <NameUpdates onChange={() => setPrev(null)} />

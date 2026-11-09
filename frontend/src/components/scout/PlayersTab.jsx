@@ -86,7 +86,7 @@ export const PlayersTab = () => {
       {adv && <AdvFilter value={f.adv} meta={meta} onChange={(v) => setF({ ...f, adv: v })} />}
       <div className="card" style={{ padding: 8, overflowX: "auto" }}>
         <table className="tbl" data-testid="sp-table">
-          <thead><tr><th></th><Th k="name">Player</Th><Th k="age">Age</Th>{view === "full" && <Th k="ca">CA/PA</Th>}<Th k="grade" title="Global grade: 20 + (local grade − 20) × league multiplier">Grade</Th>
+          <thead><tr><th></th><Th k="name">Player</Th><Th k="age">Age</Th><Th k="grade" title="Global grade: 20 + (local grade − 20) × league multiplier">Grade</Th>
             <Th k="value">Value</Th><Th k="fair_price">Fair price</Th><Th k="wage">Wage</Th><Th k="minutes">Mins</Th>
             {statKeys.map((k) => <Th key={k} k={k} title={label[k]}>{label[k]?.replace(" / 90", "").slice(0, 18)}</Th>)}
             {cols === "computed" && meta?.archetypes.map((a) => <Th key={a.key} k={`c:${a.key}`}>{a.name}</Th>)}
@@ -99,7 +99,7 @@ export const PlayersTab = () => {
                 <td onClick={(e) => e.stopPropagation()}>{!r.own && r.source === "save" && <button className="ib" style={{ width: 26, height: 26 }} onClick={() => star(r)} title="Add to shortlist" data-testid={`sp-star-${r.unique_id}`}><Star size={13} /></button>}</td>
                 <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.own && <span className="tag st g">Your club</span>}<ContractTag m={r.months_left} />{r.league_scored === false && <span className="tag st a" title={r.league_note} data-testid={`sp-noscore-${r.unique_id}`}>No strength score</span>}{r.source === "html" && !r.linked && <span className="tag st n">Not linked</span>}
                   <small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.positions?.join(", ")}</small></td>
-                <td>{r.age}</td>{view === "full" && <td className="mono">{r.ca ?? "—"}/{r.pa ?? "—"}</td>}
+                <td>{r.age}</td>
                 <td className="mono" style={{ color: "var(--acc)" }} title={r.minutes < 400 ? "Not enough minutes" : `Local ${r.grade_local} · league ×${r.league_mult}`}>{r.minutes < 400 ? "—" : r.grade_global ?? "—"}</td>
                 <td className="mono">{r.value ? fmtMoney(r.value, prefs) : "—"}</td>
                 <td className="mono" title={r.fair_price ? `Confidence: ${r.confidence}` : "Not enough minutes"}>{r.fair_price ? fmtMoney(r.fair_price, prefs) : "—"}</td>

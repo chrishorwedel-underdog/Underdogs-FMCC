@@ -21,7 +21,7 @@ const Row = ({ p, onOpen }) => (
       {p.shared_name && <span className="tag st a" title="Another player in your squad has the same name. They are kept apart by game ID.">Same name</span>}
     </td>
     <td>{p.age}</td><td>{p.positions.join(", ")}</td>
-    <td className="mono">{p.ca}</td><td className="mono" style={{ color: "var(--mut)" }}>{p.pa}</td><td><Change v={p.ca_change} /></td>
+    <td><Change v={p.ca_change} /></td>
     <td>{p.best_role?.name}<span className="mono" style={{ color: "var(--acc)", marginLeft: 6 }}>{p.best_role?.rating}</span></td>
     <td className="mono">{p.minutes}</td><td>{gameDate(p.contract_end, { month: "short", year: "numeric" })}</td>
   </tr>
@@ -37,7 +37,7 @@ export default function Squad() {
   const openId = params.get("player");
   const { data } = useQuery({ queryKey: ["squad"], queryFn: () => api.get("/squad").then((r) => r.data) });
   const setParam = (k, v) => { const n = new URLSearchParams(params); v ? n.set(k, v) : n.delete(k); setParams(n); };
-  const rows = (data?.players || []).filter((p) => filter === "all" || (filter === "u21" ? p.age < 21 : p.in_best_xi)).sort((a, b) => b.ca - a.ca);
+  const rows = (data?.players || []).filter((p) => filter === "all" || (filter === "u21" ? p.age < 21 : p.in_best_xi)).sort((a, b) => (b.best_role?.rating || 0) - (a.best_role?.rating || 0));
   return (
     <div data-testid="squad-page">
       <div className="head rise">
@@ -53,7 +53,7 @@ export default function Squad() {
       {view === "players" && <>
       <div className="card rise d1" style={{ padding: 8, overflowX: "auto" }}>
         <table className="tbl" data-testid="squad-table">
-          <thead><tr><th>Player</th><th>Age</th><th>Positions</th><th>CA</th><th>PA</th><th>Since last save</th><th>Best role</th><th>Minutes</th><th>Contract</th></tr></thead>
+          <thead><tr><th>Player</th><th>Age</th><th>Positions</th><th>CA gained since last save</th><th>Best role</th><th>Minutes</th><th>Contract</th></tr></thead>
           <tbody>{rows.map((p) => <Row key={p.unique_id} p={p} onOpen={(id) => setParam("player", id)} />)}</tbody>
         </table>
       </div>

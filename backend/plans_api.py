@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
-from core import db, active_career, latest_two, month_minutes, now_iso, new_id, next_revision
+from core import db, active_career, latest_two, month_minutes, now_iso, new_id, next_revision, season_start_ca
 from rules_api import current as current_rules
 
 router = APIRouter(prefix="/api")
@@ -27,14 +27,25 @@ async def development():
     mins = month_minutes(latest, snaps[1] if len(snaps) > 1 else None)
     params = (await current_rules(c["id"], "development"))["data"]["params"]
     plans = await latest_plans(c["id"])
+    prev = {p["unique_id"]: p for p in snaps[1]["players"]} if len(snaps) > 1 else {}
+    start = await season_start_ca(c["id"], latest["season"])
     rows = []
     for p in latest["players"]:
-        plan = plans.get(p["unique_id"])
+        uid = p["unique_id"]
+        plan = plans.get(uid)
         target = plan["minutes_target"] if plan else (int(params["default_target"]) if p["age"] < 21 else None)
-        rows.append({"unique_id": p["unique_id"], "name": p["name"], "age": p["age"], "positions": p["positions"], "ca": p["ca"], "pa": p["pa"],
-                     "month_minutes": mins[p["unique_id"]], "season_minutes": p["minutes"], "plan": plan, "target": target,
-                     "needs_minutes": bool(target) and mins[p["unique_id"]] < target * params["needs_pct"] / 100,
-                     "goal_progress": round(min(100, p["ca"] / plan["goal_ca"] * 100)) if plan and plan.get("goal_ca") else None})
+        gain = (p["ca"] - plan["start_ca"]) if plan and plan.get("start_ca") is not None else None
+        goal = (plan["goal_ca"] - plan["start_ca"]) if plan and plan.get("goal_ca") and plan.get("start_ca") is not None else None
+        apps = p.get("appearances") or 0
+        if plan:
+            plan = {k: v for k, v in plan.items() if k not in ("goal_ca", "start_ca")} | {"goal_gain": goal}
+        rows.append({"unique_id": uid, "name": p["name"], "age": p["age"], "positions": p["positions"],
+                     "ca_gain_month": p["ca"] - prev[uid]["ca"] if uid in prev else None, "ca_gain_season": p["ca"] - start[uid] if uid in start else None,
+                     "goals": p.get("goals", 0), "assists": p.get("assists", 0), "appearances": apps, "avg_rating": p.get("avg_rating"),
+                     "minutes_per_game": round(p["minutes"] / apps) if apps else None,
+                     "month_minutes": mins[uid], "season_minutes": p["minutes"], "plan": plan, "target": target,
+                     "needs_minutes": bool(target) and mins[uid] < target * params["needs_pct"] / 100,
+                     "goal_so_far": gain, "goal_progress": round(max(0, min(100, gain / goal * 100))) if goal and gain is not None else None})
     rows.sort(key=lambda r: (r["plan"] is None, r["age"]))
     return {"game_date": latest["game_date"], "rows": rows, "loans": LOANS, "params": params}
 
@@ -43,7 +54,7 @@ class PlanIn(BaseModel):
     unique_id: int
     minutes_target: int = Field(ge=0, le=1000)
     loan: Literal["none", "loan_lower", "loan_same", "loan_abroad"] = "none"
-    goal_ca: int | None = Field(None, ge=1, le=200)
+    goal_gain: int | None = Field(None, ge=1, le=60)
     note: str = Field("", max_length=300)
     expected_revision: int = Field(ge=0)
 
@@ -59,7 +70,8 @@ async def save_plan(body: PlanIn):
     rev = await next_revision("plans", {"career_id": c["id"], "unique_id": body.unique_id})
     if rev - 1 != body.expected_revision:
         raise HTTPException(409, "This plan was changed somewhere else. Reload to see the latest version.")
-    doc = body.model_dump(exclude={"expected_revision"}) | {"id": new_id(), "career_id": c["id"], "revision": rev, "name": p["name"],
+    goal = {"start_ca": p["ca"], "goal_ca": min(200, p["ca"] + body.goal_gain)} if body.goal_gain else {"start_ca": p["ca"], "goal_ca": None}
+    doc = body.model_dump(exclude={"expected_revision", "goal_gain"}) | goal | {"id": new_id(), "career_id": c["id"], "revision": rev, "name": p["name"],
                                                              "saved_at": now_iso(), "game_date": latest["game_date"]}
     try:
         await db.plans.insert_one(dict(doc))
@@ -71,7 +83,11 @@ async def save_plan(body: PlanIn):
 @router.get("/development/plans/{unique_id}/history")
 async def plan_history(unique_id: int):
     c = await active_career()
-    return await db.plans.find({"career_id": c["id"], "unique_id": unique_id}, {"_id": 0}).sort("revision", -1).to_list(100)
+    out = await db.plans.find({"career_id": c["id"], "unique_id": unique_id}, {"_id": 0}).sort("revision", -1).to_list(100)
+    for h in out:
+        g, s = h.pop("goal_ca", None), h.pop("start_ca", None)
+        h["goal_gain"] = g - s if g and s is not None else None
+    return out
 
 
 @router.get("/reports/months")
@@ -100,7 +116,7 @@ async def report_compare(a: int = Query(ge=0), b: int = Query(ge=0)):
             continue
         d = p["ca"] - o["ca"]
         mins = p["minutes"] - o["minutes"] if sa["season"] == sb["season"] else p["minutes"]
-        rows.append({"unique_id": p["unique_id"], "name": p["name"], "age": p["age"], "ca_from": o["ca"], "ca_to": p["ca"], "ca_change": d,
+        rows.append({"unique_id": p["unique_id"], "name": p["name"], "age": p["age"], "ca_change": d, "assists": p.get("assists", 0) - (o.get("assists", 0) if sa["season"] == sb["season"] else 0),
                      "minutes": mins, "avg_rating": p.get("avg_rating"), "goals": p.get("goals", 0) - (o.get("goals", 0) if sa["season"] == sb["season"] else 0),
                      "trend": "rising" if d >= params["rising"] else "falling" if d <= params["falling"] else "steady"})
     rows.sort(key=lambda r: -r["ca_change"])

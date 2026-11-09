@@ -48,6 +48,7 @@ from notify_api import router as notify_router  # noqa: E402
 from creator_api import router as creator_router  # noqa: E402
 from creator_extras import router as creator_extras_router  # noqa: E402
 from extras_api import router as extras_router  # noqa: E402
+import world_api  # noqa: E402
 import sample_matches  # noqa: E402
 
 INDEXES: dict[str, list[IndexModel]] = {
@@ -144,6 +145,7 @@ async def read_next_save(career: dict) -> dict:
         start.setdefault(str(p["unique_id"]), p["ca"])
     await db.pools.update_one({"career_id": career["id"]}, {"$set": {"save_no": save_no, "season": save["season"], "game_date": save["game_date"],
                                                                     "players": pool, "season_start_ca": start} | ({"clubs": club_list} if club_list else {})}, upsert=True)
+    await world_api.record_month(career["id"], {"save_no": save_no, "season": save["season"], "game_date": save["game_date"], "players": pool})
     ml = (await db.settings.find_one({"_id": "app"}, {"_id": 0, "matchlens": 1}) or {}).get("matchlens") or {}
     if ml.get("installed") and READER == "sample":
         opponents = sorted({p["club"] for p in pool if p["league"] == "Premier Division"})
@@ -500,7 +502,7 @@ async def restore_backup(backup_id: str):
 
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router, world_api.router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse

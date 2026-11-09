@@ -16,7 +16,7 @@ logger = logging.getLogger("fmcc")
 io_lock = asyncio.Lock()
 
 BACKUP_COLLECTIONS = ["settings", "careers", "identities", "snapshots", "lineups", "rules", "plans", "shortlist",
-                      "nominations", "awards", "changes", "batches", "audit", "game_edits", "pools", "branding", "club_edits", "punishments", "test_results", "philosophy", "pipeline", "board_slots", "notices", "missed_dates", "creator_batches"]
+                      "nominations", "awards", "changes", "batches", "audit", "game_edits", "pools", "branding", "club_edits", "punishments", "test_results", "philosophy", "pipeline", "board_slots", "notices", "missed_dates", "creator_batches", "world_months"]
 MAX_AUTO_BACKUPS = 20
 EXTRA_INDEXES: dict[str, list[IndexModel]] = {
     "lineups": [IndexModel([("career_id", ASCENDING), ("formation", ASCENDING), ("revision", DESCENDING)], name="career_form_rev", unique=True)],
@@ -26,6 +26,7 @@ EXTRA_INDEXES: dict[str, list[IndexModel]] = {
     "changes": [IndexModel([("key", ASCENDING)], name="idempotency", unique=True), IndexModel([("career_id", ASCENDING), ("status", ASCENDING)], name="career_status")],
     "game_edits": [IndexModel([("career_id", ASCENDING), ("unique_id", ASCENDING)], name="career_uid", unique=True)],
     "pools": [IndexModel([("career_id", ASCENDING)], name="career", unique=True)],
+    "world_months": [IndexModel([("career_id", ASCENDING), ("month", ASCENDING)], name="career_month", unique=True)],
     "audit": [IndexModel([("career_id", ASCENDING), ("at", DESCENDING)], name="career_at")],
     "branding": [IndexModel([("career_id", ASCENDING), ("kind", ASCENDING), ("target_uid", ASCENDING), ("revision", DESCENDING)], name="career_kind_uid_rev", unique=True)],
 }

@@ -36,6 +36,33 @@ FORMATIONS = {
                                  ("AMC", "AM", "ap", ["AM (C)"], 50, 38), ("AML", "LW", "if", ["AM (L)"], 17, 27),
                                  ("AMR", "RW", "w", ["AM (R)"], 83, 27), ("ST", "ST", "af", ["ST"], 50, 13)]),
 }
+_S = {"GK": ("GK", "GK", "sk", ["GK"], 50, 91), "DL": ("DL", "LB", "fb", ["D (L)", "WB (L)"], 14, 72), "DR": ("DR", "RB", "wb", ["D (R)", "WB (R)"], 86, 72),
+      "DCL": ("DCL", "CB", "bpd", ["D (C)"], 37, 77), "DCR": ("DCR", "CB", "cd", ["D (C)"], 63, 77), "DC": ("DC", "CB", "cd", ["D (C)"], 50, 79),
+      "DCL3": ("DCL", "CB", "bpd", ["D (C)"], 28, 76), "DCR3": ("DCR", "CB", "cd", ["D (C)"], 72, 76),
+      "WBL": ("WBL", "LB", "wb", ["WB (L)", "D (L)"], 10, 56), "WBR": ("WBR", "RB", "wb", ["WB (R)", "D (R)"], 90, 56),
+      "DM": ("DM", "DM", "dm", ["DM"], 50, 60), "DMCL": ("DMCL", "DM", "dlp", ["DM", "M (C)"], 37, 58), "DMCR": ("DMCR", "DM", "bbm", ["DM", "M (C)"], 63, 58),
+      "MCL": ("MCL", "CM", "bbm", ["M (C)"], 32, 45), "MC": ("MC", "CM", "dlp", ["M (C)", "DM"], 50, 48), "MCR": ("MCR", "CM", "ap", ["M (C)", "AM (C)"], 68, 45),
+      "ML": ("ML", "LW", "w", ["M (L)", "AM (L)", "WB (L)"], 13, 42), "MR": ("MR", "RW", "w", ["M (R)", "AM (R)", "WB (R)"], 87, 42),
+      "AMC": ("AMC", "AM", "ap", ["AM (C)", "M (C)"], 50, 31), "AMCL": ("AMCL", "AM", "ap", ["AM (C)", "AM (L)"], 36, 29), "AMCR": ("AMCR", "AM", "ap", ["AM (C)", "AM (R)"], 64, 29),
+      "AML": ("AML", "LW", "if", ["AM (L)"], 17, 25), "AMR": ("AMR", "RW", "w", ["AM (R)"], 83, 25),
+      "ST": ("ST", "ST", "af", ["ST"], 50, 13), "STL": ("STL", "ST", "af", ["ST"], 38, 14), "STR": ("STR", "ST", "tf", ["ST"], 62, 14)}
+_B4 = ["GK", "DL", "DCL", "DCR", "DR"]
+_B3 = ["GK", "DCL3", "DC", "DCR3"]
+_B5 = ["GK", "WBL", "DCL3", "DC", "DCR3", "WBR"]
+# Every other formation, for experimenting with lineups on the Squad page.
+EXTRA_FORMATIONS = {k: (n, [_S[s] for s in slots]) for k, n, slots in [
+    ("442", "4-4-2", _B4 + ["ML", "MCL", "MCR", "MR", "STL", "STR"]), ("4411", "4-4-1-1", _B4 + ["ML", "MCL", "MCR", "MR", "AMC", "ST"]),
+    ("4141", "4-1-4-1", _B4 + ["DM", "ML", "MCL", "MCR", "MR", "ST"]), ("451", "4-5-1", _B4 + ["ML", "MCL", "MC", "MCR", "MR", "ST"]),
+    ("41212", "4-1-2-1-2 (diamond)", _B4 + ["DM", "MCL", "MCR", "AMC", "STL", "STR"]), ("4312", "4-3-1-2", _B4 + ["MCL", "MC", "MCR", "AMC", "STL", "STR"]),
+    ("4321", "4-3-2-1", _B4 + ["MCL", "MC", "MCR", "AMCL", "AMCR", "ST"]), ("4222", "4-2-2-2", _B4 + ["DMCL", "DMCR", "AMCL", "AMCR", "STL", "STR"]),
+    ("424", "4-2-4", _B4 + ["MCL", "MCR", "AML", "AMR", "STL", "STR"]), ("4231n", "4-2-3-1 narrow", _B4 + ["DMCL", "DMCR", "AMCL", "AMC", "AMCR", "ST"]),
+    ("433dm", "4-3-3 two holding", _B4 + ["DMCL", "DMCR", "MC", "AML", "AMR", "ST"]),
+    ("352", "3-5-2", _B3 + ["WBL", "WBR", "DM", "MCL", "MCR", "STL", "STR"]), ("343", "3-4-3", _B3 + ["WBL", "MCL", "MCR", "WBR", "AML", "AMR", "ST"]),
+    ("3412", "3-4-1-2", _B3 + ["WBL", "MCL", "MCR", "WBR", "AMC", "STL", "STR"]), ("3421", "3-4-2-1", _B3 + ["WBL", "MCL", "MCR", "WBR", "AMCL", "AMCR", "ST"]),
+    ("3511", "3-5-1-1", _B3 + ["WBL", "MCL", "MC", "MCR", "WBR", "AMC", "ST"]),
+    ("532", "5-3-2", _B5 + ["MCL", "MC", "MCR", "STL", "STR"]), ("541", "5-4-1", _B5 + ["ML", "MCL", "MCR", "MR", "ST"]),
+    ("5212", "5-2-1-2", _B5 + ["MCL", "MCR", "AMC", "STL", "STR"]), ("523", "5-2-3", _B5 + ["MCL", "MCR", "AML", "AMR", "ST"])]}
+ALL_FORMATIONS = FORMATIONS | EXTRA_FORMATIONS
 DEFAULT_RULES = {"target_minutes": 270, "max_youth": 3, "max_team_drop": 5, "max_slot_drop": 15}
 
 
@@ -57,7 +84,7 @@ def best_role(player: dict) -> dict:
 
 
 def formation_meta(key: str) -> dict:
-    name, slots = FORMATIONS[key]
+    name, slots = ALL_FORMATIONS[key]
     return {"key": key, "name": name, "slots": [{"key": s, "pos": p, "label": LABELS[p], "role": r, "role_name": f"{ROLES[r][0]} ({ROLES[r][1]})",
                                                  "positions": acc, "x": x, "y": y} for s, p, r, acc, x, y in slots]}
 

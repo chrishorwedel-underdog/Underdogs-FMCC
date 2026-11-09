@@ -9,9 +9,9 @@ export const TOP_LINKS = [
 export const NAV = [
   { to: "/", key: "home", label: "Home", sub: "Your club at a glance", c: "#A3E635", Icon: Home },
   { to: "/dynamic-potential", key: "dp", label: "Dynamic Potential", sub: "Review development", c: "#4C8DFF", Icon: TrendingUp },
-  { to: "/breakout", key: "breakout", label: "Breakout Player", sub: "This season's breakout nominations", c: "#FACC15", Icon: Star },
+  { to: "/breakout", key: "breakout", label: "Breakout Player", sub: "Picks the winner · CA bonus", c: "#FACC15", Icon: Star },
   { to: "/scouting", key: "scouting", label: "Scout Players", sub: "Scout Window", c: "#22D3EE", Icon: Search },
-  { to: "/reports", key: "reports", label: "Monthly Reports", sub: "See the bigger picture", c: "#A78BFA", Icon: BarChart3 },
+  { to: "/reports", key: "reports", label: "World Monthly Reports", sub: "Who made waves last month", c: "#A78BFA", Icon: BarChart3 },
   { to: "/moneyball", key: "moneyball", label: "Moneyball", sub: "Compare transfer options", c: "#F2B54A", Icon: Coins },
   { to: "/squad", key: "squad", label: "Squad", sub: "Lineups and depth charts", c: "#2DD4BF", Icon: Users },
   { to: "/development", key: "development", label: "Development", sub: "Minutes and growth plans", c: "#34D399", Icon: Sprout },

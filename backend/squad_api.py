@@ -9,7 +9,7 @@ from core import db, active_career, latest_two, month_minutes, now_iso, new_id, 
 from rules_api import current as current_rules
 
 router = APIRouter(prefix="/api")
-Formation = Literal["433", "4231"]
+Formation = Literal[tuple(roles.ALL_FORMATIONS)]
 
 
 async def _plan_inputs(c: dict, formation: str):
@@ -26,6 +26,45 @@ async def _plan_inputs(c: dict, formation: str):
     return latest, form, depth, info, params
 
 
+def _registered(players: list, max_senior: int, min_hg: int) -> list:
+    """Senior list by role rating, shrunk by each missing homegrown player; under-21s are always eligible."""
+    seniors = sorted([x for x in players if x["age"] >= 21], key=lambda x: -roles.best_role(x)["rating"])
+    hg = [x for x in seniors if x.get("homegrown")][:min_hg]
+    places = max_senior - max(0, min_hg - len(hg))
+    rest = [x for x in seniors if x not in hg][:max(0, places - len(hg))]
+    return hg + rest + [x for x in players if x["age"] < 21]
+
+
+def _xi(players: list, form: dict, full_depth: dict) -> dict:
+    depth = roles.depth_chart(players, form)
+    if any(not depth[s["key"]] for s in form["slots"]):
+        return {}
+    slots = roles.best_xi(players, form, depth)
+    return {"slots": slots, "strength": roles.strength(slots, full_depth)}
+
+
+def competition_xis(players: list, form: dict, depth: dict, best: dict, info: dict, params: dict) -> dict:
+    """Domestic XI: strongest league-registered side. Cup XI: rests the most-used regulars. UEFA XI: strongest side from the UEFA List A + B."""
+    by = {p["unique_id"]: p for p in players}
+    max_senior, min_hg = int(params.get("max_senior", 25)), int(params.get("min_homegrown", 8))
+    rest_n, uefa_max, uefa_hg = int(params.get("cup_rest", 4)), int(params.get("uefa_max", 25)), int(params.get("uefa_min_homegrown", 8))
+    league = _registered(players, max_senior, min_hg)
+    dom = _xi(league, form, depth) or {"slots": best, "strength": roles.strength(best, depth)}
+    rested = sorted(dom["slots"].values(), key=lambda u: -info[u]["month_minutes"])[:rest_n]
+    cup = _xi([p for p in players if p["unique_id"] not in rested], form, depth) or dom
+    uefa_list = _registered(players, uefa_max, uefa_hg)
+    uefa = _xi(uefa_list, form, depth) or dom
+    left_out = [by[u]["name"] for u in by if u not in {p["unique_id"] for p in uefa_list}]
+    name = lambda u: info[u]["name"]  # noqa: E731
+    return {
+        "domestic": dom | {"why": [["acc", f"Strongest side from your league squad list ({max_senior} seniors, at least {min_hg} homegrown, under-21s free)."],
+                                    ["blu", "Use it for league matches."]]},
+        "cup": cup | {"rested": [name(u) for u in rested], "why": [["amb", f"Rests the {len(rested)} most-used regulars this month: {', '.join(name(u) for u in rested) or 'nobody'}."],
+                                                              ["blu", "Everyone else picked on role rating, so fringe and young players get a game."]]},
+        "uefa": uefa | {"left_out": left_out, "why": [["acc", f"Strongest side from your UEFA List A ({uefa_max} places, at least {uefa_hg} homegrown) plus List B under-21s."],
+                                                     ["amb" if left_out else "blu", f"Not registered: {', '.join(left_out)}." if left_out else "Everyone fits on the UEFA lists."]]}}
+
+
 @router.get("/squad/plan")
 async def squad_plan(formation: Formation = "433"):
     c = await active_career()
@@ -38,8 +77,11 @@ async def squad_plan(formation: Formation = "433"):
              "options": len(depth[s["key"]])} for s in form["slots"]]
     saved = await db.lineups.find_one({"career_id": c["id"], "formation": formation}, {"_id": 0}, sort=[("revision", -1)])
     youth = sorted([{"unique_id": u, **i} for u, i in info.items() if i["u21"]], key=lambda y: y["month_minutes"])
-    return {"formation": form, "formations": {k: v[0] for k, v in roles.FORMATIONS.items()}, "save_no": latest["save_no"], "game_date": latest["game_date"],
-            "players": info, "depth": depth, "rules": rules,
+    for i in info.values():
+        i.pop("ca", None)
+    return {"formation": form, "formations": {k: v[0] for k, v in roles.FORMATIONS.items()}, "all_formations": {k: v[0] for k, v in roles.ALL_FORMATIONS.items()},
+            "save_no": latest["save_no"], "game_date": latest["game_date"], "players": info, "depth": depth, "rules": rules,
+            **competition_xis(latest["players"], form, depth, best, info, params),
             "best": {"slots": best, "strength": roles.strength(best, depth), "why": roles.best_why(best, form, depth, info, rules)},
             "dev": {"slots": dev, "strength": roles.strength(dev, depth), "why": dev_why, "youth": picked},
             "weak": sorted(weak, key=lambda w: w["best"]), "youth_minutes": youth, "saved": saved,
@@ -48,7 +90,7 @@ async def squad_plan(formation: Formation = "433"):
 
 class LineupIn(BaseModel):
     formation: Formation
-    kind: Literal["best", "dev", "custom"]
+    kind: Literal["best", "dev", "domestic", "cup", "uefa", "custom"]
     slots: dict[str, int]
     based_on_save_no: int
     expected_revision: int = Field(ge=0)
@@ -74,7 +116,8 @@ async def save_lineup(body: LineupIn):
         raise HTTPException(409, "This lineup was changed somewhere else. Reload to see the latest version.")
     doc = {"id": new_id(), "career_id": c["id"], "formation": body.formation, "kind": body.kind, "slots": body.slots,
            "strength": roles.strength(body.slots, depth), "based_on_save_no": body.based_on_save_no, "revision": rev,
-           "name": body.name or {"best": "Best XI", "dev": "Development XI", "custom": "Custom lineup"}[body.kind], "saved_at": now_iso()}
+           "name": body.name or {"best": "Best XI", "dev": "Development XI", "domestic": "Domestic XI", "cup": "Cup XI", "uefa": "UEFA XI", "custom": "Custom lineup"}[body.kind],
+           "saved_at": now_iso()}
     try:
         await db.lineups.insert_one(dict(doc))
     except DuplicateKeyError:

@@ -59,7 +59,7 @@ const ViewBar = ({ view, setView, prefs, setPrefs }) => (
   </div>
 );
 
-const VIEW_NOTE = { full: "Full: everything, including CA, PA, hidden attributes, personality and a written report.", fair: "Fair play: only what your scouts would show you in the game. Attributes are ranges, CA, PA and hidden attributes are off.",
+const VIEW_NOTE = { full: "Full: everything, including hidden attributes, personality and a written report. Real CA and PA are never shown.", fair: "Fair play: only what your scouts would show you in the game. Attributes are ranges and hidden attributes are off.",
   moneyball: "Moneyball: match stats and price only. Attributes are switched off." };
 
 export default function Scouting({ initialTab = "players" }) {
@@ -77,7 +77,7 @@ export default function Scouting({ initialTab = "players" }) {
   return (
     <ScoutCtx.Provider value={{ view, prefs, openPlayer: setOpen, compare, toggleCompare }}>
       <div data-testid="scouting-page">
-        <PageHead eyebrow="ScoutSheet built in, with FMDataLab-style analytics" title={initialTab === "compare" ? "Moneyball" : "Scout Players"}>
+        <PageHead eyebrow="A combination of match stats and advanced analytics" title={initialTab === "compare" ? "Moneyball" : "Scout Players"}>
           <ViewBar view={view} setView={setView} prefs={prefs} setPrefs={setPrefs} />
         </PageHead>
         <p className="note" style={{ marginBottom: 10 }} data-testid="scout-view-note"><Scale size={12} style={{ display: "inline", verticalAlign: -1 }} /> {VIEW_NOTE[view]}</p>
