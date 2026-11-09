@@ -136,6 +136,12 @@ async def read_next_save(career: dict) -> dict:
     pool = save.pop("pool")
     club_list = save.pop("clubs", None)
     tables = save.pop("tables", None)
+    if tables:
+        import leagues_api
+        from core import audit
+        renames = world_api.name_unnamed(tables, pool, (await leagues_api.opta_list(career["id"]))["leagues"])
+        if renames:
+            await audit(career["id"], "league names", "world", f"{len(renames)} unnamed competition(s) named from the league strength workbook")
     file_mtime = save.pop("file_mtime", None)
     snap = {"id": str(uuid.uuid4()), "career_id": career["id"], "save_no": save_no, "read_at": now_iso(),
             "reader": sample_reader.READER_NAME, **save}

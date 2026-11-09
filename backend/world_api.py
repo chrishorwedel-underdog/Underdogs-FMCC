@@ -33,6 +33,35 @@ async def record_month(career_id: str, pool_doc: dict):
                                                "players": compact(pool_doc["players"]), "tables": pool_doc.get("tables"), "at": now_iso()}}, upsert=True)
 
 
+def _norm(s: str) -> str:
+    import leagues_api
+    return leagues_api.norm(s)
+
+
+def name_unnamed(tables: list, pool: list, workbook: list) -> dict:
+    """Names 'Competition 123' tables from the league strength workbook: same country, tier by average club reputation, team count as tie-break.
+    Renames the league on the tables and on every pool player in place; returns old -> new."""
+    if not tables:
+        return {}
+    taken = {_norm(a) for t in tables if not t["league"].startswith("Competition ") for a in [t["league"]]}
+    renames = {}
+    for country in {t["country"] for t in tables}:
+        mine = sorted([t for t in tables if t["country"] == country and not t.get("women")], key=lambda t: -(t.get("reputation") or 0))
+        cands = [r for r in workbook if r.get("country") == country and _norm(r["name"]) not in taken and not any(_norm(a) in taken for a in r.get("aliases") or [])]
+        cands.sort(key=lambda r: (r.get("tier") or 99, r.get("rank") or 9999))
+        for expected, t in enumerate(mine, 1):
+            if not t["league"].startswith("Competition ") or not cands:
+                continue
+            best = min(cands, key=lambda r: abs((r.get("tier") or len(cands) + expected) - expected) * 2 + (0 if r.get("teams") == len(t["rows"]) else 1))
+            cands.remove(best)
+            renames[t["league"]] = best["name"]
+            t.update(league=best["name"], named_from_workbook=True)
+    for p in pool:
+        if p.get("league") in renames:
+            p["league"] = renames[p["league"]]
+    return renames
+
+
 def _month_rows(cur: dict, prev: dict | None) -> list:
     same = prev and prev["season"] == cur["season"]
     before = {p["unique_id"]: p for p in prev["players"]} if prev else {}
@@ -211,4 +240,5 @@ async def report(country: str | None = Query(None, max_length=60), month: str | 
             "country": country, "countries": [{"country": k, "leagues": sorted({r["league"] for r in rows_all if r["country"] == k})} for k in countries],
             "news": news[:5] if country else news[:12], "tables": tables, "transfers": transfers[:10], "leaders": [x for x in leaders if x["rows"]], "awards": awards,
             "sample": not LIVE, "tables_note": None if tables else "No league tables in this save yet. FM only keeps a table once its clubs have played a match.",
-            "names_note": "Some competitions may show as 'Competition 123': the save doesn't hold their names." if any(t["league"].startswith("Competition ") for t in tables) else None}
+            "names_note": ("Some competitions show as 'Competition 123': neither the save nor your league strength workbook has their names." if any(t["league"].startswith("Competition ") for t in tables)
+                           else "League names marked * come from your league strength workbook, matched by country and level." if any(t.get("named_from_workbook") for t in tables) else None)}

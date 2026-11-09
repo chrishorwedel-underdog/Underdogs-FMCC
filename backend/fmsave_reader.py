@@ -103,10 +103,13 @@ def _tables(save, clubs: dict, nations: dict) -> tuple[list, dict]:
         return [], {}
     for t in tables:
         name = _get(t, "competition_name") or f"Competition {_get(t, 'competition_id', '?')}"
-        rows, nat = [], {}
+        rows, nat, reps, women = [], {}, [], 0
         for i, r in enumerate(_get(t, "rows") or []):
             uid = _first(r, "club_uid", "team_club_uid")
-            club, nid = clubs.get(uid, (None, None))
+            club, nid, rep, gender = clubs.get(uid, (None, None, None, None))
+            if rep is not None:
+                reps.append(rep)
+            women += str(gender or "").lower().startswith(("f", "w"))
             club = _first(r, "club_name", "team_name") or club or "Unknown club"
             row = {"club": club, "pos": int(_first(r, "position", "pos", default=i + 1)), "p": int(_first(r, "played", "played_matches", "matches_played", default=0)),
                    "w": int(_first(r, "won", "wins", default=0)), "d": int(_first(r, "drawn", "draws", default=0)), "l": int(_first(r, "lost", "losses", default=0)),
@@ -117,7 +120,8 @@ def _tables(save, clubs: dict, nations: dict) -> tuple[list, dict]:
                 nat[nid] = nat.get(nid, 0) + 1
         nid = _get(t, "nation_id") or (max(nat, key=nat.get) if nat else None)
         if rows:
-            out.append({"league": name, "country": nations.get(nid, "Other"), "rows": sorted(rows, key=lambda x: x["pos"])})
+            out.append({"league": name, "country": nations.get(nid, "Other"), "rows": sorted(rows, key=lambda x: x["pos"]),
+                        "reputation": round(sum(reps) / len(reps)) if reps else None, "women": women > len(rows) / 2})
     return out, club_league
 
 
@@ -145,7 +149,7 @@ def read_save(path: Path, club_name_hint: str) -> dict:
             raise ValueError("You aren't managing a club in this save")
         club = mine[0]
         my_uid = _first(club, "club_uid", "uid")
-        clubs = {_first(c, "club_uid", "uid"): (_first(c, "name", "club_name"), _get(c, "nation_id"), _get(c, "gender")) for c in save.clubs()} if hasattr(save, "clubs") else {}
+        clubs = {_first(c, "club_uid", "uid"): (_first(c, "name", "club_name"), _get(c, "nation_id"), _get(c, "gender"), _get(c, "reputation")) for c in save.clubs()} if hasattr(save, "clubs") else {}
         club_lookup = {u: v[0] for u, v in clubs.items()}
         club_rows = [{"uid": int(u), "name": n, "league": None} for u, n in club_lookup.items() if u is not None and n]
         club_name = club_lookup.get(my_uid) or _get(club, "name") or club_name_hint
@@ -156,7 +160,7 @@ def read_save(path: Path, club_name_hint: str) -> dict:
             nid, nn = _get(p, "nation_id"), _get(p, "nationality.name")
             if nid is not None and nn and isinstance(nn, str):
                 nations.setdefault(nid, nn)
-        tables, club_league = _tables(save, {u: (v[0], v[1]) for u, v in clubs.items()}, nations)
+        tables, club_league = _tables(save, {u: (v[0], v[1], v[3], v[2]) for u, v in clubs.items()}, nations)
         moves = _transfers(save)
         squad, pool = [], []
         for p in everyone:

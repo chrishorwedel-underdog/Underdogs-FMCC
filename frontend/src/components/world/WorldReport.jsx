@@ -33,7 +33,7 @@ const Tables = ({ d }) => (
     {d.names_note && <p className="note" data-testid="world-names-note">{d.names_note}</p>}
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: 14, marginTop: 8 }}>
       {d.tables.map((t) => (
-        <div key={t.league} style={{ overflowX: "auto" }} data-testid={`world-table-${t.league}`}><div className="eyebrow">{t.league} · {t.country}</div>
+        <div key={t.league} style={{ overflowX: "auto" }} data-testid={`world-table-${t.league}`}><div className="eyebrow">{t.league}{t.named_from_workbook ? " *" : ""} · {t.country}</div>
           <table className="tbl"><thead><tr><th>#</th><th>Club</th><th>P</th><th>GD</th><th>Pts</th><th></th></tr></thead>
             <tbody>{(d.country ? t.rows : t.rows.slice(0, 4)).map((r) => <tr key={r.club} style={{ cursor: "default" }}><td className="mono">{r.pos}</td><td>{r.club}</td><td className="mono">{r.p}</td><td className="mono">{r.gd > 0 ? "+" : ""}{r.gd}</td><td className="mono"><b>{r.pts}</b></td>
               <td>{r.move > 0 ? <span className="up"><ArrowUp size={12} />{r.move}</span> : r.move < 0 ? <span className="down"><ArrowDown size={12} />{-r.move}</span> : ""}</td></tr>)}</tbody></table>
