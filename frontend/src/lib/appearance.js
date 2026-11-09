@@ -20,7 +20,7 @@ export const applyAppearance = (s) => {
   Object.entries((THEMES[s.theme] || THEMES.dark).vars).forEach(([k, v]) => root.style.setProperty(k, v));
   root.style.setProperty("--acc", s.accent);
   root.style.setProperty("--z", String(s.text / 100));
-  root.style.zoom = s.text === 100 ? "" : `${s.text}%`;
+  root.style.zoom = "";
   root.classList.toggle("no-motion", !s.motion);
   root.classList.toggle("no-grain", !s.grain);
 };

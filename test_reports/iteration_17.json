@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only test of the sidebar logo gap and the new Appearance page (Playwright, 1920x1080 and 390x844). Almost everything works. The gap between the logo and the Home box is 62.6px, which equals the Home box height (62.6px). nav-appearance opens a real Appearance page with no 'coming soon' text, and all 21 testids are present. Each theme sets --bg (black #000000, dim #16191E, navy #070B16, dark = default rgb(8,9,11)). Accent changes --acc and the selected tab/button colour (red -> rgb(255,110,110) on Squad tabs and sidebar dots). Turning Animations and Film grain off adds no-motion and no-grain to <html>, and the grain ::after gets display:none. At 125% and 140%, html zoom is set, the page height stays at 1080 with no window scrollbar, the top bar stays at top 0, the sidebar scrolls on its own (1218 > 1080), .content scrolls, and the size stays after page changes and reload. Theme and accent also stay after reload. Reset brings back dark, #4C8DFF, 100%, motion and grain on. The player sheet (Squad > Players row) opens full height on the right at 125% and closes with Esc. On mobile at 390px the sidebar is hidden, there is no sideways scroll, and the page is usable. BUG: Radix Popover content is in the wrong place when zoom is not 100%.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Squad Pitch slot popover (components/squad/Pitch.jsx PopoverContent) and likely any Radix popper content (Popover/Select/DropdownMenu/Tooltip)", "issue": "At 125% text size the slot options popover is placed far from its token. At 100% the ST token centre is x=910 and the popover centre is x=910, right below it (top 654). At 125% the token centre is x=897 and the popover centre is x=1122, with top 1051 against a token bottom of 833. The offset is about 1.25 times, so the zoom is applied twice. floating-ui positions the content using client coordinates, and zoom on <html> scales them again. The popover ends up mostly below the visible area.", "selector": "[data-testid='pitch-options-ST']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Top bar at 140% on 1920px", "issues": ["'FM27 · December 2027', 'Sample save · save read 1 h ago' and 'Game changes' wrap onto 2-3 lines, and the Ctrl K kbd is clipped in the search box"]},
+      {"screen": "Appearance page", "issues": ["Animations/Film grain Switch stays blue when the accent is red/green: the Switch does not use --acc", "Mobile 390 at 125%: top bar is cramped, the date wraps to 3 lines and 'Game changes' is cut at the right edge"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix Radix popper placement under html zoom. Options: put zoom on #root/.app and also on the portal container, use font-size/rem scaling instead of zoom, or correct the floating-ui offset. Use web_search for 'floating-ui radix popover css zoom html Chrome 128 standardized zoom' to find the fix. Then re-check pitch-options-*, Selects, dropdowns and tooltips at 112/125/140%.",
+    "Make the top bar not wrap at 140% (hide the secondary text / use nowrap with ellipsis)",
+    "Optional: make the Switch checked colour use var(--acc)"
+  ],
+  "critical_code_review_comments": [
+    "appearance.js: loadAppearance's catch returns the DEFAULTS reference. Fine, but the Reset in Appearance.jsx also saves DEFAULTS by reference. Harmless, since state is replaced, not mutated.",
+    "CSS zoom on <html> affects every fixed/portal element and every library that measures layout (Radix popper, recharts tooltips, drag positions). Consider a scaling approach that these libraries handle."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "90%"},
+  "seed_data_creation": "None. The Appearance setting was reset to defaults at the end (localStorage fmcc-appearance = dark/#4C8DFF/100/true/true).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Each Playwright run starts a fresh context, so localStorage is empty. Set the text size via nav-appearance -> appearance-text-125 in the same script before checking other pages. Popover check: nav-squad -> click pitch-token-ST -> measure [data-testid=pitch-options-ST] against the token bounding box at 100% and 125%. Player sheet: squad-view-tab-players -> first squad-row -> [data-testid=player-sheet]. Click tour-skip if the tour shows.",
+  "rca of the issue": "applyAppearance sets document.documentElement.style.zoom. Chrome now uses standardized zoom, so getBoundingClientRect returns values that already include the zoom. floating-ui then writes a transform on the portal wrapper, which is also inside the zoomed html, so the translate is scaled a second time. The popover moves by about zoom times its intended position. Reproduce: Appearance -> Larger 125% -> Squad -> click any pitch token."
+}
