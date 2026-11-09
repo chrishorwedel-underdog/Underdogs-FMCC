@@ -236,8 +236,28 @@ def _news(rows: list, tables: list, transfers: list, awards: dict, scope: str) -
     return [{"tag": t, "country": c, "text": s} for _, c, t, s in ev]
 
 
+CONTINENT = {"UEFA": "Europe", "CONMEBOL": "South America", "CONCACAF": "North & Central America", "CAF": "Africa", "AFC": "Asia", "OFC": "Oceania"}
+
+
+async def _continents(career_id: str) -> dict:
+    """Country -> continent, from the confederation column of the league strength workbook."""
+    wb = (await leagues_api.opta_list(career_id))["leagues"]
+    out = {}
+    for r in wb:
+        conf = str(r.get("confed") or "").upper()
+        cont = next((v for k, v in CONTINENT.items() if k in conf), None)
+        if cont and r.get("country"):
+            out.setdefault(r["country"], cont)
+    return out
+
+
+def _in_scope(r: dict, continent: str | None, country: str | None, league: str | None) -> bool:
+    return (not continent or r.get("continent") == continent) and (not country or r.get("country") == country) and (not league or r.get("league") == league)
+
+
 @router.get("/report")
-async def report(country: str | None = Query(None, max_length=60), month: str | None = Query(None, pattern=r"^\d{4}-\d{2}$")):
+async def report(country: str | None = Query(None, max_length=60), month: str | None = Query(None, pattern=r"^\d{4}-\d{2}$"),
+                 continent: str | None = Query(None, max_length=40), league: str | None = Query(None, max_length=120)):
     c = await active_career()
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0})
     if not pool:
@@ -256,36 +276,51 @@ async def report(country: str | None = Query(None, max_length=60), month: str | 
     sample_names = {lg: yours[lg] for lg in LEAGUES if lg in yours} if not cur.get("tables") else {}
     for r in rows_all + (prev or {}).get("players", []):
         r["league"] = renames.get(r["league"]) or sample_names.get(r["league"]) or r["league"]
+    conts = await _continents(c["id"])
+    for r in rows_all:
+        r["continent"] = conts.get(r["country"], "Other")
     countries = sorted({r["country"] for r in rows_all})
+    if continent and continent not in {r["continent"] for r in rows_all}:
+        raise HTTPException(404, "That continent isn't in your loaded leagues")
     if country and country not in countries:
         raise HTTPException(404, "That country isn't in your loaded leagues")
-    rows = [r for r in rows_all if not country or r["country"] == country]
+    if league and league not in {r["league"] for r in rows_all}:
+        raise HTTPException(404, "That league isn't in your loaded leagues")
+    rows = [r for r in rows_all if _in_scope(r, continent, country, league)]
     tables = _tables(cur, prev, rows_all, country)
     for t in tables:
         t.setdefault("orig", t["league"])
         if t["orig"] in sample_names:
             t.update(league=sample_names[t["orig"]], named_by_you=True)
+        t["continent"] = conts.get(t["country"], "Other")
+    tables = [t for t in tables if _in_scope(t, continent, None, league)]
     wb = (await leagues_api.opta_list(c["id"]))["leagues"]
     options = sorted({r["name"] for r in wb if r.get("country") in {t["country"] for t in tables}})
-    transfers = [t for t in _transfers(rows_all, prev) if not country or country in (t["country"], t["from_country"])]
+    scope = league or country or continent
+    transfers = [t for t in _transfers(rows_all, prev)
+                 if not scope or any(_in_scope({"continent": conts.get(cn, "Other"), "country": cn, "league": lg}, continent, country, league)
+                                     for cn, lg in ((t["country"], t["to_league"]), (t["from_country"], t["from_league"])))]
     awards = _awards(rows, 180 if prev and prev["season"] == cur["season"] else 360)
-    news = _news(rows, tables, transfers, awards, f"{country}'s" if country else "the World")
+    news = _news(rows, tables, transfers, awards, f"{scope}'s" if scope else "the World")
     u21 = [r for r in rows if r["age"] < 21]
     leaders = [{"key": k, "label": lab, "kind": "month", "rows": _lead(rows, k, 10), "u21": _lead(u21, k, 5)} for k, lab in MONTH_STATS]
     leaders += [{"key": k, "label": sm.METRICS[k][0], "kind": "p90", "rows": _lead(rows, k, 10, True), "u21": _lead(u21, k, 5, True)} for k in P90 if k in sm.METRICS]
     return {"month": month, "months": months, "game_date": cur["game_date"], "from": prev["game_date"] if prev else None, "season_so_far": not (prev and prev["season"] == cur["season"]),
-            "country": country, "countries": [{"country": k, "leagues": sorted({r["league"] for r in rows_all if r["country"] == k})} for k in countries],
-            "news": news[:5] if country else news[:12], "tables": tables, "transfers": transfers[:10], "leaders": [x for x in leaders if x["rows"]], "awards": awards,
+            "country": country, "continent": continent, "league": league, "scope": scope,
+            "continents": [{"continent": k, "countries": sorted({r["country"] for r in rows_all if r["continent"] == k})} for k in sorted({r["continent"] for r in rows_all})],
+            "countries": [{"country": k, "continent": conts.get(k, "Other"), "leagues": sorted({r["league"] for r in rows_all if r["country"] == k})} for k in countries],
+            "news": news[:12] if not scope else news[:8] if continent and not (country or league) else news[:5], "tables": tables, "transfers": transfers[:10], "leaders": [x for x in leaders if x["rows"]], "awards": awards,
             "sample": not LIVE, "name_options": options, "tables_note": None if tables else "No league tables in this save yet. FM only keeps a table once its clubs have played a match.",
             "names_note": ("Some competitions show as 'Competition 123': neither the save nor your league strength workbook has their names." if any(t["league"].startswith("Competition ") for t in tables)
                            else "League names marked * come from your league strength workbook, matched by country and level. Use the pencil to fix one." if any(t.get("named_from_workbook") for t in tables) else None)}
 
 
 @router.get("/award-history")
-async def award_history(country: str | None = Query(None, max_length=60)):
-    """Every month's winners (world, or one country), newest first; worked out from the stored monthly snapshots."""
+async def award_history(country: str | None = Query(None, max_length=60), continent: str | None = Query(None, max_length=40), league: str | None = Query(None, max_length=120)):
+    """Every month's winners (world, continent, country or league), newest first; worked out from the stored monthly snapshots."""
     c = await active_career()
     yours = await overrides(c["id"])
+    conts = await _continents(c["id"])
     months = await db.world_months.find({"career_id": c["id"]}, {"_id": 0}).sort("month", 1).to_list(None)
     out = []
     for i, cur in enumerate(months):
@@ -294,11 +329,12 @@ async def award_history(country: str | None = Query(None, max_length=60)):
         rows = [r for r in _month_rows(cur, prev) if r.get("gender") != "F"]
         for r in rows:
             r["league"] = renames.get(r["league"]) or yours.get(r["league"]) or r["league"]
-        rows = [r for r in rows if not country or r["country"] == country]
+            r["continent"] = conts.get(r["country"], "Other")
+        rows = [r for r in rows if _in_scope(r, continent, country, league)]
         awards = _awards(rows, 180 if prev and prev["season"] == cur["season"] else 360)
         out.append({"month": cur["month"], "season": cur["season"], "season_so_far": not (prev and prev["season"] == cur["season"]),
                     "winners": {k: (a["picks"][0] if a["picks"] else None) for k, a in awards.items()}})
-    return {"country": country, "labels": {k: lab for k, lab, _ in AWARDS}, "months": out[::-1]}
+    return {"country": country, "continent": continent, "league": league, "labels": {k: lab for k, lab, _ in AWARDS}, "months": out[::-1]}
 
 
 class LeagueNameIn(BaseModel):

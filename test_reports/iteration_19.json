@@ -1,0 +1,35 @@
+{
+  "summary": "Tested save tactics in Squad > Lineup on both backend and frontend. Backend: 12/12 pytest pass (new test_squad_plan_save_tactics_api.py plus the existing test_tactics_from_save.py). Default plan returns formation 4231 with from_save=true and formations={4231,352,442} with the expected labels. 352, 442, 433 and 4231 return 200 with 11 unique players in every mode. A bogus formation returns 422. Frontend (Playwright 1920x1080): the three save tactic tabs replace the 4-3-3/4-2-3-1 defaults. 4-2-3-1 Gegenpress is selected on open and the formation-from-save tag is visible. Each tab puts 11 tokens on the pitch: 352 has DCL/DC/DCR plus WBL/WBR, and 442 has STL/STR. The Add dropdown has 20 options and leaves out the save tactics. Adding 3 extras hides the select. Removing the selected extra falls back to 4231, and removing a non-selected extra keeps the current tab. All 5 modes work on 352. Use this lineup POSTed formation=352 and returned 200 with revision 1. The Depth chart follows the selected 352. The Players table (23 rows), Tactic fit, Registration and Rules still load. There were no page errors. One bug: the save tactic tabs are shown in the wrong order (see below).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/lineups", "issue": "The formation query param still defaults to '433'. That is not the default tactic any more (low impact, because the UI always passes the key)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LineupView Formations tabs", "issue": "The save tactic tabs are not in save order. The UI shows Counter-attack (3-5-2), Direct 4-4-2, 4-2-3-1 Gegenpress, so the default/first tactic appears LAST. Cause: plan.formations is an object with integer-like keys ('352','442','4231'). JS Object.entries puts integer keys in ascending numeric order, so the dict order from the backend is lost. The same thing jumbles the Add-a-tactic dropdown order (343, 424, 433, ..., 41212, 4231n, 433dm). On a real save, any tactic with a non-numeric key (e.g. 4231n, 433dm) would also be moved after the numeric ones.", "selector": "[data-testid=formation-tabs]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Squad > Lineup / Depth chart 3-5-2", "issues": ["The wing-back slots (WBL/WBR) show the pos 'LB'/'RB' on the pitch tokens and 'Left Back'/'Right Back' on the depth chart cards, although the role is Wing Back (Support). Consider WB labels for 3-5-2 and 3-4-3 shapes (existing behaviour)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_squad_plan_save_tactics_api.py", "/app/backend/tests/test_tactics_from_save.py", "/app/test_reports/pytest/pytest_results_iter19.xml"],
+  "action_items": [
+    "Keep the save tactic order in the UI. Either return formations as an ordered list of [key, label] pairs (and all_formations as well), or add a formation_order array and build the tabs from it in LineupView Formations.",
+    "Optional: label wing-back slots as WB rather than LB/RB in the 3-back shapes.",
+    "Optional: make the GET /api/lineups formation default follow the first save tactic."
+  ],
+  "critical_code_review_comments": [
+    "LineupView.jsx: Object.entries(plan.formations) and Object.entries(plan.all_formations) depend on object key order, which is unreliable for numeric string keys (this is the root cause of the ordering bug).",
+    "squad_api.team_tactics: the label check 'shape in name' works. When two save tactics map to the same FMCC key, only the first is kept and the second is silently dropped. Consider showing or logging the dropped one.",
+    "squad_plan calls team_tactics (one extra snapshot query) on every plan request. That is fine, but it could reuse the snapshot from _plan_inputs."
+  ],
+  "updated_files": ["/app/backend/tests/test_squad_plan_save_tactics_api.py"],
+  "success_rate": {"backend": "100%", "frontend": "95% (all flows work; tab order bug)"},
+  "seed_data_creation": "One lineup was saved through the UI (352, uefa, id 5da2de57-9ce4-4d24-b50e-0abfb45f0cac) and then deleted by id from db.lineups. localStorage fmcc-extra-formations was cleared at the start and ended as [].",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Sample career TEST FC, save_no 5. Selectors: nav-squad, formation-tab-{key}, formation-add-select (select_option by key), formation-remove-{key}, formation-from-save, lineup-mode-tab-{best|dev|domestic|cup|uefa}, use-lineup-button, lineup-saved-label, squad-view-tab-{depth|players|fit|registration|rules}, pitch-token-{slotKey}. The selected tab has class 'on'. Lineups have no delete API, so delete them by id with mongosh in test_database.lineups. To verify the order fix, the tabs should read 4-2-3-1 Gegenpress, Counter-attack (3-5-2), Direct 4-4-2."
+}

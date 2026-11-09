@@ -7,15 +7,15 @@ const money = (v) => (v >= 1e6 ? `€${(v / 1e6).toFixed(1)}m` : `€${Math.roun
 const Who = ({ r }) => <><b style={{ color: "var(--text)" }}>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.age} · {r.club}</small></>;
 
 const News = ({ d }) => (
-  <div className="card" data-testid="world-news"><div className="ttl"><Newspaper size={14} />{d.country ? `${d.country}: top stories` : "The 12 biggest stories"}</div>
+  <div className="card" data-testid="world-news"><div className="ttl"><Newspaper size={14} />{d.scope ? `${d.scope}: top stories` : "The 12 biggest stories"}</div>
     {d.news.length ? <ol style={{ margin: "8px 0 0", paddingLeft: 20, display: "grid", gap: 6 }}>{d.news.map((n, i) => (
-      <li key={i} data-testid={`world-news-${i}`}><span className="st n" style={{ marginRight: 6 }}>{n.tag}</span>{n.text}{!d.country && <small style={{ color: "var(--dim)" }}> · {n.country}</small>}</li>))}</ol>
+      <li key={i} data-testid={`world-news-${i}`}><span className="st n" style={{ marginRight: 6 }}>{n.tag}</span>{n.text}{!d.country && !d.league && <small style={{ color: "var(--dim)" }}> · {n.country}</small>}</li>))}</ol>
       : <p className="note">No big stories this month.</p>}
   </div>
 );
 
 const Awards = ({ d }) => (
-  <div className="card" data-testid="world-awards"><div className="ttl"><Trophy size={14} />{d.country ? `${d.country}'s` : "World"} players of the month</div>
+  <div className="card" data-testid="world-awards"><div className="ttl"><Trophy size={14} />{d.scope ? `${d.scope}'s` : "World"} players of the month</div>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(230px, 100%), 1fr))", gap: 12, marginTop: 8 }}>
       {Object.entries(d.awards).map(([k, a]) => (
         <div key={k} data-testid={`world-award-${k}`}><div className="eyebrow">{a.label}</div>
@@ -61,7 +61,7 @@ const Tables = ({ d }) => (
       {d.tables.map((t) => (
         <div key={t.orig} style={{ overflowX: "auto" }} data-testid={`world-table-${t.league}`}><LeagueTitle t={t} options={d.name_options || []} />
           <table className="tbl"><thead><tr><th>#</th><th>Club</th><th>P</th><th>GD</th><th>Pts</th><th></th></tr></thead>
-            <tbody>{(d.country ? t.rows : t.rows.slice(0, 4)).map((r) => <tr key={r.club} style={{ cursor: "default" }}><td className="mono">{r.pos}</td><td>{r.club}</td><td className="mono">{r.p}</td><td className="mono">{r.gd > 0 ? "+" : ""}{r.gd}</td><td className="mono"><b>{r.pts}</b></td>
+            <tbody>{(d.country || d.league ? t.rows : t.rows.slice(0, 4)).map((r) => <tr key={r.club} style={{ cursor: "default" }}><td className="mono">{r.pos}</td><td>{r.club}</td><td className="mono">{r.p}</td><td className="mono">{r.gd > 0 ? "+" : ""}{r.gd}</td><td className="mono"><b>{r.pts}</b></td>
               <td>{r.move > 0 ? <span className="up"><ArrowUp size={12} />{r.move}</span> : r.move < 0 ? <span className="down"><ArrowDown size={12} />{-r.move}</span> : ""}</td></tr>)}</tbody></table>
         </div>))}
     </div>
@@ -90,12 +90,12 @@ const Leaders = ({ d }) => (
   </div>
 );
 
-const History = ({ country }) => {
-  const { data } = useGet("world-award-history", "/world/award-history", { country });
+const History = ({ d }) => {
+  const { data } = useGet("world-award-history", "/world/award-history", { continent: d.continent, country: d.country, league: d.league });
   if (!data) return null;
   const keys = Object.keys(data.labels);
   return (
-    <div className="card" style={{ overflowX: "auto" }} data-testid="world-award-history"><div className="ttl"><Trophy size={14} />{country ? `${country}'s` : "World"} award history</div>
+    <div className="card" style={{ overflowX: "auto" }} data-testid="world-award-history"><div className="ttl"><Trophy size={14} />{d.scope ? `${d.scope}'s` : "World"} award history</div>
       <table className="tbl" style={{ marginTop: 6 }}><thead><tr><th>Month</th>{keys.map((k) => <th key={k}>{data.labels[k].replace(" of the Month", "")}</th>)}</tr></thead>
         <tbody>{data.months.map((m) => <tr key={m.month} style={{ cursor: "default" }} data-testid={`world-history-${m.month}`}>
           <td className="mono">{gameDate(`${m.month}-01`, { month: "short", year: "numeric" })}{m.season_so_far && <small style={{ display: "block", color: "var(--dim)" }}>season so far</small>}</td>
@@ -104,14 +104,29 @@ const History = ({ country }) => {
   );
 };
 
-export const WorldReport = ({ d, openCountry }) => (
+const Scopes = ({ d, open }) => {
+  if (d.league) return null;
+  const nations = d.countries.filter((c) => !d.continent || c.continent === d.continent);
+  const btn = (label, set, id, sub) => <button key={id} className="btn" onClick={() => open(set)} data-testid={id}>{label}{sub && <small style={{ marginLeft: 6, color: "var(--dim)" }}>{sub}</small>}</button>;
+  return (
+    <div className="card" data-testid="world-countries">
+      {!d.continent && !d.country && <><div className="ttl">Continent reports</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{d.continents.map((c) => btn(c.continent, { continent: c.continent, country: null, league: null }, `world-continent-${c.continent}`, `${c.countries.length} nation${c.countries.length > 1 ? "s" : ""}`))}</div></>}
+      {!d.country && <><div className="ttl" style={{ marginTop: d.continent ? 0 : 14 }}>Nation reports</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{nations.map((c) => btn(c.country, { continent: c.continent, country: c.country, league: null }, `world-country-${c.country}`, `${c.leagues.length} league${c.leagues.length > 1 ? "s" : ""}`))}</div></>}
+      {d.country && <><div className="ttl">League reports</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{(d.countries.find((c) => c.country === d.country)?.leagues || []).map((l) => btn(l, { league: l }, `world-league-${l}`))}</div></>}
+    </div>
+  );
+};
+
+export const WorldReport = ({ d, open }) => (
   <div style={{ display: "grid", gap: 16 }} data-testid="world-report">
     <p className="note" data-testid="world-period">{d.season_so_far ? `Season so far, to ${gameDate(d.game_date)}` : `${gameDate(d.from)} to ${gameDate(d.game_date)}`}{d.sample && " · SAMPLE world data in this browser preview"}</p>
-    {!d.country && <div className="card" data-testid="world-countries"><div className="ttl">Country reports</div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{d.countries.map((c) => <button key={c.country} className="btn" title={c.leagues.join(", ")} onClick={() => openCountry(c.country)} data-testid={`world-country-${c.country}`}>{c.country}<small style={{ marginLeft: 6, color: "var(--dim)" }}>{c.leagues.length} league{c.leagues.length > 1 ? "s" : ""}</small></button>)}</div></div>}
+    <Scopes d={d} open={open} />
     <News d={d} />
     <Awards d={d} />
-    <History country={d.country} />
+    <History d={d} />
     <Tables d={d} />
     <Transfers d={d} />
     <Leaders d={d} />

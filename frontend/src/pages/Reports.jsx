@@ -42,20 +42,26 @@ const Compare = () => {
 
 const World = () => {
   const [params, setParams] = useSearchParams();
-  const country = params.get("country");
-  const month = params.get("month");
-  const { data, error } = useGet("world-report", "/world/report", { country, month });
-  const go = (k, v) => { const n = new URLSearchParams(params); v ? n.set(k, v) : n.delete(k); setParams(n); window.scrollTo(0, 0); };
-  if (error) return <div className="soon">{error.response?.data?.detail || "Couldn't load the report."}</div>;
+  const [continent, country, league, month] = ["continent", "country", "league", "month"].map((k) => params.get(k));
+  const { data, error } = useGet("world-report", "/world/report", { continent, country, league, month });
+  const go = (set) => { const n = new URLSearchParams(params); Object.entries(set).forEach(([k, v]) => (v ? n.set(k, v) : n.delete(k))); setParams(n); window.scrollTo(0, 0); };
+  if (error) return <div className="soon">{error.response?.data?.detail || "Couldn't load the report."} <button className="btn" onClick={() => go({ continent: null, country: null, league: null })} data-testid="world-error-back">Back to the World report</button></div>;
   if (!data) return <p className="note">Loading the world report…</p>;
+  const nations = data.countries.filter((c) => !continent || c.continent === continent);
+  const leagues = (data.countries.find((c) => c.country === country) || {}).leagues || [];
+  const crumbs = [["The World", { continent: null, country: null, league: null }], continent && [continent, { country: null, league: null }], country && [country, { league: null }], league && [league, {}]].filter(Boolean);
   return (
     <div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
-        <select className="inp" style={{ width: 200 }} value={data.month} onChange={(e) => go("month", e.target.value)} data-testid="world-month-select">{data.months.map((m) => <option key={m} value={m}>{gameDate(`${m}-01`, { month: "long", year: "numeric" })}</option>)}</select>
-        <select className="inp" style={{ width: 200 }} value={country || ""} onChange={(e) => go("country", e.target.value)} data-testid="world-country-select"><option value="">The World</option>{data.countries.map((c) => <option key={c.country} value={c.country}>{c.country}</option>)}</select>
-        {country && <button className="btn" onClick={() => go("country", null)} data-testid="world-back">Back to the World report</button>}
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+        <select className="inp" style={{ width: 180 }} value={data.month} onChange={(e) => go({ month: e.target.value })} data-testid="world-month-select">{data.months.map((m) => <option key={m} value={m}>{gameDate(`${m}-01`, { month: "long", year: "numeric" })}</option>)}</select>
+        <select className="inp" style={{ width: 200 }} value={continent || ""} onChange={(e) => go({ continent: e.target.value, country: null, league: null })} data-testid="world-continent-select"><option value="">All continents</option>{data.continents.map((c) => <option key={c.continent} value={c.continent}>{c.continent}</option>)}</select>
+        <select className="inp" style={{ width: 200 }} value={country || ""} onChange={(e) => { const c = data.countries.find((x) => x.country === e.target.value); go({ country: e.target.value, continent: c ? c.continent : continent, league: null }); }} data-testid="world-country-select"><option value="">All nations</option>{nations.map((c) => <option key={c.country} value={c.country}>{c.country}</option>)}</select>
+        <select className="inp" style={{ width: 220 }} value={league || ""} disabled={!country} onChange={(e) => go({ league: e.target.value })} data-testid="world-league-select"><option value="">{country ? "All leagues" : "Pick a nation first"}</option>{leagues.map((l) => <option key={l} value={l}>{l}</option>)}</select>
       </div>
-      <WorldReport d={data} openCountry={(c) => go("country", c)} />
+      <div className="note" style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }} data-testid="world-crumbs">
+        {crumbs.map(([label, set], i) => <span key={label}>{i > 0 && "› "}{i < crumbs.length - 1 ? <button className="lnk" style={{ background: "none", border: 0, color: "var(--acc)", cursor: "pointer", padding: 0 }} onClick={() => go(set)} data-testid={`world-crumb-${i}`}>{label}</button> : <b style={{ color: "var(--text)" }}>{label}</b>}</span>)}
+      </div>
+      <WorldReport d={data} open={go} />
     </div>
   );
 };

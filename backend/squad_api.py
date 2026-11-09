@@ -94,7 +94,7 @@ async def squad_plan(formation: Optional[Formation] = None):
     for i in info.values():
         i.pop("ca", None)
     youth = sorted([{"unique_id": u, **i} for u, i in info.items() if i["u21"]], key=lambda y: y["month_minutes"])
-    return {"formation": form, "formations": main, "from_save": bool(yours), "all_formations": {k: v[0] for k, v in roles.ALL_FORMATIONS.items()},
+    return {"formation": form, "formations": list(main.items()), "from_save": bool(yours), "all_formations": [[k, v[0]] for k, v in roles.ALL_FORMATIONS.items()],
             "save_no": latest["save_no"], "game_date": latest["game_date"], "players": info, "depth": depth, "rules": rules,
             **competition_xis(latest["players"], form, depth, best, info, params),
             "best": {"slots": best, "strength": roles.strength(best, depth), "why": roles.best_why(best, form, depth, info, rules)},
