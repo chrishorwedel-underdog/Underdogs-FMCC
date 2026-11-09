@@ -1,5 +1,6 @@
 """World Monthly Reports: who made waves across every loaded league last month."""
 import random
+from collections import Counter
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, Query
@@ -193,7 +194,7 @@ def _awards(rows: list, min_mins: int) -> dict:
     for key, label, groups in AWARDS:
         pool = [r for r in rows if r["m_minutes"] >= min_mins and r["m_rating"] and (r["age"] < 21 if groups is None else r["group"] in groups)]
         top = sorted(pool, key=lambda r: -_score(r, "goalie" if key == "goalie" else "defender" if key == "defender" else "attacker"))[:3]
-        out[key] = {"label": label, "picks": [{"unique_id": r["unique_id"], "name": r["name"], "age": r["age"], "club": r["club"], "league": r["league"],
+        out[key] = {"label": label, "picks": [{"unique_id": r["unique_id"], "name": r["name"], "age": r["age"], "club": r["club"], "league": r["league"], "country": r["country"],
                                                "rating": r["m_rating"], "goals": r["m_goals"], "assists": r["m_assists"], "minutes": r["m_minutes"]} for r in top]}
     return out
 
@@ -315,9 +316,7 @@ async def report(country: str | None = Query(None, max_length=60), month: str | 
                            else "League names marked * come from your league strength workbook, matched by country and level. Use the pencil to fix one." if any(t.get("named_from_workbook") for t in tables) else None)}
 
 
-@router.get("/award-history")
-async def award_history(country: str | None = Query(None, max_length=60), continent: str | None = Query(None, max_length=40), league: str | None = Query(None, max_length=120)):
-    """Every month's winners (world, continent, country or league), newest first; worked out from the stored monthly snapshots."""
+async def _monthly_awards(continent: str | None = None, country: str | None = None, league: str | None = None) -> list:
     c = await active_career()
     yours = await overrides(c["id"])
     conts = await _continents(c["id"])
@@ -331,10 +330,43 @@ async def award_history(country: str | None = Query(None, max_length=60), contin
             r["league"] = renames.get(r["league"]) or yours.get(r["league"]) or r["league"]
             r["continent"] = conts.get(r["country"], "Other")
         rows = [r for r in rows if _in_scope(r, continent, country, league)]
-        awards = _awards(rows, 180 if prev and prev["season"] == cur["season"] else 360)
         out.append({"month": cur["month"], "season": cur["season"], "season_so_far": not (prev and prev["season"] == cur["season"]),
-                    "winners": {k: (a["picks"][0] if a["picks"] else None) for k, a in awards.items()}})
+                    "awards": _awards(rows, 180 if prev and prev["season"] == cur["season"] else 360)})
+    return out, conts
+
+
+@router.get("/award-history")
+async def award_history(country: str | None = Query(None, max_length=60), continent: str | None = Query(None, max_length=40), league: str | None = Query(None, max_length=120)):
+    """Every month's winners (world, continent, country or league), newest first; worked out from the stored monthly snapshots."""
+    months, _ = await _monthly_awards(continent, country, league)
+    out = [{"month": m["month"], "season": m["season"], "season_so_far": m["season_so_far"],
+            "winners": {k: (a["picks"][0] if a["picks"] else None) for k, a in m["awards"].items()}} for m in months]
     return {"country": country, "continent": continent, "league": league, "labels": {k: lab for k, lab, _ in AWARDS}, "months": out[::-1]}
+
+
+@router.get("/continent-tally")
+async def continent_tally():
+    """World award points per continent (where the player plays) for each season: winner 3, 2nd 2, 3rd 1."""
+    months, conts = await _monthly_awards()
+    seasons = {}
+    for m in months:
+        s = seasons.setdefault(m["season"], {"season": m["season"], "months": 0, "rows": {}})
+        s["months"] += 1
+        for a in m["awards"].values():
+            for i, p in enumerate(a["picks"]):
+                cont = conts.get(p["country"], "Other")
+                r = s["rows"].setdefault(cont, {"continent": cont, "points": 0, "wins": 0, "seconds": 0, "thirds": 0, "winners": []})
+                r["points"] += 3 - i
+                r[("wins", "seconds", "thirds")[i]] += 1
+                if i == 0:
+                    r["winners"].append(p["name"])
+    out = []
+    for s in sorted(seasons.values(), key=lambda s: s["season"], reverse=True):
+        rows = sorted(s["rows"].values(), key=lambda r: (-r["points"], -r["wins"], r["continent"]))
+        for r in rows:
+            r["winners"] = [n for n, _ in Counter(r["winners"]).most_common(3)]
+        out.append({"season": s["season"], "months": s["months"], "rows": rows})
+    return {"seasons": out}
 
 
 class LeagueNameIn(BaseModel):

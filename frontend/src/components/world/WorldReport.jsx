@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Newspaper, Trophy, ArrowLeftRight, BarChart3, Table2, ArrowUp, ArrowDown, Pencil } from "lucide-react";
+import { Newspaper, Trophy, ArrowLeftRight, BarChart3, Table2, ArrowUp, ArrowDown, Pencil, Globe2 } from "lucide-react";
 import { api, gameDate } from "@/lib/api";
 import { useAct, useGet } from "@/lib/ui";
 
@@ -104,6 +104,26 @@ const History = ({ d }) => {
   );
 };
 
+const Tally = () => {
+  const { data } = useGet("world-continent-tally", "/world/continent-tally");
+  const [pick, setPick] = useState(null);
+  if (!data?.seasons.length) return null;
+  const s = data.seasons.find((x) => x.season === pick) || data.seasons[0];
+  return (
+    <div className="card" style={{ overflowX: "auto" }} data-testid="world-continent-tally">
+      <div className="ttl" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}><Globe2 size={14} />Continent award tally
+        <select className="inp" value={s.season} onChange={(e) => setPick(e.target.value)} style={{ marginLeft: "auto", width: 130, height: 32 }} data-testid="world-tally-season">
+          {data.seasons.map((x) => <option key={x.season} value={x.season}>{x.season}</option>)}</select></div>
+      <p className="note" style={{ marginTop: 4 }} data-testid="world-tally-note">World Player of the Month awards over {s.months} month{s.months > 1 ? "s" : ""}, counted by where the player plays. Winner 3 points, 2nd 2, 3rd 1.</p>
+      <table className="tbl" style={{ marginTop: 6 }}><thead><tr><th>#</th><th>Continent</th><th>Points</th><th>Wins</th><th>2nd</th><th>3rd</th><th>Winners</th></tr></thead>
+        <tbody>{s.rows.map((r, i) => <tr key={r.continent} style={{ cursor: "default" }} data-testid={`world-tally-row-${r.continent}`}>
+          <td className="mono">{i + 1}</td><td><b>{r.continent}</b></td><td className="mono" data-testid={`world-tally-points-${r.continent}`}>{r.points}</td>
+          <td className="mono">{r.wins}</td><td className="mono">{r.seconds}</td><td className="mono">{r.thirds}</td>
+          <td style={{ color: "var(--dim)" }}>{r.winners.join(", ") || "—"}</td></tr>)}</tbody></table>
+    </div>
+  );
+};
+
 const Scopes = ({ d, open }) => {
   if (d.league) return null;
   const nations = d.countries.filter((c) => !d.continent || c.continent === d.continent);
@@ -127,6 +147,7 @@ export const WorldReport = ({ d, open }) => (
     <News d={d} />
     <Awards d={d} />
     <History d={d} />
+    {!d.scope && <Tally />}
     <Tables d={d} />
     <Transfers d={d} />
     <Leaders d={d} />
