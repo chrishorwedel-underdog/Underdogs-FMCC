@@ -24,13 +24,14 @@ import BreakoutPage from "@/pages/BreakoutPage";
 import Connections from "@/pages/Connections";
 import Safety from "@/pages/Safety";
 import Extras from "@/pages/Extras";
+import Appearance from "@/pages/Appearance";
 import PlayerTeamsEditor from "@/pages/PlayerTeamsEditor";
 import Changes from "@/pages/Changes";
 import Matches from "@/pages/Matches";
 import Dof from "@/pages/Dof";
 import Punish from "@/pages/Punish";
 
-const LATER = [["/appearance", "appearance"]];
+const LATER = [];
 
 const Shell = ({ state }) => {
   const [pal, setPal] = useState(false);
@@ -65,6 +66,7 @@ const Shell = ({ state }) => {
             <Route path="/connections" element={<Connections />} />
             <Route path="/safety" element={<Safety />} />
             <Route path="/extras" element={<Extras />} />
+            <Route path="/appearance" element={<Appearance />} />
             <Route path="/editor" element={<PlayerTeamsEditor />} />
             <Route path="/changes" element={<Changes />} />
             <Route path="/matches" element={<Matches />} />
