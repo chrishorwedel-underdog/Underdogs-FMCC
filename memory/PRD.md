@@ -191,3 +191,9 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Tested: iteration_16 (backend 20/21, frontend 95%); fixed afterwards: youth_minutes CA leak, Breakout copy consistency, news balance + ordinals, odd-sized sample leagues, labelled remove buttons, Reports tab in URL.
 
 
+
+## 2026-11-09
+- World Monthly Reports: World / Continent / Nation / League levels (continent from workbook confederation column). Awards counted by where the player plays at every level.
+- Continent award tally (World level): per season, World Player of the Month awards incl. runners-up (3/2/1 pts) per continent; season picker. API GET /api/world/continent-tally. Tested iteration_21 (all pass).
+- Sidebar: logo gap halved, nav boxes 15% shorter.
+

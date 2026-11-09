@@ -1,0 +1,14 @@
+{
+  "summary": "Tested Continent Award Tally feature. Backend: new pytest file test_world_continent_tally.py (13 tests) + regression test_world_continent_scopes.py: 23/23 pass. /api/world/continent-tally returns seasons newest-first, points = 3*wins+2*seconds+thirds, rows sorted by points, wins tally consistent with /award-history winners per season, no CA/PA keys. /award-history works with no params, continent=Europe, country=England, league filter (winners correctly scoped). /report works at all 4 levels. Frontend: on /reports (via nav-reports) World level shows world-continent-tally directly below world-award-history; note, season select (2027/28), Europe row 120 pts (20/20/20 across 5 months x 4 awards = consistent). Card hidden at continent (Europe), nation and league scope. Mobile 390px: card overflow-x auto (scrollWidth 479 > clientWidth 356), page width stays 390 - no page break. No console/page errors.",
+  "backend_issues": {"critical": [], "minor": [{"endpoint": "backend/world_api.py _monthly_awards", "issue": "Return type annotated '-> list' but returns a tuple (months, conts). Cosmetic."}, {"endpoint": "backend/world_api.py _monthly_awards", "issue": "League rename logic differs slightly from /report (report applies sample_names only when month has no tables and also applies prev-month table renames); filtering award-history by a renamed league could in edge cases mismatch the league names in /report. Not reproduced with sample data."}]},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": [{"screen": "Reports tally card mobile 390px", "issues": ["Winners column wraps heavily making the single row very tall (~170px) with large empty space; consider white-space: nowrap on winners cell or hiding it on mobile (minor)"]}]},
+  "test_report_links": ["/app/backend/tests/test_world_continent_tally.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": ["Optional: fix _monthly_awards return annotation", "Optional: nowrap winners cell in tally on mobile"],
+  "critical_code_review_comments": ["Tally query key 'world-continent-tally' is not invalidated anywhere explicitly; relies on react-query defaults when a new save is read (same as award history, acceptable)", "Season select only shows one option with sample data, multi-season switch not exercisable"],
+  "updated_files": ["/app/backend/tests/test_world_continent_tally.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None - read-only tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Direct load of /reports redirects to home; navigate via data-testid=nav-reports. On mobile the sidebar nav is hidden; load at desktop size, navigate, then resize. pytest.ini uses xdist (-n), don't pass -p no:xdist. Sample data: 1 season 2027/28, 5 months, only Europe continent."
+}
