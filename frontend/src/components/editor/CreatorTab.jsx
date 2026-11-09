@@ -7,7 +7,7 @@ import { MyPresets, NameUpdates } from "./CreatorExtras";
 
 const KEYS = ["creator-batches", "editor-state"];
 const DEFAULT = { name: "", count: 20, nations: [{ nation: "England", weight: 1 }], ethnicities: [], skin_lo: 1, skin_hi: 20, age_lo: 16, age_hi: 21,
-  positions: ["GK", "DC", "DL", "DR", "DM", "MC", "AML", "AMR", "AMC", "ST"], ca_lo: 60, ca_hi: 110, pa_lo: 120, pa_hi: 170, foot: "any", height_lo: 170, height_hi: 192, faces: true, seed: 1 };
+  positions: ["GK", "DC", "DL", "DR", "DM", "MC", "AML", "AMR", "AMC", "ST"], ca_lo: 30, ca_hi: 60, pa_lo: 60, pa_hi: 100, foot: "any", height_lo: 170, height_hi: 192, faces: true, seed: 1 };
 
 const Range = ({ f, set, lo, hi, label, min, max }) => (
   <label className="note" style={{ display: "grid", gap: 4 }}>{label}
@@ -51,20 +51,26 @@ const Batches = ({ act }) => {
 };
 
 const NameSeed = ({ f, set }) => (
-  <div className="card" style={{ marginTop: 14, background: "var(--s2)", display: "grid", gap: 12 }} data-testid="pc-name-seed">
-    <div className="ttl" style={{ margin: 0 }}>Batch name and seed</div>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: 16 }}>
-      <label className="note" style={{ display: "grid", gap: 4 }}><b style={{ color: "var(--text)" }}>Batch name</b>
-        <input className="inp" maxLength={60} placeholder="e.g. Academy wonderkids" value={f.name} onChange={(e) => set({ name: e.target.value })} data-testid="pc-name" />
-        <small>What this batch is called in Saved batches and in the file's name. It isn't given to any player.</small></label>
-      <label className="note" style={{ display: "grid", gap: 4 }}><b style={{ color: "var(--text)" }}>Seed (shuffle number)</b>
-        <span style={{ display: "flex", gap: 6 }}>
-          <input className="inp mono" style={{ width: 120 }} type="number" min={0} value={f.seed} onChange={(e) => set({ seed: Number(e.target.value) })} data-testid="pc-seed" />
-          <button type="button" className="btn" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })} data-testid="pc-seed-random">New seed</button>
-        </span>
-        <small>The seed decides which names, faces, ages and details are drawn. The same seed with the same settings makes exactly the same players; a new seed makes a different batch.</small></label>
-    </div>
-  </div>
+  <>
+    <label className="note" style={{ display: "grid", gap: 4, marginTop: 14, maxWidth: 420 }}><b style={{ color: "var(--text)" }}>Batch name</b>
+      <input className="inp" maxLength={60} placeholder="e.g. Academy wonderkids" value={f.name} onChange={(e) => set({ name: e.target.value })} data-testid="pc-name" />
+      <small>What this batch is called in Saved batches and in the file's name. It isn't given to any player.</small></label>
+    <section className="card" style={{ marginTop: 14, background: "var(--s2)", borderLeft: "3px solid var(--acc, #34D399)" }} data-testid="pc-name-seed">
+      <div className="ttl" style={{ margin: 0 }} data-testid="pc-seed-title">Seed a Surname</div>
+      <p className="note" style={{ marginTop: 6 }}>The seed is a number that decides which first names and surnames each created player gets, along with their face, age and other details. Use it to control the names in a batch:</p>
+      <ul className="note" style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 2 }}>
+        <li>Same seed and same settings: exactly the same names and players again.</li>
+        <li>New seed: a fresh set of names. Use it if you don't like the surnames you got.</li>
+        <li>Names come from each country's name list, so a Spanish player gets a Spanish surname.</li>
+      </ul>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 10, flexWrap: "wrap" }}>
+        <b className="note" style={{ color: "var(--text)" }}>Seed</b>
+        <input className="inp mono" style={{ width: 120 }} type="number" min={0} value={f.seed} onChange={(e) => set({ seed: Number(e.target.value) })} data-testid="pc-seed" />
+        <button type="button" className="btn" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })} data-testid="pc-seed-random">New seed</button>
+        <small className="note">Preview to see the names this seed gives.</small>
+      </div>
+    </section>
+  </>
 );
 
 

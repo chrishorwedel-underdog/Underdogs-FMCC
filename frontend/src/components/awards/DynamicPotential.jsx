@@ -13,7 +13,7 @@ const ToggleList = ({ title, items, on, set, id }) => {
       <div className="ttl">{title}<span style={{ marginLeft: "auto" }} />
         <button className="btn" onClick={() => set(items.map((i) => i.name))} data-testid={`dp-${id}-all`}>Select all</button><button className="btn" onClick={() => set([])} data-testid={`dp-${id}-clear`}>Clear</button></div>
       <input className="inp" style={{ marginTop: 10 }} placeholder={`Search ${title.toLowerCase()}`} value={q} onChange={(e) => setQ(e.target.value)} />
-      <div style={{ maxHeight: 240, overflowY: "auto", marginTop: 6 }}>
+      <div style={{ maxHeight: 240, overflowY: "auto", marginTop: 6, paddingRight: 32 }}>
         {shown.map((i) => <div className="row" key={i.name}><div style={{ flex: 1 }}>{i.name}<small>{i.count} players in the save</small></div>
           <Switch checked={on.includes(i.name)} onCheckedChange={(v) => set(v ? [...on, i.name] : on.filter((x) => x !== i.name))} data-testid={`dp-${id}-${i.name.replace(/\s+/g, "-").toLowerCase()}`} /></div>)}
       </div>
