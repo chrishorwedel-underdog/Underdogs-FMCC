@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -65,9 +65,24 @@ def competition_xis(players: list, form: dict, depth: dict, best: dict, info: di
                                                      ["amb" if left_out else "blu", f"Not registered: {', '.join(left_out)}." if left_out else "Everyone fits on the UEFA lists."]]}}
 
 
+async def team_tactics(c: dict) -> dict:
+    """Your club's tactics from the latest save, as FMCC formation key -> label (empty if the save has none)."""
+    snap = await db.snapshots.find_one({"career_id": c["id"]}, {"_id": 0, "tactics": 1}, sort=[("save_no", -1)]) or {}
+    out = {}
+    for t in snap.get("tactics") or []:
+        k = roles.match_tactic(t)
+        if k and k not in out:
+            shape = roles.ALL_FORMATIONS[k][0]
+            out[k] = t["name"] if shape in (t.get("name") or "") else f"{t.get('name') or 'Tactic'} ({shape})"
+    return out
+
+
 @router.get("/squad/plan")
-async def squad_plan(formation: Formation = "433"):
+async def squad_plan(formation: Optional[Formation] = None):
     c = await active_career()
+    yours = await team_tactics(c)
+    main = yours or {k: v[0] for k, v in roles.FORMATIONS.items()}
+    formation = formation or next(iter(main))
     latest, form, depth, info, params = await _plan_inputs(c, formation)
     rules = {k: int(v) for k, v in params.items()}
     best = roles.best_xi(latest["players"], form, depth)
@@ -79,7 +94,7 @@ async def squad_plan(formation: Formation = "433"):
     for i in info.values():
         i.pop("ca", None)
     youth = sorted([{"unique_id": u, **i} for u, i in info.items() if i["u21"]], key=lambda y: y["month_minutes"])
-    return {"formation": form, "formations": {k: v[0] for k, v in roles.FORMATIONS.items()}, "all_formations": {k: v[0] for k, v in roles.ALL_FORMATIONS.items()},
+    return {"formation": form, "formations": main, "from_save": bool(yours), "all_formations": {k: v[0] for k, v in roles.ALL_FORMATIONS.items()},
             "save_no": latest["save_no"], "game_date": latest["game_date"], "players": info, "depth": depth, "rules": rules,
             **competition_xis(latest["players"], form, depth, best, info, params),
             "best": {"slots": best, "strength": roles.strength(best, depth), "why": roles.best_why(best, form, depth, info, rules)},

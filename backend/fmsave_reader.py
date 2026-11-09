@@ -140,6 +140,24 @@ def _transfers(save) -> dict:
     return out
 
 
+def _tactics(save, my_uid) -> list:
+    """Your club's saved tactics with each slot's position code (out of possession first, as that is the shape FM shows)."""
+    out = []
+    try:
+        mine = [t for t in save.tactics() if _get(t, "club_uid") == my_uid]
+    except Exception:
+        return []
+    for i, t in enumerate(sorted(mine, key=lambda t: (_get(t, "team_slot", 0) or 0, _get(t, "index", 0) or 0))):
+        pos = []
+        for s in _get(t, "slots") or []:
+            p = _first(s, "position", "out_of_possession_positions", "in_possession_positions")
+            p = p[0] if isinstance(p, (list, tuple)) and p else p
+            if p is not None:
+                pos.append(str(getattr(p, "name", p)))
+        out.append({"name": _get(t, "name") or f"Tactic {i + 1}", "positions": pos[:11]})
+    return out
+
+
 def read_save(path: Path, club_name_hint: str) -> dict:
     import fmsave  # only installed in the Windows build
 
@@ -162,6 +180,7 @@ def read_save(path: Path, club_name_hint: str) -> dict:
                 nations.setdefault(nid, nn)
         tables, club_league = _tables(save, {u: (v[0], v[1], v[3], v[2]) for u, v in clubs.items()}, nations)
         moves = _transfers(save)
+        tactics = _tactics(save, my_uid)
         squad, pool = [], []
         for p in everyone:
             uid, cu = _first(p, "unique_id", "uid"), _get(p, "club_uid")
@@ -185,4 +204,4 @@ def read_save(path: Path, club_name_hint: str) -> dict:
     gd = game_date if isinstance(game_date, date) else date.fromisoformat(str(game_date)[:10])
     season_year = gd.year if gd.month >= 7 else gd.year - 1
     return {"file_name": path.name, "club_name": club_name, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
-            "players": squad, "next_fixture": None, "pool": pool, "tables": tables, "clubs": club_rows, "file_mtime": path.stat().st_mtime}
+            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "file_mtime": path.stat().st_mtime}

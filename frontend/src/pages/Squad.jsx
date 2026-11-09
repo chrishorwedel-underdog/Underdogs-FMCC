@@ -31,7 +31,7 @@ const VIEWS = [["lineup", "Lineup"], ["depth", "Depth chart"], ["fit", "Tactic f
 
 export default function Squad() {
   const [params, setParams] = useSearchParams();
-  const [formation, setFormation] = useState("433");
+  const [formation, setFormation] = useState(null);
   const filter = params.get("filter") || "all";
   const view = params.get("view") || (params.get("filter") ? "players" : "lineup");
   const openId = params.get("player");

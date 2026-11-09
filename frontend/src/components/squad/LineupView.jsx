@@ -46,10 +46,11 @@ const Formations = ({ plan, formation, setFormation }) => {
   const tabs = [...Object.entries(plan.formations), ...extra.filter((k) => plan.all_formations[k]).map((k) => [k, plan.all_formations[k]])];
   const options = Object.entries(plan.all_formations).filter(([k]) => !plan.formations[k] && !extra.includes(k));
   const add = (k) => { if (k) { save([...extra, k]); setFormation(k); } };
-  const remove = (k) => { save(extra.filter((x) => x !== k)); if (formation === k) setFormation("433"); };
+  const remove = (k) => { save(extra.filter((x) => x !== k)); if (formation === k) setFormation(null); };
   return (
     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }} data-testid="formation-picker">
-      <TabBar id="formation" value={formation} onChange={setFormation} tabs={tabs} />
+      <TabBar id="formation" value={plan.formation.key} onChange={setFormation} tabs={tabs} />
+      {plan.from_save && <small className="st g" data-testid="formation-from-save">Your tactics from the save</small>}
       {extra.map((k) => <button key={k} className="btn" style={{ height: 30, padding: "0 8px" }} title={`Remove ${plan.all_formations[k]}`} onClick={() => remove(k)} data-testid={`formation-remove-${k}`}><X size={12} />{plan.all_formations[k]}</button>)}
       {extra.length < 3 && <select className="inp" style={{ width: 190, height: 34 }} value="" onChange={(e) => add(e.target.value)} data-testid="formation-add-select">
         <option value="">+ Add a tactic ({3 - extra.length} left)</option>{options.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>}
@@ -75,7 +76,7 @@ export const LineupView = ({ formation, setFormation }) => {
     }
     setSlots(next); setMode("custom");
   };
-  const use = () => act(() => api.post("/lineups", { formation, kind: mode, slots, based_on_save_no: plan.save_no, expected_revision: plan.saved?.revision || 0 }),
+  const use = () => act(() => api.post("/lineups", { formation: plan.formation.key, kind: mode, slots, based_on_save_no: plan.save_no, expected_revision: plan.saved?.revision || 0 }),
     (d) => `Lineup saved (version ${d.revision})`, ["plan"]);
   return (
     <div>

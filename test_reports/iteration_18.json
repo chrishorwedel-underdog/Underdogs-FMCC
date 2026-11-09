@@ -1,0 +1,28 @@
+{
+  "summary": "Frontend-only retest of the text-size zoom fix (Playwright, 1920x1080 and 390x844). The iteration_17 HIGH bug is FIXED. Squad pitch popover at 100%: token centre equals popover centre (dx 0), 4.2px below the token. At 125%: dx 0.5px, 4.1px below the token. At 140%: dx 0. Floating-ui flips it above the token because there is no room below (popover bottom 849, token top 853, a 4px gap), and it stays inside the viewport. .app computed zoom is 1 / 1.25 / 1.4, documentElement inline and computed zoom are empty / 1, and scrollHeight equals innerHeight (1080) with no horizontal overflow. At 125% the sidebar scrolls (1218 > 864, overflow auto) and .content scrolls (scrollTop reaches 400). Player sheet at 125%: role=dialog is a direct child of body with zoom 1.25, box 1370,0 550x1080 (full height, right side), content scales and scrolls, and Esc closes it. The sonner toaster has zoom 1.25 at 125% and the toast fits inside the viewport (bottom 1050 of 1080). Iteration_17 regression checks pass. The logo-to-Home gap is 62.6px, equal to the Home box height. Themes set --bg correctly (black #000000, dim #16191E, navy #070B16, dark #08090B). Navy + green + motion off + grain off + 125% persists after reload (localStorage, --bg, --acc, html classes no-motion/no-grain, zoom 1.25). Reset restores the defaults and shows the toast. Switches use the accent colour when checked: red gives rgb(255,110,110) and green gives rgb(52,211,153); unchecked is rgba(255,255,255,.13). Mobile 390: sidebar hidden, no horizontal scroll, Appearance page usable. The only Radix popper in the app is the Pitch Popover. There are no Radix Select/DropdownMenu/Tooltip usages outside components/ui, and the Notify bell panel is a plain fixed div inside .app. Appearance was reset to defaults at the end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Squad pitch popover at 125/140%", "issues": ["Popover content is not zoomed (fixed 288px wide, 16px base font), so its text looks smaller than the zoomed app around it. This is an accepted trade-off for correct placement. Optionally scale its font-size by var(--z) without using zoom."]},
+      {"screen": "Top bar at 140% on 1920px (known, not fixed)", "issues": ["Date, 'Sample save · save read 1 h ago' and 'Game changes' wrap onto 2-3 lines, and the Ctrl K kbd is clipped"]},
+      {"screen": "Mobile 390px top bar, even at 100%", "issues": ["'FM27 · December 2027' wraps to 3 lines, 'Game changes' wraps, and the 'Raw' checkbox label is cut off at the right edge"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: top bar nowrap/ellipsis or hide the secondary text at 140% and on mobile",
+    "Optional: scale the pitch popover font by var(--z) so it matches the zoomed app"
+  ],
+  "critical_code_review_comments": [
+    "App.css: the selector body>[role=dialog] only zooms dialogs portalled directly into body. If a future Radix Dialog/Sheet is wrapped in an extra div (e.g. a custom portal container), it will not be zoomed. Consider adding a class to the sheet/dialog content instead.",
+    "Any future Radix Select/DropdownMenu/Tooltip content will be unzoomed (smaller text) by design. Recharts tooltips sit inside the zoomed .app and were not verified, because the Matches page showed no chart in sample mode."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100% of requested checks (cosmetic notes only)"},
+  "seed_data_creation": "None. Appearance reset to defaults at the end.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Each Playwright run starts with empty localStorage. Set the size via nav-appearance -> appearance-text-{100|112|125|140}. Popover: nav-squad -> pitch-token-ST -> [data-testid^=pitch-options-]. Sheet: squad-view-tab-players -> first [data-testid^=squad-row] -> player-sheet. A sonner toast only exists after an action (Reset). To test the toast at 125%, click Reset and then 125 quickly. The Matches page had no recharts chart in sample mode."
+}

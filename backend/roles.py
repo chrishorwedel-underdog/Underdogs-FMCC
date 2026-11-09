@@ -63,6 +63,21 @@ EXTRA_FORMATIONS = {k: (n, [_S[s] for s in slots]) for k, n, slots in [
     ("532", "5-3-2", _B5 + ["MCL", "MC", "MCR", "STL", "STR"]), ("541", "5-4-1", _B5 + ["ML", "MCL", "MCR", "MR", "ST"]),
     ("5212", "5-2-1-2", _B5 + ["MCL", "MCR", "AMC", "STL", "STR"]), ("523", "5-2-3", _B5 + ["MCL", "MCR", "AML", "AMR", "ST"])]}
 ALL_FORMATIONS = FORMATIONS | EXTRA_FORMATIONS
+FM_CODE = {"DMC": "DM", "DML": "DMCL", "DMR": "DMCR", "STC": "ST", "STCL": "STL", "STCR": "STR", "SC": "ST", "SCL": "STL", "SCR": "STR"}
+
+
+def match_tactic(t: dict) -> str | None:
+    """Closest FMCC formation for a tactic read from the save: by its 11 position codes, else a shape like 4-2-3-1 in its name."""
+    import re
+    from collections import Counter
+    codes = Counter(FM_CODE.get(c, c) for c in (str(x).upper().replace(" ", "") for x in t.get("positions") or []))
+    if sum(codes.values()) >= 10:
+        score = {k: sum((codes & Counter(s[0] for s in v[1])).values()) for k, v in ALL_FORMATIONS.items()}
+        best = max(score, key=lambda k: (score[k], k in FORMATIONS))
+        if score[best] >= 8:
+            return best
+    m = re.search(r"\d(?:-\d){2,4}", t.get("name") or "")
+    return next((k for k, v in ALL_FORMATIONS.items() if m and v[0].startswith(m.group(0))), None)
 DEFAULT_RULES = {"target_minutes": 270, "max_youth": 3, "max_team_drop": 5, "max_slot_drop": 15}
 
 
