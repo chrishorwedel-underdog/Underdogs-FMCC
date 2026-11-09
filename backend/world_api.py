@@ -3,9 +3,11 @@ import random
 from datetime import date
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 
+import leagues_api
 import stats_model as sm
-from core import db, active_career, now_iso
+from core import db, active_career, now_iso, new_id, next_revision, audit
 from editor_api import LIVE
 from sample_reader import GROUP, LEAGUE_INFO, LEAGUES, WOMEN
 
@@ -55,7 +57,29 @@ def name_unnamed(tables: list, pool: list, workbook: list) -> dict:
             best = min(cands, key=lambda r: abs((r.get("tier") or len(cands) + expected) - expected) * 2 + (0 if r.get("teams") == len(t["rows"]) else 1))
             cands.remove(best)
             renames[t["league"]] = best["name"]
-            t.update(league=best["name"], named_from_workbook=True)
+            t.update(orig=t.get("orig") or t["league"], league=best["name"], named_from_workbook=True)
+    for p in pool:
+        if p.get("league") in renames:
+            p["league"] = renames[p["league"]]
+    return renames
+
+
+async def overrides(career_id: str) -> dict:
+    """Your league renames: original save name -> your name (latest revision wins; None = back to automatic)."""
+    out = {}
+    async for d in db.league_names.find({"career_id": career_id}, {"_id": 0}).sort("revision", 1):
+        out[d["orig"]] = d["name"]
+    return {k: v for k, v in out.items() if v}
+
+
+def apply_overrides(tables: list, pool: list, names: dict) -> dict:
+    """Renames tables (by their original save name) and the matching pool players in place; returns current -> new."""
+    renames = {}
+    for t in tables:
+        orig = t.setdefault("orig", t["league"])
+        if orig in names and names[orig] != t["league"]:
+            renames[t["league"]] = names[orig]
+            t.update(league=names[orig], named_by_you=True, named_from_workbook=False)
     for p in pool:
         if p.get("league") in renames:
             p["league"] = renames[p["league"]]
@@ -84,7 +108,7 @@ def _table(league: str, months: int, rows_by_club: dict) -> list:
     """SAMPLE league table for the browser preview: four rounds a month, results weighted by squad rating."""
     clubs = LEAGUES[league]
     pts = {c: {"club": c, "p": 0, "w": 0, "d": 0, "l": 0, "gf": 0, "ga": 0, "pts": 0} for c in clubs}
-    power = {c: sum(x.get("avg_rating") or 6.5 for x in rows_by_club.get(c, [])) / max(1, len(rows_by_club.get(c, []))) for c in clubs}
+    power = {c: (sum(x.get("avg_rating") or 6.5 for x in rows_by_club[c]) / len(rows_by_club[c])) if rows_by_club.get(c) else 6.5 for c in clubs}
     for rnd in range(months * 4):
         rng = random.Random(f"{league}-{rnd}")
         n = len(clubs)
@@ -225,11 +249,24 @@ async def report(country: str | None = Query(None, max_length=60), month: str | 
     cur = await db.world_months.find_one({"career_id": c["id"], "month": month}, {"_id": 0})
     prev = await db.world_months.find_one({"career_id": c["id"], "month": {"$lt": month}}, {"_id": 0}, sort=[("month", -1)])
     rows_all = [r for r in _month_rows(cur, prev) if r.get("gender") != "F"]
+    yours = await overrides(c["id"])
+    renames = apply_overrides(cur.get("tables") or [], [], yours)
+    if prev and prev.get("tables"):
+        renames |= apply_overrides(prev["tables"], [], yours)
+    sample_names = {lg: yours[lg] for lg in LEAGUES if lg in yours} if not cur.get("tables") else {}
+    for r in rows_all + (prev or {}).get("players", []):
+        r["league"] = renames.get(r["league"]) or sample_names.get(r["league"]) or r["league"]
     countries = sorted({r["country"] for r in rows_all})
     if country and country not in countries:
         raise HTTPException(404, "That country isn't in your loaded leagues")
     rows = [r for r in rows_all if not country or r["country"] == country]
     tables = _tables(cur, prev, rows_all, country)
+    for t in tables:
+        t.setdefault("orig", t["league"])
+        if t["orig"] in sample_names:
+            t.update(league=sample_names[t["orig"]], named_by_you=True)
+    wb = (await leagues_api.opta_list(c["id"]))["leagues"]
+    options = sorted({r["name"] for r in wb if r.get("country") in {t["country"] for t in tables}})
     transfers = [t for t in _transfers(rows_all, prev) if not country or country in (t["country"], t["from_country"])]
     awards = _awards(rows, 180 if prev and prev["season"] == cur["season"] else 360)
     news = _news(rows, tables, transfers, awards, f"{country}'s" if country else "the World")
@@ -239,6 +276,27 @@ async def report(country: str | None = Query(None, max_length=60), month: str | 
     return {"month": month, "months": months, "game_date": cur["game_date"], "from": prev["game_date"] if prev else None, "season_so_far": not (prev and prev["season"] == cur["season"]),
             "country": country, "countries": [{"country": k, "leagues": sorted({r["league"] for r in rows_all if r["country"] == k})} for k in countries],
             "news": news[:5] if country else news[:12], "tables": tables, "transfers": transfers[:10], "leaders": [x for x in leaders if x["rows"]], "awards": awards,
-            "sample": not LIVE, "tables_note": None if tables else "No league tables in this save yet. FM only keeps a table once its clubs have played a match.",
+            "sample": not LIVE, "name_options": options, "tables_note": None if tables else "No league tables in this save yet. FM only keeps a table once its clubs have played a match.",
             "names_note": ("Some competitions show as 'Competition 123': neither the save nor your league strength workbook has their names." if any(t["league"].startswith("Competition ") for t in tables)
-                           else "League names marked * come from your league strength workbook, matched by country and level." if any(t.get("named_from_workbook") for t in tables) else None)}
+                           else "League names marked * come from your league strength workbook, matched by country and level. Use the pencil to fix one." if any(t.get("named_from_workbook") for t in tables) else None)}
+
+
+class LeagueNameIn(BaseModel):
+    orig: str = Field(min_length=1, max_length=120)
+    name: str = Field(default="", max_length=80)
+
+
+@router.post("/league-names")
+async def rename_league(body: LeagueNameIn):
+    c = await active_career()
+    name = body.name.strip() or None
+    rev = await next_revision("league_names", {"career_id": c["id"], "orig": body.orig})
+    await db.league_names.insert_one({"id": new_id(), "career_id": c["id"], "orig": body.orig, "name": name, "revision": rev, "at": now_iso()})
+    await audit(c["id"], "league renamed", "world", f"{body.orig} → {name}" if name else f"{body.orig}: back to the automatic name")
+    return {"orig": body.orig, "name": name, "revision": rev}
+
+
+@router.get("/league-names")
+async def league_name_history():
+    c = await active_career()
+    return await db.league_names.find({"career_id": c["id"]}, {"_id": 0}).sort("at", -1).to_list(200)

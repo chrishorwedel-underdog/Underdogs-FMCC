@@ -1,5 +1,7 @@
-import { Newspaper, Trophy, ArrowLeftRight, BarChart3, Table2, ArrowUp, ArrowDown } from "lucide-react";
-import { gameDate } from "@/lib/api";
+import { useState } from "react";
+import { Newspaper, Trophy, ArrowLeftRight, BarChart3, Table2, ArrowUp, ArrowDown, Pencil } from "lucide-react";
+import { api, gameDate } from "@/lib/api";
+import { useAct } from "@/lib/ui";
 
 const money = (v) => (v >= 1e6 ? `€${(v / 1e6).toFixed(1)}m` : `€${Math.round(v / 1000)}k`);
 const Who = ({ r }) => <><b style={{ color: "var(--text)" }}>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.age} · {r.club}</small></>;
@@ -27,13 +29,37 @@ const Awards = ({ d }) => (
   </div>
 );
 
+const LeagueTitle = ({ t, options }) => {
+  const act = useAct();
+  const [edit, setEdit] = useState(false);
+  const [name, setName] = useState(t.league);
+  const save = (n) => act(() => api.post("/world/league-names", { orig: t.orig, name: n }), n ? `Renamed to ${n}` : "Back to the automatic name", ["world-report"]).then((r) => r && setEdit(false));
+  if (edit) {
+    return (
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 6 }}>
+        <input className="inp" style={{ flex: "1 1 160px", height: 30 }} list={`wb-${t.orig}`} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} data-testid={`world-rename-input-${t.orig}`} />
+        <datalist id={`wb-${t.orig}`}>{options.map((o) => <option key={o} value={o} />)}</datalist>
+        <button className="btn btn-g" disabled={!name.trim()} onClick={() => save(name.trim())} data-testid={`world-rename-save-${t.orig}`}>Save</button>
+        {t.named_by_you && <button className="btn" onClick={() => save("")} data-testid={`world-rename-reset-${t.orig}`}>Automatic</button>}
+        <button className="btn" onClick={() => setEdit(false)} data-testid={`world-rename-cancel-${t.orig}`}>Cancel</button>
+      </div>
+    );
+  }
+  return (
+    <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span data-testid={`world-table-name-${t.orig}`}>{t.league}{t.named_from_workbook ? " *" : ""}{t.named_by_you ? " (your name)" : ""} · {t.country}</span>
+      <button className="ib" title={t.orig !== t.league ? `Rename (the save calls it ${t.orig})` : "Rename"} onClick={() => { setName(t.league); setEdit(true); }} data-testid={`world-rename-${t.orig}`}><Pencil size={11} /></button>
+    </div>
+  );
+};
+
 const Tables = ({ d }) => (
   <div className="card" data-testid="world-tables"><div className="ttl"><Table2 size={14} />League tables</div>
     {d.tables_note && <p className="note">{d.tables_note}</p>}
     {d.names_note && <p className="note" data-testid="world-names-note">{d.names_note}</p>}
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: 14, marginTop: 8 }}>
       {d.tables.map((t) => (
-        <div key={t.league} style={{ overflowX: "auto" }} data-testid={`world-table-${t.league}`}><div className="eyebrow">{t.league}{t.named_from_workbook ? " *" : ""} · {t.country}</div>
+        <div key={t.orig} style={{ overflowX: "auto" }} data-testid={`world-table-${t.league}`}><LeagueTitle t={t} options={d.name_options || []} />
           <table className="tbl"><thead><tr><th>#</th><th>Club</th><th>P</th><th>GD</th><th>Pts</th><th></th></tr></thead>
             <tbody>{(d.country ? t.rows : t.rows.slice(0, 4)).map((r) => <tr key={r.club} style={{ cursor: "default" }}><td className="mono">{r.pos}</td><td>{r.club}</td><td className="mono">{r.p}</td><td className="mono">{r.gd > 0 ? "+" : ""}{r.gd}</td><td className="mono"><b>{r.pts}</b></td>
               <td>{r.move > 0 ? <span className="up"><ArrowUp size={12} />{r.move}</span> : r.move < 0 ? <span className="down"><ArrowDown size={12} />{-r.move}</span> : ""}</td></tr>)}</tbody></table>

@@ -28,3 +28,12 @@ def test_names_by_country_and_level():
 def test_named_tables_keep_their_names_and_tier():
     tables = [_t("Premier League", "England", 9000, 20), _t("Competition 7", "England", 5000, 24)]
     assert world_api.name_unnamed(tables, [], WB) == {"Competition 7": "EFL Championship"}
+
+
+def test_your_names_win_over_automatic():
+    tables = [_t("Competition 7", "England", 5000, 24), _t("Competition 3", "England", 9000, 20)]
+    pool = [{"league": "Competition 7"}]
+    world_api.apply_overrides(tables, pool, {"Competition 7": "Sky Bet Championship"})
+    world_api.name_unnamed(tables, pool, WB)
+    assert tables[0]["league"] == "Sky Bet Championship" and tables[0]["named_by_you"] and pool[0]["league"] == "Sky Bet Championship"
+    assert tables[1]["league"] == "Premier League" and tables[1]["orig"] == "Competition 3"

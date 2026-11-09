@@ -139,6 +139,7 @@ async def read_next_save(career: dict) -> dict:
     if tables:
         import leagues_api
         from core import audit
+        world_api.apply_overrides(tables, pool, await world_api.overrides(career["id"]))
         renames = world_api.name_unnamed(tables, pool, (await leagues_api.opta_list(career["id"]))["leagues"])
         if renames:
             await audit(career["id"], "league names", "world", f"{len(renames)} unnamed competition(s) named from the league strength workbook")
