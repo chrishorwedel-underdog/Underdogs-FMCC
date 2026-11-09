@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { api } from "@/lib/api";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
+import { AppFooter } from "@/components/AppFooter";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModuleGuide } from "@/components/ModuleGuide";
@@ -76,6 +77,7 @@ const Shell = ({ state }) => {
             <Route path="*" element={<Home />} />
           </Routes>
         </div>
+        <AppFooter />
       </section>
       <CommandPalette open={pal} onClose={() => setPal(false)} />
     </div>

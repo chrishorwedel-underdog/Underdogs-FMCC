@@ -196,4 +196,6 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - World Monthly Reports: World / Continent / Nation / League levels (continent from workbook confederation column). Awards counted by where the player plays at every level.
 - Continent award tally (World level): per season, World Player of the Month awards incl. runners-up (3/2/1 pts) per continent; season picker. API GET /api/world/continent-tally. Tested iteration_21 (all pass).
 - Sidebar: logo gap halved, nav boxes 15% shorter.
+- Project Safety, Downloads and Appearance moved from the sidebar into a centred footer bar at the bottom of the app (components/AppFooter.jsx), also visible on mobile.
+
 

@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { Sparkles } from "lucide-react";
-import { NAV, TOP_LINKS } from "@/constants/nav";
+import { NAV } from "@/constants/nav";
 import { useNotices } from "@/components/Notify";
 
 export const Sidebar = () => {
@@ -19,11 +19,6 @@ export const Sidebar = () => {
         </NavLink>
       ))}
     </nav>
-    <div className="botlinks">
-      {TOP_LINKS.map(({ to, key, label, Icon }) => (
-        <NavLink key={key} to={to} className={({ isActive }) => `tl${isActive ? " on" : ""}`} data-testid={`nav-${key}`}><Icon size={14} />{label}</NavLink>
-      ))}
-    </div>
     <div className="foot">
       <NavLink to="/dof" className="dofbtn" data-testid="nav-ask-dof">
         <b><Sparkles size={18} strokeWidth={2.3} />Chat with your</b>
