@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Newspaper, Trophy, ArrowLeftRight, BarChart3, Table2, ArrowUp, ArrowDown, Pencil } from "lucide-react";
 import { api, gameDate } from "@/lib/api";
-import { useAct } from "@/lib/ui";
+import { useAct, useGet } from "@/lib/ui";
 
 const money = (v) => (v >= 1e6 ? `€${(v / 1e6).toFixed(1)}m` : `€${Math.round(v / 1000)}k`);
 const Who = ({ r }) => <><b style={{ color: "var(--text)" }}>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.age} · {r.club}</small></>;
@@ -33,7 +33,7 @@ const LeagueTitle = ({ t, options }) => {
   const act = useAct();
   const [edit, setEdit] = useState(false);
   const [name, setName] = useState(t.league);
-  const save = (n) => act(() => api.post("/world/league-names", { orig: t.orig, name: n }), n ? `Renamed to ${n}` : "Back to the automatic name", ["world-report"]).then((r) => r && setEdit(false));
+  const save = (n) => act(() => api.post("/world/league-names", { orig: t.orig, name: n }), n ? `Renamed to ${n}` : "Back to the automatic name", ["world-report", "world-award-history"]).then((r) => r && setEdit(false));
   if (edit) {
     return (
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 6 }}>
@@ -90,6 +90,20 @@ const Leaders = ({ d }) => (
   </div>
 );
 
+const History = ({ country }) => {
+  const { data } = useGet("world-award-history", "/world/award-history", { country });
+  if (!data) return null;
+  const keys = Object.keys(data.labels);
+  return (
+    <div className="card" style={{ overflowX: "auto" }} data-testid="world-award-history"><div className="ttl"><Trophy size={14} />{country ? `${country}'s` : "World"} award history</div>
+      <table className="tbl" style={{ marginTop: 6 }}><thead><tr><th>Month</th>{keys.map((k) => <th key={k}>{data.labels[k].replace(" of the Month", "")}</th>)}</tr></thead>
+        <tbody>{data.months.map((m) => <tr key={m.month} style={{ cursor: "default" }} data-testid={`world-history-${m.month}`}>
+          <td className="mono">{gameDate(`${m.month}-01`, { month: "short", year: "numeric" })}{m.season_so_far && <small style={{ display: "block", color: "var(--dim)" }}>season so far</small>}</td>
+          {keys.map((k) => <td key={k}>{m.winners[k] ? <Who r={m.winners[k]} /> : <span style={{ color: "var(--dim)" }}>—</span>}</td>)}</tr>)}</tbody></table>
+    </div>
+  );
+};
+
 export const WorldReport = ({ d, openCountry }) => (
   <div style={{ display: "grid", gap: 16 }} data-testid="world-report">
     <p className="note" data-testid="world-period">{d.season_so_far ? `Season so far, to ${gameDate(d.game_date)}` : `${gameDate(d.from)} to ${gameDate(d.game_date)}`}{d.sample && " · SAMPLE world data in this browser preview"}</p>
@@ -97,6 +111,7 @@ export const WorldReport = ({ d, openCountry }) => (
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{d.countries.map((c) => <button key={c.country} className="btn" title={c.leagues.join(", ")} onClick={() => openCountry(c.country)} data-testid={`world-country-${c.country}`}>{c.country}<small style={{ marginLeft: 6, color: "var(--dim)" }}>{c.leagues.length} league{c.leagues.length > 1 ? "s" : ""}</small></button>)}</div></div>}
     <News d={d} />
     <Awards d={d} />
+    <History country={d.country} />
     <Tables d={d} />
     <Transfers d={d} />
     <Leaders d={d} />

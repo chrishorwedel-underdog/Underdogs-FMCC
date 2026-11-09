@@ -281,6 +281,26 @@ async def report(country: str | None = Query(None, max_length=60), month: str | 
                            else "League names marked * come from your league strength workbook, matched by country and level. Use the pencil to fix one." if any(t.get("named_from_workbook") for t in tables) else None)}
 
 
+@router.get("/award-history")
+async def award_history(country: str | None = Query(None, max_length=60)):
+    """Every month's winners (world, or one country), newest first; worked out from the stored monthly snapshots."""
+    c = await active_career()
+    yours = await overrides(c["id"])
+    months = await db.world_months.find({"career_id": c["id"]}, {"_id": 0}).sort("month", 1).to_list(None)
+    out = []
+    for i, cur in enumerate(months):
+        prev = months[i - 1] if i else None
+        renames = apply_overrides(cur.get("tables") or [], [], yours)
+        rows = [r for r in _month_rows(cur, prev) if r.get("gender") != "F"]
+        for r in rows:
+            r["league"] = renames.get(r["league"]) or yours.get(r["league"]) or r["league"]
+        rows = [r for r in rows if not country or r["country"] == country]
+        awards = _awards(rows, 180 if prev and prev["season"] == cur["season"] else 360)
+        out.append({"month": cur["month"], "season": cur["season"], "season_so_far": not (prev and prev["season"] == cur["season"]),
+                    "winners": {k: (a["picks"][0] if a["picks"] else None) for k, a in awards.items()}})
+    return {"country": country, "labels": {k: lab for k, lab, _ in AWARDS}, "months": out[::-1]}
+
+
 class LeagueNameIn(BaseModel):
     orig: str = Field(min_length=1, max_length=120)
     name: str = Field(default="", max_length=80)
