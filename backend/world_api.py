@@ -10,7 +10,7 @@ from editor_api import LIVE
 from sample_reader import GROUP, LEAGUE_INFO, LEAGUES, WOMEN
 
 router = APIRouter(prefix="/api/world")
-KEEP = ("unique_id", "name", "age", "club", "league", "positions", "value", "minutes", "appearances", "goals", "assists", "avg_rating", "last_move", "gender")
+KEEP = ("unique_id", "name", "age", "club", "league", "country", "positions", "value", "minutes", "appearances", "goals", "assists", "avg_rating", "last_move", "gender")
 MONTH_STATS = [("goals", "Goals"), ("assists", "Assists"), ("contrib", "Goal contributions"), ("rating", "Average match rating"), ("minutes", "Minutes played")]
 P90 = ["npxg", "xa", "kp", "chc", "progp", "drb", "tkw", "prr", "pwon", "padbc", "savep", "xgp"]
 AWARDS = [("attacker", "Attacker of the Month", {"ST", "AM", "W"}), ("defender", "Defender of the Month", {"CB", "FB"}),
@@ -30,7 +30,7 @@ async def record_month(career_id: str, pool_doc: dict):
     month = pool_doc["game_date"][:7]
     await db.world_months.update_one({"career_id": career_id, "month": month},
                                      {"$set": {"save_no": pool_doc["save_no"], "season": pool_doc["season"], "game_date": pool_doc["game_date"],
-                                               "players": compact(pool_doc["players"]), "at": now_iso()}}, upsert=True)
+                                               "players": compact(pool_doc["players"]), "tables": pool_doc.get("tables"), "at": now_iso()}}, upsert=True)
 
 
 def _month_rows(cur: dict, prev: dict | None) -> list:
@@ -47,7 +47,7 @@ def _month_rows(cur: dict, prev: dict | None) -> list:
         g = (p["goals"] or 0) - ((o or {}).get("goals") or 0)
         a = (p.get("assists") or 0) - ((o or {}).get("assists") or 0)
         out.append(p | {"m_minutes": max(0, mins), "m_apps": max(0, apps), "m_rating": rating if rating and 3 <= rating <= 10 else r2 if not o else None,
-                        "m_goals": max(0, g), "m_assists": max(0, a), "country": country_of(p["league"]), "group": GROUP.get((p["positions"] or ["M (C)"])[0], "CM")})
+                        "m_goals": max(0, g), "m_assists": max(0, a), "country": p.get("country") or country_of(p["league"]), "group": GROUP.get((p["positions"] or ["M (C)"])[0], "CM")})
     return out
 
 
@@ -82,6 +82,11 @@ def _months_played(game_date: str) -> int:
 
 
 def _tables(cur: dict, prev: dict | None, rows: list, country: str | None) -> list:
+    if cur.get("tables"):
+        same = prev and prev["season"] == cur["season"]
+        before = {(t["league"], r["club"]): r["pos"] for t in (prev or {}).get("tables") or [] for r in t["rows"]} if same else {}
+        return [t | {"women": False, "rows": [r | {"move": before[(t["league"], r["club"])] - r["pos"] if (t["league"], r["club"]) in before else 0} for r in t["rows"]]}
+                for t in cur["tables"] if not country or t["country"] == country]
     if LIVE:
         return []
     by_club = {}
@@ -107,7 +112,7 @@ def _transfers(rows: list, prev: dict | None) -> list:
         if o and o["club"] != r["club"]:
             fee = (r.get("last_move") or {}).get("fee")
             out.append({"unique_id": r["unique_id"], "name": r["name"], "age": r["age"], "from_club": o["club"], "from_league": o["league"], "to_club": r["club"],
-                        "to_league": r["league"], "country": r["country"], "from_country": country_of(o["league"]), "fee": fee or r["value"], "estimated": not fee})
+                        "to_league": r["league"], "country": r["country"], "from_country": o.get("country") or country_of(o["league"]), "fee": fee or r["value"], "estimated": not fee})
     return sorted(out, key=lambda t: -t["fee"])
 
 
@@ -205,4 +210,5 @@ async def report(country: str | None = Query(None, max_length=60), month: str | 
     return {"month": month, "months": months, "game_date": cur["game_date"], "from": prev["game_date"] if prev else None, "season_so_far": not (prev and prev["season"] == cur["season"]),
             "country": country, "countries": [{"country": k, "leagues": sorted({r["league"] for r in rows_all if r["country"] == k})} for k in countries],
             "news": news[:5] if country else news[:12], "tables": tables, "transfers": transfers[:10], "leaders": [x for x in leaders if x["rows"]], "awards": awards,
-            "sample": not LIVE, "tables_note": None if tables else "League tables need FMCC's save reader to read fixtures, which it can't do yet."}
+            "sample": not LIVE, "tables_note": None if tables else "No league tables in this save yet. FM only keeps a table once its clubs have played a match.",
+            "names_note": "Some competitions may show as 'Competition 123': the save doesn't hold their names." if any(t["league"].startswith("Competition ") for t in tables) else None}

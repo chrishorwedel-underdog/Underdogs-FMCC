@@ -30,6 +30,7 @@ const Awards = ({ d }) => (
 const Tables = ({ d }) => (
   <div className="card" data-testid="world-tables"><div className="ttl"><Table2 size={14} />League tables</div>
     {d.tables_note && <p className="note">{d.tables_note}</p>}
+    {d.names_note && <p className="note" data-testid="world-names-note">{d.names_note}</p>}
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: 14, marginTop: 8 }}>
       {d.tables.map((t) => (
         <div key={t.league} style={{ overflowX: "auto" }} data-testid={`world-table-${t.league}`}><div className="eyebrow">{t.league} · {t.country}</div>
