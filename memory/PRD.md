@@ -197,5 +197,7 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Continent award tally (World level): per season, World Player of the Month awards incl. runners-up (3/2/1 pts) per continent; season picker. API GET /api/world/continent-tally. Tested iteration_21 (all pass).
 - Sidebar: logo gap halved, nav boxes 15% shorter.
 - Project Safety, Downloads and Appearance moved from the sidebar into a centred footer bar at the bottom of the app (components/AppFooter.jsx), also visible on mobile.
+- Footer version tag (AppFooter VersionTag): shows installed FMCC version from /api/updates (fmcc component), pulsing dot when status=update_available; links to Settings. Shows "FMCC preview build" when version is dev (browser preview).
+
 
 
