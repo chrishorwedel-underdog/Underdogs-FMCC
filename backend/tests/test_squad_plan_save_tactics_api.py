@@ -1,4 +1,5 @@
 """Squad plan API: formations default to the tactics read from the save (iteration 19)."""
+# iteration 20: formations/all_formations are now ordered [key,label] lists
 import os
 import pytest
 import requests
@@ -24,10 +25,10 @@ def test_default_plan_uses_first_save_tactic(s):
     d = r.json()
     assert d["formation"]["key"] == "4231"
     assert d["from_save"] is True
-    assert d["formations"] == SAVE_TACTICS
+    assert d["formations"] == [list(x) for x in SAVE_TACTICS.items()]
     assert len(d["best"]["slots"]) == 11 and len(d["dev"]["slots"]) == 11
     for k in SAVE_TACTICS:
-        assert k in d["all_formations"]
+        assert k in dict(d["all_formations"])
 
 
 # Each save tactic shape and an extra still work
@@ -37,7 +38,7 @@ def test_plan_each_formation(s, key):
     assert r.status_code == 200
     d = r.json()
     assert d["formation"]["key"] == key
-    assert d["formations"] == SAVE_TACTICS
+    assert d["formations"] == [list(x) for x in SAVE_TACTICS.items()]
     for mode in ("best", "dev", "domestic", "cup", "uefa"):
         assert len(d[mode]["slots"]) == 11
         assert len(set(d[mode]["slots"].values())) == 11

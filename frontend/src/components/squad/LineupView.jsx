@@ -53,7 +53,7 @@ const Formations = ({ plan, formation, setFormation }) => {
     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }} data-testid="formation-picker">
       <TabBar id="formation" value={plan.formation.key} onChange={setFormation} tabs={tabs} />
       {plan.from_save && <small className="st g" data-testid="formation-from-save">Your tactics from the save</small>}
-      {extra.map((k) => <button key={k} className="btn" style={{ height: 30, padding: "0 8px" }} title={`Remove ${names[k]}`} onClick={() => remove(k)} data-testid={`formation-remove-${k}`}><X size={12} />{plan.all_formations[k]}</button>)}
+      {extra.map((k) => <button key={k} className="btn" style={{ height: 30, padding: "0 8px" }} title={`Remove ${names[k]}`} onClick={() => remove(k)} data-testid={`formation-remove-${k}`}><X size={12} />{names[k]}</button>)}
       {extra.length < 3 && <select className="inp" style={{ width: 190, height: 34 }} value="" onChange={(e) => add(e.target.value)} data-testid="formation-add-select">
         <option value="">+ Add a tactic ({3 - extra.length} left)</option>{options.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>}
     </div>

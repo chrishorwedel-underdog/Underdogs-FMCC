@@ -1,0 +1,33 @@
+{
+  "summary": "Tested the World Monthly Reports continent, nation and league scopes, plus the Squad formation tab order fix. Backend: 26/26 pytest pass. That covers the new test_world_continent_scopes.py (11 tests) plus the regression files test_squad_plan_save_tactics_api.py, test_world_league_names.py and test_tactics_from_save.py. I updated the old squad plan test to the new [key,label] list shape. Frontend (Playwright, 1920 and 390 wide): every requested flow works. The World view has 'All continents/Europe' in the continent select, a Europe button ('5 nations') and 5 Nation buttons, and 12 stories. Picking Europe, from the select or the button, sets the URL to ?continent=Europe. Its headings say 'Europe: top stories', 'Europe's players of the month' and 'Europe's award history', with 8 stories, the European tables, and Nation reports only. Picking England sets continent=Europe&country=England and enables the league select ('All leagues', 'Premier Division'). It shows 5 stories, full tables and a Premier Division league button. Picking Premier Division shows only that league's table and hides the scope card. Its history card says 'Premier Division's award history', and the API confirms that awards, leaders and history winners all come from Premier Division. The breadcrumbs read The World > Europe > England > Premier Division, each crumb goes up one level, and the month select keeps the scope. Picking a nation from the nation select also sets the continent. The ?continent=Mars URL shows the error with a working Back button. In the Squad tab, the tabs are now in save order (4-2-3-1 Gegenpress, Counter-attack (3-5-2), Direct 4-4-2) and the Add dropdown works with 20 options. One regression was found and fixed: the remove buttons for extra formations had blank labels. One open mobile bug: the report cards overflow at 390px. No page errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LineupView Formations remove buttons", "issue": "FIXED BY TESTER. The labels were empty (just an X) because the code used plan.all_formations[k], and all_formations is now a list. Changed it to names[k]. Verified that the buttons now read '4-3-3' and '4-4-1-1'.", "selector": "[data-testid^=formation-remove-]", "priority": "MEDIUM"},
+      {"component": "WorldReport grid (mobile 390px)", "issue": "The report cards overflow the screen. The world-report grid has an implicit 'auto' column, so its track is sized to 443px inside a 358px container. Cards reach right=459px and get clipped: text is cut off, e.g. the period line and the news items. The html has no scroll, so the content is simply cut. The 4 selects do wrap correctly. Fix: add gridTemplateColumns: 'minmax(0, 1fr)' to the world-report grid in WorldReport.jsx, or minWidth: 0 on the cards. The widest inner content is the award history table (436px) and the league tables (401px).", "selector": "[data-testid=world-report]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Reports 'What this page does' panel", "issues": ["It still says 'The 12 biggest world stories (3–5 per country)' and 'A report for the whole world and for every loaded country'. It does not mention continent or league reports, or the 8 and 5 story limits."]},
+      {"screen": "Reports error state", "issues": ["On ?continent=Mars the page shows 'Loading the world report…' for more than 2.5s before the 404 message appears. React Query probably retries 404s. Consider retry: false for 4xx."]},
+      {"screen": "Europe/England tables", "issues": ["The women's league table (Women's Super Division) appears in the Europe and England tables, but the league select and the League reports buttons don't list it. That is because rows exclude gender F, so it can't be opened as a league scope. Existing behaviour; may confuse users."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_world_continent_scopes.py", "/app/backend/tests/test_squad_plan_save_tactics_api.py", "/app/test_reports/pytest/pytest_results_iter20.xml"],
+  "action_items": [
+    "Fix the mobile overflow in WorldReport: add gridTemplateColumns 'minmax(0, 1fr)' to the world-report grid.",
+    "Optional: update the Reports page info text to mention continent and league reports and the story counts.",
+    "Optional: no react-query retry on 404 for /world/report, so the error shows at once."
+  ],
+  "critical_code_review_comments": [
+    "world_api.report calls leagues_api.opta_list twice: once inside _continents and once for name_options. They could share one call.",
+    "The award_history scope params are not validated: an unknown continent returns 200 with empty winners instead of 404. This doesn't match report().",
+    "Reports.jsx crumbs use key={label}. If a league is named the same as its country, the keys would clash (edge case)."
+  ],
+  "updated_files": ["/app/frontend/src/components/squad/LineupView.jsx", "/app/backend/tests/test_world_continent_scopes.py", "/app/backend/tests/test_squad_plan_save_tactics_api.py"],
+  "success_rate": {"backend": "100%", "frontend": "92% (all flows work; mobile overflow open)"},
+  "seed_data_creation": "None. localStorage fmcc-extra-formations was cleared at the start and at the end.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Sample career TEST FC. Only Europe is loaded, with 5 nations (England, Italy, Netherlands, Portugal, Scotland), 1 men's league each. Months run 2027-09 to 2028-01. On mobile, the tour redirects to home on first load: click tour-skip, then page.goto. To verify the mobile fix, check that every [data-testid=world-report] child has right <= 374 at 390px."
+}

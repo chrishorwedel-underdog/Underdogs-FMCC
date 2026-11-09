@@ -27,8 +27,8 @@ export const GUIDES = {
   },
   "/reports": {
     what: "Who made waves across the world last month: news, tables, transfers, stat leaders and monthly awards for every loaded league.",
-    features: ["The 12 biggest world stories (3–5 per country)", "Updated league tables with position changes", "The 10 biggest transfers by fee", "Top 10 leaders in every stat and analytics category, plus top 5 under-21s", "Attacker, Defender, Goalkeeper and U21 Player of the Month, each with two runners-up", "A report for the whole world and for every loaded country", "My squad: compare any two months of your own squad"],
-    how: ["Keep playing and saving: each in-game month gets its own report", "Open the World report, or pick a country for its own report and winners"],
+    features: ["The 12 biggest world stories (3–5 per country)", "Updated league tables with position changes", "The 10 biggest transfers by fee", "Top 10 leaders in every stat and analytics category, plus top 5 under-21s", "Attacker, Defender, Goalkeeper and U21 Player of the Month, each with two runners-up", "A report for the whole world, each continent, each nation and each league", "My squad: compare any two months of your own squad"],
+    how: ["Keep playing and saving: each in-game month gets its own report", "Open the World report, or pick a continent, nation or league for its own report and winners"],
   },
   "/moneyball": {
     what: "Compares transfer options side by side, judged on numbers and price.",

@@ -121,7 +121,7 @@ const Scopes = ({ d, open }) => {
 };
 
 export const WorldReport = ({ d, open }) => (
-  <div style={{ display: "grid", gap: 16 }} data-testid="world-report">
+  <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }} data-testid="world-report">
     <p className="note" data-testid="world-period">{d.season_so_far ? `Season so far, to ${gameDate(d.game_date)}` : `${gameDate(d.from)} to ${gameDate(d.game_date)}`}{d.sample && " · SAMPLE world data in this browser preview"}</p>
     <Scopes d={d} open={open} />
     <News d={d} />
