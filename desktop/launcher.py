@@ -11,6 +11,7 @@ BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 DATA = Path(os.environ.get("APPDATA", Path.home())) / "FMCC"
 DB_PORT, APP_PORT = 27817, 8765
 RESTART_AS_ADMIN = {"wanted": False}
+PENDING_INSTALL = {}
 WINDOW = {}
 
 
@@ -42,14 +43,23 @@ def start_server():
     sys.path.insert(0, str(BASE / "backend"))
     import uvicorn
     import connections_api
+    import self_update
     from server import app
     connections_api.restart_hook = restart_as_admin
+    self_update.install_hook = install_update
     uvicorn.run(app, host="127.0.0.1", port=APP_PORT, log_level="warning")
 
 
 def restart_as_admin():
     """Close this window; main() then stops the database and starts FMCC again with Windows' admin prompt."""
     RESTART_AS_ADMIN["wanted"] = True
+    if WINDOW.get("w"):
+        WINDOW["w"].destroy()
+
+
+def install_update(path: str):
+    """Close this window; main() then stops the database and runs the downloaded installer."""
+    PENDING_INSTALL["path"] = path
     if WINDOW.get("w"):
         WINDOW["w"].destroy()
 
@@ -67,6 +77,10 @@ def main():
     finally:
         db.terminate()
         db.wait(timeout=15)
+    if PENDING_INSTALL.get("path"):
+        import self_update
+        self_update.run_installer(PENDING_INSTALL["path"])
+        return
     if RESTART_AS_ADMIN["wanted"]:
         import ctypes
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, None, None, 1)

@@ -26,3 +26,4 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"
 
 [Run]
 Filename: "{app}\FMCC.exe"; Description: "Open FMCC"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\FMCC.exe"; Flags: nowait; Check: WizardSilent

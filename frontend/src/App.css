@@ -31,6 +31,10 @@ body>[role="dialog"],[data-sonner-toaster]{zoom:var(--z,1)}
 .app-foot .ver-tag{position:relative;font-family:var(--mono,monospace);font-size:11.5px;opacity:.75}
 .ver-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent);animation:verPulse 2s ease-in-out infinite}
 @keyframes verPulse{50%{box-shadow:0 0 0 6px transparent}}
+button.ver-tag{background:none;border:0;cursor:pointer}
+.upd-pop{display:grid;gap:6px;font-size:13px}
+.upd-pop ul,.wn-list{margin:2px 0 4px;padding-left:18px;display:grid;gap:4px;font-size:13px;color:var(--mut)}
+.wn-list{max-height:50vh;overflow:auto}
 @media (max-width:480px){.app-foot{gap:4px;padding:6px 8px}.app-foot .tl{padding:5px 8px;font-size:12px}}
 .tl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--mut);text-decoration:none;padding:4px 10px;border-radius:8px;transition:color .2s,background-color .2s}
 .tl:hover,.tl.on{color:var(--text);background:rgba(255,255,255,.05)}
