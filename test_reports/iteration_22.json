@@ -1,0 +1,33 @@
+{
+  "summary": "Tested One-Click Update (footer dot -> Update now popover) and What's New popup. Backend: /api/fmcc/latest, /install (409 in preview), /whats-new ({show:false} in dev), /whats-new/seen all behave as specified; pytest test_self_update.py 3/3 pass. Frontend: preview footer shows 'FMCC preview build' link to /settings with no dot; with Playwright route mocks the dot, popover (title, 4 notes from real /fmcc/latest, manual note, disabled Update now, Not now closes), can_install=true -> POST /install -> success toast; What's New dialog shows list/full notes/Got it (POSTs /seen and closes), empty state, Escape also closes+POSTs seen. Mobile 390px popover fits (no horizontal overflow). All requested checks passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/fmcc/latest (notes_items)", "issue": "First real item reads 'Continent award tally added The World Monthly Reports page now has a Continent award…' - bold title and following sentence get merged because the release body uses '**Title** text' rather than 'Title - text'; split on ' - ' doesn't catch it. Consider cutting at the end of the closing '**' so only the bold title is kept."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "What's New dialog on first load", "issues": ["Guided tour card ('1 of 15 Home', Skip tour/Next) shows at the same time as the What's New dialog, behind the overlay. Better to hold the tour until What's New is closed."]},
+      {"screen": "Update prompt / What's New lists", "issues": ["List items have no visible bullet markers (only indented), so the notes look a bit loose. Minor."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_self_update.py", "/app/test_reports/pytest/self_update.xml"],
+  "action_items": [
+    "Optional: make notes_items keep only the bold title when a line is '**Title** description'",
+    "Optional: don't start the guided tour while the What's New dialog is open"
+  ],
+  "critical_code_review_comments": [
+    "WhatsNew close(): both 'Got it' and onOpenChange call close(); fine, only one POST seen per close in testing.",
+    "UpdatePrompt: after a successful install the button stays 'Downloading…' (busy never resets). This is intended because the app closes, but if install_hook fails silently the user is stuck until reopening the popover.",
+    "install(): install_hook(str(dest)) runs outside io_lock and after the DB write. Fine, but nothing reports a hook exception to the user; wrap it in try/except and return 500 with a friendly message."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None. POST /whats-new/seen called once in preview (sets last_seen_version='dev', harmless).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Preview has FMCC_VERSION unset (dev), so update_available and whats-new show states need Playwright route mocks on **/api/updates, **/api/fmcc/latest, **/api/fmcc/install, **/api/fmcc/whats-new. Real install only works in the Windows program. Run pytest without -p no:xdist (pytest.ini sets -n)."
+}

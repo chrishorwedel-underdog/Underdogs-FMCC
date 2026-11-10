@@ -198,6 +198,9 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Sidebar: logo gap halved, nav boxes 15% shorter.
 - Project Safety, Downloads and Appearance moved from the sidebar into a centred footer bar at the bottom of the app (components/AppFooter.jsx), also visible on mobile.
 - Footer version tag (AppFooter VersionTag): shows installed FMCC version from /api/updates (fmcc component), pulsing dot when status=update_available; links to Settings. Shows "FMCC preview build" when version is dev (browser preview).
+- One-click update: footer dot opens an "Update now" popover (VersionTag.jsx) → POST /api/fmcc/install downloads FMCC-Setup.exe from the latest GitHub release to %APPDATA%\FMCC\updates, then the Windows launcher closes FMCC and runs it with /SILENT /CLOSEAPPLICATIONS; fmcc.iss reopens FMCC after a silent install. Preview returns 409 (Windows only).
+- What's New popup (WhatsNew.jsx): GET /api/fmcc/whats-new shows the release-note bullets once after the installed version changes; POST /api/fmcc/whats-new/seen. First install doesn't show it. Tested iteration_22 (all pass, UI states via mocks; real Windows install not yet verified).
+
 
 
 
