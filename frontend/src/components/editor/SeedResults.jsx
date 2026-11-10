@@ -45,7 +45,7 @@ const CurRow = ({ p, save, drop }) => (
     <td style={{ color: "var(--dim)" }}>{p.current_name}</td>
     <td><Cell v={p.first_name} onSave={(v) => save(p, { first_name: v })} id={`seed-first-${p.pid}`} /></td>
     <td><Cell v={p.last_name} onSave={(v) => save(p, { last_name: v })} id={`seed-last-${p.pid}`} /></td>
-    <td>{p.position}</td><td>{p.nationality}{!p.matched_nation && <small className="st n" style={{ marginLeft: 4 }}>closest</small>}</td><td>{p.age}</td><td>{p.club}</td>
+    <td>{p.position || p.role}{p.kind === "staff" && !p.matched_position && <small className="st n" style={{ marginLeft: 4 }}>closest</small>}</td><td>{p.nationality}{!p.matched_nation && <small className="st n" style={{ marginLeft: 4 }}>closest</small>}</td><td>{p.age}</td><td>{p.club}</td>
     <td><button className="ib" onClick={() => drop(p)} title="Leave out" data-testid={`seed-drop-${p.pid}`}><X size={13} /></button></td>
   </tr>
 );
@@ -56,12 +56,12 @@ export const SeedResults = ({ d, meta, act, onChange }) => {
   const cur = d.mode === "current";
   return (
     <div className="card" data-testid="seed-results">
-      <div className="ttl">Results: {d.people.length} {cur ? "players to rename" : "new people"} called {d.surname}
+      <div className="ttl">Results: {d.people.length} {cur ? "people to rename" : "new people"} called {d.surname}
         <span className="st n">{d.people.filter((p) => p.kind === "player").length} players · {d.people.filter((p) => p.kind === "staff").length} staff</span></div>
       {d.note && <p className="note" data-testid="seed-results-note">{d.note}</p>}
-      <p className="note">{cur ? "Only the names change; each player keeps their club, age and ability. Edit any name, or leave someone out." : "Change anything before you seed. Ability can't go above the caps."}</p>
+      <p className="note">{cur ? "Only the names change; everyone keeps their club, job, age and ability. Edit any name, or leave someone out." : "Change anything before you seed. Ability can't go above the caps."}</p>
       <div style={{ overflowX: "auto" }}><table className="tbl" style={{ marginTop: 8 }}>
-        <thead><tr>{(cur ? ["Now called", "First name", "Surname", "Pos", "Nation", "Age", "Club", ""] : ["First name", "Surname", "Position / role", "Nation", "Age", "Height", "Ethnicity", "Skin", "CA", "PA", ""]).map((h) => <th key={h}>{h}</th>)}</tr></thead>
+        <thead><tr>{(cur ? ["Now called", "First name", "Surname", "Position / job", "Nation", "Age", "Club", ""] : ["First name", "Surname", "Position / role", "Nation", "Age", "Height", "Ethnicity", "Skin", "CA", "PA", ""]).map((h) => <th key={h}>{h}</th>)}</tr></thead>
         <tbody>{d.people.map((p) => (cur ? <CurRow key={p.pid} p={p} save={save} drop={drop} /> : <NewRow key={p.pid} p={p} meta={meta} save={save} drop={drop} />))}</tbody></table></div>
     </div>
   );

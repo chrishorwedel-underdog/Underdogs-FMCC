@@ -144,6 +144,24 @@ def scouting_pool(save_no: int, game_date: date, months_played: int, edits: dict
     return out
 
 
+STAFF_JOBS = ["Manager", "Assistant Manager", "Coach", "Coach", "Goalkeeping Coach", "Physio", "Head Physio", "Scout", "Scout", "Performance Analyst",
+              "Head of Youth Development", "Director of Football", "Sports Scientist", "Chairperson"]
+
+
+def sample_staff(save_no: int, club_name: str) -> list:
+    """Non-player staff at every men's club, your own included (SAMPLE)."""
+    out, uid = [], 40500000
+    clubs = [(c, lg) for lg, cs in LEAGUES.items() if lg not in WOMEN for c in cs] + [(club_name, "Premier Division")]
+    for club, league in clubs:
+        for job in STAFF_JOBS:
+            uid += 1
+            rng = random.Random(uid)
+            nat = rng.choice(list(FIRST))
+            out.append({"unique_id": uid, "name": f"{rng.choice(FIRST[nat])} {rng.choice(LAST[nat])}", "age": rng.randint(27, 66), "nationality": nat,
+                        "club": club, "league": league, "job": job, "ca": rng.randint(40, 150), "has_contract": job != "Chairperson"})
+    return out
+
+
 def read_save(save_no: int, club_name: str, edits: dict | None = None) -> dict:
     """Return the save as fmsave-shaped records: club, game date, players, scouting pool and next fixture."""
     edits = edits or {}
@@ -187,6 +205,7 @@ def read_save(save_no: int, club_name: str, edits: dict | None = None) -> dict:
                     {"name": "Counter-attack", "positions": ["GK", "DCR", "DC", "DCL", "WBR", "WBL", "DMC", "MCR", "MCL", "STCR", "STCL"]},
                     {"name": "Direct 4-4-2", "positions": ["GK", "DR", "DCR", "DCL", "DL", "MR", "MCR", "MCL", "ML", "STCR", "STCL"]}],
         "pool": scouting_pool(save_no, game_date, months_played, edits),
+        "staff": sample_staff(save_no, club_name),
     }
 
 

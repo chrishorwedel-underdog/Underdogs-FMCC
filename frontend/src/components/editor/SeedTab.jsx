@@ -80,7 +80,7 @@ const Mode = ({ mode, set, meta }) => (
       <button className={mode === "new" ? "on" : ""} onClick={() => set({ mode: "new" })} data-testid="seed-mode-new">New save</button>
       <button className={mode === "current" ? "on" : ""} onClick={() => set({ mode: "current" })} data-testid="seed-mode-current">Current save</button></div>
     <small className="note" data-testid="seed-mode-note">{mode === "new" ? "Creates brand-new players and staff in an FMCC editor data file. Pick it from FM's database list when you start the new save."
-      : `Renames existing low-profile players (free agents, youngsters and fringe players, not ${meta.club}'s) in your running save. Their club, age and ability stay the same. Staff can only be seeded into a new save.`}</small>
+      : `Renames existing low-profile people in your running save: free agents, youngsters and fringe players, plus backroom staff (coaches, scouts, physios, analysts; never managers or the board), not ${meta.club}'s. Their club, job, age and ability stay the same.`}</small>
   </div>
 );
 
@@ -95,7 +95,7 @@ export const SeedTab = () => {
   const mode = f.mode || meta.suggested_mode;
   const body = { ...f, mode };
   const total = sum(f.players) + sum(f.staff);
-  const create = () => act(() => api.post("/seed/create", { ...body, seed: Math.floor(Math.random() * 999999) }), (r) => `${r.people.length} ${r.mode === "new" ? "people created" : "players picked"}. Check them below`, ["seed-draft"]);
+  const create = () => act(() => api.post("/seed/create", { ...body, seed: Math.floor(Math.random() * 999999) }), (r) => `${r.people.length} ${r.mode === "new" ? "people created" : "people picked"}. Check them below`, ["seed-draft"]);
   const apply = () => window.confirm(draft.mode === "new" ? `Seed ${draft.people.length} new people called ${draft.surname} into a new-save file?` : `Rename ${draft.people.length} players in your save to ${draft.surname}?`)
     && act(() => api.post("/seed/apply"), (r) => (r.mode === "new" ? `${draft.surname} seeded: ${r.people.length} people${r.placed ? " placed in your FM editor data folder" : ". Download the file from Seeded surnames"}` : `${draft.surname} seeded: ${r.people.length - r.failed} players renamed${r.sample ? " in the SAMPLE save" : ""}`), ["seed-draft", "seed-history", "editor-state"]);
   return (

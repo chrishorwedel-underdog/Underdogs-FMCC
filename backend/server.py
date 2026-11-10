@@ -138,6 +138,7 @@ async def read_next_save(career: dict) -> dict:
     save = await asyncio.to_thread(_read_save_file, career, save_no, edits)
     pool = save.pop("pool")
     club_list = save.pop("clubs", None)
+    staff = save.pop("staff", None)
     tables = save.pop("tables", None)
     if tables:
         import leagues_api
@@ -155,7 +156,7 @@ async def read_next_save(career: dict) -> dict:
     for p in pool:
         start.setdefault(str(p["unique_id"]), p["ca"])
     await db.pools.update_one({"career_id": career["id"]}, {"$set": {"save_no": save_no, "season": save["season"], "game_date": save["game_date"],
-                                                                    "players": pool, "season_start_ca": start} | ({"clubs": club_list} if club_list else {})}, upsert=True)
+                                                                    "players": pool, "season_start_ca": start} | ({"clubs": club_list} if club_list else {}) | ({"staff": staff} if staff is not None else {})}, upsert=True)
     await world_api.record_month(career["id"], {"save_no": save_no, "season": save["season"], "game_date": save["game_date"], "players": pool, "tables": tables})
     ml = (await db.settings.find_one({"_id": "app"}, {"_id": 0, "matchlens": 1}) or {}).get("matchlens") or {}
     if ml.get("installed") and READER == "sample":

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, model_validator
 
 import creator_api as cr
 import editor_api
+import sample_reader
 from core import db, active_career, latest_two, now_iso, new_id, audit
 
 router = APIRouter(prefix="/api/seed")
@@ -173,6 +174,49 @@ def match_existing(b: SeedIn, pool: list, own: str, taken: set, extra: dict) -> 
     return out, missing
 
 
+ROLE_JOBS = {
+    "Director of Football": {"Director of Football"}, "Technical Director": {"Technical Director"}, "General Manager": {"Director of Football", "Technical Director"},
+    "Chief Executive": {"Director of Football", "Technical Director"}, "Head of Recruitment": {"Scout", "Director of Football"}, "Loan Manager": {"Scout", "Coach"},
+    "Assistant Manager": {"Assistant Manager"}, "First-Team Coach": {"Coach"}, "Goalkeeping Coach": {"Goalkeeping Coach"}, "Fitness Coach": {"Coach"},
+    "Set-Piece Coach": {"Coach"}, "Youth Coach": {"Coach"}, "Head of Youth Development": {"Head of Youth Development"},
+    "Chief Scout": {"Scout"}, "Scout": {"Scout"}, "Recruitment Analyst": {"Scout", "Performance Analyst"},
+    "Head Physio": {"Head Physio"}, "Physio": {"Physio"}, "Head of Sports Science": {"Head of Sports Science"}, "Sports Scientist": {"Sports Scientist"},
+    "Club Doctor": {"Chief Doctor"}, "Head of Performance Analysis": {"Performance Analyst"}, "Performance Analyst": {"Performance Analyst"}, "Data Analyst": {"Performance Analyst"},
+}
+TOP_JOBS = {"Manager", "Chairperson", "Director", "Managing Director"}
+
+
+def _low_profile_staff(s: dict, own: str, include_own: bool) -> bool:
+    """Backroom staff only: never managers or the board, never your club's (unless asked), never the very best."""
+    if (not include_own and s.get("club") == own) or s.get("job") in TOP_JOBS or not s.get("has_contract", True):
+        return False
+    return (s.get("ca") or 0) <= 120
+
+
+def match_staff(b: SeedIn, staff: list, own: str, taken: set, extra: dict, nats: list, start: int) -> tuple:
+    """Pick existing low-profile staff for each staff slot; their job, club and ability stay as they are."""
+    rng = random.Random(b.seed * 32452843 + b.total)
+    cands = [s for s in staff if s["unique_id"] not in taken and _low_profile_staff(s, own, b.include_own_club)]
+    rng.shuffle(cands)
+    used, out, missing = set(), [], 0
+    bands = [(lo, hi) for k, _, lo, hi in STAFF_AGES if b.staff_ages.get(k)]
+    slots = [r for r, n in b.staff.items() for _ in range(n)]
+    for i, (role, nat) in enumerate(zip(slots, nats)):
+        def score(s):
+            job = 3 if s.get("job") in ROLE_JOBS[role] else 1 if s.get("job") is None else 0
+            return job + 3 * (s.get("nationality") == nat) + any(lo <= (s.get("age") or 0) <= hi for lo, hi in bands)
+        best = max((s for s in cands if s["unique_id"] not in used), key=score, default=None)
+        if not best:
+            missing += 1
+            continue
+        used.add(best["unique_id"])
+        out.append({"pid": f"s{start + i}", "id": best["unique_id"], "kind": "staff", "position": None, "role": best.get("job") or role,
+                    "current_name": best["name"], "first_name": _first(rng, best.get("nationality") or nat, extra), "last_name": b.surname,
+                    "nationality": best.get("nationality"), "age": best.get("age"), "club": best.get("club") or "No club", "league": best.get("league"),
+                    "matched_nation": best.get("nationality") == nat, "matched_position": best.get("job") in ROLE_JOBS[role]})
+    return out, missing
+
+
 async def _game_date(c: dict) -> str:
     s = await latest_two(c["id"])
     return s[0]["game_date"] if s else date.today().isoformat()
@@ -205,12 +249,18 @@ async def create(body: SeedIn):
     if body.mode == "new":
         people = generate(body, await _game_date(c), extra)
     else:
-        pool = (await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {}).get("players") or []
-        people, missing = match_existing(body, pool, c["club_name"], await _taken(c["id"]), extra)
-        staff = sum(body.staff.values())
+        doc = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1, "staff": 1}) or {}
+        taken = await _taken(c["id"])
+        people, missing = match_existing(body, doc.get("players") or [], c["club_name"], taken, extra)
+        nats = [n.nation for n in body.nations for _ in range(n.count)]
+        random.Random(body.seed * 49979687 + body.total).shuffle(nats)
+        staff_rows = doc.get("staff") or ([] if editor_api.LIVE else sample_reader.sample_staff(0, c["club_name"]))
+        staff, s_missing = match_staff(body, staff_rows, c["club_name"], taken, extra, nats, sum(body.players.values()))
+        people += staff
         notes = [f"{missing} player slot(s) had no low-profile player left to rename"] if missing else []
-        if staff:
-            notes.append(f"{staff} staff were left out: FMCC can't read staff from a running save yet, so staff can only be seeded into a new save")
+        if s_missing:
+            notes.append(f"{s_missing} staff slot(s) had no low-profile staff member left to rename" if staff_rows
+                         else f"{s_missing} staff were left out: FMCC hasn't read any staff from this save yet. Read the save again to pick them up")
         note = ". ".join(notes) or None
         if not people:
             raise HTTPException(409, note or "No low-profile players found to rename")
@@ -289,11 +339,11 @@ def _xml(c: dict, surname: str, people: list) -> str:
             f'  <list id="db_changes">\n' + "\n".join(rec(p) for p in people) + '\n  </list>\n</record>\n')
 
 
-async def _rename_live(uid: int, first: str, last: str) -> Optional[str]:
+async def _rename_live(uid: int, first: str, last: str, entity: str = "player") -> Optional[str]:
     import live_editor
     try:
-        await asyncio.to_thread(live_editor.run, "set", "player", uid, "first_name", first)
-        await asyncio.to_thread(live_editor.run, "set", "player", uid, "second_name", last)
+        await asyncio.to_thread(live_editor.run, "set", entity, uid, "first_name", first)
+        await asyncio.to_thread(live_editor.run, "set", entity, uid, "second_name", last)
         return None
     except Exception as exc:
         return str(exc)[:200]
@@ -323,10 +373,10 @@ async def apply():
     else:
         failed = 0
         for p in people:
-            err = await _rename_live(p["id"], p["first_name"], p["last_name"]) if editor_api.LIVE else None
+            err = await _rename_live(p["id"], p["first_name"], p["last_name"], p["kind"]) if editor_api.LIVE else None
             p["error"] = err
             failed += bool(err)
-            await db.seed_renames.insert_one({"career_id": c["id"], "seed_id": sid, "uid": p["id"], "old_name": p["current_name"], "new_name": f"{p['first_name']} {p['last_name']}",
+            await db.seed_renames.insert_one({"career_id": c["id"], "seed_id": sid, "uid": p["id"], "kind": p["kind"], "old_name": p["current_name"], "new_name": f"{p['first_name']} {p['last_name']}",
                                               "status": "failed" if err else "applied", "error": err, "at": now_iso()})
         xml, result = None, {"placed": editor_api.LIVE, "failed": failed, "sample": not editor_api.LIVE}
     doc = {"id": sid, "career_id": c["id"], "mode": d["mode"], "surname": d["surname"], "people": people, "status": "active", "xml": xml, "at": now_iso()} | result

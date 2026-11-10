@@ -122,13 +122,14 @@ class TestSeedCurrent:
         r = S.post(f"{BASE_URL}/api/seed/create", json=body(mode="current"))
         assert r.status_code == 200, r.text
         d = r.json()
-        assert d["mode"] == "current" and len(d["people"]) == 6
-        assert "staff were left out" in (d["note"] or "")
+        assert d["mode"] == "current" and len(d["people"]) == 9
+        staff = [p for p in d["people"] if p["kind"] == "staff"]
+        assert len(staff) == 3 and all(p["role"] not in ("Manager", "Chairperson") for p in staff)
         for p in d["people"]:
             assert p["club"] != meta["club"]
             assert "ca" not in p and "pa" not in p
             assert p["current_name"] and p["last_name"] == "Testseed"
-        assert len({p["id"] for p in d["people"]}) == 6
+        assert len({p["id"] for p in d["people"]}) == 9
         # current-mode patch only changes names
         r2 = S.patch(f"{BASE_URL}/api/seed/draft/{d['people'][0]['pid']}", json={"first_name": "Rolf", "age": 40})
         assert r2.status_code == 200 and r2.json()["first_name"] == "Rolf" and r2.json()["age"] == d["people"][0]["age"]

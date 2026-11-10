@@ -48,6 +48,7 @@ P90_MAP = {"npxg": "non_penalty_expected_goals", "xa": "expected_assists", "kp":
 SUM_KEYS = set(P90_MAP.values()) | {"minutes", "goals", "assists", "starts", "substitute_appearances", "blocks", "clearances", "pressures_attempted",
                                     "pressures_completed", "saves_held", "saves_parried", "saves_tipped", "shots_on_target_faced"}
 WORLD_CAP = 4000  # busiest players from the loaded leagues, so the world snapshot stays a sensible size
+STAFF_CAP = 8000
 
 
 def _first(obj, *names, default=None):
@@ -158,6 +159,29 @@ def _tactics(save, my_uid) -> list:
     return out
 
 
+def _staff(save, club_lookup: dict, club_league: dict, nations: dict) -> list:
+    """Non-player staff at every club, for Seed a Surname. fmsave's staff() reader; job titles on FM27 only. UNVERIFIED."""
+    if not hasattr(save, "staff"):
+        return []
+    out = []
+    try:
+        rows = list(save.staff())
+    except Exception:
+        return []
+    for s in rows:
+        if _get(s, "is_human_manager"):
+            continue
+        uid = _first(s, "unique_id", "uid")
+        club = _get(s, "club_name") or club_lookup.get(_get(s, "club_uid"))
+        job = _get(s, "job")
+        label = getattr(getattr(job, "value", job), "name", None) or getattr(job, "name", None)
+        out.append({"unique_id": int(uid) if uid is not None else None, "name": _get(s, "name") or _get(s, "full_name") or "Unknown", "age": _get(s, "age"),
+                    "nationality": nations.get(_get(s, "nation_id")), "club": club, "league": club_league.get(club),
+                    "job": label.replace("_", " ").title().replace(" Of ", " of ") if label and label != "UNKNOWN" else None,
+                    "ca": _get(s, "ability.current"), "has_contract": bool(_get(s, "has_contract", True))})
+    return [r for r in out if r["unique_id"] is not None][:STAFF_CAP]
+
+
 def read_save(path: Path, club_name_hint: str) -> dict:
     import fmsave  # only installed in the Windows build
 
@@ -200,8 +224,9 @@ def read_save(path: Path, club_name_hint: str) -> dict:
                        last_move=moves.get(_first(p, "uid", "unique_id")), gender="F" if str(clubs.get(cu, (0, 0, ""))[2]).lower().startswith(("f", "w")) else "M")
             pool.append(row)
         game_date = _get(save, "game_date") or date.today()
+        staff = _staff(save, club_lookup, club_league, nations)
     pool = sorted(pool, key=lambda r: -r["minutes"])[:WORLD_CAP]
     gd = game_date if isinstance(game_date, date) else date.fromisoformat(str(game_date)[:10])
     season_year = gd.year if gd.month >= 7 else gd.year - 1
     return {"file_name": path.name, "club_name": club_name, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
-            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "file_mtime": path.stat().st_mtime}
+            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "file_mtime": path.stat().st_mtime}
