@@ -52,12 +52,13 @@ export const DynamicPotential = () => {
     <div className="homegrid" data-testid="dp-view">
       <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
         <div className="card"><div className="ttl">Applies to</div>
-          <div className="row"><div style={{ flex: 1 }}><b>My club</b><small>Every player at your club</small></div><Switch checked={data.scope.my_club} onCheckedChange={(v) => save({ ...data.scope, my_club: v })} data-testid="dp-my-club" /></div>
-          <p className="sent" data-testid="dp-covered-count">Covers <b>{data.covered}</b> players in {data.covered_leagues} {data.covered_leagues === 1 ? "league" : "leagues"} and {data.covered_nations} {data.covered_nations === 1 ? "nation" : "nations"}{data.scope.my_club ? ", plus your club" : ""}.</p>
+          <div className="row" data-testid="dp-all-row"><div style={{ flex: 1 }}><b>All loaded players</b><small>Every player in every league loaded in your save, your club included</small></div><Switch checked={!!data.scope.all_players} onCheckedChange={(v) => save({ ...data.scope, all_players: v })} data-testid="dp-all-players" /></div>
+          {!data.scope.all_players && <div className="row"><div style={{ flex: 1 }}><b>My club</b><small>Every player at your club</small></div><Switch checked={data.scope.my_club} onCheckedChange={(v) => save({ ...data.scope, my_club: v })} data-testid="dp-my-club" /></div>}
+          <p className="sent" data-testid="dp-covered-count">Covers <b>{data.covered}</b> players{data.scope.all_players ? ": everyone loaded in the game" : <> in {data.covered_leagues} {data.covered_leagues === 1 ? "league" : "leagues"} and {data.covered_nations} {data.covered_nations === 1 ? "nation" : "nations"}{data.scope.my_club ? ", plus your club" : ""}</>}.</p>
           <p className="note" style={{ marginTop: 6 }}>A player covered by more than one toggle is counted once. Caps: {data.caps.max_players} players, ±{data.caps.max_pa_change} PA per player per season (edit in Rules).</p>
         </div>
-        <ToggleList id="leagues" title="Leagues" items={data.leagues} on={data.scope.leagues} set={(v) => save({ ...data.scope, leagues: v })} />
-        <ToggleList id="nations" title="Nations" items={data.nations} on={data.scope.nations} set={(v) => save({ ...data.scope, nations: v })} />
+        {!data.scope.all_players && <ToggleList id="leagues" title="Leagues" items={data.leagues} on={data.scope.leagues} set={(v) => save({ ...data.scope, leagues: v })} />}
+        {!data.scope.all_players && <ToggleList id="nations" title="Nations" items={data.nations} on={data.scope.nations} set={(v) => save({ ...data.scope, nations: v })} />}
       </div>
       <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
         <div className="card"><div className="ttl"><EyeOff size={15} />Run Dynamic Potential</div>

@@ -35,6 +35,25 @@ button.ver-tag{background:none;border:0;cursor:pointer}
 .upd-pop{display:grid;gap:6px;font-size:13px}
 .upd-pop ul,.wn-list{margin:2px 0 4px;padding-left:18px;display:grid;gap:4px;font-size:13px;color:var(--mut)}
 .wn-list{max-height:50vh;overflow:auto}
+.seed-hero{display:flex;gap:14px;align-items:center;color:var(--grn)}
+.seed-hero b{display:block;font-size:20px;color:var(--text)}
+.seed-step{display:grid;gap:16px}
+.seed-step-head{display:flex;gap:12px;align-items:flex-start}
+.seed-step-head b{display:block;font-size:15px}
+.seed-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
+.seed-surname{font-size:22px!important;height:52px!important;max-width:420px;font-weight:600}
+.seed-steppers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:28px}
+.seed-stepper{display:grid;gap:8px}
+.seed-big{width:96px!important;height:48px!important;font-size:24px!important;text-align:center}
+.seed-sq{width:44px;height:44px;padding:0;justify-content:center}
+.seed-pick{height:30px;min-width:44px;justify-content:center}
+.seed-nat{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)}
+.seed-adv{padding-top:4px;padding-bottom:4px}
+.seed-acc{border-top:1px solid var(--line)}
+.seed-bar{position:sticky;bottom:0;z-index:5;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 18px;border-radius:16px;border:1px solid var(--line);background:color-mix(in srgb,var(--s1) 88%,transparent);backdrop-filter:blur(16px);box-shadow:0 -10px 30px -12px rgba(0,0,0,.6)}
+.seed-bar>div{flex:1}
+.seed-bar small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:600px){.seed-bar .btn-l{flex:1;justify-content:center}.seed-bar small{white-space:normal}}
 @media (max-width:480px){.app-foot{gap:4px;padding:6px 8px}.app-foot .tl{padding:5px 8px;font-size:12px}}
 .tl{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--mut);text-decoration:none;padding:4px 10px;border-radius:8px;transition:color .2s,background-color .2s}
 .tl:hover,.tl.on{color:var(--text);background:rgba(255,255,255,.05)}

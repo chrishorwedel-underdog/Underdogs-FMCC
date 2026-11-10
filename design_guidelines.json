@@ -1,0 +1,64 @@
+{
+  "theme": "dark",
+  "app_type": "dashboard_tool",
+  "existing_classes": {
+    "card": ".card",
+    "btn": ".btn",
+    "btn_g": ".btn-g",
+    "btn_p": ".btn-p",
+    "seg": ".seg",
+    "inp": ".inp",
+    "note": ".note",
+    "eyebrow": ".eyebrow",
+    "ttl": ".ttl",
+    "chips": ".st"
+  },
+  "layout_structure": [
+    {
+      "step": 1,
+      "name": "Header & Save Context",
+      "controls": ["Surname text input (.inp)", "Save Mode segmented toggle (.seg: New save vs Current save)"],
+      "description": "Top card with surname prompt and mode selection."
+    },
+    {
+      "step": 2,
+      "name": "Primary Volume Controls & Quick Picks",
+      "controls": ["Player Count stepper/slider + quick pills (10, 25, 50, 100)", "Staff Count stepper/slider + quick pills (0, 5, 10, 20)"],
+      "description": "Prominent volume selector allowing one-click preset assignment."
+    },
+    {
+      "step": 3,
+      "name": "Auto-Split & Presets Grid",
+      "controls": ["Position Auto-Split toggle + balance sliders", "Nationality Share Allocator with Auto-Balance button", "Age Distribution Presets (Balanced, Youth Prospect Heavy, Veteran Legends)"],
+      "description": "Smart defaults that automatically calculate splits with single-click auto-balance."
+    },
+    {
+      "step": 4,
+      "name": "Advanced Fine-Tuning (Collapsible / Accordion)",
+      "controls": ["Ethnicity Range Sliders (11 bands)", "Staff Age & Specific Staff Roles breakdown", "Height, Skin, CA (<=60), PA (<=100) range sliders", "Faces generation checkbox"],
+      "description": "Hidden by default inside Collapsible to prevent visual overload."
+    },
+    {
+      "step": 5,
+      "name": "Sticky Action & Summary Bar",
+      "controls": ["Summary Pill Badges (Total Players, Staff, Top Nation, CA/PA range)", "Primary Action: Seed Surname (.btn-g)", "Secondary Action: Quick Preview (.btn-p)"],
+      "description": "Fixed bottom or card-level sticky action bar for fast execution."
+    },
+    {
+      "step": 6,
+      "name": "Results & History Table",
+      "controls": ["Editable Data Grid with direct inline cell editing", "Export / Apply buttons"],
+      "description": "Clean, interactive table displaying generated player/staff records."
+    }
+  ],
+  "microcopy_suggestions": {
+    "surname_input_placeholder": "Enter target surname (e.g. 'Novák' or 'Silva')",
+    "quick_pick_label": "Target Population",
+    "auto_split_note": "Percentages automatically balance to match total count.",
+    "advanced_toggle_label": "Fine-Tune Ethnicity, Physicals & Staff Roles",
+    "seed_button": "Seed Surname Generation"
+  },
+  "testing": {
+    "data_testid_pattern": "kebab-case role-based attributes on all inputs, switches, buttons, and summary elements"
+  }
+}

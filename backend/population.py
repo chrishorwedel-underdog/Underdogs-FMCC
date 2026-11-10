@@ -23,14 +23,14 @@ async def own_contexts(career: dict) -> list:
 async def contexts(career: dict, scope: dict) -> list:
     """Every covered player once, even when several toggles cover him."""
     out = {}
-    if scope.get("my_club", True):
+    if scope.get("my_club", True) or scope.get("all_players"):
         for x in await own_contexts(career):
             out[x["unique_id"]] = x
-    nations, leagues = set(scope.get("nations") or []), set(scope.get("leagues") or [])
-    if nations or leagues:
+    nations, leagues, every = set(scope.get("nations") or []), set(scope.get("leagues") or []), bool(scope.get("all_players"))
+    if nations or leagues or every:
         pool = await db.pools.find_one({"career_id": career["id"]}, {"_id": 0}) or {"players": [], "season_start_ca": {}}
         p90 = await season_per90(career["id"], pool.get("season"), "them")
         for p in pool["players"]:
-            if p["league"] in leagues or p["nationality"] in nations:
+            if every or p["league"] in leagues or p["nationality"] in nations:
                 out.setdefault(p["unique_id"], _ctx(p, p["club"], p["league"], pool["season_start_ca"].get(str(p["unique_id"])), p90.get(p["unique_id"])))
     return list(out.values())

@@ -37,6 +37,7 @@ class Rule(BaseModel):
 
 class Scope(BaseModel):
     my_club: bool = True
+    all_players: bool = False
     nations: list[str] = Field(default_factory=list, max_length=200)
     leagues: list[str] = Field(default_factory=list, max_length=200)
 

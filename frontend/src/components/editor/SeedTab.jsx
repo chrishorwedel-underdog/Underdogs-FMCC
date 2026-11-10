@@ -1,122 +1,109 @@
 import { useEffect, useState } from "react";
-import { Sprout, Plus, X, Wand2 } from "lucide-react";
+import { Sprout, Wand2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { SeedResults, SeedHistory } from "./SeedResults";
+import { POS_WEIGHTS, STAFF_WEIGHTS, PLAYER_AGE_PRESETS, STAFF_AGE_PRESETS, split, Step, Stepper, Seg, CountGrid, Shares, Nations } from "./SeedParts";
 
-const DEFAULT = { surname: "", mode: null, players: { GK: 1, DC: 2, MC: 2, ST: 1 }, staff: { Scout: 1, "First-Team Coach": 1, Physio: 1 }, nations: [{ nation: "England", count: 9 }],
-  ethnicities: [], player_ages: { young: 1, prime: 1 }, staff_ages: { established: 1, senior: 1 }, skin_lo: 1, skin_hi: 20, height_lo: 170, height_hi: 192,
-  ca_lo: 30, ca_hi: 60, pa_lo: 60, pa_hi: 100, include_own_club: false, faces: true, seed: 1 };
+const STORE = "fmcc-seed-form";
+const DEFAULT = { surname: "", mode: null, playerTotal: 10, staffTotal: 3, posMode: "Balanced squad", players: {}, staffMode: "Typical backroom", staff: {},
+  nations: [{ nation: "England", share: 5 }], pAge: "Balanced", sAge: "Balanced", player_ages: {}, staff_ages: {}, ethnicities: {},
+  skin_lo: 1, skin_hi: 20, height_lo: 170, height_hi: 192, ca_lo: 30, ca_hi: 60, pa_lo: 60, pa_hi: 100, include_own_club: false, faces: true };
 const sum = (o) => Object.values(o).reduce((a, b) => a + (Number(b) || 0), 0);
-
-const N = ({ v, set, id, min = 0, max = 100, w = 58 }) => <input className="inp mono" style={{ width: w, height: 30 }} type="number" min={min} max={max} value={v} onChange={(e) => set(Math.max(min, Math.min(max, Number(e.target.value) || 0)))} data-testid={id} />;
+const load = () => { try { return { ...DEFAULT, ...JSON.parse(localStorage.getItem(STORE) || "{}") }; } catch { return DEFAULT; } };
 
 const Range = ({ f, set, lo, hi, label, min, max }) => (
   <label className="note" style={{ display: "grid", gap: 4 }}>{label}
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}><N v={f[lo]} set={(v) => set({ [lo]: v })} min={min} max={max} id={`seed-${lo}`} w={70} />–<N v={f[hi]} set={(v) => set({ [hi]: v })} min={min} max={max} id={`seed-${hi}`} w={70} /></div></label>
+    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      {[lo, hi].map((k, i) => <span key={k} style={{ display: "contents" }}>{i === 1 && "to"}<input className="inp mono" style={{ width: 70, height: 32 }} type="number" min={min} max={max} value={f[k]}
+        onChange={(e) => set({ [k]: Math.max(min, Math.min(max, Number(e.target.value) || min)) })} data-testid={`seed-${k}`} /></span>)}</div></label>
 );
 
-const Counts = ({ title, keys, vals, set, id }) => (
-  <div><div className="eyebrow">{title}<span style={{ marginLeft: 6, color: "var(--dim)" }}>{sum(vals)}</span></div>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: "6px 12px", marginTop: 6 }}>
-      {keys.map((k) => <label key={k} className="note" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>{k}
-        <N v={vals[k] || 0} set={(v) => set({ ...vals, [k]: v })} id={`seed-${id}-${k}`} /></label>)}</div></div>
-);
-
-const Breakdown = ({ f, set, meta }) => (
-  <div style={{ display: "grid", gap: 14 }} data-testid="seed-breakdown">
-    <Counts title="Players by position" keys={meta.positions} vals={f.players} set={(v) => set({ players: v })} id="pl" />
-    {Object.entries(meta.staff).map(([g, roles]) => <Counts key={g} title={g} keys={roles} vals={f.staff} set={(v) => set({ staff: v })} id="st" />)}
-  </div>
-);
-
-const Nations = ({ f, set, meta, total }) => {
-  const [n, setN] = useState("");
-  const have = f.nations.reduce((a, x) => a + x.count, 0);
-  const even = () => set({ nations: f.nations.map((x, i) => ({ ...x, count: Math.floor(total / f.nations.length) + (i < total % f.nations.length ? 1 : 0) })) });
-  return (
-    <div style={{ display: "grid", gap: 6 }} data-testid="seed-nations">
-      <p className="note" style={{ margin: 0, color: have === total ? "var(--mut)" : "#F59E0B" }} data-testid="seed-nations-total">{have} of {total} people have a nationality{have !== total ? ` · ${have < total ? "add" : "remove"} ${Math.abs(total - have)}` : ""}</p>
-      {f.nations.map((x, i) => <div key={x.nation} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <b style={{ minWidth: 130 }}>{x.nation}</b><N v={x.count} max={300} set={(v) => set({ nations: f.nations.map((y, j) => (j === i ? { ...y, count: v } : y)) })} id={`seed-nat-count-${x.nation}`} />
-        <button className="ib" disabled={f.nations.length === 1} onClick={() => set({ nations: f.nations.filter((_, j) => j !== i) })} data-testid={`seed-nat-remove-${x.nation}`}><X size={13} /></button></div>)}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <select className="inp" style={{ width: 200, height: 32 }} value={n} onChange={(e) => setN(e.target.value)} data-testid="seed-nat-select">
-          <option value="">Add a nationality…</option>{meta.nations.filter((x) => !f.nations.some((y) => y.nation === x)).map((x) => <option key={x}>{x}</option>)}</select>
-        <button className="btn" disabled={!n} onClick={() => { set({ nations: [...f.nations, { nation: n, count: 0 }] }); setN(""); }} data-testid="seed-nat-add"><Plus size={13} />Add</button>
-        <button className="btn" onClick={even} data-testid="seed-nat-even">Split evenly</button></div>
-    </div>
-  );
+const build = (f, mode) => {
+  const players = f.posMode === "Balanced squad" ? split(f.playerTotal, POS_WEIGHTS) : f.players;
+  const staff = f.staffMode === "Typical backroom" ? split(f.staffTotal, STAFF_WEIGHTS) : f.staff;
+  const total = sum(players) + sum(staff);
+  const counts = split(total, Object.fromEntries(f.nations.map((n) => [n.nation, n.share])));
+  return { body: { surname: f.surname, mode, players, staff, nations: f.nations.map((n) => ({ nation: n.nation, count: counts[n.nation] || 0 })).filter((n) => n.count),
+    ethnicities: Object.entries(f.ethnicities).filter(([, s]) => s > 0).map(([ethnicity, share]) => ({ ethnicity, share })),
+    player_ages: f.pAge === "Custom" ? f.player_ages : PLAYER_AGE_PRESETS[f.pAge], staff_ages: f.sAge === "Custom" ? f.staff_ages : STAFF_AGE_PRESETS[f.sAge],
+    ...Object.fromEntries(["skin_lo", "skin_hi", "height_lo", "height_hi", "ca_lo", "ca_hi", "pa_lo", "pa_hi", "include_own_club", "faces"].map((k) => [k, f[k]])) }, total, counts };
 };
-
-const Shares = ({ title, items, vals, set, id }) => (
-  <div><div className="eyebrow">{title}</div>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "6px 12px", marginTop: 6 }}>
-      {items.map(([k, label]) => <label key={k} className="note" style={{ display: "grid", gap: 2 }}><span>{label} <b style={{ color: "var(--text)" }}>{vals[k] || 0}</b></span>
-        <input type="range" min={0} max={10} value={vals[k] || 0} onChange={(e) => set({ ...vals, [k]: Number(e.target.value) })} data-testid={`seed-${id}-${k}`} /></label>)}</div></div>
-);
-
-const Mix = ({ f, set, meta }) => {
-  const eth = Object.fromEntries(f.ethnicities.map((e) => [e.ethnicity, e.share]));
-  return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <Shares title="Ethnicity mix (all at 0 = typical for each nationality)" items={meta.ethnicities.map((e) => [e, e])} vals={eth}
-        set={(v) => set({ ethnicities: Object.entries(v).filter(([, s]) => s > 0).map(([ethnicity, share]) => ({ ethnicity, share })) })} id="eth" />
-      <Shares title="Player age mix" items={meta.player_ages.map((b) => [b.key, `${b.label} (${b.lo}–${b.hi})`])} vals={f.player_ages} set={(v) => set({ player_ages: v })} id="page" />
-      <Shares title="Staff age mix" items={meta.staff_ages.map((b) => [b.key, `${b.label} (${b.lo}–${b.hi})`])} vals={f.staff_ages} set={(v) => set({ staff_ages: v })} id="sage" />
-      <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-        <Range f={f} set={set} lo="skin_lo" hi="skin_hi" label="Skin tone (1 light – 20 dark; 1–20 = typical per ethnicity)" min={1} max={20} />
-        <Range f={f} set={set} lo="height_lo" hi="height_hi" label="Player height (cm)" min={150} max={210} />
-        <Range f={f} set={set} lo="ca_lo" hi="ca_hi" label={`Current ability (up to ${meta.caps.ca})`} min={1} max={meta.caps.ca} />
-        <Range f={f} set={set} lo="pa_lo" hi="pa_hi" label={`Potential ability (up to ${meta.caps.pa})`} min={1} max={meta.caps.pa} />
-      </div>
-    </div>
-  );
-};
-
-const Mode = ({ mode, set, meta }) => (
-  <div style={{ display: "grid", gap: 6 }}>
-    <div className="seg" style={{ justifySelf: "start" }} data-testid="seed-mode">
-      <button className={mode === "new" ? "on" : ""} onClick={() => set({ mode: "new" })} data-testid="seed-mode-new">New save</button>
-      <button className={mode === "current" ? "on" : ""} onClick={() => set({ mode: "current" })} data-testid="seed-mode-current">Current save</button></div>
-    <small className="note" data-testid="seed-mode-note">{mode === "new" ? "Creates brand-new players and staff in an FMCC editor data file. Pick it from FM's database list when you start the new save."
-      : `Renames existing low-profile people in your running save: free agents, youngsters and fringe players, plus backroom staff (coaches, scouts, physios, analysts; never managers or the board), not ${meta.club}'s. Their club, job, age and ability stay the same.`}</small>
-  </div>
-);
 
 export const SeedTab = () => {
   const { data: meta } = useGet("seed-meta", "/seed/meta");
   const { data: draft, refetch } = useGet("seed-draft", "/seed/draft");
   const act = useAct();
-  const [f, setF] = useState(DEFAULT);
-  useEffect(() => { if (draft?.settings) { setF({ ...DEFAULT, ...draft.settings }); } }, [draft?.at]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [f, setF] = useState(load);
+  useEffect(() => { localStorage.setItem(STORE, JSON.stringify(f)); }, [f]);
   const set = (p) => setF((x) => ({ ...x, ...p }));
   if (!meta) return null;
   const mode = f.mode || meta.suggested_mode;
-  const body = { ...f, mode };
-  const total = sum(f.players) + sum(f.staff);
+  const { body, total, counts } = build(f, mode);
+  const roles = Object.values(meta.staff).flat();
+  const ready = f.surname.trim().length >= 2 && total > 0;
   const create = () => act(() => api.post("/seed/create", { ...body, seed: Math.floor(Math.random() * 999999) }), (r) => `${r.people.length} ${r.mode === "new" ? "people created" : "people picked"}. Check them below`, ["seed-draft"]);
-  const apply = () => window.confirm(draft.mode === "new" ? `Seed ${draft.people.length} new people called ${draft.surname} into a new-save file?` : `Rename ${draft.people.length} players in your save to ${draft.surname}?`)
-    && act(() => api.post("/seed/apply"), (r) => (r.mode === "new" ? `${draft.surname} seeded: ${r.people.length} people${r.placed ? " placed in your FM editor data folder" : ". Download the file from Seeded surnames"}` : `${draft.surname} seeded: ${r.people.length - r.failed} players renamed${r.sample ? " in the SAMPLE save" : ""}`), ["seed-draft", "seed-history", "editor-state"]);
+  const apply = () => window.confirm(draft.mode === "new" ? `Seed ${draft.people.length} new people called ${draft.surname} into a new-save file?` : `Rename ${draft.people.length} people in your save to ${draft.surname}?`)
+    && act(() => api.post("/seed/apply"), (r) => (r.mode === "new" ? `${draft.surname} seeded: ${r.people.length} people${r.placed ? " placed in your FM editor data folder" : ". Download the file from Seeded surnames"}` : `${draft.surname} seeded: ${r.people.length - r.failed} people renamed${r.sample ? " in the SAMPLE save" : ""}`), ["seed-draft", "seed-history", "editor-state"]);
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }} data-testid="seed-tab">
-      <div className="card" style={{ display: "grid", gap: 18 }}>
-        <div className="ttl" style={{ margin: 0 }}><Sprout size={14} />Seed a Surname</div>
-        <p className="note" style={{ margin: 0 }}>Spread one surname through the football world: players, coaches, scouts, physios and front-office staff who all share it. Set it up, press Create to see and edit the people, then press Seed The Surname to put them in your game.</p>
-        <label className="note" style={{ display: "grid", gap: 4, maxWidth: 360 }}><b style={{ color: "var(--text)" }}>Surname to seed</b>
-          <input className="inp" maxLength={40} placeholder="e.g. Horwedel" value={f.surname} onChange={(e) => set({ surname: e.target.value })} data-testid="seed-surname" /></label>
-        <Mode mode={mode} set={set} meta={meta} />
-        <div><div className="eyebrow">How many, and who <span style={{ color: "var(--text)" }} data-testid="seed-total">{total} people</span></div><Breakdown f={f} set={set} meta={meta} /></div>
-        <div><div className="eyebrow">Nationalities and how many of each</div><Nations f={f} set={set} meta={meta} total={total} /></div>
-        <Mix f={f} set={set} meta={meta} />
-        <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-          {mode === "new" && <label className="note" style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" checked={f.faces} onChange={(e) => set({ faces: e.target.checked })} data-testid="seed-faces" />Match NG_Regens faces for players</label>}
-          {mode === "current" && <label className="note" style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" checked={f.include_own_club} onChange={(e) => set({ include_own_club: e.target.checked })} data-testid="seed-own-club" />Include {meta.club}'s low-profile players</label>}
+      <div className="seed-hero"><Sprout size={22} /><div><b>Seed a Surname</b><small className="note">Spread one surname through the football world in four quick steps. Nothing goes into your game until you press Seed The Surname.</small></div></div>
+      <Step n={1} title="Pick the surname" hint="And whether it goes into a brand-new save or the one you're playing" id="seed-step-1">
+        <input className="inp seed-surname" maxLength={40} placeholder="e.g. Horwedel" value={f.surname} onChange={(e) => set({ surname: e.target.value })} data-testid="seed-surname" />
+        <div className="seg" style={{ justifySelf: "start" }} data-testid="seed-mode">
+          <button className={mode === "new" ? "on" : ""} onClick={() => set({ mode: "new" })} data-testid="seed-mode-new">New save</button>
+          <button className={mode === "current" ? "on" : ""} onClick={() => set({ mode: "current" })} data-testid="seed-mode-current">Current save</button></div>
+        <small className="note" data-testid="seed-mode-note">{mode === "new" ? "Creates brand-new players and staff. Pick FMCC's file from FM's database list when you start the new save." : `Renames existing low-profile people (free agents, youngsters, fringe players and backroom staff, never ${meta.club}'s). Their club, job, age and ability stay the same.`}</small>
+      </Step>
+      <Step n={2} title="How many people?" hint="FMCC spreads them across positions and jobs for you" id="seed-step-2">
+        <div className="seed-steppers">
+          <div style={{ display: "grid", gap: 10 }}>
+            <Stepper label="Players" v={f.playerTotal} set={(v) => set({ playerTotal: v })} picks={[5, 10, 25, 50, 100]} max={200} id="seed-players" />
+            <Seg opts={["Balanced squad", "Choose positions"]} v={f.posMode} set={(v) => set({ posMode: v, players: v === "Choose positions" && !sum(f.players) ? split(f.playerTotal, POS_WEIGHTS) : f.players })} id="seed-posmode" />
+            {f.posMode === "Choose positions" ? <CountGrid keys={meta.positions} vals={f.players} set={(v) => set({ players: v, playerTotal: sum(v) })} id="seed-pl" />
+              : <small className="note" data-testid="seed-pos-summary">{Object.entries(split(f.playerTotal, POS_WEIGHTS)).map(([k, v]) => `${v} ${k}`).join(" · ") || "No players"}</small>}
+          </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            <Stepper label="Staff" v={f.staffTotal} set={(v) => set({ staffTotal: v })} picks={[0, 3, 5, 10, 20]} max={100} id="seed-staff" />
+            <Seg opts={["Typical backroom", "Choose jobs"]} v={f.staffMode} set={(v) => set({ staffMode: v, staff: v === "Choose jobs" && !sum(f.staff) ? split(f.staffTotal, STAFF_WEIGHTS) : f.staff })} id="seed-staffmode" />
+            {f.staffMode === "Choose jobs" ? <Accordion type="multiple" className="seed-acc">{Object.entries(meta.staff).map(([g, rs]) => <AccordionItem key={g} value={g}>
+              <AccordionTrigger data-testid={`seed-staff-group-${g}`}>{g} <span className="st n" style={{ marginRight: 8 }}>{rs.reduce((a, r) => a + (f.staff[r] || 0), 0)}</span></AccordionTrigger>
+              <AccordionContent><CountGrid keys={rs} vals={f.staff} set={(v) => set({ staff: v, staffTotal: roles.reduce((a, r) => a + (v[r] || 0), 0) })} id="seed-st" /></AccordionContent></AccordionItem>)}</Accordion>
+              : <small className="note" data-testid="seed-staff-summary">{Object.entries(split(f.staffTotal, STAFF_WEIGHTS)).map(([k, v]) => `${v} ${k}`).join(" · ") || "No staff"}</small>}
+          </div>
         </div>
-        <div className="acts">
-          <button className="btn btn-l" disabled={f.surname.trim().length < 2 || !total} onClick={create} data-testid="seed-create"><Wand2 size={16} />Create</button>
-          <button className="btn btn-g btn-l" disabled={!draft?.people?.length} onClick={apply} data-testid="seed-apply"><Sprout size={16} />Seed The Surname</button>
-        </div>
+      </Step>
+      <Step n={3} title="Where are they from?" hint="Slide to give a nationality a bigger share; FMCC works out the numbers" id="seed-step-3">
+        <Nations list={f.nations} set={(v) => set({ nations: v })} all={meta.nations} counts={counts} />
+      </Step>
+      <Step n={4} title="How old are they?" id="seed-step-4">
+        <div style={{ display: "grid", gap: 6 }}><div className="eyebrow">Players</div><Seg opts={[...Object.keys(PLAYER_AGE_PRESETS), "Custom"]} v={f.pAge} set={(v) => set({ pAge: v, player_ages: v === "Custom" && !sum(f.player_ages) ? PLAYER_AGE_PRESETS.Balanced : f.player_ages })} id="seed-page-preset" />
+          {f.pAge === "Custom" && <Shares items={meta.player_ages.map((b) => [b.key, `${b.label} (${b.lo}–${b.hi})`])} vals={f.player_ages} set={(v) => set({ player_ages: v })} id="seed-page" />}</div>
+        <div style={{ display: "grid", gap: 6 }}><div className="eyebrow">Staff</div><Seg opts={[...Object.keys(STAFF_AGE_PRESETS), "Custom"]} v={f.sAge} set={(v) => set({ sAge: v, staff_ages: v === "Custom" && !sum(f.staff_ages) ? STAFF_AGE_PRESETS.Balanced : f.staff_ages })} id="seed-sage-preset" />
+          {f.sAge === "Custom" && <Shares items={meta.staff_ages.map((b) => [b.key, `${b.label} (${b.lo}–${b.hi})`])} vals={f.staff_ages} set={(v) => set({ staff_ages: v })} id="seed-sage" />}</div>
+      </Step>
+      <Accordion type="single" collapsible className="card seed-adv" data-testid="seed-advanced">
+        <AccordionItem value="adv" style={{ border: 0 }}>
+          <AccordionTrigger data-testid="seed-advanced-toggle">Fine-tune looks, height and ability (optional)</AccordionTrigger>
+          <AccordionContent><div style={{ display: "grid", gap: 16 }}>
+            <div><div className="eyebrow" style={{ marginBottom: 6 }}>Ethnicity mix (all at 0 = typical for each nationality)</div><Shares items={meta.ethnicities.map((e) => [e, e])} vals={f.ethnicities} set={(v) => set({ ethnicities: v })} id="seed-eth" /></div>
+            <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
+              <Range f={f} set={set} lo="skin_lo" hi="skin_hi" label="Skin tone (1 light – 20 dark)" min={1} max={20} />
+              <Range f={f} set={set} lo="height_lo" hi="height_hi" label="Player height (cm)" min={150} max={210} />
+              <Range f={f} set={set} lo="ca_lo" hi="ca_hi" label={`Current ability (max ${meta.caps.ca})`} min={1} max={meta.caps.ca} />
+              <Range f={f} set={set} lo="pa_lo" hi="pa_hi" label={`Potential ability (max ${meta.caps.pa})`} min={1} max={meta.caps.pa} />
+            </div>
+            {mode === "new" ? <label className="note" style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" checked={f.faces} onChange={(e) => set({ faces: e.target.checked })} data-testid="seed-faces" />Match NG_Regens faces for players</label>
+              : <label className="note" style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" checked={f.include_own_club} onChange={(e) => set({ include_own_club: e.target.checked })} data-testid="seed-own-club" />Also rename {meta.club}'s low-profile people</label>}
+          </div></AccordionContent>
+        </AccordionItem>
+      </Accordion>
+      <div className="seed-bar" data-testid="seed-summary-bar">
+        <div style={{ minWidth: 0 }}><b data-testid="seed-total">{f.surname.trim() || "Your surname"} · {total} {total === 1 ? "person" : "people"}</b>
+          <small className="note">{sum(body.players)} players · {sum(body.staff)} staff · {f.nations.map((n) => `${n.nation} ${counts[n.nation] || 0}`).join(", ")} · {mode === "new" ? "new save" : "current save"}</small></div>
+        <button className="btn btn-l" disabled={!ready} onClick={create} data-testid="seed-create"><Wand2 size={16} />Create</button>
+        <button className="btn btn-g btn-l" disabled={!draft?.people?.length} onClick={apply} data-testid="seed-apply"><Sprout size={16} />Seed The Surname</button>
       </div>
       {draft?.people?.length > 0 && <SeedResults d={draft} meta={meta} act={act} onChange={refetch} />}
       <SeedHistory act={act} />
