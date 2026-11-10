@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
 import rules_engine as RE
+from features_api import need
 from changes_api import queue_changes
 from core import db, active_career, latest_snapshot, now_iso, new_id, next_revision, audit
 from population import contexts, own_contexts
@@ -69,7 +70,7 @@ async def elite_withdraw(uid: int):
     return await _nominate(c, "elite", uid, "withdrawn", "Withdrawn")
 
 
-@router.post("/elite/queue")
+@router.post("/elite/queue", dependencies=need("elite"))
 async def elite_queue():
     """Work out PA boosts for nominees under the current rules and queue them as game changes."""
     c = await active_career()
@@ -171,7 +172,7 @@ async def breakout_review(body: ReviewIn):
     return {"revision": rev}
 
 
-@router.post("/breakout/finalise")
+@router.post("/breakout/finalise", dependencies=need("breakout"))
 async def breakout_finalise():
     """Make provisional awards official, roll the reward within the rule's range and queue it as a game change."""
     c = await active_career()
@@ -247,7 +248,7 @@ class RunIn(BaseModel):
     exclude_clubs: list[str] = Field(default_factory=list, max_length=2000)
 
 
-@router.post("/dp/run")
+@router.post("/dp/run", dependencies=need("dp"))
 async def dp_run(body: RunIn):
     c = await active_career()
     snap = await latest_snapshot(c["id"])

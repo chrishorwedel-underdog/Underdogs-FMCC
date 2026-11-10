@@ -60,12 +60,23 @@ export const Shares = ({ items, vals, set, id }) => (
 export const Nations = ({ list, set, all, counts }) => {
   const [n, setN] = useState("");
   const tot = list.reduce((a, x) => a + x.share, 0) || 1;
+  const bump = (i, d) => {
+    const c = list.map((x) => counts[x.nation] || 1);
+    const others = c.map((v, j) => [j, v]).filter(([j, v]) => j !== i && (d > 0 ? v > 1 : true)).sort((a, b) => b[1] - a[1]);
+    if (!others.length) { return; }
+    c[i] += d;
+    c[others[0][0]] -= d;
+    set(list.map((x, j) => ({ ...x, share: c[j] })));
+  };
+  const maxShare = Math.max(10, ...list.map((x) => x.share));
   return (
     <div style={{ display: "grid", gap: 10 }} data-testid="seed-nations">
       {list.map((x, i) => <div key={x.nation} className="seed-nat" data-testid={`seed-nat-${x.nation}`}>
         <b style={{ minWidth: 120 }}>{x.nation}</b>
-        <input type="range" min={1} max={10} value={x.share} style={{ flex: 1, minWidth: 100 }} onChange={(e) => set(list.map((y, j) => (j === i ? { ...y, share: Number(e.target.value) } : y)))} data-testid={`seed-nat-share-${x.nation}`} />
-        <span className="mono note" style={{ width: 120, textAlign: "right" }} data-testid={`seed-nat-count-${x.nation}`}>{Math.round((x.share / tot) * 100)}% · {counts[x.nation] || 0} people</span>
+        <input type="range" min={1} max={maxShare} value={x.share} style={{ flex: 1, minWidth: 100 }} onChange={(e) => set(list.map((y, j) => (j === i ? { ...y, share: Number(e.target.value) } : y)))} data-testid={`seed-nat-share-${x.nation}`} />
+        <button className="ib" disabled={(counts[x.nation] || 0) <= 1 || list.length === 1} onClick={() => bump(i, -1)} aria-label={`One fewer from ${x.nation}`} data-testid={`seed-nat-minus-${x.nation}`}><Minus size={13} /></button>
+        <span className="mono note" style={{ width: 120, textAlign: "center" }} data-testid={`seed-nat-count-${x.nation}`}>{Math.round((x.share / tot) * 100)}% · {counts[x.nation] || 0} people</span>
+        <button className="ib" disabled={list.length === 1 || list.every((y) => y.nation === x.nation || (counts[y.nation] || 0) <= 1)} onClick={() => bump(i, 1)} aria-label={`One more from ${x.nation}`} data-testid={`seed-nat-plus-${x.nation}`}><Plus size={13} /></button>
         <button className="ib" disabled={list.length === 1} onClick={() => set(list.filter((_, j) => j !== i))} aria-label={`Remove ${x.nation}`} data-testid={`seed-nat-remove-${x.nation}`}><X size={13} /></button>
       </div>)}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

@@ -1,9 +1,10 @@
-import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins, Sprout, ShieldCheck, Palette, UserCog, Gavel, Package } from "lucide-react";
+import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins, Sprout, ShieldCheck, Palette, UserCog, Gavel, Package, ToggleRight } from "lucide-react";
 
 export const TOP_LINKS = [
   { to: "/safety", key: "safety", label: "Project Safety", Icon: ShieldCheck },
   { to: "/extras", key: "extras", label: "Downloads", Icon: Package },
   { to: "/appearance", key: "appearance", label: "Appearance", Icon: Palette },
+  { to: "/features", key: "features", label: "Features", Icon: ToggleRight },
 ];
 
 export const NAV = [

@@ -248,6 +248,14 @@ h1.h .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
 .bell-pop{position:absolute;right:0;top:44px;width:380px;max-height:520px;overflow-y:auto;z-index:80;padding:14px;box-shadow:0 20px 60px -10px rgba(0,0,0,.7)}
 .bell-row{cursor:pointer;border-radius:8px;padding:8px}.bell-row:hover{background:var(--s2)}.bell-row.unread b:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);margin-right:6px}
 .nav-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);margin-left:auto;flex-shrink:0}
+.nav-item.locked{--c:#5A5F66;opacity:.45;filter:grayscale(1);cursor:not-allowed}
+.nav-item.locked:hover{transform:none}
+.nav-item .lock-ic{margin-left:auto;flex-shrink:0;color:var(--dim)}
+.dofbtn.locked{filter:grayscale(1);opacity:.45;animation:none;box-shadow:none;cursor:not-allowed}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(420px,100%),1fr));gap:14px}
+.feat-card{border-left:3px solid var(--c);transition:opacity .3s,filter .3s}
+.feat-card .tile2{color:var(--c)}
+.feat-card.off{opacity:.55;filter:grayscale(1)}
 .rawsw{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);padding:0 8px;cursor:pointer}
 .dl-box{display:flex;flex-direction:column;align-items:center;gap:8px;margin:22px 0 4px}
 .dl-box small{color:var(--mut);font-size:13px}

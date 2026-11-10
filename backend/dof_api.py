@@ -11,6 +11,7 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, Strea
 
 import roles
 from core import db, active_career, latest_two, month_minutes, now_iso, new_id, logger
+from features_api import need
 from matches_api import season_per90
 from rules_api import current as current_rules
 from sample_reader import GROUP
@@ -248,7 +249,7 @@ async def messages(conv_id: str):
     return await db.dof_messages.find({"conversation_id": conv_id}, {"_id": 0}).sort("at", 1).to_list(500)
 
 
-@router.post("/conversations/{conv_id}/stream")
+@router.post("/conversations/{conv_id}/stream", dependencies=need("dof"))
 async def stream(conv_id: str, body: Ask):
     c = await active_career()
     conv = await _conv(c, conv_id)

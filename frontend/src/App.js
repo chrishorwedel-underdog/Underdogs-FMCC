@@ -8,6 +8,9 @@ import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { AppFooter } from "@/components/AppFooter";
 import { WhatsNew } from "@/components/WhatsNew";
+import { FeatureGate } from "@/components/FeatureGate";
+import { useFeatures } from "@/lib/features";
+import Features from "@/pages/Features";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModuleGuide } from "@/components/ModuleGuide";
@@ -37,6 +40,7 @@ const LATER = [];
 
 const Shell = ({ state }) => {
   const [pal, setPal] = useState(false);
+  const { data: feats } = useFeatures();
   useEffect(() => {
     const onKey = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPal(true); }
@@ -47,7 +51,7 @@ const Shell = ({ state }) => {
   return (
     <div className="app grain">
       <Sidebar />
-      <Tour ready={!!state.career} />
+      <Tour ready={!!state.career && feats?.ask === false} />
       <section className="main">
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
         <div className="content">
@@ -69,6 +73,7 @@ const Shell = ({ state }) => {
             <Route path="/safety" element={<Safety />} />
             <Route path="/extras" element={<Extras />} />
             <Route path="/appearance" element={<Appearance />} />
+            <Route path="/features" element={<Features />} />
             <Route path="/editor" element={<PlayerTeamsEditor />} />
             <Route path="/changes" element={<Changes />} />
             <Route path="/matches" element={<Matches />} />
@@ -82,6 +87,7 @@ const Shell = ({ state }) => {
       </section>
       <CommandPalette open={pal} onClose={() => setPal(false)} />
       <WhatsNew />
+      {state.career && <FeatureGate />}
     </div>
   );
 };

@@ -6,7 +6,7 @@ export const GUIDES = {
     how: ["Pick a club", "Switch on penalties or pick a preset, then check the summary", "Make the new-career file and pick it from FM's database list when you start a new career, or queue the live ones and approve them in Game changes"],
   },
   "/": {
-    what: "Your club at a glance. Everything important from your latest save on one screen.",
+    what: "Your club at a glance. Everything important from your latest save on one screen. A dot next to a menu item means that page has something new; opening the page clears it.",
     features: ["Six cards with your squad, development, scouting, awards, matches and reports", "Needs your attention: contracts ending, players short of minutes and changes waiting for approval", "Your next match", "Updates, backups and careers"],
     how: ["Play FM and save the game", "FMCC reads the new save on its own (or press the refresh button at the top)", "Click any card to open that module"],
   },

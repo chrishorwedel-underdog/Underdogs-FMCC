@@ -1,8 +1,13 @@
 import { useNavigate } from "react-router-dom";
+import { useFeatures, isOff } from "@/lib/features";
+
+const FEAT = { squad: "squad", development: "development", scouting: "scouting", report: "reports", breakout: "breakout" };
 import { Users, TrendingUp, Search, BarChart3, Zap, Star, ArrowRight } from "lucide-react";
 
 const Card = ({ icon: Icon, title, tag, to, delay, children, id, open }) => {
   const nav = useNavigate();
+  const { data: feats } = useFeatures();
+  if (isOff(feats, FEAT[id])) return null;
   return (
     <div className={`card click rise ${delay}`} onClick={() => nav(to)} data-testid={`home-card-${id}`}>
       <div className="ch"><span className="tile"><Icon size={15} /></span>{title}{tag}</div>

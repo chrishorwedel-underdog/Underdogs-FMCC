@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from core import db, active_career, now_iso, new_id
+import features_api
 
 router = APIRouter(prefix="/api/notify")
 TYPES = {"report": "New monthly report", "missed": "Missed dates", "countdown": "Countdown reaching 7 days", "changes": "Game changes waiting",
@@ -121,8 +122,10 @@ async def get_countdowns():
     if not snaps:
         return {"game_date": None, "items": [], "missed": []}
     done = {d["key"]: d async for d in db.missed_dates.find({"career_id": c["id"]}, {"_id": 0})}
-    return {"game_date": snaps[-1]["game_date"], "items": countdowns(_d(snaps[-1]["game_date"]), [p for p in await _own(c)]),
-            "missed": [m | {"handled": done.get(m["key"])} for m in missed(snaps)]}
+    offs = features_api.off(c)
+    items = [x for x in countdowns(_d(snaps[-1]["game_date"]), [p for p in await _own(c)]) if features_api.COUNTDOWN.get(x["page"]) not in offs]
+    return {"game_date": snaps[-1]["game_date"], "items": items,
+            "missed": [m | {"handled": done.get(m["key"])} for m in missed(snaps)] if "reports" not in offs else []}
 
 
 async def _own(c: dict) -> list:
@@ -152,9 +155,29 @@ async def notices():
     c = await active_career()
     await sync(c)
     p = await prefs()
+    offs = features_api.off(c)
     rows = await db.notices.find({"career_id": c["id"], "hidden": False, "type": {"$in": [k for k, v in p.items() if v]}}, {"_id": 0, "career_id": 0}).sort("at", -1).to_list(100)
+    rows = [r for r in rows if not features_api.path_off(r["link"], offs) and not (r["type"] == "countdown" and _cd_off(r["key"], offs))]
     badges = sorted({r["link"].split("?")[0] for r in rows if not r["read"]})
-    return {"items": rows, "unread": sum(not r["read"] for r in rows), "badges": badges}
+    return {"items": rows, "unread": sum(not r["read"] for r in rows), "badges": badges,
+            "badge_items": {b: [r["title"] for r in rows if not r["read"] and r["link"].split("?")[0] == b][:5] for b in badges}}
+
+
+def _cd_off(key: str, offs: set) -> bool:
+    return features_api.COUNTDOWN.get(key.split(":")[1] if key.count(":") >= 1 else "") in offs
+
+
+class PageIn(BaseModel):
+    path: str
+
+
+@router.post("/read-page")
+async def read_page(body: PageIn):
+    """Opening a page marks its notices read, so its menu dot clears."""
+    c = await active_career()
+    links = [v for v in PAGE.values() if v.split("?")[0] == body.path]
+    r = await db.notices.update_many({"career_id": c["id"], "read": False, "link": {"$in": links}}, {"$set": {"read": True}})
+    return {"ok": True, "marked": r.modified_count}
 
 
 @router.post("/{nid}/read")
