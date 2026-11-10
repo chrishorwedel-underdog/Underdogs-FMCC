@@ -256,6 +256,23 @@ h1.h .serif{font-size:50px;color:var(--acc);letter-spacing:-.01em}
 .feat-card{border-left:3px solid var(--c);transition:opacity .3s,filter .3s}
 .feat-card .tile2{color:var(--c)}
 .feat-card.off{opacity:.55;filter:grayscale(1)}
+/* The left menu always fits one screen with no scroll bar; at Large text and up it also drops the subtitles */
+.side{overflow:hidden}
+.side nav{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.side .nav-item{flex:1 1 0;min-height:0;max-height:calc(clamp(31px,4.93vh,61px) * 1.25);overflow:hidden}
+.side .logo{height:clamp(56px,calc(11vh / var(--z,1)),192px)}
+.side-compact .side{padding-top:6px;padding-bottom:6px}
+@media (max-height:760px){.side .nav-item small{display:none}}
+.side-compact .brand{padding-bottom:6px}
+.side-compact .logo{height:clamp(36px,calc(8vh / var(--z,1)),96px)}
+.side-compact .side nav{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:3px}
+.side-compact .nav-item{flex:1 1 0;min-height:0;max-height:52px;margin-bottom:0;padding:0 9px;gap:8px;overflow:hidden}
+.side-compact .nav-item small{display:none}
+.side-compact .nav-item .tile2{width:22px;height:22px;border-radius:7px}
+.side-compact .nav-item .tile2 svg{width:14px;height:14px}
+.side-compact .foot{padding-top:6px}
+.side-compact .dofbtn{padding:5px 10px}
+.side-compact .dofbtn b,.side-compact .dofbtn small{font-size:13px}
 .rawsw{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);padding:0 8px;cursor:pointer}
 .dl-box{display:flex;flex-direction:column;align-items:center;gap:8px;margin:22px 0 4px}
 .dl-box small{color:var(--mut);font-size:13px}

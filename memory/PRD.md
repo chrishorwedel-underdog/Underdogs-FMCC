@@ -210,6 +210,8 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Per-career Features (features_api.py /api/features; pages/Features.jsx; FeatureGate.jsx): "Choose your features" shown once per career after its first save read (careers.features_seen), 13 cards (Home always on + 12 switches incl. DOF), footer "Features" link. Off = greyed/locked menu item (toast hint), direct URL redirects Home, countdowns/notices/dots/Home cards hidden, run endpoints 409 (dp/run, elite/queue, breakout/finalise, dof stream). Nothing deleted; world monthly data still recorded.
 - Menu dot: /api/notify returns badge_items for a hover tooltip; opening a page POSTs /api/notify/read-page to clear its dot. Tour Home text explains the dot.
 - Seed a Surname step 3: − / + per nationality (moves one person from/to the largest other share; total fixed; min 1). Tested iteration_25 (backend 12/12, frontend 100%).
+- Text sizes now Normal 115% (default), Large 130%, Larger 142.5%, Largest 155%; old saved sizes are mapped up. The left menu always fits one screen with no scroll bar (items shrink to share the height; subtitles hidden from Large up or on short screens).
+
 
 
 
