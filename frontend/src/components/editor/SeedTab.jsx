@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sprout, Plus, X, Wand2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
@@ -89,13 +89,14 @@ export const SeedTab = () => {
   const { data: draft, refetch } = useGet("seed-draft", "/seed/draft");
   const act = useAct();
   const [f, setF] = useState(DEFAULT);
+  useEffect(() => { if (draft?.settings) { setF({ ...DEFAULT, ...draft.settings }); } }, [draft?.at]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (p) => setF((x) => ({ ...x, ...p }));
   if (!meta) return null;
   const mode = f.mode || meta.suggested_mode;
   const body = { ...f, mode };
   const total = sum(f.players) + sum(f.staff);
   const create = () => act(() => api.post("/seed/create", { ...body, seed: Math.floor(Math.random() * 999999) }), (r) => `${r.people.length} ${r.mode === "new" ? "people created" : "players picked"}. Check them below`, ["seed-draft"]);
-  const apply = () => window.confirm(mode === "new" ? `Seed ${draft.people.length} new people called ${draft.surname} into a new-save file?` : `Rename ${draft.people.length} players in your save to ${draft.surname}?`)
+  const apply = () => window.confirm(draft.mode === "new" ? `Seed ${draft.people.length} new people called ${draft.surname} into a new-save file?` : `Rename ${draft.people.length} players in your save to ${draft.surname}?`)
     && act(() => api.post("/seed/apply"), (r) => (r.mode === "new" ? `${draft.surname} seeded: ${r.people.length} people${r.placed ? " placed in your FM editor data folder" : ". Download the file from Seeded surnames"}` : `${draft.surname} seeded: ${r.people.length - r.failed} players renamed${r.sample ? " in the SAMPLE save" : ""}`), ["seed-draft", "seed-history", "editor-state"]);
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }} data-testid="seed-tab">

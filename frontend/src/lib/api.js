@@ -4,7 +4,7 @@ export const api = axios.create({ baseURL: `${process.env.REACT_APP_BACKEND_URL}
 
 export const errMsg = (e) => {
   const d = e?.response?.data?.detail;
-  if (Array.isArray(d)) return d.map((x) => x?.msg || String(x)).join("; ");
+  if (Array.isArray(d)) return d.map((x) => (x?.msg || String(x)).replace(/^Value error, /, "")).join("; ");
   if (d && typeof d === "object") return d.msg || JSON.stringify(d);
   return d || "Something went wrong. Please try again.";
 };

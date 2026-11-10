@@ -57,7 +57,7 @@ export const GUIDES = {
   },
   "/editor": {
     what: "Changes how players and clubs look and are named in FM.",
-    features: ["Player faces: pick from NG_Regens, upload your own or create one with ChatGPT", "Clubs: logos (upload or ChatGPT), names and club attributes such as reputation and cash", "Kits: home, away and third, uploaded or designed by ChatGPT, even in bulk", "Licensing fix: give unlicensed clubs and leagues their real names", "Pack browser, Bulk import of a whole folder or zip, and a Pack check that finds missing or clashing pictures"],
+    features: ["Player faces: pick from NG_Regens, upload your own or create one with ChatGPT", "Player Creator: build one player in detail (positions, attributes, personality, ability), or a batch", "Seed a Surname: spread one surname across new players and staff, or rename low-profile players in your save", "Clubs: logos (upload or ChatGPT), names and club attributes such as reputation and cash", "Kits: home, away and third, uploaded or designed by ChatGPT, even in bulk", "Licensing fix: give unlicensed clubs and leagues their real names", "Pack browser, Bulk import of a whole folder or zip, and a Pack check that finds missing or clashing pictures"],
     how: ["Pick a tab at the top", "Every change shows a preview first and can be undone", "Reload graphics in FM (or restart it) to see the changes"],
   },
   "/safety": {

@@ -1,12 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet } from "@/lib/ui";
 
 const Cell = ({ v, onSave, id, type = "text", w = 110, min, max }) => {
   const [x, setX] = useState(v ?? "");
+  useEffect(() => { setX(v ?? ""); }, [v]);
+  const commit = () => {
+    const val = type === "number" ? Math.max(min, Math.min(max, Number(x) || min)) : x;
+    if (String(val) === String(v ?? "")) { setX(v ?? ""); return; }
+    setX(val);
+    onSave(val).then((r) => { if (!r) { setX(v ?? ""); } });
+  };
   return <input className={`inp${type === "number" ? " mono" : ""}`} style={{ width: w, height: 28 }} type={type} min={min} max={max} value={x}
-    onChange={(e) => setX(e.target.value)} onBlur={() => String(x) !== String(v ?? "") && onSave(type === "number" ? Number(x) : x)} data-testid={id} />;
+    onChange={(e) => setX(e.target.value)} onBlur={commit} data-testid={id} />;
 };
 
 const Sel = ({ v, opts, onSave, id, w = 130 }) => (
@@ -55,7 +62,7 @@ export const SeedResults = ({ d, meta, act, onChange }) => {
       <p className="note">{cur ? "Only the names change; each player keeps their club, age and ability. Edit any name, or leave someone out." : "Change anything before you seed. Ability can't go above the caps."}</p>
       <div style={{ overflowX: "auto" }}><table className="tbl" style={{ marginTop: 8 }}>
         <thead><tr>{(cur ? ["Now called", "First name", "Surname", "Pos", "Nation", "Age", "Club", ""] : ["First name", "Surname", "Position / role", "Nation", "Age", "Height", "Ethnicity", "Skin", "CA", "PA", ""]).map((h) => <th key={h}>{h}</th>)}</tr></thead>
-        <tbody>{d.people.map((p) => (cur ? <CurRow key={p.pid} p={p} save={save} drop={drop} /> : <NewRow key={`${p.pid}-${d.at}`} p={p} meta={meta} save={save} drop={drop} />))}</tbody></table></div>
+        <tbody>{d.people.map((p) => (cur ? <CurRow key={p.pid} p={p} save={save} drop={drop} /> : <NewRow key={p.pid} p={p} meta={meta} save={save} drop={drop} />))}</tbody></table></div>
     </div>
   );
 };

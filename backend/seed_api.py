@@ -158,7 +158,7 @@ def match_existing(b: SeedIn, pool: list, own: str, taken: set, extra: dict) -> 
     slots = [p for p, n in b.players.items() for _ in range(n)]
     for i, (pos, nat) in enumerate(zip(slots, want_nat)):
         def score(p):
-            return (2 * (p.get("nationality") == nat) + 3 * bool(POS_MATCH[pos] & set(p.get("positions") or []))
+            return (3 * (p.get("nationality") == nat) + 3 * bool(POS_MATCH[pos] & set(p.get("positions") or []))
                     + any(lo <= (p.get("age") or 0) <= hi for lo, hi in bands.values()))
         best = max((p for p in cands if p["unique_id"] not in used), key=score, default=None)
         if not best:

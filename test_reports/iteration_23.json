@@ -1,0 +1,40 @@
+{
+  "summary": "Tested Seed a Surname (new + current save modes) and the reworked Player Creator (one player + batch), both backend and UI. Backend pytest test_seed_surname_single_creator.py passes 23/23 after one fix. Found and FIXED a critical bug in the single Player Creator: editing a player (PUT /api/creator/single/{id}) replaced player.id with the record's UUID. After that, the XML unique_id was a UUID, and every later POST /api/creator/single returned 500 (TypeError: str vs Int64 in max()), because the max query also counts removed records. UI: the tab order is right (Player Creator, Seed a Surname, Clubs). Seed: the form, the nationality warning, Split evenly, and the CA/PA input clamps (60/100) all work. Create gives exact nationality counts, every last name equals the surname, and CA<=60, PA<=100, PA>=CA. Ethnicity and age sliders are respected. Editing, removing rows, Seed The Surname, the history list, file download and removal all work. Current mode gives the correct columns (no CA/PA), the note that staff are left out, excludes TEST FC players and already-renamed players, and the history says SAMPLE with no remove button. The single creator (no caps, auto attributes, create/edit/download/delete) and batch preview with shuffle work. The seed tab has no horizontal overflow at 390px mobile. Three minor UI bugs remain (below).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "PUT /api/creator/single/{id} -> POST /api/creator/single", "issue": "FIXED by testing agent: _save used old['id'] (doc uuid) instead of old['player']['id']; after any edit, subsequent creates 500'd and XML unique_id became a uuid", "priority": "CRITICAL"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/creator/single (422)", "issue": "Validation messages reach the UI with Pydantic prefix 'Value error, ...' (e.g. 'Value error, Potential ability can't be below current ability'); same pattern for seed validator messages"},
+      {"endpoint": "PUT /api/creator/single/{id}", "issue": "file_name keeps the original name (e.g. 'FMCC Player - Chrissy - ...xml') after the player is renamed or common name cleared; face not re-matched when nationality/ethnicity changes"},
+      {"endpoint": "POST /api/seed/create (current)", "issue": "Scoring weights position (3) above nationality (2), so with nations=[England x6] most picks were Netherlands/Brazil/Nigeria ('closest' tag). Consider weighting nationality higher since the user specified exact nationality counts"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SeedTab apply confirm", "issue": "Confirm text uses the form's mode (f.mode || meta.suggested_mode) instead of draft.mode. After a reload, or after switching the toggle once Create has run, a NEW-save draft asked 'Rename 11 players in your save to Testseed?'. The apply itself did the right thing (new). Fix: use draft.mode in the confirm text.", "selector": "[data-testid=seed-apply]", "priority": "MEDIUM"},
+      {"component": "SeedResults Cell", "issue": "Cells keep local state and the row key is pid-d.at, and d.at doesn't change on PATCH, so server changes never show. (1) Setting CA 58 above PA 40: the server stores pa=58 but the UI still shows 40. (2) Typing CA 75 (above the cap): the PATCH returns 422 but the cell still shows 75 while the server keeps 52. Fix: re-sync the cell from props after the save or an error (e.g. key by value, or a useEffect on v), and clamp to min/max on blur.", "selector": "[data-testid^=seed-ca-], [data-testid^=seed-pa-]", "priority": "MEDIUM"},
+      {"component": "SeedTab form state", "issue": "After a reload the draft results persist but the form (surname, breakdown, nations) resets to defaults and the mode toggle goes back to suggested_mode (current). Consider loading draft.settings into the form.", "selector": "[data-testid=seed-tab]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_seed_surname_single_creator.py", "/app/test_reports/pytest/pytest_seed.xml"],
+  "action_items": [
+    "SeedTab apply(): build the confirm text from draft.mode, not the form mode",
+    "SeedResults Cell: re-sync from server value after PATCH (PA auto-raise) and on 422; clamp CA/PA to the caps on input",
+    "Strip the 'Value error, ' prefix from Pydantic validator messages in the API error handler",
+    "Optional: keep creator single file_name in sync with the name on edit; weight nationality higher in seed current-mode matching; restore form from draft.settings"
+  ],
+  "critical_code_review_comments": [
+    "creator_single._save: pid for an update must be old['player']['id'] (fixed). The max() id query includes removed docs, so one bad doc poisons all creates. Consider an int-only filter or a counter.",
+    "seed_api.remove: IDs come from max over ACTIVE batches only, so after a removal the same unique_ids can be handed out again while revisions or faces still refer to the old ones. Low risk, but worth noting.",
+    "seed current-mode history rows can't be removed (409 by design). There is no UI or admin path to clear SAMPLE renames in preview."
+  ],
+  "updated_files": ["/app/backend/creator_single.py", "/app/backend/tests/test_seed_surname_single_creator.py"],
+  "success_rate": {"backend": "100% (23/23 after fix)", "frontend": "~90% (3 minor UI state bugs)"},
+  "seed_data_creation": "None left behind. Test seed_batches (Testseed x3, Testcurrent), seed_renames (5), and creator_singles (3 removed test docs, one of which I had to repair first) were deleted by id. Preview XML files were removed through the DELETE endpoints. The main agent's seed_drafts doc (Horwedel, 9 people) was backed up and restored. Audit-log entries from the test actions remain.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest with -n 0 for test_seed_surname_single_creator.py: seed draft is one doc per career, so parallel classes clash. The test suite overwrites the career's seed draft, so back up db.seed_drafts first and restore it afterwards. Skip tour redirects to Home; click nav-editor afterwards. Current-mode apply writes db.seed_renames plus a seed_batches row that can't be deleted via the API, so clean those up in Mongo by seed_id."
+}

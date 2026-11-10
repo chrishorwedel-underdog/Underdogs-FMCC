@@ -112,11 +112,15 @@ def _xml(c: dict, p: dict) -> str:
 
 
 async def _save(c: dict, body: SingleIn, old: Optional[dict]) -> dict:
-    pid = old["id"] if old else max([d["player"]["id"] async for d in db.creator_singles.find({"career_id": c["id"]}, {"_id": 0, "player.id": 1})] + [ID_BASE - 1]) + 1
+    pid = old["player"]["id"] if old else max([d["player"]["id"] async for d in db.creator_singles.find({"career_id": c["id"], "player.id": {"$type": "number"}}, {"_id": 0, "player.id": 1})] + [ID_BASE - 1]) + 1
     p = body.model_dump(mode="json") | {"id": pid, "name": body.common_name.strip() or f"{body.first_name} {body.last_name}", "face": (old or {}).get("player", {}).get("face")}
     if body.faces and not p["face"]:
         await cr._faces(c, [p])
-    fname = (old or {}).get("file_name") or f"FMCC Player - {re.sub(r'[^A-Za-z0-9 ._-]', '', p['name'])[:40] or 'Player'} - {pid}.xml"
+    fname = f"FMCC Player - {re.sub(r'[^A-Za-z0-9 ._-]', '', p['name'])[:40] or 'Player'} - {pid}.xml"
+    if old and old.get("file_name") != fname:
+        f = Path(old["file_path"])
+        if f.parent == cr._folder(c) and f.name.startswith("FMCC Player - "):
+            await asyncio.to_thread(f.unlink, True)
     xml = _xml(c, p)
     path = await asyncio.to_thread(cr._write, cr._folder(c), fname, xml)
     return {"player": p, "file_name": fname, "file_path": path, "xml": xml, "at": now_iso()}
