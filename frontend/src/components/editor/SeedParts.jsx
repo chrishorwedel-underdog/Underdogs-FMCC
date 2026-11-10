@@ -61,7 +61,7 @@ export const Nations = ({ list, set, all, counts }) => {
   const [n, setN] = useState("");
   const tot = list.reduce((a, x) => a + x.share, 0) || 1;
   const bump = (i, d) => {
-    const c = list.map((x) => counts[x.nation] || 1);
+    const c = list.map((x) => counts[x.nation] ?? 0);
     const others = c.map((v, j) => [j, v]).filter(([j, v]) => j !== i && (d > 0 ? v > 1 : true)).sort((a, b) => b[1] - a[1]);
     if (!others.length) { return; }
     c[i] += d;

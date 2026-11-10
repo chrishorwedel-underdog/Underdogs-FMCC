@@ -207,6 +207,10 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Every seeded player (created or renamed) gets "Keep History After Retirement" on: keep_history attribute in the new-save XML; live set keep_history_after_retirement=1 after renaming (UNVERIFIED field name).
 - Seed a Surname page redesigned (SeedTab.jsx + SeedParts.jsx): 4 numbered steps (surname + save type; big Players/Staff steppers with quick picks and auto split "Balanced squad"/"Typical backroom" or custom; nationality share sliders auto-converted to exact counts; age presets or custom), "Fine-tune" accordion (ethnicity, skin, height, CA ≤60/PA ≤100, faces/own club), sticky summary bar with Create + Seed The Surname. Form saved in localStorage.
 - Dynamic Potential: "All loaded players" switch (scope.all_players) covers your squad + every player in loaded leagues; hides My club/League/Nation lists while on. Per-run cap (Rules) still applies. Tested iteration_24 (backend 30/30; stepper sync, custom-age start, mobile bar fixed after).
+- Per-career Features (features_api.py /api/features; pages/Features.jsx; FeatureGate.jsx): "Choose your features" shown once per career after its first save read (careers.features_seen), 13 cards (Home always on + 12 switches incl. DOF), footer "Features" link. Off = greyed/locked menu item (toast hint), direct URL redirects Home, countdowns/notices/dots/Home cards hidden, run endpoints 409 (dp/run, elite/queue, breakout/finalise, dof stream). Nothing deleted; world monthly data still recorded.
+- Menu dot: /api/notify returns badge_items for a hover tooltip; opening a page POSTs /api/notify/read-page to clear its dot. Tour Home text explains the dot.
+- Seed a Surname step 3: − / + per nationality (moves one person from/to the largest other share; total fixed; min 1). Tested iteration_25 (backend 12/12, frontend 100%).
+
 
 
 

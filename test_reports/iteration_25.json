@@ -1,0 +1,30 @@
+{
+  "summary": "Tested the per-career Features switches, the menu dot tooltip and read-page clearing, and the Seed a Surname nationality -/+ controls, on both backend and UI. Backend: the new suite tests/test_features_gate.py passes 12/12. It covers GET and PUT /api/features (an unknown key gives 422, partial updates merge and persist), the countdown and notice filtering for reports/scouting/squad, a 409 with the 'turned off' message from dp/run, elite/queue, breakout/finalise and dof stream when the feature is off (dp/run is not blocked when on), the badge_items shape, and read-page. UI: with ask:true, deep links (/squad) and sidebar clicks redirect to /features. There are 13 cards (Home 'Always on' + 12 switches) and the Tour stays hidden. Turning reports off greys the card (class 'off') and locks nav-reports (class 'nav-item locked'). Turn all off locks 11 nav items and nav-ask-dof (class 'dofbtn locked'). Turn all on turns every switch back on. Done goes to Home, then the Tour shows (1 of 15, Home text mentions the dot). The footer nav-features link opens /features. With reports, dof and dp off: home-card-report is hidden and the 'Monthly report' and 'Dynamic Potential review' chips are gone. Clicking locked nav-reports and nav-ask-dof shows the toast and stays on /. Direct /reports and /dof redirect to / with the toast. Turning features back on restores the card and navigation. Dot: nav-badge-reports shows the title 'New: December report ready. Opening this page clears the dot.', and opening Reports clears both the dot and the title. Seed step 3 with 2 and 3 nations: + and - move exactly one person to or from the largest other nation, the total stays at 13, - is disabled at 1, + is disabled when all others are at 1, and the sliders follow. On mobile (390px) the features grid is one column (358px) with no horizontal overflow. Restored afterwards: all features ON and careers.features_seen $unset (ask:true again).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Tour vs deep links", "issue": "Pre-existing, not new. In a fresh browser profile (Tour not done), a direct link such as /editor, or clicking the footer Features link while the Tour is open, ends up on Home because the Tour pulls the route back to its step page. Testers must click 'Skip tour' first.", "selector": "Tour", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home 'What this page does'", "issues": ["It still says 'Six cards...' when some module cards are hidden by off features."]},
+      {"screen": "Mobile 390px top bar", "issues": ["The career subtitle 'FM27 · January 2028' wraps over 3 lines and the top bar is cramped. Pre-existing."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_features_gate.py", "/app/test_reports/pytest/pytest_features.xml"],
+  "action_items": [
+    "Optional: in SeedParts Nations bump(), `counts[x.nation] || 1` treats a nation with 0 people (more nations than people) as 1, so the moved amount is not exactly one person in that edge case. Use `?? 0` and guard it.",
+    "Optional: make the Home ModuleGuide card-count text dynamic, or don't hard-code 'Six cards'."
+  ],
+  "critical_code_review_comments": [
+    "The path-to-feature map is duplicated in features_api.PATHS and FeatureGate.jsx PATHS. They can drift apart; consider having GET /api/features return the paths, or keep a shared constant.",
+    "Only the 4 run endpoints are gated. Other mutating endpoints for off features (e.g. punish actions, editor writes, elite nominations, scouting shortlist) still work over the API. That is fine if 'off' is meant only as 'no automatic work', but it is worth confirming.",
+    "notify.sync still creates notices for off features (they are only filtered at read time). This is fine and nothing is lost, but the countdown notices for off features pile up and reappear unread when the feature is turned back on."
+  ],
+  "updated_files": ["/app/backend/tests/test_features_gate.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None. Testing toggled features on the active TEST_Shot career, which wrote 'features changed' audit entries. Afterwards all features were restored to ON and features_seen was $unset. One notice (report:2027-12) was temporarily set unread to test the dot; opening Reports marked it read again (its original state). No seed records were created.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Each browser_automation run is a fresh profile, so the Tour starts on Home and pulls the route back to '/'. Click the 'Skip tour' button before navigating. With ask:true, everything redirects to /features. Run pytest with -n 0. After testing, restore all features ON (PUT /api/features) and $unset careers.features_seen for the active career (72f82391-...). A helper script is at /tmp/m.py (may not persist)."
+}
