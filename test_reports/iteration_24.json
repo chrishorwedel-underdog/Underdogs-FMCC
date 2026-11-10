@@ -1,0 +1,36 @@
+{
+  "summary": "Tested the 4-step Seed a Surname page and the Dynamic Potential 'All loaded players' toggle, on both backend and UI. Backend: the new suite tests/test_seed_steps_dp_all_players.py passes 7/7 and the regression suite test_seed_surname_single_creator.py passes 23/23 (both run with -n 0). DP: PUT /api/dp/scope accepts all_players. With it on, covered = 227 (23 own squad + 204 pool players) and the review list holds 227 players. Turning it off restores 23. A stale version gives 409 and a bad type gives 422. UI, seed: all 4 steps, the summary bar and the Advanced accordion render. Create is disabled when there is no surname. Steppers, quick picks and the clamp (500 -> 200) work. The Balanced squad and Typical backroom summaries are correct. With Choose positions, the inputs drive the total. The Choose jobs accordion groups show the per-group counts. Nationality share sliders recompute % and people, and the counts always add up to the total (13). Add, remove and Make them equal work. All age presets are present, and Custom shows the sliders. The Advanced section has 11 ethnicity sliders and clamps CA to 60 and PA to 100. It shows the faces checkbox in New mode and the own-club checkbox in Current mode. New-mode Create gave 13 rows (10 players + 3 staff, England 7 / France 6). Seed The Surname cleared the results, added the history entry with a File link, and disabled the button. Current-mode Create gave 8/8 with the right columns. The large case (100+20) gave 44 people with the note '76 player slot(s) had no low-profile player left'. Applying added a SAMPLE history entry. The form and draft survive a reload. UI, DP: the switch works, hides the My club switch and the League/Nation lists, and shows 'Covers 227 players: everyone loaded in the game'. Turning it off restores them. Mobile 390px: no page overflow and both summary-bar buttons fit, but the bar is cramped. One functional bug: the stepper gets out of sync in Choose positions / Choose jobs mode.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SeedTab Step 2 Stepper", "issue": "In 'Choose positions' mode, the Players stepper -/+ and the quick picks (5/10/25/50/100) change playerTotal, but the per-position counts don't change. Reproduce: set GK=5, so the total is 16, then press +. The stepper shows 17, but the summary bar still says 16 players and Create sends 16. The same happens with the Staff stepper in 'Choose jobs' mode. Fix: in choose mode, either re-split the new total across positions/jobs or make the stepper read-only (show the sum).", "selector": "[data-testid=seed-players-plus], [data-testid=seed-players-pick-*], [data-testid=seed-staff-plus]", "priority": "MEDIUM"},
+      {"component": "SeedTab Step 4 Custom ages", "issue": "Picking a preset (e.g. Academy) and then Custom fills the sliders with the Balanced values, not the preset that was selected (SeedTab.jsx line 81/83 always uses PLAYER_AGE_PRESETS.Balanced / STAFF_AGE_PRESETS.Balanced). Users would expect Custom to start from the preset they picked.", "selector": "[data-testid=seed-page-preset-custom]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Seed Step 2 (desktop)", "issues": ["When Choose jobs is open, the staff column gets taller and the left Players column stretches vertically: there is a big empty gap under 'PLAYERS' and the Balanced/Choose seg box becomes a tall empty box. Add alignContent:'start' / align-items:start to .seed-steppers and its column grids."]},
+      {"screen": "Seed summary bar (mobile 390px)", "issues": ["The sticky bar is about 200px tall (about 25% of the viewport). The text is squeezed into a column about 75px wide and wraps onto 6 lines ('Testseed / · 13 / people / ...'). On narrow screens, stack the text above the buttons (flex-wrap, or text at 100% width)."]},
+      {"screen": "Seed Step 3 nation row", "issues": ["The count span is a fixed 120px, so '100% · 120 people' wraps onto two lines. Widen it to about 150px or use white-space:nowrap."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_seed_steps_dp_all_players.py", "/app/backend/tests/test_seed_surname_single_creator.py", "/app/test_reports/pytest/iter24.xml"],
+  "action_items": [
+    "Fix the stepper getting out of sync in Choose positions / Choose jobs mode (re-split the new total or make the stepper read-only)",
+    "Make Custom age sliders start from the preset that was selected",
+    "Mobile: stack the seed summary bar text above the buttons",
+    "Step 2: stop the columns stretching vertically (align-content:start)",
+    "Consider DP all_players at real-save scale (see code review)"
+  ],
+  "critical_code_review_comments": [
+    "DP all_players: dp_run stops at caps.max_players (500 by default) in the order the players come (own club first, then pool order). In a real save with thousands of loaded players, 'All loaded players' quietly covers only the first 500, which biases it toward the leagues that come first. Tell the user when the covered count is above the cap, or pick at random.",
+    "With all_players on, GET /api/dp/review returns every loaded player, and ReviewList renders one checkbox per player. In a real save (tens of thousands of players) this will be very slow. Paginate it, or collapse it to clubs by default.",
+    "GET /api/dp works out the full contexts() list just to count the covered players. For all_players in a real save, that is a heavy query on every scope toggle.",
+    "SeedTab.build: when the nations' shares are all equal, the remainder goes to whichever comes first (England 5, France 4, Brazil 4). That's fine, but the % labels show 33% for all three."
+  ],
+  "updated_files": ["/app/backend/tests/test_seed_steps_dp_all_players.py"],
+  "success_rate": {"backend": "100% (30/30)", "frontend": "~90% (one medium stepper sync bug, plus design nits)"},
+  "seed_data_creation": "None kept. Everything created was cleaned up by id: 6 DP rule versions (DP is back to preset version 0: my_club true, all_players off, 23 covered), 3 seed_batches (the new-mode file was deleted via the API), 8 seed_renames, the seed_drafts doc and 1 creator_singles row. Audit-log entries and editor face revisions ('Seeded person removed') written by the app were left in place.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Navigate via /editor then [data-testid=editor-tab-seed] (the tabs are TabBar buttons, not role=tab). DP nav is /dynamic-potential. Each browser_automation run is a fresh context, so localStorage persistence only shows within one run. The sample pool has 204 players plus 23 own squad, so all_players covered = 227. Run both seed pytest files with -n 0. Clean up DP rule versions in db.rules (module dp) by id afterwards so the version goes back to 0."
+}

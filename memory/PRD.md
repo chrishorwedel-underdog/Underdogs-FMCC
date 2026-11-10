@@ -205,6 +205,9 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Fixed: editor data XML no longer has duplicate id attributes (unique_id). Tested iteration_23 + fixes (draft.mode confirm, cell resync/clamp, form restored from draft, cleaner validation messages, file renamed on edit).
 - Seed a Surname now renames staff in running saves too: fmsave_reader._staff reads save.staff() (job titles on FM27 only; skips human manager), stored as pools.staff; sample_reader.sample_staff for preview. Low-profile staff = backroom roles at other clubs (never Manager/board, CA ≤120); role matched via ROLE_JOBS, nationality preferred, "closest" tag when not matched. Live rename uses FMLibreEditor "set staff" — UNVERIFIED.
 - Every seeded player (created or renamed) gets "Keep History After Retirement" on: keep_history attribute in the new-save XML; live set keep_history_after_retirement=1 after renaming (UNVERIFIED field name).
+- Seed a Surname page redesigned (SeedTab.jsx + SeedParts.jsx): 4 numbered steps (surname + save type; big Players/Staff steppers with quick picks and auto split "Balanced squad"/"Typical backroom" or custom; nationality share sliders auto-converted to exact counts; age presets or custom), "Fine-tune" accordion (ethnicity, skin, height, CA ≤60/PA ≤100, faces/own club), sticky summary bar with Create + Seed The Surname. Form saved in localStorage.
+- Dynamic Potential: "All loaded players" switch (scope.all_players) covers your squad + every player in loaded leagues; hides My club/League/Nation lists while on. Per-run cap (Rules) still applies. Tested iteration_24 (backend 30/30; stepper sync, custom-age start, mobile bar fixed after).
+
 
 
 

@@ -58,14 +58,14 @@ export const SeedTab = () => {
       </Step>
       <Step n={2} title="How many people?" hint="FMCC spreads them across positions and jobs for you" id="seed-step-2">
         <div className="seed-steppers">
-          <div style={{ display: "grid", gap: 10 }}>
-            <Stepper label="Players" v={f.playerTotal} set={(v) => set({ playerTotal: v })} picks={[5, 10, 25, 50, 100]} max={200} id="seed-players" />
+          <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
+            <Stepper label="Players" v={f.playerTotal} set={(v) => set({ playerTotal: v, ...(f.posMode === "Choose positions" ? { players: split(v, sum(f.players) ? f.players : POS_WEIGHTS) } : {}) })} picks={[5, 10, 25, 50, 100]} max={200} id="seed-players" />
             <Seg opts={["Balanced squad", "Choose positions"]} v={f.posMode} set={(v) => set({ posMode: v, players: v === "Choose positions" && !sum(f.players) ? split(f.playerTotal, POS_WEIGHTS) : f.players })} id="seed-posmode" />
             {f.posMode === "Choose positions" ? <CountGrid keys={meta.positions} vals={f.players} set={(v) => set({ players: v, playerTotal: sum(v) })} id="seed-pl" />
               : <small className="note" data-testid="seed-pos-summary">{Object.entries(split(f.playerTotal, POS_WEIGHTS)).map(([k, v]) => `${v} ${k}`).join(" · ") || "No players"}</small>}
           </div>
-          <div style={{ display: "grid", gap: 10 }}>
-            <Stepper label="Staff" v={f.staffTotal} set={(v) => set({ staffTotal: v })} picks={[0, 3, 5, 10, 20]} max={100} id="seed-staff" />
+          <div style={{ display: "grid", gap: 10, alignContent: "start" }}>
+            <Stepper label="Staff" v={f.staffTotal} set={(v) => set({ staffTotal: v, ...(f.staffMode === "Choose jobs" ? { staff: split(v, sum(f.staff) ? f.staff : STAFF_WEIGHTS) } : {}) })} picks={[0, 3, 5, 10, 20]} max={100} id="seed-staff" />
             <Seg opts={["Typical backroom", "Choose jobs"]} v={f.staffMode} set={(v) => set({ staffMode: v, staff: v === "Choose jobs" && !sum(f.staff) ? split(f.staffTotal, STAFF_WEIGHTS) : f.staff })} id="seed-staffmode" />
             {f.staffMode === "Choose jobs" ? <Accordion type="multiple" className="seed-acc">{Object.entries(meta.staff).map(([g, rs]) => <AccordionItem key={g} value={g}>
               <AccordionTrigger data-testid={`seed-staff-group-${g}`}>{g} <span className="st n" style={{ marginRight: 8 }}>{rs.reduce((a, r) => a + (f.staff[r] || 0), 0)}</span></AccordionTrigger>
@@ -78,9 +78,9 @@ export const SeedTab = () => {
         <Nations list={f.nations} set={(v) => set({ nations: v })} all={meta.nations} counts={counts} />
       </Step>
       <Step n={4} title="How old are they?" id="seed-step-4">
-        <div style={{ display: "grid", gap: 6 }}><div className="eyebrow">Players</div><Seg opts={[...Object.keys(PLAYER_AGE_PRESETS), "Custom"]} v={f.pAge} set={(v) => set({ pAge: v, player_ages: v === "Custom" && !sum(f.player_ages) ? PLAYER_AGE_PRESETS.Balanced : f.player_ages })} id="seed-page-preset" />
+        <div style={{ display: "grid", gap: 6 }}><div className="eyebrow">Players</div><Seg opts={[...Object.keys(PLAYER_AGE_PRESETS), "Custom"]} v={f.pAge} set={(v) => set({ pAge: v, player_ages: v === "Custom" ? (f.pAge !== "Custom" ? PLAYER_AGE_PRESETS[f.pAge] : f.player_ages) : f.player_ages })} id="seed-page-preset" />
           {f.pAge === "Custom" && <Shares items={meta.player_ages.map((b) => [b.key, `${b.label} (${b.lo}–${b.hi})`])} vals={f.player_ages} set={(v) => set({ player_ages: v })} id="seed-page" />}</div>
-        <div style={{ display: "grid", gap: 6 }}><div className="eyebrow">Staff</div><Seg opts={[...Object.keys(STAFF_AGE_PRESETS), "Custom"]} v={f.sAge} set={(v) => set({ sAge: v, staff_ages: v === "Custom" && !sum(f.staff_ages) ? STAFF_AGE_PRESETS.Balanced : f.staff_ages })} id="seed-sage-preset" />
+        <div style={{ display: "grid", gap: 6 }}><div className="eyebrow">Staff</div><Seg opts={[...Object.keys(STAFF_AGE_PRESETS), "Custom"]} v={f.sAge} set={(v) => set({ sAge: v, staff_ages: v === "Custom" ? (f.sAge !== "Custom" ? STAFF_AGE_PRESETS[f.sAge] : f.staff_ages) : f.staff_ages })} id="seed-sage-preset" />
           {f.sAge === "Custom" && <Shares items={meta.staff_ages.map((b) => [b.key, `${b.label} (${b.lo}–${b.hi})`])} vals={f.staff_ages} set={(v) => set({ staff_ages: v })} id="seed-sage" />}</div>
       </Step>
       <Accordion type="single" collapsible className="card seed-adv" data-testid="seed-advanced">
