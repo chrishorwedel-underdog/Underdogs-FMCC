@@ -332,7 +332,7 @@ async def drop(pid: str):
 
 def _xml(c: dict, surname: str, people: list) -> str:
     def rec(p):
-        keys = ("id", "first_name", "last_name", "nationality", "ethnicity", "skin_tone", "dob", "ca", "pa", "club") + (("position", "foot", "height") if p["kind"] == "player" else ("role",))
+        keys = ("id", "first_name", "last_name", "nationality", "ethnicity", "skin_tone", "dob", "ca", "pa", "club") + (("position", "foot", "height", "keep_history") if p["kind"] == "player" else ("role",))
         return f"    <record id=\"new_{'person' if p['kind'] == 'player' else 'staff'}\"" + "".join(f" {'unique_id' if k == 'id' else k}={quoteattr(str(p[k]))}" for k in keys) + "/>"
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<!-- Made by FMCC Seed a Surname for a NEW career. Whether FM accepts this file is unconfirmed until it is tested on your PC. -->\n'
             f'<record id="fmcc_seed_surname">\n  <string id="edition" value={quoteattr(c["edition"])}/>\n  <string id="surname" value={quoteattr(surname)}/>\n'
@@ -344,6 +344,8 @@ async def _rename_live(uid: int, first: str, last: str, entity: str = "player") 
     try:
         await asyncio.to_thread(live_editor.run, "set", entity, uid, "first_name", first)
         await asyncio.to_thread(live_editor.run, "set", entity, uid, "second_name", last)
+        if entity == "player":
+            await asyncio.to_thread(live_editor.run, "set", "player", uid, "keep_history_after_retirement", 1)
         return None
     except Exception as exc:
         return str(exc)[:200]
@@ -357,6 +359,9 @@ async def apply():
         raise HTTPException(409, "Press Create first, then Seed The Surname")
     sid = new_id()
     people = d["people"]
+    for p in people:
+        if p["kind"] == "player":
+            p["keep_history"] = True
     if d["mode"] == "new":
         start = max([p["id"] for b in await db.seed_batches.find({"career_id": c["id"], "status": "active"}, {"_id": 0, "people.id": 1}).to_list(None) for p in b["people"]] + [ID_BASE - 1]) + 1
         for i, p in enumerate(people):

@@ -204,6 +204,8 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Player Creator is now "One player" (SingleCreator.jsx, creator_single.py /api/creator/single): name, known-as, two nationalities, DOB, club, ethnicity, skin, height, weight, feet, 14 position levels, CA/PA 1–200, auto-filled then editable attributes, 10 personality traits, face; create/edit/download/delete. "Batch of players" toggle keeps the old batch tools (seed section removed, Shuffle names button).
 - Fixed: editor data XML no longer has duplicate id attributes (unique_id). Tested iteration_23 + fixes (draft.mode confirm, cell resync/clamp, form restored from draft, cleaner validation messages, file renamed on edit).
 - Seed a Surname now renames staff in running saves too: fmsave_reader._staff reads save.staff() (job titles on FM27 only; skips human manager), stored as pools.staff; sample_reader.sample_staff for preview. Low-profile staff = backroom roles at other clubs (never Manager/board, CA ≤120); role matched via ROLE_JOBS, nationality preferred, "closest" tag when not matched. Live rename uses FMLibreEditor "set staff" — UNVERIFIED.
+- Every seeded player (created or renamed) gets "Keep History After Retirement" on: keep_history attribute in the new-save XML; live set keep_history_after_retirement=1 after renaming (UNVERIFIED field name).
+
 
 
 

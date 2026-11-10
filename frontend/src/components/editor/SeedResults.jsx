@@ -59,7 +59,7 @@ export const SeedResults = ({ d, meta, act, onChange }) => {
       <div className="ttl">Results: {d.people.length} {cur ? "people to rename" : "new people"} called {d.surname}
         <span className="st n">{d.people.filter((p) => p.kind === "player").length} players · {d.people.filter((p) => p.kind === "staff").length} staff</span></div>
       {d.note && <p className="note" data-testid="seed-results-note">{d.note}</p>}
-      <p className="note">{cur ? "Only the names change; everyone keeps their club, job, age and ability. Edit any name, or leave someone out." : "Change anything before you seed. Ability can't go above the caps."}</p>
+      <p className="note">{cur ? "Only the names change; everyone keeps their club, job, age and ability. Edit any name, or leave someone out." : "Change anything before you seed. Ability can't go above the caps."} Every seeded player gets "Keep History After Retirement" ticked.</p>
       <div style={{ overflowX: "auto" }}><table className="tbl" style={{ marginTop: 8 }}>
         <thead><tr>{(cur ? ["Now called", "First name", "Surname", "Position / job", "Nation", "Age", "Club", ""] : ["First name", "Surname", "Position / role", "Nation", "Age", "Height", "Ethnicity", "Skin", "CA", "PA", ""]).map((h) => <th key={h}>{h}</th>)}</tr></thead>
         <tbody>{d.people.map((p) => (cur ? <CurRow key={p.pid} p={p} save={save} drop={drop} /> : <NewRow key={p.pid} p={p} meta={meta} save={save} drop={drop} />))}</tbody></table></div>
