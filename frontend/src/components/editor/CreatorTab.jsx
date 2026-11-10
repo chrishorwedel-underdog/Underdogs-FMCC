@@ -4,6 +4,7 @@ import { UserPlus, Download, Trash2, Eye, Plus, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { MyPresets, NameUpdates } from "./CreatorExtras";
+import { SingleCreator } from "./SingleCreator";
 
 const KEYS = ["creator-batches", "editor-state"];
 const DEFAULT = { name: "", count: 20, nations: [{ nation: "England", weight: 1 }], ethnicities: [], skin_lo: 1, skin_hi: 20, age_lo: 16, age_hi: 21,
@@ -50,31 +51,28 @@ const Batches = ({ act }) => {
   );
 };
 
-const NameSeed = ({ f, set }) => (
-  <>
-    <label className="note" style={{ display: "grid", gap: 4, marginTop: 14, maxWidth: 420 }}><b style={{ color: "var(--text)" }}>Batch name</b>
-      <input className="inp" maxLength={60} placeholder="e.g. Academy wonderkids" value={f.name} onChange={(e) => set({ name: e.target.value })} data-testid="pc-name" />
-      <small>What this batch is called in Saved batches and in the file's name. It isn't given to any player.</small></label>
-    <section className="card" style={{ marginTop: 14, background: "var(--s2)", borderLeft: "3px solid var(--acc, #34D399)" }} data-testid="pc-name-seed">
-      <div className="ttl" style={{ margin: 0 }} data-testid="pc-seed-title">Seed a Surname</div>
-      <p className="note" style={{ marginTop: 6 }}>The seed is a number that decides which first names and surnames each created player gets, along with their face, age and other details. Use it to control the names in a batch:</p>
-      <ul className="note" style={{ margin: "6px 0 0", paddingLeft: 18, display: "grid", gap: 2 }}>
-        <li>Same seed and same settings: exactly the same names and players again.</li>
-        <li>New seed: a fresh set of names. Use it if you don't like the surnames you got.</li>
-        <li>Names come from each country's name list, so a Spanish player gets a Spanish surname.</li>
-      </ul>
-      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 10, flexWrap: "wrap" }}>
-        <b className="note" style={{ color: "var(--text)" }}>Seed</b>
-        <input className="inp mono" style={{ width: 120 }} type="number" min={0} value={f.seed} onChange={(e) => set({ seed: Number(e.target.value) })} data-testid="pc-seed" />
-        <button type="button" className="btn" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })} data-testid="pc-seed-random">New seed</button>
-        <small className="note">Preview to see the names this seed gives.</small>
-      </div>
-    </section>
-  </>
+const BatchName = ({ f, set }) => (
+  <div style={{ display: "flex", gap: 10, alignItems: "end", flexWrap: "wrap", marginTop: 14 }}>
+    <label className="note" style={{ display: "grid", gap: 4, maxWidth: 420, flex: 1 }}><b style={{ color: "var(--text)" }}>Batch name</b>
+      <input className="inp" maxLength={60} placeholder="e.g. Academy wonderkids" value={f.name} onChange={(e) => set({ name: e.target.value })} data-testid="pc-name" /></label>
+    <button type="button" className="btn" onClick={() => set({ seed: Math.floor(Math.random() * 100000) })} data-testid="pc-shuffle">Shuffle names</button>
+  </div>
 );
 
-
 export const CreatorTab = () => {
+  const [mode, setMode] = useState("single");
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <div className="seg" style={{ justifySelf: "start" }} data-testid="creator-mode">
+        <button className={mode === "single" ? "on" : ""} onClick={() => setMode("single")} data-testid="creator-mode-single">One player</button>
+        <button className={mode === "batch" ? "on" : ""} onClick={() => setMode("batch")} data-testid="creator-mode-batch">Batch of players</button>
+      </div>
+      {mode === "single" ? <SingleCreator /> : <BatchCreator />}
+    </div>
+  );
+};
+
+const BatchCreator = () => {
   const { data: meta } = useGet("creator-meta", "/creator/meta");
   const act = useAct();
   const [f, setF] = useState(DEFAULT);
@@ -87,14 +85,14 @@ export const CreatorTab = () => {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }} data-testid="creator-tab">
       <div className="card">
-        <div className="ttl"><UserPlus size={14} />Player Creator<span className="st b">New careers only</span></div>
+        <div className="ttl"><UserPlus size={14} />Batch of players<span className="st b">New careers only</span></div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }} data-testid="pc-presets">
           {meta.presets.map((p) => <button key={p.key} className="btn" title={p.about} onClick={() => { load(p.settings, p.name); setCopy(`${p.name} (copy)`); }} data-testid={`pc-preset-${p.key}`}>{p.name}</button>)}
           <MyPresets f={f} load={(s, n, note) => { load(s, n, note); setCopy(`${n} (copy)`); }} copyName={copy} />
           <button className="btn" onClick={() => { set(DEFAULT); setCopy(""); }} data-testid="pc-reset">Reset</button>
         </div>
         <p className="note" style={{ marginTop: 8 }}>Presets fill in the settings below; you can change anything before you preview. Built-in presets can't be changed, but saving one makes your own copy. Makes a batch of new free-agent players as an FMCC editor data file. Pick it from FM's database list when you start a new career. Players already in the game keep their clubs; in a running career you can only rename players.</p>
-        <NameSeed f={f} set={set} />
+        <BatchName f={f} set={set} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: 18, marginTop: 14 }}>
           <div style={{ display: "grid", gap: 14, alignContent: "start" }}>
             <label className="note" style={{ display: "grid", gap: 4 }}>How many players<input className="inp mono" style={{ width: 100 }} type="number" min={1} max={200} value={f.count} onChange={(e) => set({ count: Number(e.target.value) })} data-testid="pc-count" /></label>

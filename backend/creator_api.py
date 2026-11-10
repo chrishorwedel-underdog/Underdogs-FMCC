@@ -163,7 +163,7 @@ def _folder(c: dict) -> Path:
 
 
 def _xml(c: dict, name: str, players: list) -> str:
-    rows = "\n".join("    <record id=\"new_person\"" + "".join(f" {k}={quoteattr(str(p[k]))}" for k in ("id", "first_name", "last_name", "nationality", "ethnicity",
+    rows = "\n".join("    <record id=\"new_person\"" + "".join(f" {'unique_id' if k == 'id' else k}={quoteattr(str(p[k]))}" for k in ("id", "first_name", "last_name", "nationality", "ethnicity",
                      "skin_tone", "dob", "position", "ca", "pa", "foot", "height", "club")) + "/>" for p in players)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<!-- Made by FMCC Player Creator for a NEW career. Whether FM accepts this file is unconfirmed until it is tested on your PC. -->\n'
             f'<record id="fmcc_new_players">\n  <string id="edition" value={quoteattr(c["edition"])}/>\n  <string id="batch" value={quoteattr(name)}/>\n'
