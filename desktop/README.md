@@ -17,6 +17,11 @@ If a build fails, nothing is published, the previous release stays the newest, a
 ## Pointing the website at the releases (one time)
 Give FMCC the repository name (`your-github-name/fmcc`) as `FMCC_RELEASE_REPO` in the secure keys card, then re-publish the website. The front-page button then shows the newest version, release date and size, and downloads `FMCC-Setup.exe` straight from GitHub. Until then it says the download isn't set up yet. Inside the Windows program the button stays hidden; Settings → Updates uses the same releases to say when a newer version is out (the build records the repository and version itself).
 
+## How the program starts
+`desktop/launcher.py` allows one copy at a time (opening FMCC again brings the open window forward) and opens the window straight away on FMCC's loading screen (`desktop/startup_pages.py`). It then checks the install and the data folder, stops any data store left behind by an earlier run, starts the local database, then the server, and switches to the app once `/api/ping` answers. If anything fails, the window shows a plain-words problem screen (already open, connection in use, blocked by Windows security, data folder not writable, missing file, data store or engine didn't start) with Try again, Open log file and Copy details. Closing the window shuts the server and database down cleanly. The startup log is `%APPDATA%\FMCC\logs\fmcc-startup.log`.
+
+Every build runs the packaged `FMCC.exe --selftest` on GitHub's Windows machine (start everything, load the screens, stop). If it fails, nothing is published.
+
 ## What the build contains
 - the FMCC screens and server, with a real save reader that uses fmsave 0.10.0 (MIT) (`backend/fmsave_reader.py`);
 - a private local database (MongoDB `mongod.exe`) that stores data in `%APPDATA%\FMCC`;

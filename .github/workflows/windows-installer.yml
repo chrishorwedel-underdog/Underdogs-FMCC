@@ -77,11 +77,25 @@ jobs:
           "v$env:FMCC_VERSION" | Out-File -Encoding ascii -NoNewline desktop/version.txt
 
       - name: Package the program
-        run: >
-          pyinstaller desktop/launcher.py --name FMCC --noconsole --noconfirm --icon desktop/fmcc.ico
-          --add-data "desktop/release_repo.txt;." --add-data "desktop/version.txt;."
-          --add-data "backend;backend" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb" --add-data "desktop/fmlibre;fmlibre"
-          --collect-all fmsave --collect-all emergentintegrations --collect-submodules uvicorn --hidden-import motor --hidden-import psutil
+        shell: pwsh
+        run: |
+          # The server's own modules are packaged as code so everything they use (FastAPI, the database driver, image and Excel tools) is bundled too.
+          $mods = Get-ChildItem backend -Filter *.py | Where-Object { $_.BaseName -ne 'conftest' } | ForEach-Object { "--hidden-import=$($_.BaseName)" }
+          pyinstaller desktop/launcher.py --name FMCC --noconsole --noconfirm --icon desktop/fmcc.ico --paths backend --paths desktop `
+            --add-data "desktop/release_repo.txt;." --add-data "desktop/version.txt;." --add-data "desktop/loading-logo.png;." `
+            --add-data "backend;backend" --add-data "backend/data;data" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb" --add-data "desktop/fmlibre;fmlibre" `
+            --collect-all fmsave --collect-all emergentintegrations --collect-submodules uvicorn --collect-all webview `
+            --hidden-import motor --hidden-import psutil --hidden-import startup_pages @mods
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Start the packaged program and check it answers
+        shell: pwsh
+        run: |
+          $env:FMCC_DATA_DIR = Join-Path $env:RUNNER_TEMP "fmcc-selftest"
+          $p = Start-Process dist/FMCC/FMCC.exe -ArgumentList "--selftest" -Wait -PassThru
+          Get-Content (Join-Path $env:FMCC_DATA_DIR "logs/fmcc-startup.log") -ErrorAction SilentlyContinue
+          Get-Content (Join-Path $env:FMCC_DATA_DIR "logs/fmcc-output.log") -Tail 60 -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { Write-Error "FMCC didn't start in the self-test (exit $($p.ExitCode)); nothing is published"; exit 1 }
 
       - name: Smoke test the reader import
         run: python -c "import fmsave, sys; sys.path.insert(0, 'backend'); import fmsave_reader; print('fmsave', fmsave.__version__)"

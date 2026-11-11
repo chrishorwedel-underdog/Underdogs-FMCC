@@ -13,6 +13,13 @@ Compression=lzma2
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
+AppMutex=FMCCSingleInstance
+CloseApplications=yes
+UninstallDisplayIcon={app}\FMCC.exe
+
+[InstallDelete]
+; old program files are replaced on every install; your data in %APPDATA%\FMCC is never touched
+Type: filesandordirs; Name: "{app}\_internal"
 
 [Files]
 Source: "..\dist\FMCC\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion

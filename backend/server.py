@@ -524,6 +524,11 @@ if os.environ.get("FMCC_STATIC_DIR"):
     _static = Path(os.environ["FMCC_STATIC_DIR"])
     app.mount("/static", StaticFiles(directory=_static / "static"), name="static")
 
+    @app.get("/api/ping", include_in_schema=False)
+    async def ping():
+        return {"ok": True}
+
+
     @app.get("/{path:path}", include_in_schema=False)
     async def spa(path: str):
         f = _static / path

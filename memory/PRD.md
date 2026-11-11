@@ -247,3 +247,11 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Seed a Surname (new save), Player Creator (single create/edit and batches), Punish a Club now auto-download their file (lib/autoDownload.js). On Windows the file is also placed in FM's editor data folder (as before). Punish on FM27 also auto-queues its current-save penalties in Game changes (approval step kept for save safety). Current-save seeds apply renames directly (no file).
 - Tested: iteration_29 (all flows pass). Known: current-save rename seeds have no undo button in Seeded surnames list.
 
+
+## 2026-11-11 Windows app starts reliably (Phase 1 of approved plan "FMCC for Windows: a standalone app that starts every time")
+- Problem: installed app opened on "127.0.0.1 refused to connect". Likely causes fixed: window opened before the engine; packaged server crashed silently (no console streams for uvicorn; server modules shipped as data so FastAPI/Pillow/openpyxl etc. weren't bundled); errors never shown.
+- desktop/launcher.py rewritten: single copy (mutex FMCCSingleInstance, focuses open window), loading screen first (desktop/startup_pages.py, loading-logo.png), ordered start (install check, data-folder write check, leftover data-store cleanup, ports, mongod, uvicorn.Server, /api/ping), plain-words problem screen with Try again / Open log file / Copy details, clean shutdown (uvicorn exit + mongod shutdown command), rotating log %APPDATA%\FMCC\logs\fmcc-startup.log, `--selftest` mode.
+- backend/server.py: /api/ping (desktop only). Workflow: backend modules bundled as code (--paths backend + hidden imports), backend/data bundled, CI self-test of packaged exe blocks publishing on failure. Inno: AppMutex, CloseApplications, old _internal removed on install (data in %APPDATA%\FMCC untouched). requirements-desktop: Pillow, openpyxl.
+- Verified on Linux with a simulated install: clean start/stop, port-in-use message, leftover data store stopped; screens rendered. NOT verified on Windows yet - needs Save to GitHub -> CI build -> install on PC.
+- Phase 2/3 backlog: one-click self-fix, end-to-end update check on a PC, signed installer, uninstall keep/remove data, export/import.
+
