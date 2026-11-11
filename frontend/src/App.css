@@ -1,6 +1,11 @@
 :root{--bg:#08090B;--s1:#0D0F12;--s2:#121519;--s3:#191D23;--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.13);--text:#ECEEF1;--mut:#8B919B;--dim:#5C626C;--acc:#4C8DFF;--grn:#34D399;--amb:#F2B54A;--blu:#6AA8FF;--red:#FF6E6E;--ease:cubic-bezier(.22,1,.36,1)}
 body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 ::selection{background:var(--acc);color:#fff}
+.theme-light .tl:hover,.theme-light .tl.on,.theme-light .st.n,.theme-light .D{background:rgba(0,0,0,.05)}
+.theme-light .track,.theme-light .ticks i{background:rgba(0,0,0,.08)}
+.theme-light .main:before{opacity:.35}
+.theme-light .btn{color:var(--text)}
+.theme-light .btn-p,.theme-light .btn-g{color:#fff}
 .mono{font-family:'Geist Mono',monospace;font-feature-settings:'tnum'}
 .serif{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
 .app{display:grid;grid-template-columns:280px 1fr;height:calc(100vh / var(--z,1));overflow:hidden;zoom:var(--z,1)}
@@ -89,7 +94,7 @@ button.ver-tag{background:none;border:0;cursor:pointer}
 /* top */
 .main{display:flex;flex-direction:column;min-width:0;position:relative;height:calc(100vh / var(--z,1))}
 .main:before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:22px 22px;mask-image:radial-gradient(ellipse 70% 50% at 50% 0%,#000,transparent);pointer-events:none}
-.top{height:64px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 28px;border-bottom:1px solid var(--line);position:relative;z-index:5;background:rgba(8,9,11,.7);backdrop-filter:blur(16px)}
+.top{height:64px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 28px;border-bottom:1px solid var(--line);position:relative;z-index:5;background:var(--top,rgba(8,9,11,.7));backdrop-filter:blur(16px)}
 .club{display:flex;align-items:center;gap:11px}
 .crest{width:32px;height:32px;border-radius:9px;background:var(--s3);border:1px solid var(--line2);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--mut)}
 .club b{font-size:14px;font-weight:600;display:block}.club span{font-size:12px;color:var(--mut)}

@@ -30,7 +30,8 @@ export default function Appearance() {
           {TEXT_SIZES.map(([v, l]) => <Choice key={v} on={s.text === v} onClick={() => set({ text: v })} id={`appearance-text-${v}`}>{l} <small style={{ opacity: 0.7 }}>{v}%</small></Choice>)}
         </Row>
         <Row title="Theme" note="The background colours of the app.">
-          {Object.entries(THEMES).map(([k, t]) => <Choice key={k} on={s.theme === k} onClick={() => set({ theme: k })} id={`appearance-theme-${k}`}>{t.label}</Choice>)}
+          {Object.entries(THEMES).map(([k, t]) => <Choice key={k} on={s.theme === k} onClick={() => set(t.accent ? { theme: k, accent: t.accent } : { theme: k })} id={`appearance-theme-${k}`}>
+            <span style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden", border: "1px solid var(--line2)" }} data-testid={`appearance-preview-${k}`}>{[t.vars["--bg"] || "#08090B", t.vars["--s2"] || "#121519", t.accent || "#4C8DFF"].map((c) => <i key={c} style={{ width: 9, height: 14, background: c, display: "block" }} />)}</span>{t.label}</Choice>)}
         </Row>
         <Row title="Accent colour" note="Used for highlights, selected tabs and main buttons.">
           {ACCENTS.map(([l, c]) => (

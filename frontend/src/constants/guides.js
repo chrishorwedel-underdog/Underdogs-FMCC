@@ -11,9 +11,9 @@ export const GUIDES = {
     how: ["Play FM and save the game", "FMCC reads the new save on its own (or press the refresh button at the top)", "Click any card to open that module"],
   },
   "/dynamic-potential": {
-    what: "Adjusts potential (PA) up or down for players who are developing faster or slower than expected, under rules you set.",
-    features: ["Run it for every player at your club (and other clubs, if you switch them on)", "Your own growth and decline rules in the Rules tab", "A review list where you untick players or whole clubs before anything is queued", "Changes stay hidden: FMCC never shows who goes up or down, so you find out by playing"],
-    how: ["Press Run Dynamic Potential after a save is read", "Untick anyone you want to leave alone", "Queue the changes; you confirm them in Game changes before anything touches FM"],
+    what: "Moves each player's hidden potential with how they actually play, following the Underdog FM Dynamic Potential Rulesheet: a winter review and a season-end review.",
+    features: ["Performance Score: 55% match-rating percentile and 45% role output, compared with similar players", "Growth tiers, decline rules, age deduction and both tapers from the rulesheet", "Results go straight into your save; ratings-only growth above +4, small comparison groups and held declines wait for your review", "A plain-words breakdown for every player, never showing real CA or PA", "Every rule value editable in Settings, with reset and history"],
+    how: ["Check the winter review date that splits the season", "Press Run winter review when the winter window opens, and Run season-end review after the last match", "Approve or reject anything under Needs your review"],
   },
   "/breakout": {
     what: "FMCC picks the season's Breakout Player: the player who performed furthest above what was expected. The winner is awarded a CA (current ability) bonus in FM.",

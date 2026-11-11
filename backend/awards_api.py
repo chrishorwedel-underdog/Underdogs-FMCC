@@ -200,7 +200,7 @@ async def award_history(award_key: str):
 
 
 # ---------- Dynamic Potential (values never shown) ----------
-@router.get("/dp")
+@router.get("/dp/scope")
 async def dp():
     c = await active_career()
     rules = await current_rules(c["id"], "dp")

@@ -16,7 +16,7 @@ logger = logging.getLogger("fmcc")
 io_lock = asyncio.Lock()
 
 BACKUP_COLLECTIONS = ["settings", "careers", "identities", "snapshots", "lineups", "rules", "plans", "shortlist",
-                      "nominations", "awards", "changes", "batches", "audit", "game_edits", "pools", "branding", "club_edits", "punishments", "test_results", "philosophy", "pipeline", "board_slots", "notices", "missed_dates", "creator_batches", "world_months", "league_names", "fm_shortlist", "tactics"]
+                      "nominations", "awards", "changes", "batches", "audit", "game_edits", "pools", "branding", "club_edits", "punishments", "test_results", "philosophy", "pipeline", "board_slots", "notices", "missed_dates", "creator_batches", "world_months", "league_names", "fm_shortlist", "tactics", "dp_settings", "dp_seasons", "dp_records"]
 MAX_AUTO_BACKUPS = 20
 EXTRA_INDEXES: dict[str, list[IndexModel]] = {
     "lineups": [IndexModel([("career_id", ASCENDING), ("formation", ASCENDING), ("revision", DESCENDING)], name="career_form_rev", unique=True)],

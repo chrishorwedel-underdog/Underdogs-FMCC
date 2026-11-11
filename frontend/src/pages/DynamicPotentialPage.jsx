@@ -1,23 +1,21 @@
 import { useState } from "react";
 import { TabBar, PageHead } from "@/lib/ui";
-import { RulesTab } from "@/components/rules/RulesTab";
 import { DynamicPotential } from "@/components/awards/DynamicPotential";
+import { Overview } from "@/components/dp/Overview";
+import { NeedsReview } from "@/components/dp/NeedsReview";
+import { DPSettings } from "@/components/dp/Settings";
 
-const Caps = (data, setData) => (
-  <div className="card" style={{ marginBottom: 14 }}>
-    <p className="sentence">Change at most <input className="blank mono" type="number" style={{ width: 80 }} value={data.caps.max_players} onChange={(e) => setData({ ...data, caps: { ...data.caps, max_players: Number(e.target.value) } })} data-testid="dp-cap-players" /> players per run,
-      and no player by more than <input className="blank mono" type="number" style={{ width: 60 }} value={data.caps.max_pa_change} onChange={(e) => setData({ ...data, caps: { ...data.caps, max_pa_change: Number(e.target.value) } })} data-testid="dp-cap-pa" /> PA per season.</p>
-  </div>
-);
+const VIEWS = { overview: Overview, review: NeedsReview, settings: DPSettings, scope: DynamicPotential };
 
 export default function DynamicPotentialPage() {
-  const [tab, setTab] = useState("run");
+  const [tab, setTab] = useState("overview");
+  const View = VIEWS[tab];
   return (
     <div data-testid="dp-page">
-      <PageHead eyebrow="Review development" title="Dynamic Potential">
-        <TabBar id="dp" value={tab} onChange={setTab} tabs={[["run", "Run"], ["rules", "Rules"]]} />
+      <PageHead eyebrow="Underdog FM rulesheet · winter and season-end reviews" title="Dynamic Potential">
+        <TabBar id="dp" value={tab} onChange={setTab} tabs={[["overview", "Overview"], ["review", "Needs your review"], ["settings", "Settings"], ["scope", "Who's reviewed"]]} />
       </PageHead>
-      {tab === "run" ? <DynamicPotential /> : <RulesTab module="dp" title="Growth and decline rules" extra={Caps} />}
+      <View />
     </div>
   );
 }
