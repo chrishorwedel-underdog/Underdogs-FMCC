@@ -299,3 +299,5 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Appearance accent row: "Use my club's second colour" switch (appearance kit_accent, off by default); ClubColours sets window.__fmccKitAccent (trim lightened to >=4.5 contrast on dark panels) and re-applies appearance.
 - Verified via curl + screenshots (greeting changed to Gaffer, accent became trim gold). Setup screen itself not re-run (setup already complete in preview).
 
+- 2026-11-11 Personal greetings: DoF system prompt tells the model to address the manager by settings.address (verified live: "Hello again, Gaffer."); DoF empty-thread welcome, World Monthly Reports header and the "report ready" notification use it too (lib/address.js useAddress). FMCC has no weekly reports; monthly reports are the closest.
+

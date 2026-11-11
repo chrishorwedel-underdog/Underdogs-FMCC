@@ -3,6 +3,7 @@ import { Plus, Send, Check, X, Star, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { api, ago, errMsg } from "@/lib/api";
 import { useGet, useAct, PageHead } from "@/lib/ui";
+import { useAddress } from "@/lib/address";
 
 const visible = (t) => { const i = t.indexOf("ACTION:"); return i >= 0 ? t.slice(0, i) : t; };
 
@@ -42,6 +43,7 @@ const Draft = ({ m, act }) => {
 };
 
 const Thread = ({ conv, status, onDone }) => {
+  const address = useAddress();
   const { data: msgs = [], refetch } = useGet("dof-msgs", `/dof/conversations/${conv}/messages`, { conv });
   const act = useAct();
   const [text, setText] = useState("");
@@ -74,7 +76,7 @@ const Thread = ({ conv, status, onDone }) => {
   return (
     <div className="card" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 230px)", minHeight: 480 }} data-testid="dof-thread">
       <div style={{ flex: 1, overflowY: "auto", paddingRight: 6 }}>
-        {msgs.length === 0 && !live && <p className="note">Ask your Director of Football anything about your squad, plans, matches or transfers.</p>}
+        {msgs.length === 0 && !live && <p className="note" data-testid="dof-welcome">Ask me anything about your squad, plans, matches or transfers, {address}.</p>}
         {msgs.map((m) => <div key={m.id} className={`msg ${m.role}`} data-testid={`dof-msg-${m.role}`}><div className="bubble">{m.content}</div>{m.role === "assistant" && <Draft m={m} act={act} />}</div>)}
         {live && <><div className="msg user"><div className="bubble">{live.q}</div></div>
           <div className="msg assistant" data-testid="dof-live"><div className="bubble">{live.a ? visible(live.a) : <span className="typing" data-testid="dof-typing"><i /><i /><i /></span>}</div></div></>}

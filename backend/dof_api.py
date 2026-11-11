@@ -257,6 +257,7 @@ async def stream(conv_id: str, body: Ask):
         raise HTTPException(503, "Add your OpenAI key in Settings to use the DOF chat")
     history = await db.dof_messages.find({"conversation_id": conv_id}, {"_id": 0, "role": 1, "content": 1}).sort("at", 1).to_list(500)
     context = await build_context(c)
+    address = ((await db.settings.find_one({"_id": "app"}, {"_id": 0, "address": 1})) or {}).get("address") or "Boss"
     try:
         context += await lab_context(c)
     except Exception as exc:
@@ -265,7 +266,7 @@ async def stream(conv_id: str, body: Ask):
     await db.dof_messages.insert_one({"id": new_id(), "conversation_id": conv_id, "role": "user", "content": body.text, "at": now_iso()})
     if conv["title"] == "New conversation":
         await db.dof_conversations.update_one({"id": conv_id}, {"$set": {"title": body.text[:60]}})
-    system = SYSTEM + context + (f"\n\nEARLIER IN THIS CONVERSATION:\n{transcript}" if transcript else "")
+    system = SYSTEM + f"\nAddress the manager as \"{address}\", the way the game does (for example when you greet them or close an answer). Use it naturally, not in every sentence.\n" + context + (f"\n\nEARLIER IN THIS CONVERSATION:\n{transcript}" if transcript else "")
     from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, StreamDone
     chat = LlmChat(api_key=key, session_id=f"dof-{conv_id}-{new_id()}", system_message=system).with_model(*MODEL)
 

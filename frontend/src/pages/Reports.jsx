@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { gameDate } from "@/lib/api";
 import { useGet, TabBar, PageHead } from "@/lib/ui";
+import { useAddress } from "@/lib/address";
 import { RulesTab } from "@/components/rules/RulesTab";
 import { WorldReport } from "@/components/world/WorldReport";
 
@@ -70,9 +71,10 @@ export default function Reports() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") || "world";
   const setTab = (t) => { const n = new URLSearchParams(params); t === "world" ? n.delete("tab") : n.set("tab", t); setParams(n); };
+  const address = useAddress();
   return (
     <div data-testid="reports-page">
-      <PageHead eyebrow="Who's been making waves across every loaded league" title="World Monthly Reports">
+      <PageHead eyebrow={`Your monthly briefing, ${address} · who's been making waves across every loaded league`} title="World Monthly Reports">
         <TabBar id="reports" value={tab} onChange={setTab} tabs={[["world", "World & countries"], ["compare", "My squad"], ["rules", "Rules"]]} />
       </PageHead>
       {tab === "world" ? <World /> : tab === "compare" ? <Compare /> : <RulesTab module="reports" title="Monthly Report rules" />}

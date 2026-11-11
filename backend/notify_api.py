@@ -91,7 +91,8 @@ async def sync(c: dict) -> None:
         await _add(c["id"], "save", f"save:{s['save_no']}", f"New save read: {_d(s['game_date']):%-d %b %Y}", f"Save #{s['save_no'] + 1} was read.", s["game_date"])
     for a, b in zip(snaps, snaps[1:]):
         if _d(a["game_date"]).month != _d(b["game_date"]).month:
-            await _add(c["id"], "report", f"report:{_d(a['game_date']):%Y-%m}", f"{_d(a['game_date']):%B} report ready", "Your monthly squad report is in Monthly Reports.", b["game_date"])
+            addr = ((await db.settings.find_one({"_id": "app"}, {"_id": 0, "address": 1})) or {}).get("address") or "Boss"
+            await _add(c["id"], "report", f"report:{_d(a['game_date']):%Y-%m}", f"{_d(a['game_date']):%B} report ready", f"Your monthly squad report is in Monthly Reports, {addr}.", b["game_date"])
     done = {d["key"] async for d in db.missed_dates.find({"career_id": c["id"]}, {"key": 1})}
     for m in missed(snaps):
         if m["key"] not in done:
