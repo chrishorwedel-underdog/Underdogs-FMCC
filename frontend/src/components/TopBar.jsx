@@ -49,7 +49,7 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
   return (
     <header className="top" data-testid="top-bar">
       <div className="club">
-        <div className="crest">{career?.club_name?.slice(0, 2).toUpperCase()}</div>
+        <div className="crest" data-testid="top-crest">{career?.club_name?.slice(0, 2).toUpperCase()}</div>
         <div><b data-testid="top-club-name">{career?.club_name}</b><span data-testid="top-game-date">{career?.edition} · {gameDate(career?.last_game_date)}</span></div>
       </div>
       <div className="srch" onClick={onSearch} data-testid="top-search-button"><Search size={15} />Search players, screens, actions…<kbd>Ctrl K</kbd></div>

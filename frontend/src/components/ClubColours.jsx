@@ -15,6 +15,11 @@ export const readableTop = (hex) => {
   return mix(hex, t);
 };
 
+const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+
+// the trim colour for the badge letters when it reads well on the main colour, else white or black
+export const crestText = (bg, trim) => (trim && contrast(bg, trim) >= 3 ? trim : contrast(bg, "#FFFFFF") >= contrast(bg, "#000000") ? "#FFFFFF" : "#000000");
+
 export const ClubColours = () => {
   const { data } = useGet("club-colours", "/club-colours");
   useEffect(() => {
@@ -22,9 +27,10 @@ export const ClubColours = () => {
     if (data?.primary) {
       root.style.setProperty("--club-top", readableTop(data.primary));
       root.style.setProperty("--club-line", data.secondary || data.primary);
+      root.style.setProperty("--club-crest", data.primary);
+      root.style.setProperty("--club-crest-fg", crestText(data.primary, data.secondary));
     } else {
-      root.style.removeProperty("--club-top");
-      root.style.removeProperty("--club-line");
+      ["--club-top", "--club-line", "--club-crest", "--club-crest-fg"].forEach((k) => root.style.removeProperty(k));
     }
   }, [data]);
   return null;
@@ -45,7 +51,8 @@ export const ClubColoursCard = () => {
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
         <label className="note" style={{ margin: 0, display: "flex", gap: 6, alignItems: "center" }}>Main<input type="color" value={p} onChange={(e) => setP(e.target.value)} data-testid="club-colour-primary" /></label>
         <label className="note" style={{ margin: 0, display: "flex", gap: 6, alignItems: "center" }}>Trim<input type="color" value={s} onChange={(e) => setS(e.target.value)} data-testid="club-colour-secondary" /></label>
-        <span style={{ width: 120, height: 26, borderRadius: 6, background: readableTop(p), borderBottom: `3px solid ${s}` }} data-testid="club-colour-preview" />
+        <span style={{ width: 120, height: 26, borderRadius: 6, background: readableTop(p), borderBottom: `3px solid ${s}`, display: "inline-flex", alignItems: "center", paddingLeft: 4 }} data-testid="club-colour-preview">
+          <span style={{ width: 20, height: 20, borderRadius: 6, background: p, border: `1px solid ${s}`, color: crestText(p, s), fontSize: 9, fontWeight: 700, display: "grid", placeItems: "center" }} data-testid="club-colour-crest-preview">FC</span></span>
         <button className="btn btn-p" onClick={() => act(() => api.put("/club-colours", { primary: p, secondary: s }), "Club colours saved", ["club-colours"])} data-testid="club-colours-save">Save</button>
         {data.source === "you" && <button className="btn" onClick={() => act(() => api.delete("/club-colours"), "Using your save's colours again", ["club-colours"])} data-testid="club-colours-reset">Use save colours</button>}
       </div>
