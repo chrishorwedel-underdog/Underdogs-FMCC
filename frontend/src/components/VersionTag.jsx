@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api, errMsg } from "@/lib/api";
 import { useGet } from "@/lib/ui";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
-const UpdatePrompt = ({ installed, onClose }) => {
-  const { data, isError } = useGet("fmcc-latest", "/fmcc/latest");
+const useInstall = () => {
   const [busy, setBusy] = useState(false);
   const go = async () => {
     setBusy(true);
@@ -17,6 +16,12 @@ const UpdatePrompt = ({ installed, onClose }) => {
       toast.success(`Downloaded FMCC ${r.data.version}. FMCC will close, install it and open again.`);
     } catch (e) { toast.error(errMsg(e)); setBusy(false); }
   };
+  return [busy, go];
+};
+
+const UpdatePrompt = ({ installed, onClose }) => {
+  const { data, isError } = useGet("fmcc-latest", "/fmcc/latest");
+  const [busy, go] = useInstall();
   return (
     <div className="upd-pop" data-testid="update-prompt">
       <b data-testid="update-prompt-title">FMCC {data?.version || ""} is ready</b>
@@ -28,6 +33,28 @@ const UpdatePrompt = ({ installed, onClose }) => {
         <button className="btn btn-g" disabled={busy || !data?.can_install} onClick={go} data-testid="update-now-btn">
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}{busy ? "Downloading…" : "Update now"}</button>
         <button className="btn" onClick={onClose} disabled={busy} data-testid="update-later-btn">Not now</button>
+      </div>
+    </div>
+  );
+};
+
+export const UpdateCard = () => {
+  const { data } = useQuery({ queryKey: ["fmcc-update-card"], queryFn: () => api.get("/fmcc/update-card").then((r) => r.data), staleTime: Infinity, refetchOnWindowFocus: false, retry: false });
+  const [shown, setShown] = useState(false);
+  const [busy, go] = useInstall();
+  useEffect(() => { if (data?.show) { const t = setTimeout(() => setShown(true), 3000); return () => clearTimeout(t); } return undefined; }, [data]);
+  if (!data?.show || !shown) return null;
+  const later = () => { setShown(false); data.show = false; api.post("/fmcc/update-card/snooze", null, { params: { version: data.version } }).catch(() => {}); };
+  return (
+    <div className="upd-card" role="status" data-testid="update-card">
+      <button className="ib upd-card-x" onClick={later} disabled={busy} aria-label="Not now" data-testid="update-card-close"><X size={13} /></button>
+      <b data-testid="update-card-title">FMCC {data.version} is ready</b>
+      <small style={{ color: "var(--dim)" }} data-testid="update-card-installed">You have {data.installed}</small>
+      {data.items?.length > 0 && <ul data-testid="update-card-notes">{data.items.slice(0, 3).map((t) => <li key={t}>{t}</li>)}</ul>}
+      <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+        <button className="btn btn-g" disabled={busy} onClick={go} data-testid="update-card-now">
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}{busy ? "Downloading…" : "Update now"}</button>
+        <button className="btn" onClick={later} disabled={busy} data-testid="update-card-later">Not now</button>
       </div>
     </div>
   );

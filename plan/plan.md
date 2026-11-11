@@ -1,55 +1,53 @@
-# Getting the fixed FMCC for Windows onto your PC
+# "New version ready" notice in FMCC for Windows
 
-The startup fix was built, but the website's Download button still gives out v0.2.11 from Nov 10, which is the version with the "127.0.0.1 refused to connect" error. This plan gets the fixed installer published, and makes the Download button show whether the version on offer is the newest one.
+When a newer FMCC installer is published, the Windows program says so with a small, quiet card in the bottom corner, and you can update in one click.
+It builds on the existing footer version tag and its update dot, which stay as they are.
 
 ## Who it's for
-Football Manager players, starting with you, who install FMCC from the website and need the version they download to be the latest working one.
-
-## What happened
-- You pressed Save to GitHub, but no new installer was published after Nov 10. The build that makes the installer either failed or never ran.
-- The new build includes a check that starts the packaged FMCC on a Windows machine before publishing. If FMCC doesn't start there, the build stops on purpose, so a broken installer never reaches the website. That check, or the packaging step just before it, is the most likely place the build stopped.
-- The installer you ran is therefore still the old one. Its window opens before FMCC's engine is ready, waits, and then shows the browser's error page. That matches "nothing happens for a while, then the error".
+Football Manager players using the installed FMCC for Windows who want to know when there's a newer version without having to check the website.
 
 ## Core features and experience
-- **A fixed installer on the Download button.** The reason the latest build stopped is found and fixed, and the build is re-run until a new version (v0.2.12 or later) is published with the startup fix. That version must pass the check that starts it on a Windows machine before publishing.
-- **Honest Download button.** Next to the version, the website shows the state of the newest build:
-  - "Latest version", when the newest build is the one on offer
-  - "A new version is being built, check back in a few minutes", while a build is running
-  - "The newest build didn't finish, so this is the last working version", when the latest build failed. The working version is still offered.
-- **What you'll see once you install it.** FMCC opens on its own dark loading screen with the logo within a second or two, then switches to the app. If it can't start, it shows the reason in plain words, with Try again, Open log file and Copy details. You won't see the browser error page again.
-- **Version in the app.** The footer shows the installed version, so you can confirm you're on the new one.
+- **Check at start.** Each time FMCC opens, it checks once whether a newer installer is on the Download button. It doesn't check again while it stays open.
+- **Small corner card.** If a newer version exists, a small card appears in the bottom corner a few seconds after the app shows. It contains:
+  - "FMCC v0.2.x is ready" and "You have v0.2.y"
+  - up to three short lines on what changed, taken from the release notes
+  - **Update now**, which downloads the installer, closes FMCC, installs it and opens FMCC again (the existing one-click update)
+  - **Not now**, which closes the card
+- **Reminder after a day.** After **Not now**, the card stays hidden for 24 hours. The next time FMCC opens after that, the card shows again if the update still hasn't been installed.
+- **Footer dot stays.** The dot next to the version in the footer still shows until you update. Clicking it opens the same update prompt as before.
+- **Quiet when there's nothing new.** No card and no dot when you're on the newest version, or when FMCC can't reach the internet. A failed check is never shown as an error.
+- **Website stays the same.** The card only appears in the installed Windows program, never on the website.
 
 ## User flow
-1. The fix is built and published. You'll be told when the new version is on the Download button.
-2. On the website, the Download button shows the new version number and "Latest version".
-3. Download and run the installer. It closes any open FMCC first. Your data is kept.
-4. Open FMCC. The loading screen appears, then the app.
-5. If the app doesn't appear, press Copy details on the problem screen and paste it into the chat.
+1. Open FMCC. The app loads as usual.
+2. If a newer version is out, the small card slides in at the bottom corner.
+3. Press **Update now**. FMCC downloads the installer, closes, installs it and reopens on the new version, with your data kept. Or press **Not now** and carry on.
+4. If you chose **Not now**, the card shows again the first time you open FMCC a day or more later. The footer dot reminds you in the meantime.
 
 ## UI/UX feel
-- The build status is one short line under the version on the Download card, in the card's existing style. It's calm, has no technical words, and uses a small coloured dot: green for latest, amber while building, grey when the last working version is shown.
-- The rest of the Download card stays as it is.
+- A compact card in FMCC's dark style with a soft entrance and a thin accent edge. It doesn't block the page or need an answer.
+- Calm wording, no technical terms, and one clear main button (**Update now**).
+- It sits above the footer and away from page content, and fits on small windows.
 
 ## Implementation phases
 **Phase 1 – MVP (built now)**
-- Find which step stopped the latest build and fix it so the build publishes a new installer.
-- Keep the check that starts FMCC on a Windows machine before publishing, and make it report the reason in plain words when it fails.
-- The build status line on the website's Download card.
-- Confirm the new version and date appear on the Download button.
+- One check for a newer version when FMCC starts.
+- The bottom-corner card with what changed, **Update now** and **Not now**.
+- **Not now** hides the card for 24 hours. This is remembered for each version, so a newer release brings the card back straight away.
+- The existing footer dot and update prompt stay as they are.
 
 **Phase 2**
-- One-click fixes on FMCC's problem screen, for example using a free connection or restoring from the latest backup.
-- Confirm the in-app update prompt works end to end on a real PC.
+- A full "What's new" page listing the changes in every version since the one you're on.
+- A Settings switch to turn the corner card off, keeping only the footer dot.
 
 **Phase 3**
-- A signed installer, which needs a paid code-signing certificate from you.
-- An uninstall choice to keep or remove your FMCC data.
-- Export and import of all your FMCC data for a new PC.
+- Optional automatic updates that install the new version the next time FMCC closes.
+- A choice between stable releases and early test releases.
 
 ## Assumptions
-- The build runs on GitHub when you press Save to GitHub. Its overall result and which step failed can be read publicly. If the detailed build log is needed and can't be read without signing in, you'll be asked for a read-only GitHub access key through a secure form, not in chat.
-- You'll need to press Save to GitHub once more after the fix, because the build only runs from what's on GitHub.
-- Until the new version is published, the Download button keeps offering v0.2.11, with the "last working version" status line.
-- The fix is only confirmed once you install the new version on your PC. The Windows check in the build makes it very likely, but it isn't the same as your PC.
-- Your existing data, if any was created, is kept.
-- The installer stays unsigned, so Windows still shows its warning: choose More info, then Run anyway.
+- "Newer installer" means a newer version on the same release page that the website's Download button uses. A build still in progress, or a failed one, doesn't count.
+- The 24-hour reminder is checked when FMCC opens. If FMCC is left open for more than a day, the card doesn't reappear until the next start, as there's only one check per start.
+- If no release notes are available, the card shows only the version numbers.
+- **Update now** relies on the existing one-click update. It hasn't yet been confirmed end to end on a real PC.
+- The website, and copies of FMCC not installed from the installer, never show the card.
+- The card isn't added to the notifications bell list.

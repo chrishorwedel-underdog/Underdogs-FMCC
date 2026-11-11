@@ -263,5 +263,13 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Pending: user presses Save to GitHub; confirm v0.2.12+ publishes; user installs on PC.
 
 - 2026-11-11 Build #13 (with encoding fix) got past import of data files; self-test annotation showed: FastAPI 'Form data requires python-multipart'. Fixed: python-multipart added to desktop/requirements-desktop.txt + hidden imports; new CI step "Check the server loads with the packaged requirements" catches missing packages before packaging. Awaiting user Save to GitHub -> build #14.
+- 2026-11-11 Build #14 PASSED the Windows self-test; v0.2.14 published (FMCC-Setup.exe). Not yet installed on user's PC.
+
+## 2026-11-11 "New version ready" corner card (approved plan, Phase 1)
+- backend/self_update.py: GET /api/fmcc/update-card (installed Windows program only: install_hook set and version != dev; quiet on offline/errors; newer than installed; respects per-version 24h snooze in settings.update_snooze), POST /api/fmcc/update-card/snooze?version=.
+- frontend VersionTag.jsx: UpdateCard (checked once per start, appears 3s after load, bottom-right above footer, up to 3 notes, Update now = existing one-click install, Not now = 24h snooze); shared useInstall hook; App.js renders it. Footer dot/prompt unchanged.
+- Verified: backend logic via mocked release (show, snooze, newer version brings it back, offline quiet); card render via mocked API on desktop + mobile. Website returns show:false. Update now end-to-end on a real PC not confirmed.
+- Phase 2/3 backlog: What's new page for all versions since installed; Settings switch for the card; auto-install on close; stable vs test channel.
+
 
 

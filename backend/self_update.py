@@ -48,6 +48,33 @@ async def latest():
             "newer": _version() != "dev" and updates.is_newer(d.get("tag_name") or "", _version()), "can_install": install_hook is not None}
 
 
+@router.get("/update-card")
+async def update_card():
+    """Corner card in the installed Windows program: shown once per start when a newer installer is out, unless snoozed for that version."""
+    if install_hook is None or _version() == "dev":
+        return {"show": False}
+    try:
+        d = await _release("latest")
+    except Exception:  # noqa: BLE001 - offline or release page unreachable: stay quiet
+        return {"show": False}
+    tag = d.get("tag_name") or ""
+    if not updates.is_newer(tag, _version()):
+        return {"show": False}
+    s = await db.settings.find_one({"_id": "app"}, {"_id": 0, "update_snooze": 1}) or {}
+    sn = s.get("update_snooze") or {}
+    if sn.get("version") == tag and sn.get("until", "") > now_iso():
+        return {"show": False}
+    return {"show": True, "version": tag, "installed": _version(), "items": notes_items(d.get("body"), 3)}
+
+
+@router.post("/update-card/snooze")
+async def snooze_update_card(version: str):
+    from datetime import datetime, timedelta, timezone
+    until = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    await db.settings.update_one({"_id": "app"}, {"$set": {"update_snooze": {"version": version[:40], "until": until}}}, upsert=True)
+    return {"ok": True, "until": until}
+
+
 @router.post("/install")
 async def install():
     if install_hook is None:
