@@ -6,6 +6,7 @@ import { TacticFit } from "@/components/TacticApps";
 import { PlayerSheet } from "@/components/PlayerSheet";
 import { TabBar } from "@/lib/ui";
 import { LineupView } from "@/components/squad/LineupView";
+import { TryXI } from "@/components/squad/TryXI";
 import { DepthView, RegistrationView } from "@/components/squad/DepthView";
 import { RulesTab } from "@/components/rules/RulesTab";
 
@@ -46,6 +47,7 @@ export default function Squad() {
         {view === "players" && <div className="seg">{FILTERS.map(([k, l]) => <button key={k} className={filter === k ? "on" : ""} onClick={() => setParam("filter", k === "all" ? null : k)} data-testid={`squad-filter-${k}`}>{l}</button>)}</div>}
       </div>
       {view === "lineup" && <LineupView formation={formation} setFormation={setFormation} />}
+      {view === "lineup" && <TryXI formation={formation} />}
       {view === "depth" && <DepthView formation={formation} />}
       {view === "fit" && <TacticFit />}
       {view === "registration" && <RegistrationView />}

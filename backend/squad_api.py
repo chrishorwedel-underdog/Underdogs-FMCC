@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -101,6 +101,33 @@ async def squad_plan(formation: Optional[Formation] = None):
             "dev": {"slots": dev, "strength": roles.strength(dev, depth), "why": dev_why, "youth": picked},
             "weak": sorted(weak, key=lambda w: w["best"]), "youth_minutes": youth, "saved": saved,
             "weak_spot": roles.weak_spot(best, depth, labels)}
+
+
+@router.get("/squad/try-xi")
+async def try_xi(add: str = Query("", max_length=200), formation: Optional[Formation] = None):
+    """Shadow signings: drop up to 3 players from anywhere in the save into your squad and see how the best XI changes. Nothing is saved to FM."""
+    c = await active_career()
+    ids = [int(x) for x in add.split(",") if x.strip().isdigit()][:3]
+    formation = formation or next(iter(await team_tactics(c) or {k: v[0] for k, v in roles.FORMATIONS.items()}))
+    latest, form, depth, info, _ = await _plan_inputs(c, formation)
+    pool = (await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {}).get("players") or []
+    own = {p["unique_id"] for p in latest["players"]}
+    trial = [p for p in pool if p["unique_id"] in ids and p["unique_id"] not in own]
+    names = {u: i["name"] for u, i in info.items()} | {p["unique_id"]: p["name"] for p in trial}
+    before = roles.best_xi(latest["players"], form, depth)
+    players = latest["players"] + trial
+    depth2 = roles.depth_chart(players, form)
+    after = roles.best_xi(players, form, depth2)
+    rating = lambda d, k, u: next((r["rating"] for r in d[k] if r["unique_id"] == u), 0)  # noqa: E731
+    slots = [{"slot": s["key"], "label": s["label"], "before": names.get(before.get(s["key"])), "after": names.get(after.get(s["key"])),
+              "before_rating": rating(depth, s["key"], before.get(s["key"])), "after_rating": rating(depth2, s["key"], after.get(s["key"])),
+              "trial": after.get(s["key"]) in {p["unique_id"] for p in trial}} for s in form["slots"]]
+    dropped = [names[u] for u in set(before.values()) - set(after.values()) if u]
+    return {"formation": formation, "label": roles.ALL_FORMATIONS[formation][0], "strength_before": roles.strength(before, depth), "strength_after": roles.strength(after, depth2),
+            "slots": slots, "dropped": dropped, "trial": [{"unique_id": p["unique_id"], "name": p["name"], "club": p.get("club"), "positions": p.get("positions"),
+                                                            "in_xi": p["unique_id"] in after.values()} for p in trial],
+            "skipped": [u for u in ids if u in own or u not in {p["unique_id"] for p in trial}]}
+
 
 
 class LineupIn(BaseModel):
