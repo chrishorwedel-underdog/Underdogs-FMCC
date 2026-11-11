@@ -283,3 +283,10 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Tested: iteration_30 + fixes; backend/tests/test_dp_rulesheet.py 17/17 pass. Sample save: small comparison groups and missing role stats -> mostly needs_review / ratings-only (expected). Real-save stats availability unverified.
 - Phase 2/3 backlog: balance preview, compare settings sets, export records, club trends, review reminders, settings presets; FM27 club colours from save.
 
+
+
+## 2026-11-11 Balance preview + club colours (FM27 theme)
+- User picks: Balance preview simulates the season-end review only, broken down by position.
+- GET /api/dp/preview: dry run with current settings (shared _assess_all helper with run_review); nothing saved/applied; per position players/rising/steady/falling/waiting, average rise/fall (no CA/PA). Frontend tab "Balance preview" (components/dp/BalancePreview.jsx).
+- Club colours: fmsave_reader._colours tries likely Club colour fields (fmsave's documented Club record has none -> UNVERIFIED, usually None); sample save gives #1F4E9C/#F2C94C. GET/PUT/DELETE /api/club-colours (manual override per career, else save, else none). ClubColours sets --club-top (darkened for readable text) and --club-line; .theme-fm27 .top uses them, else FM27 colours. Appearance shows a club colours card when FM27 is selected.
+- Verified by API calls and screenshots (sample save). Sample preview shows all 23 waiting (fewer than 25 comparison players) - expected.

@@ -191,6 +191,41 @@ async def new_career(body: CareerIn, save_folder: str) -> dict:
 
 
 # ---------- setup & careers ----------
+class ColoursIn(BaseModel):
+    primary: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
+    secondary: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
+
+
+@api.get("/club-colours")
+async def club_colours():
+    """Your club's colours for the FM27 theme: yours if set, else from the latest save read, else none."""
+    s = await get_settings()
+    career = await db.careers.find_one({"id": s.get("active_career_id")}, {"_id": 0, "id": 1, "club_colours": 1}) if s.get("active_career_id") else None
+    if not career:
+        return {"primary": None, "secondary": None, "source": None}
+    if career.get("club_colours"):
+        return career["club_colours"] | {"source": "you"}
+    snap = await db.snapshots.find_one({"career_id": career["id"]}, {"_id": 0, "club_colours": 1}, sort=[("save_no", -1)]) or {}
+    cc = snap.get("club_colours") or {}
+    return {"primary": cc.get("primary"), "secondary": cc.get("secondary"), "source": "save" if cc.get("primary") else None}
+
+
+@api.put("/club-colours")
+async def set_club_colours(body: ColoursIn):
+    from core import active_career
+    c = await active_career()
+    await db.careers.update_one({"id": c["id"]}, {"$set": {"club_colours": {"primary": body.primary.upper(), "secondary": body.secondary.upper()}}})
+    return {"ok": True}
+
+
+@api.delete("/club-colours")
+async def clear_club_colours():
+    from core import active_career
+    c = await active_career()
+    await db.careers.update_one({"id": c["id"]}, {"$unset": {"club_colours": ""}})
+    return {"ok": True}
+
+
 @api.get("/state")
 async def state():
     s = await get_settings()

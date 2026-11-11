@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Check, RotateCcw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { PageHead } from "@/lib/ui";
+import { ClubColoursCard } from "@/components/ClubColours";
 import { ACCENTS, DEFAULTS, TEXT_SIZES, THEMES, loadAppearance, saveAppearance } from "@/lib/appearance";
 
 const Choice = ({ on, onClick, children, id }) => (
@@ -33,6 +34,7 @@ export default function Appearance() {
           {Object.entries(THEMES).map(([k, t]) => <Choice key={k} on={s.theme === k} onClick={() => set(t.accent ? { theme: k, accent: t.accent } : { theme: k })} id={`appearance-theme-${k}`}>
             <span style={{ display: "inline-flex", borderRadius: 4, overflow: "hidden", border: "1px solid var(--line2)" }} data-testid={`appearance-preview-${k}`}>{[t.vars["--bg"] || "#08090B", t.vars["--s2"] || "#121519", t.accent || "#4C8DFF"].map((c) => <i key={c} style={{ width: 9, height: 14, background: c, display: "block" }} />)}</span>{t.label}</Choice>)}
         </Row>
+        {s.theme === "fm27" && <ClubColoursCard />}
         <Row title="Accent colour" note="Used for highlights, selected tabs and main buttons.">
           {ACCENTS.map(([l, c]) => (
             <button key={c} className="btn" onClick={() => set({ accent: c })} style={{ borderColor: s.accent === c ? c : undefined }} data-testid={`appearance-accent-${l.toLowerCase()}`}>

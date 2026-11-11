@@ -9,6 +9,7 @@ import { TopBar } from "@/components/TopBar";
 import { AppFooter } from "@/components/AppFooter";
 import { WhatsNew } from "@/components/WhatsNew";
 import { UpdateCard } from "@/components/VersionTag";
+import { ClubColours } from "@/components/ClubColours";
 import { FeatureGate } from "@/components/FeatureGate";
 import { useFeatures } from "@/lib/features";
 import Features from "@/pages/Features";
@@ -94,6 +95,7 @@ const Shell = ({ state }) => {
       <CommandPalette open={pal} onClose={() => setPal(false)} />
       <WhatsNew />
       <UpdateCard />
+      {state.career && <ClubColours />}
       {state.career && <FeatureGate />}
       {state.career && <DossierHost />}
     </div>

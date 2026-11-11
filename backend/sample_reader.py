@@ -201,6 +201,7 @@ def read_save(save_no: int, club_name: str, edits: dict | None = None) -> dict:
         "club_name": club_name, "game_date": game_date.isoformat(),
         "season": f"{season_year}/{str(season_year + 1)[2:]}",
         "players": players, "next_fixture": fixture,
+        "club_colours": {"primary": "#1F4E9C", "secondary": "#F2C94C"},
         "tactics": [{"name": "4-2-3-1 Gegenpress", "positions": ["GK", "DR", "DCR", "DCL", "DL", "DMCR", "DMCL", "AMR", "AMC", "AML", "STC"]},
                     {"name": "Counter-attack", "positions": ["GK", "DCR", "DC", "DCL", "WBR", "WBL", "DMC", "MCR", "MCL", "STCR", "STCL"]},
                     {"name": "Direct 4-4-2", "positions": ["GK", "DR", "DCR", "DCL", "DL", "MR", "MCR", "MCL", "ML", "STCR", "STCL"]}],

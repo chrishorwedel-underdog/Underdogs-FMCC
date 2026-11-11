@@ -28,6 +28,7 @@ export const applyAppearance = (s) => {
   ALL_VARS.forEach((v) => root.style.removeProperty(v));
   Object.entries((THEMES[s.theme] || THEMES.dark).vars).forEach(([k, v]) => root.style.setProperty(k, v));
   root.classList.toggle("theme-light", !!(THEMES[s.theme] || {}).light);
+  root.classList.toggle("theme-fm27", s.theme === "fm27");
   root.style.setProperty("--acc", s.accent);
   root.style.setProperty("--z", String(s.text / 100));
   root.style.zoom = "";

@@ -155,6 +155,59 @@ def _ev(x: dict, first: dict, ages: dict, kind: str, h_rating) -> dict:
             "h1_rating_pct": h_rating(r1), "h2_rating_pct": h_rating(r2), "age": int(ages.get(str(x["unique_id"]), x["age"]))}
 
 
+def _assess_all(players: list, everyone: list, first: dict, ages: dict, winter: dict, S: dict, kind: str):
+    """Yields (player, score, evidence, record) for each player, without saving anything."""
+    by_pos = {}
+    for x in everyone:
+        by_pos.setdefault(x["position"], []).append(x)
+    band = S["score"]["level_band"]
+    for x in players:
+        start = x["ca"] - (x.get("ca_growth") or 0)
+        group = [g for g in by_pos.get(x["position"], []) if g["unique_id"] != x["unique_id"] and abs((g["ca"] - (g.get("ca_growth") or 0)) - start) <= band]
+        sc = E.score_player(x, group, S)
+        h_vals = [g.get("avg_rating") for g in group]
+        ev = _ev(x, first, ages, kind, lambda r, h=h_vals: E.percentile(h, r))
+        w = winter.get(x["unique_id"])
+        w_applied = w["change"] if w and kind == "season_end" and w["status"] in ("auto", "approved") else 0
+        yield x, sc, ev, E.assess(x, sc, ev, S, kind, w_applied, w_applied, len(group))
+
+
+@router.get("/preview")
+async def balance_preview():
+    """Season-end rules over the save with nothing applied or saved: how many rise, stay steady or fall, by position."""
+    c = await active_career()
+    s = await _season(c)
+    S = (await settings_doc())["data"]
+    rules = await current_rules(c["id"], "dp")
+    targets = await contexts(c, rules["data"]["scope"])
+    first, ages = await _evidence(c, s, "season_end")
+    winter = {r["unique_id"]: r for r in await _latest_records(c["id"], s["season"], "winter")}
+    rows = {}
+    for x, _, _, rec in _assess_all(targets, await contexts(c, {"all_players": True}), first, ages, winter, S, "season_end"):
+        r = rows.setdefault(x["position"], {"position": x["position"], "label": E.POS_LABEL.get(x["position"], x["position"]), "players": 0,
+                                            "rising": 0, "steady": 0, "falling": 0, "waiting": 0, "total_up": 0, "total_down": 0})
+        r["players"] += 1
+        total = rec["change"] + rec["winter_applied"]
+        if rec["status"] in ("needs_review", "held", "flag"):
+            r["waiting"] += 1
+        elif total > 0:
+            r["rising"] += 1
+            r["total_up"] += total
+        elif total < 0:
+            r["falling"] += 1
+            r["total_down"] += total
+        else:
+            r["steady"] += 1
+    order = {p: i for i, p in enumerate(E.POS)}
+    out = sorted(rows.values(), key=lambda r: order.get(r["position"], 99))
+    for r in out:
+        r["avg_up"] = round(r.pop("total_up") / r["rising"], 1) if r["rising"] else None
+        r["avg_down"] = round(r.pop("total_down") / r["falling"], 1) if r["falling"] else None
+    tot = {k: sum(r[k] for r in out) for k in ("players", "rising", "steady", "falling", "waiting")}
+    return {"season": s["season"], "game_date": s["game_date"], "positions": out, "totals": tot,
+            "note": "A dry run of the season-end review with your current settings and the save as it is now. Nothing is applied or saved. Players waiting would need your review or more evidence."}
+
+
 class ReviewIn(BaseModel):
     again: bool = False
 
@@ -175,20 +228,8 @@ async def run_review(kind: Literal["winter", "season_end"], body: ReviewIn):
     prev = {r["unique_id"]: r for r in await _latest_records(c["id"], s["season"], kind)}
     winter = {r["unique_id"]: r for r in await _latest_records(c["id"], s["season"], "winter")}
     todo = [x for x in targets if body.again or x["unique_id"] not in prev][:S["batch_size"]]
-    by_pos = {}
-    for x in everyone:
-        by_pos.setdefault(x["position"], []).append(x)
-    band = S["score"]["level_band"]
     recs, items = [], []
-    for x in todo:
-        start = x["ca"] - (x.get("ca_growth") or 0)
-        group = [g for g in by_pos.get(x["position"], []) if g["unique_id"] != x["unique_id"] and abs((g["ca"] - (g.get("ca_growth") or 0)) - start) <= band]
-        sc = E.score_player(x, group, S)
-        h_vals = [g.get("avg_rating") for g in group]
-        ev = _ev(x, first, ages, kind, lambda r: E.percentile(h_vals, r))
-        w = winter.get(x["unique_id"])
-        w_applied = w["change"] if w and kind == "season_end" and w["status"] in ("auto", "approved") else 0
-        rec = E.assess(x, sc, ev, S, kind, w_applied, w_applied, len(group))
+    for x, sc, ev, rec in _assess_all(todo, everyone, first, ages, winter, S, kind):
         old = prev.get(x["unique_id"])
         if old and old["status"] in ("auto", "approved") and old["change"]:
             rec = rec | {"status": old["status"], "change": old["change"], "correction": f"Earlier decision kept: {old['change']:+d} already applied",

@@ -182,6 +182,27 @@ def _staff(save, club_lookup: dict, club_league: dict, nations: dict) -> list:
     return [r for r in out if r["unique_id"] is not None][:STAFF_CAP]
 
 
+def _hex(v) -> str | None:
+    """'#RRGGBB' from a hex string, an (r, g, b) tuple or an object with r/g/b, else None."""
+    if isinstance(v, str) and len(v.lstrip("#")) == 6:
+        try:
+            int(v.lstrip("#"), 16)
+            return "#" + v.lstrip("#").upper()
+        except ValueError:
+            return None
+    rgb = v if isinstance(v, (tuple, list)) else tuple(_get(v, k) for k in ("r", "g", "b")) if v is not None else None
+    if rgb and len(rgb) >= 3 and all(isinstance(x, int) and 0 <= x <= 255 for x in rgb[:3]):
+        return "#%02X%02X%02X" % tuple(rgb[:3])
+    return None
+
+
+def _colours(club) -> dict | None:
+    """Your club's colours, if this fmsave version exposes them (its documented Club record doesn't yet). UNVERIFIED."""
+    primary = _hex(_first(club, "background_colour", "primary_colour", "home_kit_colour", "colour", "colours.background"))
+    secondary = _hex(_first(club, "foreground_colour", "secondary_colour", "colours.foreground"))
+    return {"primary": primary, "secondary": secondary} if primary else None
+
+
 def read_save(path: Path, club_name_hint: str) -> dict:
     import fmsave  # only installed in the Windows build
 
@@ -195,6 +216,7 @@ def read_save(path: Path, club_name_hint: str) -> dict:
         club_lookup = {u: v[0] for u, v in clubs.items()}
         club_rows = [{"uid": int(u), "name": n, "league": None} for u, n in club_lookup.items() if u is not None and n]
         club_name = club_lookup.get(my_uid) or _get(club, "name") or club_name_hint
+        club_colours = _colours(club)
         stats = _season_stats(save)
         everyone = list(save.players())
         nations = {}
@@ -229,4 +251,4 @@ def read_save(path: Path, club_name_hint: str) -> dict:
     gd = game_date if isinstance(game_date, date) else date.fromisoformat(str(game_date)[:10])
     season_year = gd.year if gd.month >= 7 else gd.year - 1
     return {"file_name": path.name, "club_name": club_name, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
-            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "file_mtime": path.stat().st_mtime}
+            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "file_mtime": path.stat().st_mtime}
