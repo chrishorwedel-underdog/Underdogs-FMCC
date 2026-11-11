@@ -1,4 +1,4 @@
-import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins, Sprout, ShieldCheck, Palette, UserCog, Gavel, Package, ToggleRight } from "lucide-react";
+import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins, Sprout, ShieldCheck, Palette, UserCog, Gavel, Package, ToggleRight, ArrowLeftRight, ClipboardList } from "lucide-react";
 
 export const TOP_LINKS = [
   { to: "/safety", key: "safety", label: "Project Safety", Icon: ShieldCheck },
@@ -12,6 +12,8 @@ export const NAV = [
   { to: "/dynamic-potential", key: "dp", label: "Dynamic Potential", sub: "Review development", c: "#4C8DFF", Icon: TrendingUp },
   { to: "/breakout", key: "breakout", label: "Breakout Player", sub: "Picks the winner · CA bonus", c: "#FACC15", Icon: Star },
   { to: "/scouting", key: "scouting", label: "Scout Players", sub: "Scout Window", c: "#22D3EE", Icon: Search },
+  { to: "/transfer-market", key: "market", label: "Transfer Market", sub: "Who's available, what's moving", c: "#38BDF8", Icon: ArrowLeftRight },
+  { to: "/club-analysis", key: "club", label: "Club Analysis", sub: "What to do first", c: "#818CF8", Icon: ClipboardList },
   { to: "/reports", key: "reports", label: "World Monthly Reports", sub: "Who made waves last month", c: "#A78BFA", Icon: BarChart3 },
   { to: "/moneyball", key: "moneyball", label: "Moneyball", sub: "Compare transfer options", c: "#F2B54A", Icon: Coins },
   { to: "/squad", key: "squad", label: "Squad", sub: "Lineups and depth charts", c: "#2DD4BF", Icon: Users },

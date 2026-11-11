@@ -11,6 +11,9 @@ import { WhatsNew } from "@/components/WhatsNew";
 import { FeatureGate } from "@/components/FeatureGate";
 import { useFeatures } from "@/lib/features";
 import Features from "@/pages/Features";
+import TransferMarket from "@/pages/TransferMarket";
+import ClubAnalysis from "@/pages/ClubAnalysis";
+import { DossierHost } from "@/components/analysis/Dossier";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModuleGuide } from "@/components/ModuleGuide";
@@ -74,6 +77,8 @@ const Shell = ({ state }) => {
             <Route path="/extras" element={<Extras />} />
             <Route path="/appearance" element={<Appearance />} />
             <Route path="/features" element={<Features />} />
+            <Route path="/transfer-market" element={<TransferMarket />} />
+            <Route path="/club-analysis" element={<ClubAnalysis />} />
             <Route path="/editor" element={<PlayerTeamsEditor />} />
             <Route path="/changes" element={<Changes />} />
             <Route path="/matches" element={<Matches />} />
@@ -88,6 +93,7 @@ const Shell = ({ state }) => {
       <CommandPalette open={pal} onClose={() => setPal(false)} />
       <WhatsNew />
       {state.career && <FeatureGate />}
+      {state.career && <DossierHost />}
     </div>
   );
 };

@@ -5,8 +5,8 @@ from pydantic import BaseModel
 from core import db, active_career, audit
 
 router = APIRouter(prefix="/api/features")
-KEYS = ["dp", "breakout", "scouting", "reports", "moneyball", "squad", "development", "elite", "matches", "editor", "punish", "dof"]
-PATHS = {"/dynamic-potential": "dp", "/breakout": "breakout", "/scouting": "scouting", "/reports": "reports", "/moneyball": "moneyball", "/squad": "squad",
+KEYS = ["dp", "breakout", "scouting", "market", "club", "reports", "moneyball", "squad", "development", "elite", "matches", "editor", "punish", "dof"]
+PATHS = {"/dynamic-potential": "dp", "/breakout": "breakout", "/scouting": "scouting", "/transfer-market": "market", "/club-analysis": "club", "/reports": "reports", "/moneyball": "moneyball", "/squad": "squad",
          "/development": "development", "/elite-training": "elite", "/matches": "matches", "/editor": "editor", "/punish": "punish", "/dof": "dof"}
 COUNTDOWN = {"reports": "reports", "development": "development", "dp": "dp", "elite": "elite", "breakout": "breakout", "window": "scouting", "squad": "squad"}
 

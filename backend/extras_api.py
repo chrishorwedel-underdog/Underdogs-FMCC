@@ -34,15 +34,10 @@ ITEMS = [
     {"key": "kits", "name": "Kit pack", "by": "sortitoutsi (or any kit pack)", "needed": False, "kind": "zip", "pattern": r"kit.*\.zip$",
      "for": "Real kits in FM and in FMCC's Kits tab", "page": "https://sortitoutsi.net/graphics",
      "how": "Download a kit pack zip. FMCC unpacks it into FM's graphics folder."},
-    {"key": "fmst26", "name": "FMST26", "by": "FM Scout", "needed": False, "kind": "app", "pattern": None, "for": "Scouting stats app, opened from Connections",
-     "page": "https://www.fmscout.com/a-fmst-26.html", "how": "A separate app; install it with its own installer."},
-    {"key": "fmos", "name": "fmOS", "by": "fmOS", "needed": False, "kind": "app", "pattern": None, "for": "Manager's office app, opened from Connections",
-     "page": "https://fmos.it/", "how": "A separate app; install it with its own installer."},
-    {"key": "fmdossier", "name": "FM Dossier", "by": "FM Dossier", "needed": False, "kind": "app", "pattern": None, "for": "Squad and recruitment app, opened from Connections",
-     "page": "https://fmdossier.dev/download", "how": "A separate app; install it with its own installer."},
 ]
 BUILT_IN = [("fmsave", "Reads your saves"), ("FMLibreEditor", "Makes FM27 game edits"), ("FMMatchLens + BepInEx", "Match analytics; FMCC installs it from Connections"),
-            ("ScoutSheet", "Scouting engine inside Scout Players"), ("League strength workbook", "408 rated competitions")]
+            ("ScoutSheet", "Scouting engine inside Scout Players"), ("League strength workbook", "408 rated competitions"),
+            ("Stats Table, Role Fit and Player Dossiers", "Inside Scout Players"), ("Transfer Market and Club Analysis", "Their own menu pages")]
 _CHECK = {"data": {}, "at": {}}
 
 
@@ -196,6 +191,29 @@ def _install_graphics(zpath: Path, p: dict, word: str, stamp: str) -> dict:
                 n += 1
     return {"message": f"{n} file(s) unpacked into FM's graphics folder as \"{name}\"{f' ({replaced} replaced file(s) backed up)' if replaced else ''}. Restart FM (or reload skin) to see them.",
             "backup": backup.name if replaced else None}
+
+
+@router.post("/ng_regens/fetch")
+async def ng_fetch():
+    """Download the NG_Regens Manager installer from the official site into Downloads (Windows file preferred), then start it."""
+    if not LIVE:
+        raise HTTPException(409, "FMCC fetches NG_Regens itself only in the Windows program")
+    c = await active_career()
+    p = _paths(c)
+    async with httpx.AsyncClient(timeout=httpx.Timeout(30, read=180), follow_redirects=True) as client:
+        page = await client.get("https://ngregens.org/")
+        links = re.findall(r'href="([^"]+\.(?:exe|msi|zip))"', page.text) if page.status_code == 200 else []
+        links = sorted(set(links), key=lambda u: (not re.search(r"(?i)win|setup|\.exe$", u), u))
+        if not links:
+            raise HTTPException(502, "Couldn't find the NG_Regens Manager download on ngregens.org. Use the official page instead.")
+        url = links[0] if links[0].startswith("http") else httpx.URL("https://ngregens.org/").join(links[0]).__str__()
+        dest = p["downloads"] / ("NG_Regens_Manager_" + url.rsplit("/", 1)[-1])
+        async with client.stream("GET", url) as r:
+            r.raise_for_status()
+            with dest.open("wb") as f:
+                async for chunk in r.aiter_bytes(1 << 20):
+                    f.write(chunk)
+    return await install("ng_regens")
 
 
 @router.post("/{key}/install")

@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useNotices } from "@/components/Notify";
 import { useFeatures } from "@/lib/features";
 
-const PATHS = { "/dynamic-potential": "dp", "/breakout": "breakout", "/scouting": "scouting", "/reports": "reports", "/moneyball": "moneyball", "/squad": "squad",
+const PATHS = { "/dynamic-potential": "dp", "/breakout": "breakout", "/scouting": "scouting", "/transfer-market": "market", "/club-analysis": "club", "/reports": "reports", "/moneyball": "moneyball", "/squad": "squad",
   "/development": "development", "/elite-training": "elite", "/matches": "matches", "/editor": "editor", "/punish": "punish", "/dof": "dof" };
 
 export const FeatureGate = () => {

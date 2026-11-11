@@ -13,6 +13,7 @@ import { LeaguesTab } from "@/components/scout/LeaguesTab";
 import { FormulasTab, Quadrant } from "@/components/scout/Lab";
 import { ExploreTab, BoardTab, PicksTab, Compare4 } from "@/components/scout/Recruit";
 import { PossessionTab, ImportTab } from "@/components/scout/DataTabs";
+import { StatsTable } from "@/components/analysis/StatsTable";
 
 const Shortlist = ({ open }) => {
   const { data } = useGet("rankings", "/scouting/rankings", { shortlist_only: true, sort: "score" });
@@ -72,7 +73,7 @@ export default function Scouting({ initialTab = "players" }) {
   const prefs = saved || { currency: "GBP", wages: "week" };
   const setPrefs = (p) => act(() => api.put("/scout/prefs", p), null, ["scout-prefs"]);
   const toggleCompare = (id) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id].slice(-4)));
-  const tabs = [["players", "Players"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["board", "Shortlist board"], ["picks", "DOF picks"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
+  const tabs = [["players", "Players"], ["stats", "Stats Table"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["board", "Shortlist board"], ["picks", "DOF picks"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
     ["computed", "Computed stats"], ["formulas", "Formulas"], ["roles", "Role scores"], ["leagues", "Leagues"], ["possession", "Possession"], ["import", "HTML import"], ["shortlist", "Shortlist"], ["rules", "Rules"]];
   return (
     <ScoutCtx.Provider value={{ view, prefs, openPlayer: setOpen, compare, toggleCompare }}>
@@ -83,6 +84,7 @@ export default function Scouting({ initialTab = "players" }) {
         <p className="note" style={{ marginBottom: 10 }} data-testid="scout-view-note"><Scale size={12} style={{ display: "inline", verticalAlign: -1 }} /> {VIEW_NOTE[view]}</p>
         <div style={{ overflowX: "auto", marginBottom: 16 }}><TabBar id="scouting" value={tab} onChange={setTab} tabs={tabs} /></div>
         {tab === "players" && <PlayersTab />}
+        {tab === "stats" && <StatsTable />}
         {tab === "myclub" && <MyClubTab />}
         {tab === "deals" && <><DealsTab /><Quadrant /></>}
         {tab === "formulas" && <FormulasTab />}
