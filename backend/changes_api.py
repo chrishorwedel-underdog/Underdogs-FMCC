@@ -13,7 +13,7 @@ import sample_reader
 from core import db, active_career, create_backup, audit, now_iso, new_id, get_settings, logger, latest_two
 
 router = APIRouter(prefix="/api")
-SOURCES = {"elite": "Elite Training", "breakout": "Breakout Player", "dp": "Dynamic Potential", "editor": "Player & Teams Editor", "punish": "Punish a Club"}
+SOURCES = {"elite": "Elite Training", "breakout": "Breakout Player", "dp": "Dynamic Potential", "editor": "Player & Teams Editor", "punish": "Punish a Club", "shortlist": "Shortlist to FM"}
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
 HIDE = ("delta", "current", "new", "old_value", "new_value")
 STEP_DELAY = 0.12
@@ -93,6 +93,9 @@ async def current_values(c: dict, chs: list) -> dict:
         import live_editor
         out = {}
         for ch in chs:
+            if ch.get("entity") == "shortlist":
+                out[ch["id"]] = None
+                continue
             try:
                 v, _ = await asyncio.to_thread(live_editor.read, ch["unique_id"], ch["field"], ch.get("entity", "player"))
                 out[ch["id"]] = v if v > 0 or ch.get("entity") == "club" else None
@@ -104,12 +107,13 @@ async def current_values(c: dict, chs: list) -> dict:
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {"players": []}
     for p in pool["players"]:
         players.setdefault(p["unique_id"], p)
+    sent = {d["unique_id"] async for d in db.fm_shortlist.find({"career_id": c["id"]}, {"unique_id": 1})}
     clubs = {}
     if any(ch.get("entity") == "club" for ch in chs):
         from editor_api import club_values
         for uid in {ch["unique_id"] for ch in chs if ch.get("entity") == "club"}:
             clubs[uid] = {f["key"]: f["value"] for f in await club_values(c, uid)}
-    return {ch["id"]: (clubs.get(ch["unique_id"], {}) if ch.get("entity") == "club" else players.get(ch["unique_id"], {})).get(ch["field"]) for ch in chs}
+    return {ch["id"]: int(ch["unique_id"] in sent) if ch.get("entity") == "shortlist" else (clubs.get(ch["unique_id"], {}) if ch.get("entity") == "club" else players.get(ch["unique_id"], {})).get(ch["field"]) for ch in chs}
 
 
 async def queue_club_edit(career: dict, cl: dict, field: str, label: str, value: int, source: str = "editor", award_id: str | None = None):
@@ -123,10 +127,22 @@ async def queue_club_edit(career: dict, cl: dict, field: str, label: str, value:
     await audit(career["id"], "queued", source, f"{label} → {value}", cl["uid"], cl["name"])
 
 
+async def queue_shortlist(career: dict, players: list) -> dict:
+    """Add players to FM's own shortlist as game changes. A player already queued or sent is skipped."""
+    busy = {d["unique_id"] async for d in db.changes.find({"career_id": career["id"], "entity": "shortlist", "status": {"$in": ["queued", "approved", "applying", "applied"]}}, {"unique_id": 1})}
+    docs = [{"id": new_id(), "career_id": career["id"], "source": "shortlist", "award_id": None, "unique_id": p["unique_id"], "player_name": p["name"],
+             "club": p.get("club"), "entity": "shortlist", "field": "shortlist", "label": "Add to FM shortlist", "target": 1, "delta": None, "hidden": False,
+             "status": "queued", "created_at": now_iso(), "batch_id": None, "key": f"{career['id']}:shortlist:{p['unique_id']}:{new_id()}"} for p in players if p["unique_id"] not in busy]
+    if docs:
+        await db.changes.insert_many([dict(d) for d in docs])
+        await audit(career["id"], "queued", "shortlist", f"{len(docs)} player(s) to add to FM's shortlist")
+    return {"queued": len(docs), "already": len(players) - len(docs)}
+
+
 def new_value(ch: dict, cur):
     if cur is None:
         return None
-    return ch["target"] if ch.get("entity") == "club" else clamp(cur + ch["delta"])
+    return ch["target"] if ch.get("entity") in ("club", "shortlist") else clamp(cur + ch["delta"])
 
 
 async def queue_changes(career: dict, source: str, award_id: str, items: list, hidden: bool = False) -> dict:
@@ -204,7 +220,7 @@ async def run_batch(batch_id: str):
                 return
             await db.changes.update_one({"id": ch["id"]}, {"$set": {"status": "applied", "applied_at": now_iso(), "old_value": old, "new_value": new, "result": "read back OK" if LIVE else "sample save"}})
             await db.batches.update_one({"id": batch_id}, {"$inc": {"done": 1}})
-            detail = f"{(ch.get('label') or ch['field']).upper() if ch.get('entity') != 'club' else ch['label']} {old} → {new}" if old is not None else f"{ch['field'].upper()} {'+' if ch['delta'] > 0 else ''}{ch['delta']}"
+            detail = f"{(ch.get('label') or ch['field']).upper() if ch.get('entity') not in ('club', 'shortlist') else ch['label']} {old} → {new}" if old is not None else f"{ch['field'].upper()} {'+' if ch['delta'] > 0 else ''}{ch['delta']}"
             await audit(ch["career_id"], "applied", ch["source"], detail, ch["unique_id"], ch["player_name"], batch_id, ch["hidden"])
             await asyncio.sleep(STEP_DELAY)
     except Exception as exc:
@@ -215,6 +231,12 @@ async def run_batch(batch_id: str):
 async def apply_one(ch: dict, b: dict) -> tuple:
     exp = (b.get("expected") or {}).get(ch["id"])
     entity = ch.get("entity", "player")
+    if entity == "shortlist":
+        if LIVE:
+            raise RuntimeError("the game editor can't write to FM's shortlist yet")
+        await db.fm_shortlist.update_one({"career_id": ch["career_id"], "unique_id": ch["unique_id"]},
+                                         {"$set": {"name": ch["player_name"], "club": ch.get("club"), "added_at": now_iso()}}, upsert=True)
+        return exp, 1
     if not LIVE:
         if entity == "club":
             await db.club_edits.update_one({"career_id": ch["career_id"], "uid": ch["unique_id"]}, {"$set": {ch["field"]: ch["target"]}}, upsert=True)
@@ -315,6 +337,11 @@ async def preview_changes(body: PreviewIn):
     cur = await current_values(c, chs) if ready else {}
     unreadable = [ch["player_name"] for ch in chs if ready and cur.get(ch["id"]) is None]
     if LIVE and ready:
+        sl = [ch for ch in chs if ch.get("entity") == "shortlist"]
+        if sl:
+            checks.append({"key": "shortlist", "label": "FM's shortlist can be written", "ok": False,
+                           "detail": "The game editor can't add players to FM's shortlist yet, so these stay queued. Apply your other changes on their own."})
+            unreadable = [n for n in unreadable if n not in {ch["player_name"] for ch in sl}]
         checks.append({"key": "values", "label": "Every current value can be read", "ok": not unreadable, "detail": ", ".join(unreadable[:5]) or "All read"})
     checks += [{"key": "backup", "label": "A verified copy of the newest save is made first" if LIVE else "A verified FMCC backup is made first", "ok": True, "detail": "Made when you press Apply batch"},
                {"key": "dupes", "label": "No change in this batch was applied before", "ok": True, "detail": "Each reward can only be applied once"}]
@@ -400,7 +427,9 @@ async def undo_batch(batch_id: str):
         claimed = await db.changes.update_one({"id": ch["id"], "status": "applied"}, {"$set": {"status": "undone", "undone_at": now_iso()}})
         if claimed.modified_count:
             if not LIVE:
-                if ch.get("entity") == "club":
+                if ch.get("entity") == "shortlist":
+                    await db.fm_shortlist.delete_one({"career_id": c["id"], "unique_id": ch["unique_id"]})
+                elif ch.get("entity") == "club":
                     await db.club_edits.update_one({"career_id": c["id"], "uid": ch["unique_id"]}, {"$set": {ch["field"]: ch["old_value"]}}, upsert=True)
                 else:
                     await db.game_edits.update_one({"career_id": c["id"], "unique_id": ch["unique_id"]}, {"$inc": {ch["field"]: -ch["delta"]}})

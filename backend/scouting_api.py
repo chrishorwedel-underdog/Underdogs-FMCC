@@ -2,7 +2,7 @@ import math
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import roles
 from core import db, active_career, latest_snapshot, now_iso, new_id
@@ -92,6 +92,22 @@ async def shortlist(body: ShortlistIn):
     await db.shortlist.insert_one({"id": new_id(), "career_id": c["id"], "unique_id": body.unique_id,
                                    "status": "active" if body.action == "add" else "removed", "at": now_iso()})
     return {"ok": True}
+
+
+class SendIn(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=200)
+
+
+@router.post("/send-to-fm")
+async def send_to_fm(body: SendIn):
+    """Queue players for FM's own shortlist; they go in with your other game changes."""
+    from changes_api import queue_shortlist
+    c = await active_career()
+    by = {p["unique_id"]: p for p in (await _pool(c))["players"]}
+    found = [by[u] for u in dict.fromkeys(body.ids) if u in by]
+    if not found:
+        raise HTTPException(404, "None of these players are in the scouting pool")
+    return await queue_shortlist(c, found) | {"not_found": len(set(body.ids)) - len(found)}
 
 
 @router.get("/compare")

@@ -81,6 +81,7 @@ button.ver-tag{background:none;border:0;cursor:pointer}
 .guide-body ul,.guide-body ol{margin:6px 0 0;padding-left:18px}
 .guide-body ul{list-style:disc}.guide-body ol{list-style:decimal}
 @media (max-width:900px){.guide-body{grid-template-columns:1fr;padding-left:16px}.guide-head b{white-space:normal}}
+@media (max-width:1000px){.fit-grid{grid-template-columns:1fr!important}}
 /* top */
 .main{display:flex;flex-direction:column;min-width:0;position:relative;height:calc(100vh / var(--z,1))}
 .main:before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:22px 22px;mask-image:radial-gradient(ellipse 70% 50% at 50% 0%,#000,transparent);pointer-events:none}

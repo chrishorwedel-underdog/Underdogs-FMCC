@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Star, Scale } from "lucide-react";
+import { Star, Scale, ListPlus } from "lucide-react";
+import { sendToFm } from "@/lib/fmShortlist";
 import { api } from "@/lib/api";
 import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
 import { RulesTab } from "@/components/rules/RulesTab";
@@ -21,6 +22,9 @@ const Shortlist = ({ open }) => {
   const act = useAct();
   return (
     <div className="card" style={{ padding: 8, overflowX: "auto" }}>
+      {data?.rows.length > 0 && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px 10px" }}>
+        <small style={{ flex: 1, color: "var(--dim)" }}>Queue the whole list for FM's own shortlist; it goes in with your other game changes.</small>
+        <button className="btn btn-p" onClick={() => sendToFm(act, data.rows.map((r) => r.unique_id))} data-testid="shortlist-send-fm"><ListPlus size={13} />Send all to FM shortlist</button></div>}
       <table className="tbl" data-testid="rankings-table">
         <thead><tr><th></th><th>Player</th><th>Age</th><th>Club</th><th>Best role</th><th>Value</th><th>Score</th></tr></thead>
         <tbody>{data?.rows.map((r) => (

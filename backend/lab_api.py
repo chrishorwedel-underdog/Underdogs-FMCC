@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from pydantic import BaseModel, Field
 
 import roles
@@ -393,18 +393,36 @@ def _formation_from_file(raw: bytes) -> Optional[str]:
     txt = raw.decode("latin-1", errors="ignore")
     for m in re.finditer(r"\b(\d)-(\d)-(\d)(?:-(\d))?\b", txt):
         key = "".join(g for g in m.groups() if g)
-        if key in roles.FORMATIONS:
+        if key in roles.ALL_FORMATIONS:
             return key
     return None
 
 
+def role_options(slot: dict) -> list:
+    return [{"key": k, "name": f"{v[0]} ({v[1]})"} for k, v in roles.ROLES.items() if k == slot["role"] or set(roles.ROLE_POSITIONS[k]) & set(slot["positions"])]
+
+
+def tactic_slots(formation: str, picks: dict | None = None) -> list:
+    """Formation slots with your chosen role in each (FMCC's default role where none is picked or the pick doesn't suit the slot)."""
+    out = []
+    for s in roles.formation_meta(formation)["slots"]:
+        r = (picks or {}).get(s["key"])
+        if r and any(o["key"] == r for o in role_options(s)):
+            s = s | {"role": r, "role_name": f"{roles.ROLES[r][0]} ({roles.ROLES[r][1]})"}
+        out.append(s)
+    return out
+
+
 class TacticIn(BaseModel):
-    formation: str = Field(pattern="^(" + "|".join(roles.FORMATIONS) + ")$")
+    formation: str = Field(pattern="^(" + "|".join(roles.ALL_FORMATIONS) + ")$")
     name: str = Field(default="", max_length=60)
+    roles: dict[str, str] = Field(default_factory=dict, max_length=11)
 
 
-async def _add_tactic(c: dict, formation: str, name: str, source: str) -> dict:
-    doc = {"id": new_id(), "career_id": c["id"], "formation": formation, "name": name or roles.FORMATIONS[formation][0], "source": source, "at": now_iso()}
+async def _add_tactic(c: dict, formation: str, name: str, source: str, picks: dict | None = None) -> dict:
+    chosen = {s["key"]: s["role"] for s in tactic_slots(formation, picks)}
+    doc = {"id": new_id(), "career_id": c["id"], "formation": formation, "name": name or roles.ALL_FORMATIONS[formation][0], "source": source,
+           "roles": chosen, "at": now_iso()}
     await db.tactics.insert_one(dict(doc))
     await audit(c["id"], "tactic added", "squad", f"{doc['name']} ({source})")
     return {k: v for k, v in doc.items() if k != "career_id"}
@@ -412,7 +430,16 @@ async def _add_tactic(c: dict, formation: str, name: str, source: str) -> dict:
 
 @router.post("/squad/tactics")
 async def add_tactic(body: TacticIn):
-    return await _add_tactic(await active_career(), body.formation, body.name, "FMCC formation")
+    return await _add_tactic(await active_career(), body.formation, body.name, "Built in FMCC", body.roles)
+
+
+@router.delete("/squad/tactics/{tactic_id}")
+async def delete_tactic(tactic_id: str):
+    c = await active_career()
+    r = await db.tactics.delete_one({"id": tactic_id, "career_id": c["id"]})
+    if not r.deleted_count:
+        raise HTTPException(404, "Tactic not found")
+    return {"ok": True}
 
 
 @router.post("/squad/tactics/import")
@@ -427,10 +454,20 @@ async def import_tactic(file: UploadFile = File(...)):
     return await _add_tactic(c, f, Path(file.filename).stem[:60], f"Imported from {file.filename}")
 
 
+async def _save_tactics(c: dict) -> list:
+    snap = await db.snapshots.find_one({"career_id": c["id"]}, {"_id": 0, "tactics": 1}, sort=[("save_no", -1)]) or {}
+    out = []
+    for i, t in enumerate(snap.get("tactics") or []):
+        k = roles.match_tactic(t)
+        if k:
+            out.append({"id": f"save-{i}", "formation": k, "name": t.get("name") or f"Tactic {i + 1}", "source": "From your save", "roles": {}, "from_save": True})
+    return out
+
+
 @router.get("/squad/tactics")
 async def list_tactics():
     c = await active_career()
-    return await db.tactics.find({"career_id": c["id"]}, {"_id": 0, "career_id": 0}).sort("at", -1).to_list(50)
+    return await _save_tactics(c) + await db.tactics.find({"career_id": c["id"]}, {"_id": 0, "career_id": 0}).sort("at", -1).to_list(50)
 
 
 def _layer(slots: list, players: list, used: set) -> dict:
@@ -448,8 +485,8 @@ def _layer(slots: list, players: list, used: set) -> dict:
     return out
 
 
-def fit(players: list, formation: str) -> list:
-    slots = roles.formation_meta(formation)["slots"]
+def fit(players: list, formation: str, picks: dict | None = None) -> list:
+    slots = tactic_slots(formation, picks)
     used, layers = set(), []
     for _ in range(3):
         lay = _layer(slots, players, used)
@@ -458,22 +495,33 @@ def fit(players: list, formation: str) -> list:
     out = []
     for s in slots:
         top = [lay.get(s["key"]) for lay in layers]
-        rated = sorted(({"unique_id": p["unique_id"], "name": p["name"], "rating": roles.role_rating(p, s["role"]), "natural": roles.eligible(p, s)} for p in players),
-                       key=lambda r: (-r["natural"], -r["rating"]))
+        rated = sorted(({"unique_id": p["unique_id"], "name": p["name"], "age": p.get("age"), "positions": p.get("positions"), "rating": roles.role_rating(p, s["role"]),
+                         "natural": roles.eligible(p, s)} for p in players), key=lambda r: (-r["natural"], -r["rating"]))
         score = round(sum(w * (t["rating"] if t else 0) for t, w in zip(top, (.6, .3, .1))), 1)
         out.append({"slot": s["key"], "label": s["label"], "role": s["role"], "role_name": s["role_name"], "group": GROUP.get(s["positions"][0], "CM"),
-                    "starter": top[0], "backup": top[1], "depth": top[2], "score": score, "all": rated[:8]})
+                    "starter": top[0], "backup": top[1], "depth": top[2], "score": score, "ranked": rated, "role_options": role_options(s)})
     return out
 
 
 @router.get("/squad/tactic-fit")
-async def tactic_fit(formation: str = "433"):
-    if formation not in roles.FORMATIONS:
-        raise HTTPException(404, "Unknown formation")
+async def tactic_fit(formation: Optional[str] = None, tactic: Optional[str] = None, picks: str = Query("", max_length=400)):
+    """Ranked fit of every squad player for each slot of a tactic: one from your save, an imported or built one, or a formation with roles picked here."""
     c = await active_career()
-    slots = fit((await latest_snapshot(c["id"]))["players"], formation)
-    return {"formation": roles.FORMATIONS[formation][0], "slots": slots, "gaps": sorted(slots, key=lambda s: s["score"])[:3],
-            "note": "Each player is used once across starters, backups and depth. FM tactic files hold in- and out-of-possession roles; FMCC rates the in-possession role until it can read them."}
+    known = await list_tactics()
+    chosen = next((t for t in known if t["id"] == tactic), None) if tactic else None
+    if tactic and not chosen:
+        raise HTTPException(404, "Tactic not found")
+    if formation and formation not in roles.ALL_FORMATIONS:
+        raise HTTPException(404, "Unknown formation")
+    if not chosen and not formation:
+        chosen = known[0] if known else None
+    formation = chosen["formation"] if chosen else formation or "433"
+    asked = dict(x.split(":", 1) for x in picks.split(",") if ":" in x)
+    slots = fit((await latest_snapshot(c["id"]))["players"], formation, asked or (chosen or {}).get("roles"))
+    note = ("FMCC reads the shape of your save's tactics but not their roles yet, so each slot starts on FMCC's default role. Change a role to see the fit move."
+            if chosen and chosen.get("from_save") else "Fit uses attributes only, rated for the role in each slot. Each player is used once across starter, backup and depth.")
+    return {"formation": roles.ALL_FORMATIONS[formation][0], "formation_key": formation, "tactic": chosen, "slots": slots,
+            "gaps": sorted(slots, key=lambda s: s["score"])[:3], "note": note, "formations": [[k, v[0]] for k, v in roles.ALL_FORMATIONS.items()]}
 
 
 @router.get("/squad/shapes")

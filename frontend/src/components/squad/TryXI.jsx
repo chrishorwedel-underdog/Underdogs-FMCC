@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { FlaskConical, X, UserPlus } from "lucide-react";
-import { useGet } from "@/lib/ui";
+import { FlaskConical, X, UserPlus, ListPlus } from "lucide-react";
+import { useGet, useAct } from "@/lib/ui";
+import { sendToFm } from "@/lib/fmShortlist";
 import { openDossier } from "@/components/analysis/StatsTable";
 
 const KEY = "fmcc-try-xi";
@@ -15,6 +16,7 @@ export const addTrial = (uid) => {
 
 export const TryXI = ({ formation }) => {
   const [ids, setIds] = useState(trialList);
+  const act = useAct();
   useEffect(() => { const h = () => setIds(trialList()); window.addEventListener("fmcc-try-xi", h); return () => window.removeEventListener("fmcc-try-xi", h); }, []);
   const { data } = useGet(["try-xi", ids.join(","), formation], "/squad/try-xi", { add: ids.join(","), ...(formation ? { formation } : {}) }, { enabled: ids.length > 0 });
   const remove = (u) => { const l = ids.filter((x) => x !== u); localStorage.setItem(KEY, JSON.stringify(l)); setIds(l); };
@@ -29,7 +31,8 @@ export const TryXI = ({ formation }) => {
       {ids.length > 0 && data && <>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>{data.trial.map((p) => <span key={p.unique_id} className={`st ${p.in_xi ? "g" : "n"}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 0, padding: "4px 8px" }} data-testid={`try-xi-chip-${p.unique_id}`}>
           <span style={{ cursor: "pointer" }} onClick={() => openDossier(p.unique_id)}>{p.name} ({p.club}){p.in_xi ? " · starts" : " · doesn't start"}</span>
-          <button className="ib" style={{ marginLeft: 4 }} onClick={() => remove(p.unique_id)} aria-label={`Remove ${p.name}`} data-testid={`try-xi-remove-${p.unique_id}`}><X size={11} /></button></span>)}</div>
+          <button className="ib" style={{ marginLeft: 4 }} onClick={() => remove(p.unique_id)} aria-label={`Remove ${p.name}`} data-testid={`try-xi-remove-${p.unique_id}`}><X size={11} /></button></span>)}
+          {data.trial.length > 0 && <button className="btn" style={{ marginLeft: "auto" }} onClick={() => sendToFm(act, data.trial.map((p) => p.unique_id))} data-testid="try-xi-send-fm"><ListPlus size={13} />Send to FM shortlist</button>}</div>
         <p className="sent" data-testid="try-xi-strength">Best XI strength in {data.label}: <b>{data.strength_before}</b> → <b>{data.strength_after}</b> <span className={`mono ${diff > 0 ? "up" : diff < 0 ? "down" : ""}`}>({diff > 0 ? "+" : ""}{diff})</span>
           {data.dropped.length > 0 && <> · drops out: {data.dropped.join(", ")}</>}</p>
         <div style={{ overflowX: "auto" }}><table className="tbl" data-testid="try-xi-table"><thead><tr><th>Position</th><th>Now</th><th>With trial players</th></tr></thead>

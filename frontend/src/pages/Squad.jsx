@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api, gameDate } from "@/lib/api";
-import { TacticFit } from "@/components/TacticApps";
+import { TacticFit } from "@/components/squad/TacticFit";
 import { PlayerSheet } from "@/components/PlayerSheet";
 import { TabBar } from "@/lib/ui";
 import { LineupView } from "@/components/squad/LineupView";

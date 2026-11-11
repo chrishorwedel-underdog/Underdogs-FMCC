@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Legend } from "recharts";
-import { GitCompare, X, FlaskConical } from "lucide-react";
+import { GitCompare, X, FlaskConical, ListPlus } from "lucide-react";
+import { sendToFm } from "@/lib/fmShortlist";
 import { toast } from "sonner";
 import { addTrial } from "@/components/squad/TryXI";
-import { useGet } from "@/lib/ui";
+import { useGet, useAct } from "@/lib/ui";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { money, openDossier } from "./StatsTable";
@@ -26,11 +27,17 @@ const Similar = ({ uid }) => {
   );
 };
 
+const SendBtn = ({ uid }) => {
+  const act = useAct();
+  return <button className="btn" onClick={() => sendToFm(act, [uid])} data-testid="dossier-send-fm"><ListPlus size={13} />Send to FM shortlist</button>;
+};
+
 const Body = ({ d, addCompare }) => (
   <div style={{ display: "grid", gap: 16, marginTop: 12 }}>
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><span className="st n">{d.club}</span><span className="st n">{d.league}</span><span className="st n">{d.nationality}</span><span className="st n">Age {d.age}</span>
       <button className="btn" onClick={addCompare} data-testid="dossier-compare-add"><GitCompare size={13} />Add to compare</button>
-      {!d.own && <button className="btn" onClick={() => toast.success(addTrial(d.unique_id) ? `${d.name} added to Try in XI (the oldest trial player was taken out; 3 at most)` : `${d.name} added to Try in XI on the Squad page`)} data-testid="dossier-try-xi"><FlaskConical size={13} />Try in XI</button>}</div>
+      {!d.own && <button className="btn" onClick={() => toast.success(addTrial(d.unique_id) ? `${d.name} added to Try in XI (the oldest trial player was taken out; 3 at most)` : `${d.name} added to Try in XI on the Squad page`)} data-testid="dossier-try-xi"><FlaskConical size={13} />Try in XI</button>}
+      {!d.own && <SendBtn uid={d.unique_id} />}</div>
     <div className="card" data-testid="dossier-value"><div className="ttl">Estimated value: {money(d.est_value)}</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{d.value_factors.map((f) => <span key={f.name} className="st n" style={{ color: f.pct > 0 ? "#34D399" : f.pct < 0 ? "#FF6E6E" : undefined }} data-testid={`dossier-factor-${f.name}`}>{f.name} {f.pct > 0 ? "+" : ""}{f.pct}%</span>)}</div>
       {d.value_history.length > 1 && <div style={{ height: 140, marginTop: 10 }} data-testid="dossier-value-chart"><ResponsiveContainer><LineChart data={d.value_history}><XAxis dataKey="month" fontSize={10} /><YAxis tickFormatter={money} fontSize={10} width={52} /><Tooltip formatter={money} /><Line dataKey="value" stroke="#4C8DFF" dot={false} /></LineChart></ResponsiveContainer></div>}

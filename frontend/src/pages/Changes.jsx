@@ -11,7 +11,7 @@ import { BatchDialog } from "@/components/BatchDialog";
 const Modes = ({ d, act }) => (
   <div className="card" data-testid="change-modes">
     <div className="ttl">How changes are applied</div>
-    {Object.entries(d.sources).filter(([k]) => k !== "editor").map(([k, l]) => (
+    {Object.entries(d.sources).filter(([k]) => k !== "editor" && k !== "shortlist").map(([k, l]) => (
       <div className="row" key={k}><div style={{ flex: 1 }}>{l}<small>{d.modes[k] === "auto" && d.auto_allowed ? "Apply automatically" : "Ask me first"}</small></div>
         <Switch disabled={!d.auto_allowed} checked={d.modes[k] === "auto" && d.auto_allowed} onCheckedChange={(v) => act(() => api.put("/changes/modes", { source: k, mode: v ? "auto" : "ask" }), null, ["changes"])} data-testid={`mode-${k}`} /></div>
     ))}
@@ -40,7 +40,7 @@ const Queue = ({ d, act }) => {
           <tr key={q.id} style={{ cursor: "default" }} data-testid={`queue-row-${q.id}`}>
             <td><Checkbox checked={chosen.includes(q.id)} onCheckedChange={(v) => setSel(v ? [...chosen, q.id] : chosen.filter((x) => x !== q.id))} /></td>
             <td>{q.player_name}{q.club && <small style={{ display: "block", color: "var(--dim)" }}>{q.club}</small>}</td><td>{d.sources[q.source]}</td>
-            <td className="mono" data-testid={`queue-delta-${q.id}`}>{q.delta == null && q.entity !== "club" ? <span style={{ color: "var(--dim)" }}>Hidden</span> : q.entity === "club" ? `${q.label} → ${q.target}` : `${q.field.toUpperCase()} ${q.delta > 0 ? "+" : ""}${q.delta}`}</td><td><small>{ago(q.created_at)}</small></td>
+            <td className="mono" data-testid={`queue-delta-${q.id}`}>{q.entity === "shortlist" ? "Add to FM shortlist" : q.delta == null && q.entity !== "club" ? <span style={{ color: "var(--dim)" }}>Hidden</span> : q.entity === "club" ? `${q.label} → ${q.target}` : `${q.field.toUpperCase()} ${q.delta > 0 ? "+" : ""}${q.delta}`}</td><td><small>{ago(q.created_at)}</small></td>
           </tr>))}</tbody>
       </table>
       {!d.queued.length && <p className="note" style={{ padding: 10 }}>Nothing waiting.</p>}
@@ -59,7 +59,7 @@ const BatchDetail = ({ id }) => {
       <small style={{ display: "block", marginBottom: 6 }}>Approved by {data.approved_by || "Manager"} · {data.save_backup ? `save copied to ${data.save_backup.file}` : "FMCC backup saved"}</small>
       {data.changes.map((c) => <div key={c.id} style={{ padding: "6px 8px 6px 0", borderTop: "1px solid var(--line)", fontSize: 12.5 }} data-testid={`batch-change-${c.id}`}>
         <b style={{ display: "block" }}>{c.player_name}</b>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}><span className="mono">{c.field.toUpperCase()} {c.old_value == null && c.hidden ? "Hidden" : `${c.old_value ?? "—"} → ${c.new_value ?? "—"}`}</span>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}><span className="mono">{c.entity === "shortlist" ? "Add to FM shortlist" : <>{c.field.toUpperCase()} {c.old_value == null && c.hidden ? "Hidden" : `${c.old_value ?? "—"} → ${c.new_value ?? "—"}`}</>}</span>
           <span className={`st ${c.status === "applied" ? "ok" : c.status === "failed" ? "r" : "n"}`} style={{ marginLeft: "auto" }} title={c.error || ""}>{c.status}</span></div></div>)}
     </div>
   );
