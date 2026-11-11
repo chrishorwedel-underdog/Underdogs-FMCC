@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { UserPlus, Download, Trash2, Eye, Plus, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { autoDownload } from "@/lib/autoDownload";
 import { MyPresets, NameUpdates } from "./CreatorExtras";
 import { SingleCreator } from "./SingleCreator";
 
@@ -116,7 +117,7 @@ const BatchCreator = () => {
         </div>
         <div className="acts" style={{ marginTop: 16 }}>
           <button className="btn btn-l" onClick={() => act(() => api.post("/creator/preview", f)).then((r) => r && setPrev(r))} data-testid="pc-preview"><Eye size={16} />Preview</button>
-          <button className="btn btn-g btn-l" onClick={() => act(() => api.post("/creator/batches", f), (r) => `${r.players.length} players made${r.placed ? " and placed in your FM editor data folder" : ". Download the file from Saved batches"}`, KEYS).then((r) => r && setPrev(null))} data-testid="pc-create"><UserPlus size={16} />Make the players</button>
+          <button className="btn btn-g btn-l" onClick={() => act(() => api.post("/creator/batches", f), (r) => `${r.players.length} players made${r.placed ? " and placed in your FM editor data folder" : ""}. The file is downloading`, KEYS).then((r) => { if (r) { autoDownload(`/creator/batches/${r.bid}/file`, r.file_name); setPrev(null); } })} data-testid="pc-create"><UserPlus size={16} />Make the players</button>
         </div>
       </div>
       {prev && <div className="card" data-testid="pc-preview-card">

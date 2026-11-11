@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { UserPlus, Download, Trash2, Pencil, Wand2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { autoDownload } from "@/lib/autoDownload";
 
 const KEYS = ["creator-singles", "editor-state"];
 const blank = (meta) => ({
@@ -90,8 +91,8 @@ export const SingleCreator = () => {
   useEffect(() => { if (meta && !f) { auto(blank(meta)); } }, [meta]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!meta || !f) return null;
   const save = () => act(() => (editing ? api.put(`/creator/single/${editing}`, f) : api.post("/creator/single", f)),
-    (r) => `${r.player.name} ${editing ? "updated" : "created"}${r.placed ? " and placed in your FM editor data folder" : ". Download the file from Your created players"}`, KEYS)
-    .then((r) => { if (r) { setEditing(null); auto(blank(meta)); } });
+    (r) => `${r.player.name} ${editing ? "updated" : "created"}${r.placed ? " and placed in your FM editor data folder" : ""}. The file is downloading`, KEYS)
+    .then((r) => { if (r) { autoDownload(`/creator/single/${r.id}/file`, r.file_name); setEditing(null); auto(blank(meta)); } });
   const load = (d) => { const { id, name, face, ...rest } = d.player; setF(rest); setEditing(d.id); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const a = meta.groups;
   return (

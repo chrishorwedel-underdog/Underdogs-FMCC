@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Gavel, Download, Trash2, ListChecks, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct, PageHead } from "@/lib/ui";
+import { autoDownload } from "@/lib/autoDownload";
 
 const KEYS = ["punishments", "changes"];
 
@@ -86,7 +87,15 @@ export default function Punish() {
     const t = setTimeout(() => { api.post("/punish/preview", { club_uid: club.uid, penalties: chosen }).then((r) => setSum(r.data)).catch((e) => setSum({ error: e.response?.data?.detail })); }, 250);
     return () => clearTimeout(t);
   }, [club, JSON.stringify(chosen)]); // eslint-disable-line react-hooks/exhaustive-deps
-  const make = () => act(() => api.post("/punish", { club_uid: club.uid, penalties: chosen }), (r) => r.placed ? `Saved ${r.file_name} in your FM editor data folder` : `Made ${r.file_name}. Download it from Saved punishments.`, KEYS).then((r) => r && setPens({}));
+  const make = () => act(() => api.post("/punish", { club_uid: club.uid, penalties: chosen }), (r) => r.placed ? `Saved ${r.file_name} in your FM editor data folder. The file is downloading` : `Made ${r.file_name}. The file is downloading`, KEYS)
+    .then((r) => {
+      if (!r) return;
+      setPens({});
+      autoDownload(`/punish/${r.pid}/file`, r.file_name);
+      if (meta?.edition === "FM27" && r.rows.some((x) => x.current_save)) {
+        act(() => api.post(`/punish/${r.pid}/queue`), (q) => `${q.queued.length} change(s) for your current save queued in Game changes`, KEYS);
+      }
+    });
   const groups = [...new Set((meta?.penalties || []).map((p) => p.group))];
   return (
     <div data-testid="punish-page">

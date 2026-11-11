@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { SeedResults, SeedHistory } from "./SeedResults";
+import { autoDownload } from "@/lib/autoDownload";
 import { POS_WEIGHTS, STAFF_WEIGHTS, PLAYER_AGE_PRESETS, STAFF_AGE_PRESETS, split, Step, Stepper, Seg, CountGrid, Shares, Nations } from "./SeedParts";
 
 const STORE = "fmcc-seed-form";
@@ -45,7 +46,8 @@ export const SeedTab = () => {
   const ready = f.surname.trim().length >= 2 && total > 0;
   const create = () => act(() => api.post("/seed/create", { ...body, seed: Math.floor(Math.random() * 999999) }), (r) => `${r.people.length} ${r.mode === "new" ? "people created" : "people picked"}. Check them below`, ["seed-draft"]);
   const apply = () => window.confirm(draft.mode === "new" ? `Seed ${draft.people.length} new people called ${draft.surname} into a new-save file?` : `Rename ${draft.people.length} people in your save to ${draft.surname}?`)
-    && act(() => api.post("/seed/apply"), (r) => (r.mode === "new" ? `${draft.surname} seeded: ${r.people.length} people${r.placed ? " placed in your FM editor data folder" : ". Download the file from Seeded surnames"}` : `${draft.surname} seeded: ${r.people.length - r.failed} people renamed${r.sample ? " in the SAMPLE save" : ""}`), ["seed-draft", "seed-history", "editor-state"]);
+    && act(() => api.post("/seed/apply"), (r) => (r.mode === "new" ? `${draft.surname} seeded: ${r.people.length} people${r.placed ? " placed in your FM editor data folder" : ""}. The file is downloading` : `${draft.surname} seeded: ${r.people.length - r.failed} people renamed${r.sample ? " in the SAMPLE save" : ""}`), ["seed-draft", "seed-history", "editor-state"])
+      .then((r) => r?.mode === "new" && autoDownload(`/seed/history/${r.id}/file`, r.file_name));
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }} data-testid="seed-tab">
       <div className="seed-hero"><Sprout size={22} /><div><b>Seed a Surname</b><small className="note">Spread one surname through the football world in four quick steps. Nothing goes into your game until you press Seed The Surname.</small></div></div>
