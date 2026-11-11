@@ -273,3 +273,13 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 
 
 
+
+## 2026-11-11 Dynamic Potential rebuilt to the Underdog FM rulesheet + four themes (approved plan, Phase 1)
+- backend/dp_engine.py: rulesheet defaults (score weights, metric groups per position, stand-ins, reverse stats, score bands, tiers, decline, age table, growth/decline tapers, winter, limits, batch size), validation, percentile scoring, tier caps, decline requirements, age deduction, point-by-point tapers, winter advance (half, max +4), season settlement, floors/caps, plain-words reasons. Never returns real CA/PA.
+- backend/dp_api.py (/api/dp): settings (one set for all careers, history, reset section/all, restore; malformed -> 422), season (winter date suggested from winter window, locked after first review, ages fixed at season start), overview counts, POST /review/{winter|season_end} (batches, rerun safe, again=true recomputes with revision and never re-applies), records + detail, decide (latest revision only; winter records blocked once season-end settled). Season-end supersedes pending winter records (prevents double growth) and requires game date after the winter date. Auto changes go through queue_changes + start_batch (backup first); exceptions wait in Needs your review.
+- Old GET /api/dp moved to GET /api/dp/scope (scope/all loaded players switch kept); old /dp/run no longer used by UI.
+- Frontend: DynamicPotentialPage tabs Overview / Needs your review / Settings / Who's reviewed (components/dp/*). Guide text updated.
+- Themes: Light, FM24, FM26, FM27 (lib/appearance.js, Appearance previews, theme-light CSS overrides, --top var). FM27 top bar uses FM27 colours; club colours not readable from saves yet.
+- Tested: iteration_30 + fixes; backend/tests/test_dp_rulesheet.py 17/17 pass. Sample save: small comparison groups and missing role stats -> mostly needs_review / ratings-only (expected). Real-save stats availability unverified.
+- Phase 2/3 backlog: balance preview, compare settings sets, export records, club trends, review reminders, settings presets; FM27 club colours from save.
+

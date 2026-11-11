@@ -33,8 +33,9 @@ const Field = ({ v, set, id, labels }) => {
         <button className="btn" style={{ width: "fit-content", height: 26, fontSize: 12 }} onClick={() => set([...v, [...v[v.length - 1]]])} data-testid={`${id}-add`}>Add row</button>
       </div>);
   }
-  if (Array.isArray(v)) return <input className="inp" style={{ width: 320, height: 30 }} value={v.join(", ")} onChange={(e) => set(e.target.value.split(",").map((x) => x.trim()).filter(Boolean))} data-testid={id} />;
-  if (typeof v === "string") return <input className="inp" style={{ width: 200, height: 30 }} value={v} onChange={(e) => set(e.target.value.trim())} data-testid={id} />;
+  if (Array.isArray(v)) return <div><input className="inp" style={{ width: 320, height: 30 }} value={v.join(", ")} onChange={(e) => set(e.target.value.split(",").map((x) => x.trim()).filter(Boolean))} data-testid={id} />
+    <small style={{ display: "block", color: "var(--dim)" }}>{v.map((x) => labels?.metrics?.[x] || x).join(" · ")}</small></div>;
+  if (typeof v === "string") return <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><input className="inp" style={{ width: 200, height: 30 }} value={v} onChange={(e) => set(e.target.value.trim())} data-testid={id} /><small>{labels?.metrics?.[v]}</small></span>;
   return (
     <div style={{ display: "grid", gap: 6, paddingLeft: 10, borderLeft: "1px solid var(--line)" }}>
       {Object.entries(v).map(([k, x]) => <div key={k} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>

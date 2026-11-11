@@ -1,0 +1,48 @@
+{
+  "summary": "Tested the Dynamic Potential rulesheet rebuild (engine, /api/dp, the /dynamic-potential UI) and the new Light/FM24/FM26/FM27 Appearance themes. Engine checks all pass: growth_taper(174,12)=6; decline_taper at 140..95 = 5/4/3/2/1/0; score bands; age table; score 91 with 1500 minutes -> +8 capped at Excellent; winter award is half rounded down, max +4; settlement 6-2=+4; validate(defaults)==[]. Backend pytest: 15/17 pass. These work: overview; PUT season (200 before a review, 409 after); winter and season-end reviews; a rerun does not duplicate; again:true bumps the revision and re-queues nothing; no ca/pa/ca_growth keys anywhere; decide approve/reject; settings validation 422, section reset, reset all, restore, 404s; dp/scope GET/PUT including all_players. There are 2 failures and 1 logic bug: (1) malformed settings return 500, not 422; (2) a superseded record id can be decided again; (3) winter records still waiting for review stay approvable after the season-end review, so growth can be counted twice. Frontend: every tab and testid listed works. No CA/PA in the UI. Themes switch and are remembered after reload. The Light theme has contrast problems.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/dp/records/{id}/decide (winter records after the season-end review)", "issue": "Growth can be counted twice. The season-end review computes the full entitlement with winter_applied=0 when the winter record was never approved, e.g. Yusuf Demir 20481117: season-end +7, approved and applied. His winter record (+3, needs_review) stays in Needs your review with Approve enabled. Approving it applies +3 more, +10 in total, above the rulesheet entitlement. Pending winter records should be closed or superseded when the season-end review runs, or decide should refuse winter records once a season-end record exists.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "PUT /api/dp/settings", "issue": "Malformed data gives a 500 instead of a 422. E.g. bands=[] raises IndexError in validate() (th[-1]); a string rating_weight raises TypeError; a missing nested key raises KeyError. Wrap validate in try/except and return a 422 with plain words, or add a Pydantic model for the settings."},
+      {"endpoint": "POST /api/dp/records/{id}/decide", "issue": "Decide does not check that the id is the latest revision. A second decide on the old needs_review id returns 200 and writes another revision. Approving the same id twice made two 'approved' revision-3 docs; queue_changes dedup kept it from applying twice. Reject followed by approve on the old id is also possible. Return 409 unless the record is the latest revision for (kind, unique_id)."},
+      {"endpoint": "GET /api/dp (counts)", "issue": "The counts overlap. 'rising' and 'falling' include needs_review records that were never applied (e.g. rising 8 plus review 22 is more than 23 players). Count pending records only under review, or label rising as proposed."},
+      {"endpoint": "POST /api/dp/review/season_end", "issue": "No guard on timing. The season-end review can run on the same game date as the winter date, or with no winter review, mid-season (h2=0). Consider a warning or confirm."},
+      {"endpoint": "GET /api/dp", "issue": "A GET inserts a dp_seasons doc (write on read). Harmless, but worth noting."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "NeedsReview", "issue": "Each player appears twice (winter card and season-end card). The two cards share the same data-testid dp-approve-{uid} / dp-reject-{uid} / dp-card-{uid}, so the ids are not unique. They also show no label saying which review each card is for.", "selector": "[data-testid^=dp-approve-]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Light theme (any page)", "issues": ["The top-bar 'Sample save · save read 2 d ago' pill (amber text on pale amber) is almost unreadable", "The active sidebar item's subtitle ('Review development') disappears on the light background", "The guide bullets ('What this page does') and the Appearance switch descriptions are very faint grey"]},
+      {"screen": "DP Overview", "issues": ["The winter review date uses the browser's native input type=date, not the shadcn calendar", "After the season-end review, a card shows 'Steady' (change 0) when the winter +3 is kept. That reads as no growth this season; showing the season total would be clearer"]},
+      {"screen": "DP Settings > Role metrics / Stand-ins / Lower is better", "issues": ["Raw keys (save_pct, goals_prevented90) appear instead of the friendly METRIC_LABEL names"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_dp_rulesheet.py", "/app/test_reports/pytest/dp_rulesheet.xml"],
+  "action_items": [
+    "Close or supersede pending winter records when the season-end review runs, or block decide on them (double-counting bug)",
+    "Make decide accept only the latest revision of a record (409 otherwise)",
+    "Make PUT /api/dp/settings return 422, not 500, for malformed data (empty bands, wrong types, missing keys)",
+    "NeedsReview: make the testids unique (include the kind, e.g. dp-approve-{kind}-{uid}) and show the review type on each card",
+    "Light theme contrast: the sample-save pill, the active nav subtitle, and the faint note text",
+    "Optional: separate pending from applied in the overview counts; use the shadcn date picker for the winter date"
+  ],
+  "critical_code_review_comments": [
+    "dp_api.run_review: when kind == season_end, pending winter needs_review records are left open, so they can still be approved and count growth twice",
+    "dp_api.decide: looks up by id with no latest-revision check; the duplicate guard only works through queue_changes dedup",
+    "dp_engine.validate: assumes the shape is right; any structural problem raises an exception and gives a 500",
+    "dp_api.run_review has a dead branch ('if kind == season_end and not winter ...: pass')"
+  ],
+  "updated_files": ["/app/backend/tests/test_dp_rulesheet.py"],
+  "success_rate": {"backend": "88% (15/17 pytest + engine checks all pass)", "frontend": "90% (all flows work; duplicate testids and Light contrast problems)"},
+  "seed_data_creation": "None kept. Cleanup: deleted the dp_records (97) and dp_seasons I created for season 2027/28; DP settings reset to the rulesheet (current v10, changed=[]; my history versions 1-10 remain in dp_settings); DP scope restored to my_club only (rules version bumped). Theme changes were only in the Playwright browser's localStorage. Two DP changes could not be rejected because they were applied straight away to the SAMPLE save: 20481114 PA +3 (award 2027/28-winter-approved, change acba0f52) and 20481117 PA +7 (award 2027/28-season_end-approved, change be99ee60). The 4 queued dp-2027/28 changes were there before testing and were left untouched.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use the DP tab testids dp-tab-overview/review/settings/scope. Sidebar nav-dp; footer nav-appearance. Settings fields: dp-f-{section}-{key}; table rows dp-f-bands-{i}-{j}. Run the suite serially: pytest tests/test_dp_rulesheet.py -n 0. It creates dp_records; clean up with deleteMany({season:'2027/28'}) only if they are yours. Approving a record applies to the SAMPLE save straight away (status applied), so it cannot be rejected afterwards.",
+  "rca of the issue": "Double count: run_review(season_end) computes w_applied only from winter records with status auto/approved. A winter record still in needs_review counts as 0, so season-end grants the full entitlement while the winter record stays open in NeedsReview (it filters status in needs_review/held/flag across both kinds). Repro: run winter, run season-end, approve the season-end record, then the winter record for the same uid can still be approved. Fix: at season-end, mark pending winter records 'superseded', and in decide reject kind=winter when a season_end record exists."
+}

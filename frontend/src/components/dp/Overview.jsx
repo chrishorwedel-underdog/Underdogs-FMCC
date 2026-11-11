@@ -8,6 +8,7 @@ const KEYS = ["dp-overview", "dp-records", "changes"];
 const STAGE = { before_winter: "Before the winter review", winter_done: "Winter review done", season_done: "Season-end review done" };
 
 export const Signal = ({ r }) => {
+  if (r.status === "superseded") return <span className="st n" data-testid={`dp-signal-${r.unique_id}`}>Settled at season-end</span>;
   if (r.status === "held" || r.status === "flag") return <span className="st a" data-testid={`dp-signal-${r.unique_id}`}><PauseCircle size={12} />{r.status === "held" ? "Held" : "Watching"}</span>;
   if (r.change > 0) return <span className="st g" data-testid={`dp-signal-${r.unique_id}`}><TrendingUp size={12} />+{r.change}</span>;
   if (r.change < 0) return <span className="st r" data-testid={`dp-signal-${r.unique_id}`}><TrendingDown size={12} />{r.change}</span>;
@@ -15,9 +16,10 @@ export const Signal = ({ r }) => {
 };
 
 export const RecordCard = ({ r, open, children }) => (
-  <div className="card" style={{ padding: 14, cursor: "pointer" }} onClick={() => open(r.unique_id)} data-testid={`dp-card-${r.unique_id}`}>
+  <div className="card" style={{ padding: 14, cursor: "pointer" }} onClick={() => open(r.unique_id)} data-testid={`dp-card-${r.kind}-${r.unique_id}`}>
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}><b style={{ flex: 1 }}>{r.name}</b><Signal r={r} /></div>
-    <small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.position}{r.status === "needs_review" ? " · needs your review" : ""}</small>
+    <small style={{ display: "block", color: "var(--dim)" }}>{r.kind === "winter" ? "Winter review" : "Season-end review"} · {r.club} · {r.position}{r.status === "needs_review" ? " · needs your review" : ""}</small>
+    {r.kind === "season_end" && r.winter_applied > 0 && <small style={{ display: "block" }} data-testid={`dp-season-total-${r.unique_id}`}>Season total {r.change + r.winter_applied > 0 ? "+" : ""}{r.change + r.winter_applied} (including +{r.winter_applied} at winter)</small>}
     <p className="note" style={{ margin: "6px 0 0" }}>{r.reason}</p>
     {children}
   </div>
@@ -25,7 +27,8 @@ export const RecordCard = ({ r, open, children }) => (
 
 const Status = ({ o, act }) => {
   const [date, setDate] = useState(o.winter_date);
-  const run = (kind) => act(() => api.post(`/dp/review/${kind}`, {}), (r) => r.summary + (r.applied?.waiting_reason ? `. Waiting in Game changes: ${r.applied.waiting_reason}` : ""), KEYS);
+  const run = (kind) => (kind === "winter" || window.confirm("Run the season-end review now? It settles the whole season and should run after the final competitive match."))
+    && act(() => api.post(`/dp/review/${kind}`, {}), (r) => r.summary + (r.applied?.waiting_reason ? `. Waiting in Game changes: ${r.applied.waiting_reason}` : ""), KEYS);
   const locked = o.reviewed.winter + o.reviewed.season_end > 0;
   return (
     <div className="card" data-testid="dp-status">

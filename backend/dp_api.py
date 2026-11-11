@@ -34,7 +34,10 @@ async def get_settings():
 
 
 async def _save(data: dict, note: str) -> dict:
-    errs = E.validate(data)
+    try:
+        errs = E.validate(data)
+    except (KeyError, IndexError, TypeError, ValueError, AttributeError) as exc:
+        errs = [f"Settings are incomplete or have a wrong value ({type(exc).__name__}: {exc})"]
     if errs:
         raise HTTPException(422, "; ".join(errs))
     cur = await settings_doc()
@@ -113,7 +116,8 @@ async def overview():
     done = {k: [r for r in recs if r["kind"] == k] for k in ("winter", "season_end")}
     stage = "season_done" if done["season_end"] else "winter_done" if done["winter"] else "before_winter"
     cur = done["season_end"] or done["winter"]
-    counts = {"rising": sum(r["change"] > 0 for r in cur), "falling": sum(r["change"] < 0 for r in cur), "steady": sum(r["change"] == 0 and r["status"] == "none" for r in cur),
+    counts = {"rising": sum(r["change"] > 0 and r["status"] in ("auto", "approved") for r in cur), "falling": sum(r["change"] < 0 and r["status"] in ("auto", "approved") for r in cur),
+              "steady": sum(r["status"] in ("none", "rejected", "superseded") for r in cur),
               "held": sum(r["status"] in ("held", "flag") for r in cur), "review": sum(r["status"] == "needs_review" for r in cur)}
     st = await settings_doc()
     return {"season": s["season"], "game_date": s["game_date"], "winter_date": s["winter_date"], "winter_suggested": s.get("suggested", False), "stage": stage,
@@ -161,8 +165,8 @@ async def run_review(kind: Literal["winter", "season_end"], body: ReviewIn):
     s = await _season(c)
     st = await settings_doc()
     S = st["data"]
-    if kind == "season_end" and not await db.dp_records.count_documents({"career_id": c["id"], "season": s["season"], "kind": "winter"}):
-        pass  # a season-end review without a winter review is allowed: winter points are simply 0
+    if kind == "season_end" and s["game_date"] <= s["winter_date"]:
+        raise HTTPException(409, "The season-end review runs after the final match; your save is still before the winter review date")
     rules = await current_rules(c["id"], "dp")
     targets = sorted(await contexts(c, rules["data"]["scope"]), key=lambda x: x["unique_id"])
     everyone = await contexts(c, {"all_players": True})
@@ -198,6 +202,11 @@ async def run_review(kind: Literal["winter", "season_end"], body: ReviewIn):
             items.append({"unique_id": x["unique_id"], "name": x["name"], "club": x["club"], "field": "pa", "delta": rec["change"]})
     if recs:
         await db.dp_records.insert_many([dict(r) for r in recs])
+    if kind == "season_end":
+        stale = [w for u, w in winter.items() if w["status"] in ("needs_review", "held", "flag") and u in {r["unique_id"] for r in recs}]
+        if stale:
+            await db.dp_records.insert_many([{k: v for k, v in w.items() if k != "id"} | {"id": new_id(), "career_id": c["id"], "revision": w["revision"] + 1, "status": "superseded",
+                                               "change": 0, "reason": "Replaced by the season-end review, which settles the whole season", "at": now_iso()} for w in stale])
     applied = await _apply(c, s["season"], kind, items)
     left = len([x for x in targets if x["unique_id"] not in prev and x["unique_id"] not in {r["unique_id"] for r in recs}])
     summary = f"{'Winter' if kind == 'winter' else 'Season-end'} review: {len(recs)} players reviewed, {len(items)} changes sent to your save" + (f", {left} still to review" if left else "")
@@ -251,6 +260,11 @@ async def decide(rid: str, body: DecideIn):
     r = await db.dp_records.find_one({"id": rid, "career_id": c["id"]}, {"_id": 0})
     if not r or r["status"] not in ("needs_review", "held", "flag"):
         raise HTTPException(409, "This review doesn't need a decision")
+    newer = await db.dp_records.find_one({"career_id": c["id"], "season": r["season"], "kind": r["kind"], "unique_id": r["unique_id"], "revision": {"$gt": r["revision"]}}, {"_id": 1})
+    if newer:
+        raise HTTPException(409, "This review was already decided or replaced. Reload the list.")
+    if r["kind"] == "winter" and await db.dp_records.count_documents({"career_id": c["id"], "season": r["season"], "kind": "season_end", "unique_id": r["unique_id"]}):
+        raise HTTPException(409, "The season-end review has already settled this season for this player")
     new = {k: v for k, v in r.items() if k != "id"} | {"id": new_id(), "revision": r["revision"] + 1, "status": "approved" if body.approve and r["change"] else "rejected",
                                                        "decided_at": now_iso(), "change": r["change"] if body.approve else 0}
     await db.dp_records.insert_one(dict(new))

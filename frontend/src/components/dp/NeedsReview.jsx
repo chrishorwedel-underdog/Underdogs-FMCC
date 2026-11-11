@@ -18,8 +18,8 @@ export const NeedsReview = () => {
         {rows.map((r) => (
           <RecordCard key={r.id} r={r} open={setOpen}>
             <div style={{ display: "flex", gap: 8, marginTop: 10 }} onClick={(e) => e.stopPropagation()}>
-              <button className="btn btn-g" disabled={!r.change} onClick={() => decide(r, true)} data-testid={`dp-approve-${r.unique_id}`}><Check size={13} />Approve</button>
-              <button className="btn" onClick={() => decide(r, false)} data-testid={`dp-reject-${r.unique_id}`}><X size={13} />Reject</button>
+              <button className="btn btn-g" disabled={!r.change} onClick={() => decide(r, true)} data-testid={`dp-approve-${r.kind}-${r.unique_id}`}><Check size={13} />Approve</button>
+              <button className="btn" onClick={() => decide(r, false)} data-testid={`dp-reject-${r.kind}-${r.unique_id}`}><X size={13} />Reject</button>
             </div>
           </RecordCard>))}
       </div>

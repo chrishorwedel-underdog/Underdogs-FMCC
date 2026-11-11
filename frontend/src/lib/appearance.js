@@ -5,7 +5,7 @@ export const THEMES = {
   black: { label: "Pure black", vars: { "--bg": "#000000", "--s1": "#050506", "--s2": "#0B0C0E", "--s3": "#121418" } },
   dim: { label: "Dim grey", vars: { "--bg": "#16191E", "--s1": "#1C2027", "--s2": "#232831", "--s3": "#2B313B", "--mut": "#9AA1AC" } },
   navy: { label: "Midnight blue", vars: { "--bg": "#070B16", "--s1": "#0B1222", "--s2": "#111A2E", "--s3": "#18233B" } },
-  light: { label: "Light", light: true, accent: "#2F6FE4", vars: { "--bg": "#FFFFFF", "--s1": "#F3F4F6", "--s2": "#F8F9FA", "--s3": "#E7E9ED", "--text": "#15181D", "--mut": "#4B5260", "--dim": "#6B7280",
+  light: { label: "Light", light: true, accent: "#2F6FE4", vars: { "--bg": "#FFFFFF", "--s1": "#F3F4F6", "--s2": "#F8F9FA", "--s3": "#E7E9ED", "--text": "#15181D", "--mut": "#3F4552", "--dim": "#5B6270",
     "--line": "rgba(0,0,0,.09)", "--line2": "rgba(0,0,0,.16)", "--top": "rgba(255,255,255,.85)", "--grn": "#0E9F6E", "--amb": "#B7791F", "--red": "#D64545", "--blu": "#2F6FE4" } },
   fm24: { label: "FM24", accent: "#3DDC84", vars: { "--bg": "#0E1726", "--s1": "#132033", "--s2": "#1A2940", "--s3": "#22344F", "--mut": "#9AA9BF", "--top": "rgba(14,23,38,.85)" } },
   fm26: { label: "FM26", accent: "#E05CFF", vars: { "--bg": "#150B24", "--s1": "#1C0F31", "--s2": "#24153F", "--s3": "#2E1B4F", "--mut": "#B3A3CC", "--top": "rgba(21,11,36,.85)" } },

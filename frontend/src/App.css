@@ -6,6 +6,9 @@ body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--text);-webk
 .theme-light .main:before{opacity:.35}
 .theme-light .btn{color:var(--text)}
 .theme-light .btn-p,.theme-light .btn-g{color:#fff}
+.theme-light .link.ok{color:#05603A}.theme-light .link.warn{color:#7A4B00;background:rgba(242,181,74,.16)}.theme-light .link.bad{color:#8A1C1C}
+.theme-light .nav-item.active .tx small{color:var(--mut)}
+.theme-light .guide li,.theme-light .note,.theme-light small{color:var(--mut)}
 .mono{font-family:'Geist Mono',monospace;font-feature-settings:'tnum'}
 .serif{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
 .app{display:grid;grid-template-columns:280px 1fr;height:calc(100vh / var(--z,1));overflow:hidden;zoom:var(--z,1)}
