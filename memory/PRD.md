@@ -227,3 +227,11 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 
 
 
+
+## 2026-11-11 Shortlist to FM + Tactic fit upgrade
+- User: "Shortlist To FM: Let you send your trial players and shortlists straight into your FM shortlist" / "Tactic Import: Let you load a tactic file and see how well each squad player fits every slot in it"
+- Choices: queued as game change; tactic from upload/build AND save's tactics; ranked fit per slot.
+- Shortlist to FM: POST /api/scouting/send-to-fm queues entity "shortlist" changes (source "Shortlist to FM"); buttons in Try in XI card, Scouting Shortlist tab, Dossier. Sample mode applies into fm_shortlist collection (undo supported). LIVE Windows: preflight blocks with a clear message (game editor can't write FM's shortlist yet) — UNVERIFIED / not supported on real FM yet.
+- Tactic fit (components/squad/TacticFit.jsx, lab_api.py): save tactics (save-N ids) + imported .fmf + built (any formation, role per slot); every slot ranks the whole squad by attribute-only fit; save/delete built tactics. Save tactic roles not read yet (default roles).
+- Tested: iteration_28 (backend 17/17), follow-up UI fixes (initial select sync, delete reset, import label, toast grammar, batch dialog wording) verified by screenshot.
+

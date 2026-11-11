@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileUp, Trash2, Hammer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
@@ -37,12 +37,12 @@ const Slot = ({ s, gap, onRole }) => (
   </div>
 );
 
-const TacticList = ({ tactics, current, pick, act }) => (
+const TacticList = ({ tactics, current, pick, act, onDeleted }) => (
   <div className="card" data-testid="tactics-history"><div className="ttl">Your tactics</div>
     {tactics.map((t) => (
       <div key={t.id} className="row" style={{ cursor: "pointer", background: current === t.id ? "rgba(255,255,255,.04)" : undefined }} onClick={() => pick(t.id)} data-testid={`tactic-item-${t.id}`}>
         <div style={{ flex: 1 }}>{t.name}<small>{t.source}</small></div>
-        {!t.from_save && <button className="ib" onClick={(e) => { e.stopPropagation(); act(() => api.delete(`/squad/tactics/${t.id}`), "Tactic removed", ["tactics", "tactic-fit"]); }} aria-label={`Remove ${t.name}`} data-testid={`tactic-delete-${t.id}`}><Trash2 size={12} /></button>}
+        {!t.from_save && <button className="ib" onClick={(e) => { e.stopPropagation(); act(() => api.delete(`/squad/tactics/${t.id}`), "Tactic removed", ["tactics", "tactic-fit"]).then((r) => r && onDeleted(t)); }} aria-label={`Remove ${t.name}`} data-testid={`tactic-delete-${t.id}`}><Trash2 size={12} /></button>}
       </div>))}
     {!tactics.length && <p className="note">Read a save, import an .fmf file or build a tactic to keep it here.</p>}
   </div>
@@ -58,8 +58,10 @@ export const TacticFit = () => {
   const act = useAct();
   const nav = useNavigate();
   const pick = (id) => setSel({ tactic: id, formation: null, picks: {} });
+  useEffect(() => { if (!sel.tactic && !sel.formation && data) { setSel((s) => ({ ...s, tactic: data.tactic?.id || null, formation: data.tactic ? null : data.formation_key })); } }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const onDeleted = (t) => { if (t.id === sel.tactic) setSel({ tactic: null, formation: t.formation, picks: {} }); };
   const setRole = (slot, role) => setSel({ ...sel, picks: { ...Object.fromEntries((data?.slots || []).map((s) => [s.slot, s.role])), [slot]: role } });
-  const upload = (f) => { const fd = new FormData(); fd.append("file", f); act(() => api.post("/squad/tactics/import", fd), (r) => `${r.name} imported (${r.formation})`, ["tactics"]).then((r) => r && pick(r.id)); };
+  const upload = (f) => { const fd = new FormData(); fd.append("file", f); act(() => api.post("/squad/tactics/import", fd), (r) => `${r.name} imported (${(data?.formations || []).find(([k]) => k === r.formation)?.[1] || r.formation})`, ["tactics"]).then((r) => r && pick(r.id)); };
   const save = () => act(() => api.post("/squad/tactics", { formation: data.formation_key, name, roles: Object.fromEntries(data.slots.map((s) => [s.slot, s.role])) }), "Tactic saved", ["tactics"]).then((r) => { if (r) { setName(""); pick(r.id); } });
   const edited = !sel.tactic || picks;
   return (
@@ -83,7 +85,7 @@ export const TacticFit = () => {
           {data?.slots.map((s) => <Slot key={s.slot} s={s} gap={data.gaps.some((g) => g.slot === s.slot)} onRole={setRole} />)}</div>
       </div>
       <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
-        <TacticList tactics={tactics} current={sel.tactic} pick={pick} act={act} />
+        <TacticList tactics={tactics} current={sel.tactic} pick={pick} act={act} onDeleted={onDeleted} />
         <div className="card" data-testid="squad-gaps"><div className="ttl">Squad gaps</div>
           {data?.gaps.map((g) => <div key={g.slot} className="row" style={{ cursor: "pointer" }} onClick={() => nav(`/scouting?group=${g.group}`)} data-testid={`gap-${g.slot}`}><div style={{ flex: 1 }}>{g.label}<small>{g.role_name} · find players</small></div><span className="mono">{g.score}</span></div>)}</div>
         <div className="card" data-testid="shape-advisor"><div className="ttl">Shape advisor</div>

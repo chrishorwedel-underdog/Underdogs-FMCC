@@ -1,0 +1,39 @@
+{
+  "summary": "Tested Shortlist to FM and Tactic fit / tactic import. Backend: 17/17 pytest pass (tests/test_shortlist_to_fm_tactic_fit.py). Checked: send-to-fm queue, resend gives already N, mixed known and unknown ids give not_found, all-unknown ids give 404, an empty list gives 422, /changes lists the rows (source 'shortlist', label 'Add to FM shortlist'), preview shows current 0 and new 1 with ready=true, apply finishes with every change applied, reusing a preview gives 409, resending after apply still gives already N, undo puts every change back. Tactics: save-0..2 listed; tactic-fit with no params, ?tactic=save-1, and ?formation=442&picks=STR:af all return 11 slots with role in role_options, every slot ranks the whole squad (natural first, then rating, high to low), 3 gaps, and no ca/pa. Unknown tactic or formation gives 404. A built tactic is saved with its roles, used by tactic-fit, then deleted (a second delete gives 404). An .fmf import containing '4-2-3-1' works; a bad .fmf or a .txt file gives 422. Frontend at 1920px: the Tactic fit tab, the tactic-select options (Build your own… plus 3 save tactics) and the builder (22 formations) work. Changing a role re-ranks the slot. Show all 23 / Show top 5 works. Save shows the tactic in tactics-history and selects it with its roles; delete removes it. Import works (good and bad file). Shortlist tab: no send button while empty; after starring 2 players, Send all queues 2, and a second press shows the 'Already queued' toast. dossier-send-fm and try-xi-send-fm both work (toast: '1 queued ... 1 were already there'). /changes shows 4 'Add to FM shortlist' rows. The modes card has no Shortlist switch. Ticking only the shortlist rows and pressing Apply batch (4) opens the preview, applies, shows the batch detail as applied, and Undo works. At 390px the layout is a single column with no horizontal overflow. No page errors. Found 2 medium UI state bugs and a few minor issues.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/squad/tactics/import", "issue": "The response 'formation' is the key ('343'), so the frontend toast reads 'TEST_imp_ui imported (343)' instead of '3-4-3'."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "TacticFit initial state", "issue": "On first load sel.tactic is null, so the dropdown shows 'Build your own…' and the builder and Save inputs show. But the backend defaults to known[0], so the title reads '4-2-3-1 Gegenpress (4-2-3-1)' and the note is the save-tactic note. The dropdown and the content disagree. Fix: on first load, set sel.tactic to data.tactic.id (or the first tactic), or send formation when Build your own is chosen.", "selector": "[data-testid=tactic-select], [data-testid=fit-title]", "priority": "MEDIUM"},
+      {"component": "TacticFit delete selected tactic", "issue": "Deleting the tactic that is selected leaves sel.tactic on the deleted id. The refetch of tactic-fit gives 404, so the old data stays on screen: the title still reads 'TEST_UI_tactic (4-4-2)' while the select shows 'Build your own…', and the builder stays hidden. Fix: in the delete handler, if t.id === current, reset with setSel({tactic:null, formation:t.formation, picks:{}}).", "selector": "[data-testid^=tactic-delete-]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Game changes > Apply batch dialog", "issues": ["Shortlist rows show Current 0 → New 1 as raw numbers. 'Not on shortlist → On shortlist' (or '—') would be clearer."]},
+      {"screen": "fmShortlist toast", "issues": ["'1 were already there' is bad grammar for a count of 1."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_shortlist_to_fm_tactic_fit.py", "/app/test_reports/pytest/shortlist_tactic_fit.xml"],
+  "action_items": [
+    "TacticFit: sync the dropdown with the default tactic the backend picks on first load",
+    "TacticFit: reset the selection when the selected tactic is deleted",
+    "Import toast: use the formation label (e.g. '3-4-3'), not the key",
+    "Optional: show friendly current and new text for shortlist rows in BatchDialog; fix the 'were' plural"
+  ],
+  "critical_code_review_comments": [
+    "lab_api.tactic_fit: when picks are given together with a tactic, 'asked' fully replaces the tactic's stored roles (asked or chosen.roles). The frontend always sends every slot, so it works today, but an API call with only one pick drops the other saved roles. Merge them: {**chosen.roles, **asked}.",
+    "tactic_slots silently ignores a pick whose role doesn't suit the slot (e.g. STR:gk). That's fine, but the response doesn't say so.",
+    "changes_api.queue_shortlist doesn't use an idempotency key, only a 'busy' read-then-insert check, so two concurrent sends could queue duplicates. Low risk for one user.",
+    "Dossier SendBtn shows for any non-own player. If the dossier was opened from a source outside the scouting pool (world data), send-to-fm returns 404 and the user sees an error toast. Consider hiding the button for such players."
+  ],
+  "updated_files": ["/app/backend/tests/test_shortlist_to_fm_tactic_fit.py"],
+  "success_rate": {"backend": "100%", "frontend": "90%"},
+  "seed_data_creation": "None left behind. Every shortlist change created (pytest 30500011/30500012 twice; UI 30500004, 30500028, 30500044, 30500007) was applied and then undone, so fm_shortlist is empty. Tactics TEST_built, TEST_imp, TEST_UI_tactic and TEST_imp_ui were deleted (tactics collection: 0). Players 30500004 and 30500028 were starred and then unstarred (shortlist_only total 0). localStorage fmcc-try-xi was cleared. $unset careers.features_seen (1). The 4 pre-existing queued DP changes were not touched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest with -n 0. The backend test re-sends ids 30500011/30500012; it needs them not queued or applied (each run applies and then undoes). Going straight to /squad?view=fit after features-done lands on Home; click nav-squad and then squad-view-tab-fit instead. There is no nav-changes testid; use the header 'Game changes' button. Tour popup: click 'Skip tour'. Star buttons are sp-star-{uid} in Scouting > Players; tabs are scouting-tab-{key}. In the queue, tick only the shortlist rows so the existing DP changes are not applied."
+}

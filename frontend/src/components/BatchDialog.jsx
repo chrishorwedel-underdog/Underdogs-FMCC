@@ -47,7 +47,7 @@ export const BatchDialog = ({ ids, onClose, sources }) => {
               <tbody>{p.rows.map((r) => (
                 <tr key={r.id} style={{ cursor: "default" }} data-testid={`batch-preview-row-${r.id}`}>
                   <td>{r.player_name}</td><td>{sources[r.source]}</td><td className="mono">{r.label || r.field.toUpperCase()}</td>
-                  <td className="mono">{p.ready ? val(r.current) : "—"}</td><td className="mono"><b>{p.ready ? val(r.new) : "—"}</b></td>
+                  <td className="mono">{!p.ready ? "—" : r.entity === "shortlist" ? (r.current ? "On shortlist" : "Not on shortlist") : val(r.current)}</td><td className="mono"><b>{!p.ready ? "—" : r.entity === "shortlist" ? "On shortlist" : val(r.new)}</b></td>
                 </tr>))}</tbody>
             </table>
           </div>
