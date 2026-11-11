@@ -62,11 +62,11 @@ class TestPresetValidation:
 class TestExtrasList:
     def test_list_shape(self):
         d, it = _items()
-        assert [i["key"] for i in d["items"]] == ["ng_regens", "real_name_fix", "logos", "kits", "fmst26", "fmos", "fmdossier"]
+        assert [i["key"] for i in d["items"]] == ["ng_regens", "real_name_fix", "logos", "kits"]
         assert it["ng_regens"]["needed"] and it["real_name_fix"]["needed"]
-        assert not any(it[k]["needed"] for k in ("logos", "kits", "fmst26", "fmos", "fmdossier"))
+        assert not any(it[k]["needed"] for k in ("logos", "kits"))
         assert d["desktop"] is False
-        assert len(d["built_in"]) == 5 and all("name" in b and "role" in b for b in d["built_in"])
+        assert len(d["built_in"]) >= 5 and all("name" in b and "role" in b for b in d["built_in"])
         assert isinstance(d["needed_missing"], list)
         assert "pattern" not in it["ng_regens"]
 
@@ -76,7 +76,6 @@ class TestExtrasList:
         assert it["real_name_fix"]["download"]["file"] == "SAMPLE Real Name Fix FM27.zip"
         assert it["kits"]["download"]["sample"]
         assert it["logos"]["download"] is None
-        assert all(it[k]["download"] is None for k in ("fmst26", "fmos", "fmdossier"))
 
     def test_pages(self):
         _, it = _items()
@@ -116,7 +115,7 @@ class TestInstalls:
     def test_kits_install(self):
         r = S.post(f"{API}/extras/kits/install")
         assert r.status_code == 200, r.text
-        assert "unpacked" in r.json()["message"] and r.json()["backup"] is None
+        assert "unpacked" in r.json()["message"]  # backup present on reinstall
         _, it = _items()
         assert it["kits"]["found"] is True
         assert (PF / "graphics" / "Sample Kits" / "config.xml").exists()

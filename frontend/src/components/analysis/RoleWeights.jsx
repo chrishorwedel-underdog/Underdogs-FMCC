@@ -10,7 +10,7 @@ export const RoleWeights = ({ open, onClose, roles }) => {
   const r = roles.find((x) => x.key === key);
   const attrs = [...new Set([...r.with_ball, ...r.without_ball])];
   const w = saved[key] || {};
-  const set = (a, v) => act(() => api.put(`/analysis/roles/${key}`, { weights: { ...w, [a]: v } }), null, ["role-weights", "analysis-table"]);
+  const set = (a, v) => act(() => api.put(`/analysis/roles/${key}`, { weights: { [a]: v } }), null, ["role-weights", "analysis-table"]);
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent data-testid="role-weights-dialog" style={{ maxWidth: 560 }}>

@@ -16,7 +16,7 @@ export default function ClubAnalysis() {
   const nav = useNavigate();
   if (!data) return <p className="note">Looking at your squad…</p>;
   return (
-    <div data-testid="club-analysis-page" style={{ display: "grid", gap: 16 }}>
+    <div data-testid="club-analysis-page" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }}>
       <PageHead eyebrow={data.club} title="Club Analysis" />
       <div className="card" data-testid="ca-todo"><div className="ttl">What to do first</div>
         {data.todo.map((t, i) => <div key={t.title} className="row" data-testid={`ca-todo-${i}`}><span className="mono" style={{ width: 22 }}>{i + 1}</span><div style={{ flex: 1 }}><b>{t.title}</b><small>{t.evidence}</small></div>

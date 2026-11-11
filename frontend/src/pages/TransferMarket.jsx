@@ -11,15 +11,16 @@ const Rows = ({ rows, extra }) => (
 );
 
 const Rankings = ({ rows }) => {
-  const [by, setBy] = useState({ league: "", club: "", nationality: "", group: "", age: "" });
-  const opts = (k) => [...new Set(rows.map((r) => r[k]).filter(Boolean))].sort();
-  const shown = rows.filter((r) => ["league", "club", "nationality", "group"].every((k) => !by[k] || r[k] === by[k]) && (!by.age || (by.age === "u21" ? r.age <= 21 : by.age === "u25" ? r.age <= 25 : r.age >= 30)));
+  const [by, setBy] = useState({ league: "", club: "", nationality: "", group: "", age: "", gender: "M" });
+  const opts = (k) => [...new Set(rows.filter((r) => k !== "club" || !by.league || r.league === by.league).map((r) => r[k]).filter(Boolean))].sort();
+  const shown = rows.filter((r) => (!by.gender || r.gender === by.gender) && ["league", "club", "nationality", "group"].every((k) => !by[k] || r[k] === by[k]) && (!by.age || (by.age === "u21" ? r.age <= 21 : by.age === "u25" ? r.age <= 25 : r.age >= 30)));
   const sum = shown.reduce((a, r) => a + r.est_value, 0);
   return (
     <div style={{ display: "grid", gap: 10 }} data-testid="tm-rankings">
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {[["league", "Any league"], ["club", "Any club"], ["nationality", "Any country"], ["group", "Any position"]].map(([k, l]) => <select key={k} className="inp" style={{ width: 170, height: 32 }} value={by[k]} onChange={(e) => setBy({ ...by, [k]: e.target.value })} data-testid={`tm-rank-${k}`}><option value="">{l}</option>{opts(k).map((x) => <option key={x}>{x}</option>)}</select>)}
         <select className="inp" style={{ width: 130, height: 32 }} value={by.age} onChange={(e) => setBy({ ...by, age: e.target.value })} data-testid="tm-rank-age"><option value="">Any age</option><option value="u21">Under 21</option><option value="u25">Under 25</option><option value="o30">30 and over</option></select>
+        <select className="inp" style={{ width: 110, height: 32 }} value={by.gender} onChange={(e) => setBy({ ...by, gender: e.target.value })} data-testid="tm-rank-gender"><option value="M">Men</option><option value="F">Women</option><option value="">Both</option></select>
       </div>
       <p className="note" data-testid="tm-rank-summary">{shown.length} players · total {money(sum)} · average age {shown.length ? (shown.reduce((a, r) => a + r.age, 0) / shown.length).toFixed(1) : "—"}{by.club ? ` · ${shown.filter((r) => r.nationality !== shown[0]?.nationality).length} not from the main nation` : ""}</p>
       <Rows rows={shown.slice(0, 100)} />

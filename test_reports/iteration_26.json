@@ -1,0 +1,51 @@
+{
+  "summary": "Phase 1 (Stats Table, Role Fit, Dossier, Transfer Market, Club Analysis, market/club feature gates, Downloads single-button) tested backend (new pytest file test_fmcc_stage18_analysis.py, 22 tests + regression of features_gate and stage16_extras) and frontend (Playwright at 1920 and 390). Almost everything works: no ca/pa/ability/potential keys anywhere in /api/analysis/* payloads (checked recursively); 40 roles; dossier six factors; similar/cheaper(<=60%)/younger rules hold; role weights PUT/GET/DELETE with 422/404 validation and change the fit; 409 gates for market/club; nav lock; all Stats Table quick filters, AND/OR, top % conditions, sort, columns, saved views, CSV, role weights dialog; dossier, compare dialog with add/remove; Transfer Market lists, notes, rankings filters and summary, tm-row opens dossier; Club Analysis todo/positions/ideas and Look link prefilter (group=GK); Downloads shows only 4 packs with Download & install / Waiting for the download (Cancel works) / Installed. Found 1 functional bug (My league changes always empty), 1 spec gap (only 86 unique columns, spec says 100+), 1 mobile layout bug in Club Analysis.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/analysis/market", "issue": "my_league is always null, so the 'Since your last save → My league' tab is always empty. In market(), rows is filtered to `not r['own']` BEFORE computing my_league = next(r.league for r in rows if r.club == c.club_name), so no row can match. Own players also get league 'Your league' (snapshot players have no league in _world), so even using the own rows would give the placeholder. Verified via API: my_league=None while changes contain 5 leagues.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/analysis/meta", "issue": "Spec says 100+ columns. meta returns 92 column entries and only 86 unique ones (Physical repeats 5 attributes already in Attributes). Add more per-90/General columns (e.g. goals/assists per 90, wage, height, pass %, etc.) to reach 100+."},
+      {"endpoint": "_world() own players", "issue": "Own-squad players get league 'Your league' (placeholder) instead of the real league name. It shows as a league option in the Stats Table / Rankings and changes the 'Club' value factor and 'One league' compare for own players."},
+      {"endpoint": "GET /api/analysis/player/{uid}, /similar/{uid}, /roles", "issue": "Not gated by need('scouting') while /meta and /table are; with scouting off the dossier still loads (inconsistent but probably fine because the dossier opens from market/club pages too)."},
+      {"endpoint": "PUT /api/analysis/roles/{key}", "issue": "Frontend slider sends the full weights object built from the stale cached `saved` value on every input event; fast keyboard/drag sends many PUTs which can race (pressing ArrowRight 8 times from 1 ended at 3, not 5). Debounce or send a single attribute and $set roles.key.attr on the server."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ClubAnalysis mobile 390px", "issue": "Cards are wider than the viewport: the 'Look' buttons and the Where to strengthen table columns are clipped at the right. The outer `display:grid` container grows to the table's min-content width. Fix: gridTemplateColumns: 'minmax(0,1fr)' (or minWidth:0 on the cards).", "selector": "[data-testid='club-analysis-page']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Transfer Market → Since your last save → My league", "issue": "Always shows 'Nothing yet' because the backend's my_league is null (see backend issue)", "affected_selectors": ["tm-changes-league", "tm-changes"]}
+    ],
+    "design_issues": [
+      {"screen": "Dossier Top role fits", "issues": ["Roles with no without-ball attributes (Enganche, Poacher) show 'without —%'. Drop the % when the value is null."]},
+      {"screen": "Compare dialog", "issues": ["Radar axes and table rows use raw keys (npxg, xa, kp, progp, prr, passc) instead of labels from meta. passc shows 100.00 for both players, which looks wrong or is a % metric mixed with counts."]},
+      {"screen": "Transfer Market Rankings", "issues": ["Club options aren't narrowed by the chosen league, so league + club easily gives '0 players · total £0 · average age — · 0 not from the main nation'. Rankings and lists mix men's and women's players with no gender filter."]},
+      {"screen": "Sidebar locked item", "issues": ["Locked 'Transfer Market' subtitle wraps to 2 lines because of the lock icon (other items are 1 line)."]},
+      {"screen": "Stats Table", "issues": ["'top %' / 'bottom %' conditions always use percentiles over the whole save (rows), not the 'Compare against' base. That may be intended, but the user may expect it to follow the Compare against choice."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_fmcc_stage18_analysis.py", "/app/backend/tests/test_features_gate.py", "/app/backend/tests/test_fmcc_stage16_extras.py", "/app/test_reports/pytest/pytest_iter26.xml"],
+  "action_items": [
+    "Fix /api/analysis/market my_league: compute it from the career's own league (give own players their real league in _world rather than 'Your league'), before filtering out own rows",
+    "Add enough columns in /api/analysis/meta to reach 100+ unique columns (spec)",
+    "Fix Club Analysis mobile overflow (grid minmax(0,1fr))",
+    "Use meta labels in the compare radar/table; show '—' rather than '—%' in dossier roles",
+    "Optional: debounce role-weight slider PUTs; narrow Rankings club options by league; gender filter in rankings"
+  ],
+  "critical_code_review_comments": [
+    "analysis_api.market(): my_league lookup uses the non-own rows, so it can never match the user's club",
+    "_world() rebuilds the whole world (fits for every player x 40 roles + model) on every request for /table, /player, /similar, /market, /club; the dossier and each Similar tab click recompute everything. Fine for the SAMPLE size, but it may be slow on a real save with many thousands of players. Cache per snapshot id plus weights version.",
+    "dossier(): uses a list comprehension side-effect pattern `hist.append(...) if ... else None` inside a for loop; readable but fragile",
+    "StatsTable test(): the first line has a redundant ternary (both branches get(r, c.field))",
+    "RoleWeights builds payload from cached `saved` → lost updates under rapid input"
+  ],
+  "updated_files": ["/app/backend/tests/test_fmcc_stage18_analysis.py (new)", "/app/backend/tests/test_features_gate.py (KEYS now include market, club)", "/app/backend/tests/test_fmcc_stage16_extras.py (expectations updated: 4 packs, built_in >=5, kits reinstall has backup)"],
+  "success_rate": {"backend": "95% (21/22 new tests pass; only fail is 100+ columns spec; plus my_league bug found by inspection/API)", "frontend": "92%"},
+  "seed_data_creation": "None. The stage16 extras regression tests install SAMPLE packs (ng_regens, real_name_fix, kits) into the preview SAMPLE FM folder, so they show 'Installed ✓'. Logos was not installed (no SAMPLE file in Downloads). Saved views were created in the browser's localStorage only and then cleared. The role_weights doc created by the tests was deleted.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest with -n 0. Each browser run: click 'Skip tour'; if ask=true press features-done. Active career 72f82391-d58c-41f7-bc47-6a46cfd10a55. After testing: PUT all features true, delete db.role_weights {career_id, roles:{}} if created, $unset careers.features_seen (done this iteration; ask=true now). Dossier sheet screenshots taken immediately after open look clipped because of the 500ms slide-in animation; wait >=800ms. Retest: tm-changes-league shows rows, meta 100+ columns, club-analysis at 390px.",
+  "rca of the issue": "My league empty: analysis_api.py market() line 266 `rows = [r for r in rows if not r['own']]`, then line 284 searches those rows for club == c['club_name'] → always None. Also _world() sets own league to p.get('league') or 'Your league', and snapshot players have no league field. Fix: derive my_league from the career/snapshot (e.g. league of the club in the pool/world_months) and give own rows that league."
+}

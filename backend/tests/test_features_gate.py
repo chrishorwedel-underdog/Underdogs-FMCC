@@ -5,7 +5,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 API = f"{BASE_URL}/api"
-KEYS = ["dp", "breakout", "scouting", "reports", "moneyball", "squad", "development", "elite", "matches", "editor", "punish", "dof"]
+KEYS = ["dp", "breakout", "scouting", "market", "club", "reports", "moneyball", "squad", "development", "elite", "matches", "editor", "punish", "dof"]
 
 
 @pytest.fixture(scope="module")

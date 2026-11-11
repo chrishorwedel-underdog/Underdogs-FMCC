@@ -8,7 +8,8 @@ import { money, openDossier } from "./StatsTable";
 
 const band = (v) => (v >= 16 ? "#34D399" : v >= 13 ? "#A3E635" : v >= 10 ? "#F2B54A" : "#FF6E6E");
 const COLORS = ["#4C8DFF", "#34D399", "#F2B54A", "#FF6E6E", "#A78BFA"];
-const RADAR = ["npxg", "xa", "kp", "progp", "drb", "tkw", "intc", "prr", "aerw", "passc"];
+const RADAR = ["npxg", "xa", "kp", "progp", "drb", "tkw", "intc", "prr", "aerw", "pcmp"];
+const NAMES = { npxg: "npxG", xa: "xA", kp: "Key passes", progp: "Prog. passes", drb: "Dribbles", tkw: "Tackles won", intc: "Interceptions", prr: "Pressure success", aerw: "Aerials won", pcmp: "Passes completed" };
 
 const Similar = ({ uid }) => {
   const [kind, setKind] = useState("similar");
@@ -35,7 +36,7 @@ const Body = ({ d, addCompare }) => (
       <p className="note" style={{ margin: "4px 0 0" }}>This season: {d.appearances || 0} apps · {d.goals || 0} goals · {d.assists || 0} assists · {d.minutes || 0} min · rating {d.avg_rating ?? "—"}</p></div>
     <div className="card" data-testid="dossier-positions"><div className="ttl">Positions</div><div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{(d.positions || []).map((p, i) => <span key={p} className={`st ${i ? "n" : "g"}`}>{p}</span>)}</div></div>
     <div className="card" data-testid="dossier-roles"><div className="ttl">Top role fits</div>
-      {d.roles.slice(0, 6).map((r) => <div key={r.role} className="row"><div style={{ flex: 1 }}><b>{r.name}</b><small>{r.natural ? "Natural position" : "Not his position"} · with ball {r.with_ball ?? "—"}% · without {r.without_ball ?? "—"}%</small></div><span className="mono">{r.fit}%</span></div>)}</div>
+      {d.roles.slice(0, 6).map((r) => <div key={r.role} className="row"><div style={{ flex: 1 }}><b>{r.name}</b><small>{r.natural ? "Natural position" : "Not his position"} · with ball {r.with_ball != null ? `${r.with_ball}%` : "—"} · without {r.without_ball != null ? `${r.without_ball}%` : "—"}</small></div><span className="mono">{r.fit}%</span></div>)}</div>
     <div className="card" data-testid="dossier-attributes"><div className="ttl">Attributes</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: "4px 12px" }}>{Object.entries(d.attributes).map(([k, v]) => <div key={k} className="note" style={{ display: "flex", justifyContent: "space-between" }}>{k.replace(/_/g, " ")}<b style={{ color: band(v) }}>{v}</b></div>)}</div></div>
     <div className="card"><div className="ttl">Find another</div><Similar uid={d.unique_id} /></div>
@@ -46,13 +47,13 @@ const Compare = ({ ids, close, remove }) => {
   const { data: t } = useGet("analysis-table", "/analysis/table");
   const ps = (t?.rows || []).filter((r) => ids.includes(r.unique_id));
   const max = Object.fromEntries(RADAR.map((k) => [k, Math.max(0.01, ...(t?.rows || []).map((r) => r.p90?.[k] || 0))]));
-  const data = RADAR.map((k) => ({ k, ...Object.fromEntries(ps.map((p) => [p.name, Math.round(((p.p90?.[k] || 0) / max[k]) * 100)])) }));
+  const data = RADAR.map((k) => ({ k: NAMES[k], ...Object.fromEntries(ps.map((p) => [p.name, Math.round(((p.p90?.[k] || 0) / max[k]) * 100)])) }));
   return (
     <Dialog open={ids.length > 0 && !!t} onOpenChange={(o) => !o && close()}>
       <DialogContent style={{ maxWidth: 900 }} data-testid="compare-dialog"><DialogHeader><DialogTitle>Compare players</DialogTitle></DialogHeader>
         <div style={{ height: 300 }}><ResponsiveContainer><RadarChart data={data}><PolarGrid /><PolarAngleAxis dataKey="k" fontSize={11} />{ps.map((p, i) => <Radar key={p.unique_id} name={p.name} dataKey={p.name} stroke={COLORS[i]} fill={COLORS[i]} fillOpacity={0.15} />)}<Legend /></RadarChart></ResponsiveContainer></div>
         <div style={{ overflowX: "auto" }}><table className="tbl"><thead><tr><th></th>{ps.map((p) => <th key={p.unique_id}>{p.name} <button className="ib" onClick={() => remove(p.unique_id)} data-testid={`compare-remove-${p.unique_id}`}><X size={11} /></button></th>)}</tr></thead>
-          <tbody>{[["Est. value", (p) => money(p.est_value)], ["Best role", (p) => `${p.top_roles?.[0]?.name || "—"} ${p.role_fit}%`], ["Age", (p) => p.age], ...RADAR.map((k) => [k, (p) => p.p90?.[k]?.toFixed?.(2) ?? "—"])].map(([l, fn]) =>
+          <tbody>{[["Est. value", (p) => money(p.est_value)], ["Best role", (p) => `${p.top_roles?.[0]?.name || "—"} ${p.role_fit}%`], ["Age", (p) => p.age], ...RADAR.map((k) => [`${NAMES[k]} / 90`, (p) => p.p90?.[k]?.toFixed?.(2) ?? "—"])].map(([l, fn]) =>
             <tr key={l} style={{ cursor: "default" }}><td><b>{l}</b></td>{ps.map((p) => <td key={p.unique_id} className="mono">{fn(p)}</td>)}</tr>)}</tbody></table></div>
       </DialogContent>
     </Dialog>

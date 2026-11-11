@@ -137,7 +137,8 @@ async def _world(c: dict) -> tuple:
         raise HTTPException(404, "No save read yet")
     gd = date.fromisoformat(snaps[0]["game_date"][:10])
     pool = (await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {}).get("players") or []
-    own = [p | {"club": c["club_name"], "league": p.get("league") or "Your league", "own": True, "gender": p.get("gender", "M")} for p in snaps[0]["players"]]
+    own_league = snaps[0].get("league") or c.get("league") or next((p.get("league") for p in pool if p.get("club") == c["club_name"]), None) or ("Premier Division" if not LIVE else "Your league")
+    own = [p | {"club": c["club_name"], "league": p.get("league") or own_league, "own": True, "gender": p.get("gender", "M")} for p in snaps[0]["players"]]
     seen, rows = set(), []
     w = await _weights(c["id"])
     for p in own + pool:
@@ -148,6 +149,11 @@ async def _world(c: dict) -> tuple:
         r = {k: v for k, v in p.items() if k not in HIDDEN and k != "attributes"} | {"attributes": p.get("attributes") or {}, "group": G(p), "own": bool(p.get("own"))}
         r["_q"] = best[0]["fit"] if best else 0
         r["top_roles"] = best
+        r["fit"] = {k: fit(p, k, w)[2] for k in ROLES}
+        mins = p.get("minutes") or 0
+        r["per90"] = {"g": round((p.get("goals") or 0) * 90 / mins, 2) if mins else None, "a": round((p.get("assists") or 0) * 90 / mins, 2) if mins else None,
+                       "ga": round(((p.get("goals") or 0) + (p.get("assists") or 0)) * 90 / mins, 2) if mins else None,
+                       "mpa": round(mins / p["appearances"]) if p.get("appearances") else None}
         r["p90"] = p.get("stats") or (sm.sample_stats(p) if not LIVE else None) or {}
         rows.append(r)
     league_q, by = {}, {}
@@ -178,7 +184,9 @@ async def meta():
         groups.setdefault(g, []).append([f"p90.{k}", label])
     from roles import GK_ATTRS, OUTFIELD_ATTRS, SHARED_ATTRS
     groups["Attributes"] = [[f"attributes.{a}", a.replace("_", " ").title()] for a in OUTFIELD_ATTRS + SHARED_ATTRS + GK_ATTRS]
-    groups["Physical"] = [[f"attributes.{a}", a.replace("_", " ").title()] for a in ("pace", "acceleration", "stamina", "strength", "jumping_reach")] + [["p90.spr", "Sprints / 90"]]
+    groups["General"] += [["per90.g", "Goals / 90"], ["per90.a", "Assists / 90"], ["per90.ga", "Goals + assists / 90"], ["per90.mpa", "Minutes per appearance"]]
+    groups["Role fit"] = [[f"fit.{k}", f"{v[0]} fit %"] for k, v in ROLES.items()]
+    groups["Physical"] = [["p90.spr", "Sprints / 90"], ["p90.aerw", "Aerial duels won / 90"], ["p90.aerr", "Aerial-duel win rate"]]
     return {"groups": groups, "roles": [{"key": k, "name": v[0], "positions": v[1], "with_ball": v[2], "without_ball": v[3]} for k, v in ROLES.items()],
             "sample": not LIVE}
 
@@ -238,7 +246,7 @@ async def set_weights(key: str, body: WeightsIn):
     if any(k not in ok or not 0 <= v <= 5 for k, v in body.weights.items()):
         raise HTTPException(422, "Weights are 0 to 5, for the role's own attributes")
     c = await active_career()
-    await db.role_weights.update_one({"career_id": c["id"]}, {"$set": {f"roles.{key}": body.weights}}, upsert=True)
+    await db.role_weights.update_one({"career_id": c["id"]}, {"$set": {f"roles.{key}.{a}": v for a, v in body.weights.items()}}, upsert=True)
     return {"ok": True}
 
 
@@ -263,6 +271,7 @@ def _row(r: dict, why: str = "") -> dict:
 async def market():
     c = await active_career()
     rows, gd, _ = await _world(c)
+    my_league = next((r.get("league") for r in rows if r["own"]), None)
     rows = [r for r in rows if not r["own"]]
     free = [r for r in rows if (r.get("club") or "Free agent") in ("Free agent", "", "Unattached")]
     expiring = sorted([r for r in rows if r["years_left"] is not None and r["years_left"] <= 1 and r not in free], key=lambda r: -r["est_value"])
@@ -281,7 +290,7 @@ async def market():
                 changes.append({"kind": "move", "unique_id": p["unique_id"], "name": p["name"], "league": p.get("league"), "text": f"{o.get('club') or 'Free agent'} → {p.get('club') or 'Free agent'}"})
             elif o.get("value") and p.get("value") and abs(p["value"] - o["value"]) / o["value"] >= 0.15:
                 changes.append({"kind": "value", "unique_id": p["unique_id"], "name": p["name"], "league": p.get("league"), "text": f"Value {'up' if p['value'] > o['value'] else 'down'} {round(abs(p['value'] - o['value']) / o['value'] * 100)}%"})
-    return {"game_date": gd.isoformat(), "since": months[1]["month"] if len(months) == 2 else None, "my_league": next((r.get("league") for r in rows if r.get("club") == c["club_name"]), None),
+    return {"game_date": gd.isoformat(), "since": months[1]["month"] if len(months) == 2 else None, "my_league": my_league,
             "lists": {"expiring": [_row(r) for r in expiring[:50]], "free": [_row(r) for r in sorted(free, key=lambda r: -r["est_value"])[:50]],
                       "clauses": [_row(r) | {"release_clause": r["release_clause"]} for r in clauses[:50]], "u21": [_row(r) for r in u21[:50]], "loans": [_row(r) for r in loans[:50]]},
             "notes": {"clauses": None if clauses else "This save doesn't show release clauses yet", "loans": None if loans else "This save doesn't show loan-listed players yet"},
