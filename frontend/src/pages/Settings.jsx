@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { api, ago, gameDate, errMsg } from "@/lib/api";
 import { CareersCard } from "@/components/CareersCard";
+import { AddressCard } from "@/components/AddressPick";
 import { UpdatesCard } from "@/components/UpdatesCard";
 import { BackupsCard } from "@/components/BackupsCard";
 import { startTour } from "@/components/Tour";
@@ -73,7 +74,7 @@ export default function Settings({ state }) {
       </div>}
       <div style={{ marginBottom: 20 }}><TestingCard /></div>
       <div className="sgrid">
-        <div style={{ display: "grid", gap: 20, alignContent: "start" }}><CareersCard career={state.career} key={state.career.id} /><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /></div>
+        <div style={{ display: "grid", gap: 20, alignContent: "start" }}><CareersCard career={state.career} key={state.career.id} /><AddressCard current={state.address} key={state.address} /><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /></div>
         <div style={{ display: "grid", gap: 20, alignContent: "start" }}>
           <UpdatesCard autoInstall={state.auto_install_updates} />
           <BackupsCard />

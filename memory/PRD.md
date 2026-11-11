@@ -292,3 +292,10 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Verified by API calls and screenshots (sample save). Sample preview shows all 23 waiting (fewer than 25 comparison players) - expected.
 - 2026-11-11 Kit badge colours: in the FM27 theme the top-bar crest uses the club's main colour, trim-coloured border, and trim letters when readable (contrast >= 3) else white/black (ClubColours.jsx crestText, --club-crest/--club-crest-fg). Appearance club colours preview shows the badge. Verified by screenshot (sample: blue badge, gold letters).
 
+
+## 2026-11-11 What the game calls you + kit accent
+- User: "On the initial setup, you should be able to establish what the game calls you. This should also be editable after the fact." / "Kit Accent Option: Add a switch that uses your club's second colour for FMCC's highlights and main buttons".
+- settings.address (default "Boss"): set in setup step 1 (AddressPick: Boss/Gaffer/Coach/Mister/Manager/Chief or your own, max 30), PUT /api/settings/address (blank -> 422), returned in /api/state and /api/home; Home greeting uses it; Settings has "What the game calls you" card.
+- Appearance accent row: "Use my club's second colour" switch (appearance kit_accent, off by default); ClubColours sets window.__fmccKitAccent (trim lightened to >=4.5 contrast on dark panels) and re-applies appearance.
+- Verified via curl + screenshots (greeting changed to Gaffer, accent became trim gold). Setup screen itself not re-run (setup already complete in preview).
+

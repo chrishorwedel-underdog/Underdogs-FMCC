@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AddressPick } from "@/components/AddressPick";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, X, AlertTriangle, FolderSearch, Activity, KeyRound, HeartPulse, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ const FindStep = ({ form, set, next }) => {
   };
   useEffect(() => { if (form.found && !res) inspect(form.save_folder); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const bad = res?.items.some((i) => i.status === "fail");
-  const ready = res && res.items.find((i) => i.key === "saves")?.status === "ok" && form.name.trim() && form.club_name.trim();
+  const ready = res && res.items.find((i) => i.key === "saves")?.status === "ok" && form.name.trim() && form.club_name.trim() && (form.address || "").trim();
   return (
     <div>
       <Head title="Find Football Manager" text="FMCC finds FM and your save folder for you. In this browser preview it uses a sample save instead of your PC." />
@@ -63,6 +64,7 @@ const FindStep = ({ form, set, next }) => {
           <div><label className="lbl">Club</label><input className="inp" value={form.club_name} maxLength={60} onChange={(e) => set({ club_name: e.target.value })} data-testid="setup-club-input" /></div>
           <div><label className="lbl">Career name</label><input className="inp" value={form.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} data-testid="setup-career-input" /></div>
         </div>
+        <AddressPick value={form.address} onChange={(address) => set({ address })} />
         <div style={{ marginTop: 24, textAlign: "right" }}><button className="btn btn-p btn-l" disabled={!ready} onClick={next} data-testid="setup-next-1">Continue</button></div>
       </>}
     </div>
@@ -123,13 +125,13 @@ const HealthStep = ({ analytics }) => {
 export default function Setup() {
   const [step, setStep] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ edition: "FM27", save_folder: "", club_name: "Sample Club FC", name: "My first career", analytics: false, found: false });
+  const [form, setForm] = useState({ edition: "FM27", save_folder: "", club_name: "Sample Club FC", name: "My first career", address: "Boss", analytics: false, found: false });
   useEffect(() => { api.get("/setup/progress").then((r) => { setForm((f) => ({ ...f, ...r.data.form })); setStep(Math.min(r.data.step, 2)); }).catch(() => setStep(0)); }, []);
   useEffect(() => { if (step !== null && step < 3) api.put("/setup/progress", { step, form }).catch(() => {}); }, [step, form]);
   const set = (p) => setForm((f) => ({ ...f, ...p }));
   const finish = async () => {
     setBusy(true);
-    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, club_name: form.club_name, name: form.name }); setStep(3); }
+    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, club_name: form.club_name, name: form.name, address: form.address.trim() }); setStep(3); }
     catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
   return (

@@ -1,5 +1,5 @@
 const KEY = "fmcc-appearance";
-export const DEFAULTS = { theme: "dark", accent: "#4C8DFF", text: 100, motion: true, grain: true };
+export const DEFAULTS = { theme: "dark", accent: "#4C8DFF", text: 100, motion: true, grain: true, kit_accent: false };
 export const THEMES = {
   dark: { label: "Dark", vars: {} },
   black: { label: "Pure black", vars: { "--bg": "#000000", "--s1": "#050506", "--s2": "#0B0C0E", "--s3": "#121418" } },
@@ -29,7 +29,7 @@ export const applyAppearance = (s) => {
   Object.entries((THEMES[s.theme] || THEMES.dark).vars).forEach(([k, v]) => root.style.setProperty(k, v));
   root.classList.toggle("theme-light", !!(THEMES[s.theme] || {}).light);
   root.classList.toggle("theme-fm27", s.theme === "fm27");
-  root.style.setProperty("--acc", s.accent);
+  root.style.setProperty("--acc", (s.kit_accent && window.__fmccKitAccent) || s.accent);
   root.style.setProperty("--z", String(s.text / 100));
   root.style.zoom = "";
   root.classList.toggle("no-motion", !s.motion);

@@ -36,6 +36,8 @@ export default function Appearance() {
         </Row>
         {s.theme === "fm27" && <ClubColoursCard />}
         <Row title="Accent colour" note="Used for highlights, selected tabs and main buttons.">
+          <div className="row" style={{ width: "100%" }}><div style={{ flex: 1 }}>Use my club's second colour<small>Highlights and main buttons take your kit's trim colour, lightened if needed so it stays readable. Uses the colours from Appearance or your save.</small></div>
+            <Switch checked={!!s.kit_accent} onCheckedChange={(v) => set({ kit_accent: v })} data-testid="appearance-kit-accent" /></div>
           {ACCENTS.map(([l, c]) => (
             <button key={c} className="btn" onClick={() => set({ accent: c })} style={{ borderColor: s.accent === c ? c : undefined }} data-testid={`appearance-accent-${l.toLowerCase()}`}>
               <span style={{ width: 14, height: 14, borderRadius: 99, background: c, display: "inline-block" }} />{l}{s.accent === c && <Check size={13} />}</button>))}

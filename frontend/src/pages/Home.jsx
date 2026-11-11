@@ -48,7 +48,7 @@ export default function Home() {
       <div className="hero">
         <div>
           <div className="eyebrow rise">{gameDate(d.game_date)} · Season {d.season}</div>
-          <h1 className="h rise d1">{greet()} <span className="serif">Boss.</span></h1>
+          <h1 className="h rise d1">{greet()} <span className="serif" data-testid="home-address">{d?.address || "Boss"}.</span></h1>
           <p className="lede rise d2" data-testid="home-status-line">Everything is up to date. <b>{WORDS[Math.min(n, 5)]}</b> {n === 1 ? "needs" : "need"} your attention today.</p>
         </div>
         <div className="hchips rise d3">

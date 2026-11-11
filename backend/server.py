@@ -98,6 +98,11 @@ class CareerIn(BaseModel):
 
 class SetupIn(CareerIn):
     save_folder: str = Field(min_length=3, max_length=300)
+    address: str = Field("Boss", min_length=1, max_length=30)
+
+
+class AddressIn(BaseModel):
+    address: str = Field(min_length=1, max_length=30)
 
 
 class FolderIn(BaseModel):
@@ -234,7 +239,17 @@ async def state():
         career = await db.careers.find_one({"id": s["active_career_id"]}, {"_id": 0})
     return {"setup_complete": s.get("setup_complete", False), "career": career, "sample_mode": READER == "sample",
             "auto_install_updates": s.get("auto_install_updates", False), "last_update_check": s.get("last_update_check"),
-            "auto_read_saves": s.get("auto_read_saves", True)}
+            "auto_read_saves": s.get("auto_read_saves", True), "address": s.get("address") or "Boss"}
+
+
+@api.put("/settings/address")
+async def set_address(body: AddressIn):
+    """What FMCC calls you, as the game does (e.g. Boss, Gaffer, or your name)."""
+    v = body.address.strip()
+    if not v:
+        raise HTTPException(422, "Enter what FMCC should call you")
+    await db.settings.update_one({"_id": "app"}, {"$set": {"address": v}}, upsert=True)
+    return {"address": v}
 
 
 @api.post("/setup/detect")
@@ -249,7 +264,7 @@ async def setup_complete(body: SetupIn):
         if s.get("setup_complete"):
             raise HTTPException(409, "Setup is already finished")
         career = await new_career(body, body.save_folder.strip())
-        await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True, "auto_install_updates": False}, "$unset": {"setup_progress": ""}}, upsert=True)
+        await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True, "auto_install_updates": False, "address": body.address.strip() or "Boss"}, "$unset": {"setup_progress": ""}}, upsert=True)
     latest = (await latest_two(career["id"]))[0]
     return {"career": career, "health": [
         {"key": "link", "label": "Game link ready", "ok": True, "detail": f"Read {len(latest['players'])} players from {latest['file_name']}" + (" (sample save)" if READER == "sample" else "")},
@@ -387,7 +402,8 @@ async def home():
         raise HTTPException(404, "No save read yet")
     b = await db.backups.find_one({}, {"_id": 0, "created_at": 1}, sort=[("created_at", -1)])
     pending = await db.changes.count_documents({"career_id": c["id"], "status": "queued"})
-    return dashboard.compute(snaps[0], snaps[1] if len(snaps) > 1 else None, b["created_at"] if b else None) | {"read_at": snaps[0]["read_at"], "pending_changes": pending}
+    address = (await get_settings()).get("address") or "Boss"
+    return dashboard.compute(snaps[0], snaps[1] if len(snaps) > 1 else None, b["created_at"] if b else None) | {"read_at": snaps[0]["read_at"], "pending_changes": pending, "address": address}
 
 
 @api.get("/squad")

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { applyAppearance, loadAppearance } from "@/lib/appearance";
 
 const lum = (hex) => {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
@@ -17,6 +18,13 @@ export const readableTop = (hex) => {
 
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 
+// the trim colour lightened until it stands out on FMCC's dark panels, so highlights and buttons stay readable
+export const kitAccent = (hex) => {
+  let t = 0, c = hex;
+  while (contrast(c, "#121519") < 4.5 && t < 0.9) { t += 0.05; c = "#" + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) + (255 - parseInt(hex.slice(i, i + 2), 16)) * t).toString(16).padStart(2, "0")).join(""); }
+  return c;
+};
+
 // the trim colour for the badge letters when it reads well on the main colour, else white or black
 export const crestText = (bg, trim) => (trim && contrast(bg, trim) >= 3 ? trim : contrast(bg, "#FFFFFF") >= contrast(bg, "#000000") ? "#FFFFFF" : "#000000");
 
@@ -32,6 +40,8 @@ export const ClubColours = () => {
     } else {
       ["--club-top", "--club-line", "--club-crest", "--club-crest-fg"].forEach((k) => root.style.removeProperty(k));
     }
+    window.__fmccKitAccent = data?.secondary || data?.primary ? kitAccent(data.secondary || data.primary) : null;
+    applyAppearance(loadAppearance());
   }, [data]);
   return null;
 };
