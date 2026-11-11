@@ -20,7 +20,7 @@ ROOT = Path(__file__).parent
 
 # key: (group, label, {param: (min, max, default, unit)}, live club field or None, why it's new-career only)
 PENALTIES = {
-    "points": ("Sporting", "Points deduction", {"points": (1, 120, 15, "points")}, None, "Points can't be changed safely mid-season"),
+    "points": ("Sporting", "Points deduction", {"seasons": (1, 10, 1, "seasons"), "points": (1, 120, 15, "points")}, None, "Points can't be changed safely mid-season"),
     "relegation": ("Sporting", "Forced relegation", {}, None, "Relegation is decided when the season is set up"),
     "releases": ("Sporting", "Forced player releases", {"players": (1, 15, 3, "players")}, None, "Releasing players mid-season would break contracts in the save"),
     "morale": ("Sporting", "Lower player and staff morale", {"amount": (1, 20, 5, "levels")}, None, "FMCC can't change morale in a running save yet"),
@@ -43,6 +43,11 @@ PRESETS = {
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five"}
 
 
+def season_points(v: dict) -> list:
+    """Points for each season of a deduction: season 1 is `points`, later seasons are s2..s10."""
+    return [v["points"]] + [v[f"s{i}"] for i in range(2, v.get("seasons", 1) + 1)]
+
+
 class PunishIn(BaseModel):
     club_uid: int
     penalties: dict[str, dict[str, int]] = Field(min_length=1, max_length=len(PENALTIES))
@@ -61,13 +66,20 @@ def clean(pens: dict) -> dict:
             if not lo <= v <= hi:
                 raise HTTPException(422, f"{PENALTIES[k][1]}: {unit} must be between {lo} and {hi}")
             vals[p] = v
+        if k == "points":
+            for i in range(2, vals["seasons"] + 1):
+                v = int(params.get(f"s{i}", vals["points"]))
+                if not 1 <= v <= 120:
+                    raise HTTPException(422, f"Points deduction: season {i} points must be between 1 and 120")
+                vals[f"s{i}"] = v
         out[k] = vals
     return out
 
 
 def phrase(k: str, v: dict) -> str:
     return {
-        "points": lambda: f"−{v['points']} points",
+        "points": lambda: f"−{v['points']} points" if v.get("seasons", 1) == 1 else
+        f"−{' / −'.join(map(str, season_points(v)))} points over {v['seasons']} seasons ({sum(season_points(v))} in total)",
         "relegation": lambda: "relegated",
         "releases": lambda: f"{v['players']} players released",
         "morale": lambda: f"morale down {v['amount']}",
@@ -102,8 +114,13 @@ def _folder(c: dict) -> Path:
 
 
 def _xml(c: dict, club: dict, pens: dict, summary: str) -> str:
-    rows = "\n".join(f'    <record id="penalty" type={quoteattr(k)} label={quoteattr(PENALTIES[k][1])}'
-                     + "".join(f" {p}={quoteattr(str(x))}" for p, x in v.items()) + "/>" for k, v in pens.items())
+    def row(k: str, v: dict) -> str:
+        if k == "points":
+            return "\n".join(f'    <record id="penalty" type="points" label={quoteattr(PENALTIES[k][1])} season="{i}" points="{p}"/>'
+                             for i, p in enumerate(season_points(v), 1))
+        return (f'    <record id="penalty" type={quoteattr(k)} label={quoteattr(PENALTIES[k][1])}'
+                + "".join(f" {p}={quoteattr(str(x))}" for p, x in v.items()) + "/>")
+    rows = "\n".join(row(k, v) for k, v in pens.items())
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             "<!-- Made by FMCC Punish a Club. Whether FM accepts this file is unconfirmed until it is tested on your PC. -->\n"
             f'<record id="fmcc_punishment">\n  <string id="edition" value={quoteattr(c["edition"])}/>\n'

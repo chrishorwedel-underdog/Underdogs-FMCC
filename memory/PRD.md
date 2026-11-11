@@ -235,3 +235,9 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Tactic fit (components/squad/TacticFit.jsx, lab_api.py): save tactics (save-N ids) + imported .fmf + built (any formation, role per slot); every slot ranks the whole squad by attribute-only fit; save/delete built tactics. Save tactic roles not read yet (default roles).
 - Tested: iteration_28 (backend 17/17), follow-up UI fixes (initial select sync, delete reset, import label, toast grammar, batch dialog wording) verified by screenshot.
 
+
+## 2026-11-11 Punish a Club: multi-year points deduction
+- User: "In punish a club, add the ability to apply a multi-year points deduction". Choices: set each season yourself; up to 10 seasons.
+- Points penalty params: seasons (1-10), points (season 1), s2..s10 (1-120 each). Summary "−20 / −10 / −5 points over 3 seasons (35 in total)"; new-career file writes one penalty record per season. Presets unchanged (1 season). Still new-career only. FM accepting the file is UNCONFIRMED.
+- Verified via curl (valid/invalid inputs, file output) and screenshot (desktop + mobile).
+

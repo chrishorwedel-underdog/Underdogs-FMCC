@@ -21,11 +21,37 @@ const ClubSearch = ({ club, setClub }) => {
   );
 };
 
+const PointsSeasons = ({ val, setVal }) => {
+  const n = val.seasons || 1;
+  const pts = (i) => (i === 1 ? val.points : val[`s${i}`] ?? val.points);
+  const setPts = (i, v) => setVal({ ...val, [i === 1 ? "points" : `s${i}`]: v });
+  const setN = (v) => {
+    const k = Math.max(1, Math.min(10, v || 1));
+    const next = { ...val, seasons: k };
+    for (let i = 2; i <= 10; i += 1) { if (i > k) delete next[`s${i}`]; else if (next[`s${i}`] == null) next[`s${i}`] = val.points; }
+    setVal(next);
+  };
+  const total = Array.from({ length: n }, (_, i) => Number(pts(i + 1)) || 0).reduce((a, b) => a + b, 0);
+  return (
+    <div style={{ width: "100%", marginTop: 8 }} data-testid="penalty-points-seasons">
+      <label className="note" style={{ display: "flex", gap: 6, alignItems: "center", margin: 0 }}>Seasons
+        <input className="inp" style={{ width: 70, height: 32 }} type="number" min={1} max={10} value={n} onChange={(e) => setN(Number(e.target.value))} data-testid="penalty-points-seasons-count" />
+        <span style={{ marginLeft: "auto" }} data-testid="penalty-points-total">{n > 1 ? `${total} points in total` : ""}</span></label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(130px,1fr))", gap: 6, marginTop: 8 }}>
+        {Array.from({ length: n }, (_, i) => i + 1).map((i) => (
+          <label key={i} className="note" style={{ display: "flex", gap: 6, alignItems: "center", margin: 0, whiteSpace: "nowrap" }}>{n > 1 ? `Season ${i}` : "Points"}
+            <input className="inp" style={{ width: 64, height: 32 }} type="number" min={1} max={120} value={pts(i)} onChange={(e) => setPts(i, Number(e.target.value))} data-testid={`penalty-points-season-${i}`} /></label>))}
+      </div>
+    </div>
+  );
+};
+
 const Penalty = ({ p, val, setVal }) => (
-  <div className="chk" style={{ padding: "10px 12px", borderColor: val ? "rgba(76,141,255,.45)" : undefined }} data-testid={`penalty-${p.key}`}>
+  <div className="chk" style={{ padding: "10px 12px", flexWrap: "wrap", borderColor: val ? "rgba(76,141,255,.45)" : undefined }} data-testid={`penalty-${p.key}`}>
     <input type="checkbox" checked={!!val} onChange={(e) => setVal(e.target.checked ? Object.fromEntries(p.params.map((x) => [x.key, x.default])) : null)} data-testid={`penalty-toggle-${p.key}`} />
     <div style={{ flex: 1 }}><b style={{ fontSize: 14 }}>{p.label}</b><small>{p.current_save ? "New career, or queue on your current FM27 save" : "New career only"}</small></div>
-    {val && p.params.map((x) => <label key={x.key} className="note" style={{ display: "flex", gap: 6, alignItems: "center", margin: 0 }}>{x.unit}
+    {val && p.key === "points" && <PointsSeasons val={val} setVal={setVal} />}
+    {val && p.key !== "points" && p.params.map((x) => <label key={x.key} className="note" style={{ display: "flex", gap: 6, alignItems: "center", margin: 0 }}>{x.unit}
       <input className="inp" style={{ width: 80, height: 32 }} type="number" min={x.min} max={x.max} value={val[x.key]} onChange={(e) => setVal({ ...val, [x.key]: Number(e.target.value) })} data-testid={`penalty-${p.key}-${x.key}`} /></label>)}
   </div>
 );
