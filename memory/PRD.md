@@ -241,3 +241,9 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Points penalty params: seasons (1-10), points (season 1), s2..s10 (1-120 each). Summary "−20 / −10 / −5 points over 3 seasons (35 in total)"; new-career file writes one penalty record per season. Presets unchanged (1 season). Still new-career only. FM accepting the file is UNCONFIRMED.
 - Verified via curl (valid/invalid inputs, file output) and screenshot (desktop + mobile).
 
+
+## 2026-11-11 Automatic download + apply of made files
+- User: "When I click Seed a Surname, the file should be automatically downloaded and applied. This goes for any edited/created/adjusted file."
+- Seed a Surname (new save), Player Creator (single create/edit and batches), Punish a Club now auto-download their file (lib/autoDownload.js). On Windows the file is also placed in FM's editor data folder (as before). Punish on FM27 also auto-queues its current-save penalties in Game changes (approval step kept for save safety). Current-save seeds apply renames directly (no file).
+- Tested: iteration_29 (all flows pass). Known: current-save rename seeds have no undo button in Seeded surnames list.
+

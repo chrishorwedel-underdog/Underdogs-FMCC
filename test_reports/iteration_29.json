@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend test (1920px, Playwright with page.expect_download) of automatic file download after create/edit/apply. All flows pass. (1) Seed a Surname, New save: surname 'TESTfam' (13 people), Create, then Seed The Surname (confirm accepted). The browser download 'FMCC Seed - TESTfam - 36234c.xml' started at once and holds valid XML. Toast: 'TESTfam seeded: 13 people. The file is downloading'. The Seeded surnames File button also downloads it. Current save mode ('TESTcur'): renames applied in the SAMPLE save, no download started, and the list row has no File button. (2) Player Creator, one player: Create player downloaded 'FMCC Player - TESTAlan TESTsec - 2180000001.xml'. Edit an existing player, change the surname, Save changes downloaded 'FMCC Player - TESTChris TESTmanb - 2180000000.xml'; the file has the new name, the toast says 'updated. The file is downloading', and the form goes back to 'Create player'. The pcs-download File button works. Delete works. (3) Batch, 'Make the players' (3 players): downloaded 'FMCC Players - TEST batch - 3472bb.xml' with toast '3 players made. The file is downloading'. The batch File link works; removing the batch works. (4) Punish a Club: Northbridge Athletic with reputation + points deduction. 'Make the new-career file' downloaded 'FMCC Punish - Northbridge Athletic - 364070.xml', and (FM27) one live change was queued automatically. Toast: '1 change(s) for your current save queued in Game changes'. /changes shows the row 'Northbridge Athletic · Punish a Club · Reputation (Punish a Club) → 0'. A points-only punishment (new career only) downloaded its file and queued nothing, which is correct. The punishment-download File button works. No page errors in any flow.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Seeded surnames list", "issues": ["Current-save (rename) seeds have no remove or undo button, so a test or mistaken rename record can't be cleared from the UI."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: autoDownload swallows errors silently, but the success toast already says 'The file is downloading'. If the blob fetch fails, show a toast.error that points to the list's File button.",
+    "Optional: add a remove or undo option for current-save seeds in the Seeded surnames list."
+  ],
+  "critical_code_review_comments": [
+    "autoDownload uses a blob, an anchor click and a deferred revokeObjectURL. Fine. The catch {} hides failures from the user (see action item).",
+    "SingleCreator: names with an underscore (e.g. 'TEST_Chris') get a 422 from POST /creator/single (name validation). Expected, but worth checking that the error toast tells the user which characters are allowed.",
+    "Punish make: the queue call only runs when edition is FM27 and some row has current_save. Both toasts appear, and the queue toast shows above the file toast."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend only)", "frontend": "100%"},
+  "seed_data_creation": "Everything created was cleaned up. Seed TESTfam (new) was removed in the UI. The current-save seed TESTcur (id 70e691a3…) has no UI remove, so its seed_batches doc and 13 seed_renames docs were deleted by that id in mongo (SAMPLE save, no live rename happened). Players TESTChris TESTmanb and TESTAlan TESTsec were deleted in the UI. Batch 'TEST batch' was removed in the UI. Punishments 364070d2 and 54083913 were deleted through the API. Queued change d8bd0845 (punish reputation) was rejected through POST /api/changes/reject. The 4 pre-existing DP queued changes were not touched. Audit-log entries stay (append-only).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Navigate with nav-editor, then editor-tab-seed or editor-tab-creator (creator-mode-single / creator-mode-batch), and nav-punish. Accept window.confirm with a dialog handler. Don't use underscores in Player Creator names (422). Clubs: punish-club-{uid} (999023 = Northbridge Athletic). Queue rows: queue-row-{id}. Reject by id through POST /api/changes/reject {ids:[...]}. Current-save seeds can only be cleaned in mongo, by id."
+}
