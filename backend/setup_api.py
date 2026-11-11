@@ -128,12 +128,14 @@ async def download_info():
         return {"show": False}
     if not repo:
         return {"show": True, "url": None, "version": None, "message": "The download link isn't set up yet"}
-    if _DL["data"] and time.time() - _DL["at"] < 600:
+    if _DL["data"] and time.time() - _DL["at"] < 120:
         return _DL["data"]
     data = {"show": True, "url": f"https://github.com/{repo}/releases/latest/download/FMCC-Setup.exe", "version": None, "message": None}
     try:
         async with httpx.AsyncClient(timeout=8, follow_redirects=True) as client:
             r = await client.get(f"https://api.github.com/repos/{repo}/releases/latest", headers={"Accept": "application/vnd.github+json"})
+            build = await _build_state(client, repo)
+        data["build"] = build
         if r.status_code == 200:
             rel = r.json()
             asset = next((a for a in rel.get("assets", []) if a["name"].lower().endswith(".exe")), None)
@@ -145,6 +147,19 @@ async def download_info():
         logger.warning("Release check failed: %s", type(exc).__name__)
     _DL.update(at=time.time(), data=data)
     return data
+
+
+async def _build_state(client, repo: str) -> str | None:
+    """latest / building / failed for the newest installer build, or None if GitHub can't say."""
+    r = await client.get(f"https://api.github.com/repos/{repo}/actions/workflows/windows-installer.yml/runs",
+                         params={"per_page": 1, "branch": "main"}, headers={"Accept": "application/vnd.github+json"})
+    runs = r.json().get("workflow_runs") if r.status_code == 200 else None
+    if not runs:
+        return None
+    run = runs[0]
+    if run["status"] != "completed":
+        return "building"
+    return "latest" if run["conclusion"] == "success" else "failed"
 
 
 class ProgressIn(BaseModel):

@@ -92,10 +92,25 @@ jobs:
         shell: pwsh
         run: |
           $env:FMCC_DATA_DIR = Join-Path $env:RUNNER_TEMP "fmcc-selftest"
-          $p = Start-Process dist/FMCC/FMCC.exe -ArgumentList "--selftest" -Wait -PassThru
-          Get-Content (Join-Path $env:FMCC_DATA_DIR "logs/fmcc-startup.log") -ErrorAction SilentlyContinue
-          Get-Content (Join-Path $env:FMCC_DATA_DIR "logs/fmcc-output.log") -Tail 60 -ErrorAction SilentlyContinue
-          if ($p.ExitCode -ne 0) { Write-Error "FMCC didn't start in the self-test (exit $($p.ExitCode)); nothing is published"; exit 1 }
+          $p = Start-Process dist/FMCC/FMCC.exe -ArgumentList "--selftest" -PassThru
+          $null = $p.Handle  # keeps the exit code readable after the program ends
+          $done = $p.WaitForExit(240000)
+          if (-not $done) { $p.Kill(); $code = "timeout" } else { $code = $p.ExitCode }
+          $log = Join-Path $env:FMCC_DATA_DIR "logs/fmcc-startup.log"
+          $out = Join-Path $env:FMCC_DATA_DIR "logs/fmcc-output.log"
+          $db = Join-Path $env:FMCC_DATA_DIR "db.log"
+          $text = @()
+          if (Test-Path $log) { $text += Get-Content $log -Tail 40 } else { $text += "No startup log was written (FMCC stopped before it could start logging)." }
+          if (Test-Path $out) { $text += "--- output ---"; $text += Get-Content $out -Tail 40 }
+          if ($code -ne 0 -and (Test-Path $db)) { $text += "--- data store ---"; $text += Get-Content $db -Tail 15 }
+          $text | Write-Output
+          $flat = ($text -join "%0A") -replace "::", ": :"
+          if ($code -ne 0) {
+            Write-Output "::error title=FMCC self-test failed (exit $code)::$flat"
+            "## FMCC self-test failed (exit $code)`n``````n$($text -join "`n")`n``````" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+            exit 1
+          }
+          Write-Output "::notice title=FMCC self-test passed::$flat"
 
       - name: Smoke test the reader import
         run: python -c "import fmsave, sys; sys.path.insert(0, 'backend'); import fmsave_reader; print('fmsave', fmsave.__version__)"

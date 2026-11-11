@@ -16,7 +16,7 @@ import sample_reader
 from core import db, active_career, now_iso, new_id, audit, next_revision
 
 router = APIRouter(prefix="/api/leagues")
-BUILTIN = json.loads((Path(__file__).parent / "data" / "opta_leagues.json").read_text())
+BUILTIN = json.loads((Path(__file__).parent / "data" / "opta_leagues.json").read_text(encoding="utf-8"))
 STOP = {"league", "the", "football", "fc", "de", "la", "le", "of", "division", "liga", "pro"}
 
 

@@ -1,67 +1,55 @@
-# FMCC for Windows: a standalone app that starts every time
+# Getting the fixed FMCC for Windows onto your PC
 
-The Download button on the FMCC website installs FMCC as a self-contained Windows program. It runs entirely on your PC, reads your Football Manager saves directly and keeps your data on your computer.
+The startup fix was built, but the website's Download button still gives out v0.2.11 from Nov 10, which is the version with the "127.0.0.1 refused to connect" error. This plan gets the fixed installer published, and makes the Download button show whether the version on offer is the newest one.
 
 ## Who it's for
-Football Manager players who install FMCC from the website and expect it to open like any other PC program: no internet needed for daily use, no setup and no technical steps.
+Football Manager players, starting with you, who install FMCC from the website and need the version they download to be the latest working one.
 
-## The problem today
-After installing, the FMCC window opens on an error page: "Hmmm… can't reach this page – 127.0.0.1 refused to connect". The window opens before FMCC's own engine has started, or the engine fails to start, so there is nothing for the window to show. The installed app never gets past this point.
+## What happened
+- You pressed Save to GitHub, but no new installer was published after Nov 10. The build that makes the installer either failed or never ran.
+- The new build includes a check that starts the packaged FMCC on a Windows machine before publishing. If FMCC doesn't start there, the build stops on purpose, so a broken installer never reaches the website. That check, or the packaging step just before it, is the most likely place the build stopped.
+- The installer you ran is therefore still the old one. Its window opens before FMCC's engine is ready, waits, and then shows the browser's error page. That matches "nothing happens for a while, then the error".
 
 ## Core features and experience
-- **Everything in the installer.** One download installs everything FMCC needs, including the part that stores your data, and it all runs on your PC. Nothing else to install or sign up for.
-- **Works offline.** Once installed, FMCC runs without internet. A connection is only used to check for FMCC updates and to download the optional packs from the Downloads page.
-- **Data stays on your PC.** Careers, history, settings, created players, punishments and backups are kept in your Windows user folder. Nothing is sent to the website. Updating or reinstalling FMCC keeps them.
-- **Loading screen.** When FMCC opens you see an FMCC-branded loading screen, never a browser error page. It switches to the app as soon as the app is ready.
-- **Plain reason if it can't start.** If FMCC fails to start, the loading screen says why in everyday words, says what to try, and offers:
-  - **Try again**
-  - **Open log file**, a text file you can send for help
-  - **Copy details**
-
-  Problems it recognises by name:
-  - FMCC is already open
-  - another program is using the connection FMCC needs on your PC
-  - Windows security or antivirus blocked part of FMCC
-  - the data folder can't be written to
-  - a file is missing from the install, with advice to reinstall
-- **One copy at a time.** Opening FMCC while it's already running brings the open window to the front instead of starting a second copy that fails.
-- **Clean shutdown.** Closing the window stops everything FMCC started, so nothing keeps running in the background and the next start is clean.
-- **Website download link.** The website's Download button always points to the latest fixed installer, and its version label is the version you actually get.
+- **A fixed installer on the Download button.** The reason the latest build stopped is found and fixed, and the build is re-run until a new version (v0.2.12 or later) is published with the startup fix. That version must pass the check that starts it on a Windows machine before publishing.
+- **Honest Download button.** Next to the version, the website shows the state of the newest build:
+  - "Latest version", when the newest build is the one on offer
+  - "A new version is being built, check back in a few minutes", while a build is running
+  - "The newest build didn't finish, so this is the last working version", when the latest build failed. The working version is still offered.
+- **What you'll see once you install it.** FMCC opens on its own dark loading screen with the logo within a second or two, then switches to the app. If it can't start, it shows the reason in plain words, with Try again, Open log file and Copy details. You won't see the browser error page again.
+- **Version in the app.** The footer shows the installed version, so you can confirm you're on the new one.
 
 ## User flow
-1. Press **Download FMCC for Windows** on the website.
-2. Run the installer. Windows may warn that the installer isn't signed; choose More info, then Run anyway. Then finish the short setup.
-3. FMCC opens from the Start menu or desktop shortcut. The loading screen shows for a few seconds.
-4. The app appears, ready to read your FM saves.
-5. If something goes wrong at step 3, the loading screen explains it and offers Try again, Open log file or Copy details.
+1. The fix is built and published. You'll be told when the new version is on the Download button.
+2. On the website, the Download button shows the new version number and "Latest version".
+3. Download and run the installer. It closes any open FMCC first. Your data is kept.
+4. Open FMCC. The loading screen appears, then the app.
+5. If the app doesn't appear, press Copy details on the problem screen and paste it into the chat.
 
 ## UI/UX feel
-- The loading screen uses FMCC's dark look and logo, with a quiet progress indicator and a single status line, for example "Starting FMCC…" or "Getting your data ready…".
-- Error messages are short, calm and written for non-technical players, with one clear next step. Technical detail stays in the log file.
+- The build status is one short line under the version on the Download card, in the card's existing style. It's calm, has no technical words, and uses a small coloured dot: green for latest, amber while building, grey when the last working version is shown.
+- The rest of the Download card stays as it is.
 
 ## Implementation phases
 **Phase 1 – MVP (built now)**
-- Every installed part starts in order, and the window waits for FMCC to be ready before showing it.
-- The loading screen and the plain-reason error screen, including Try again, Open log file and Copy details.
-- The single-copy rule and clean shutdown.
-- A startup log in the data folder.
-- Data saved in the Windows user folder and kept through updates and reinstalls.
-- The website's Download button and version label point to the new installer.
+- Find which step stopped the latest build and fix it so the build publishes a new installer.
+- Keep the check that starts FMCC on a Windows machine before publishing, and make it report the reason in plain words when it fails.
+- The build status line on the website's Download card.
+- Confirm the new version and date appear on the Download button.
 
 **Phase 2**
-- A self-check on the error screen that fixes common causes in one click. For example, it can move to a free connection on your PC or rebuild a damaged data store from the latest backup.
-- The update prompt is confirmed end to end on a real PC: download, install, restart into the new version with data intact.
+- One-click fixes on FMCC's problem screen, for example using a free connection or restoring from the latest backup.
+- Confirm the in-app update prompt works end to end on a real PC.
 
 **Phase 3**
-- A signed installer so Windows stops showing the "protected your PC" warning. This needs a paid code-signing certificate from you.
-- An uninstall option to keep or remove your FMCC data.
-- Export and import of all your data, for moving to a new PC.
+- A signed installer, which needs a paid code-signing certificate from you.
+- An uninstall choice to keep or remove your FMCC data.
+- Export and import of all your FMCC data for a new PC.
 
 ## Assumptions
-- The installed app does not depend on the website at all: no account and no sign-in. The website stays a separate place to try FMCC and download it.
-- Your data on the website and your data on your PC are separate and are not merged.
-- Windows 10 and 11 (64-bit) are supported. Mac and Linux are not.
-- The installer stays unsigned in Phase 1, so the Windows warning remains until Phase 3.
-- The exact reason your PC refused the connection can't be seen from here. Phase 1 fixes the startup order and covers the known failure causes. Whether it starts cleanly on your PC is only confirmed once you install the new version. If it still fails, the new error screen and log file will show why.
-- A new installer version is published to the website's Download button once Phase 1 is built. You will need to download and reinstall it once.
-- Data from earlier installs, if any was created, is kept and used by the new version.
+- The build runs on GitHub when you press Save to GitHub. Its overall result and which step failed can be read publicly. If the detailed build log is needed and can't be read without signing in, you'll be asked for a read-only GitHub access key through a secure form, not in chat.
+- You'll need to press Save to GitHub once more after the fix, because the build only runs from what's on GitHub.
+- Until the new version is published, the Download button keeps offering v0.2.11, with the "last working version" status line.
+- The fix is only confirmed once you install the new version on your PC. The Windows check in the build makes it very likely, but it isn't the same as your PC.
+- Your existing data, if any was created, is kept.
+- The installer stays unsigned, so Windows still shows its warning: choose More info, then Run anyway.

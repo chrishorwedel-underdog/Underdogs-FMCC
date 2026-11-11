@@ -197,7 +197,7 @@ class Engine:
             cfg = DATA / "config.json"
             if cfg.exists():
                 import json
-                os.environ.update({k: v for k, v in json.loads(cfg.read_text()).items() if isinstance(v, str)})
+                os.environ.update({k: v for k, v in json.loads(cfg.read_text(encoding="utf-8")).items() if isinstance(v, str)})
             os.environ.update({"MONGO_URL": f"mongodb://127.0.0.1:{DB_PORT}", "DB_NAME": "fmcc", "CORS_ORIGINS": f"http://127.0.0.1:{APP_PORT}",
                                "FMCC_READER": "fmsave", "FMCC_STATIC_DIR": str(BASE / "web"), "FMCC_PROBE": str(BASE / "fmlibre" / "fmlibre-probe.exe"),
                                "FMCC_RELEASE_REPO": (BASE / "release_repo.txt").read_text().strip() if (BASE / "release_repo.txt").exists() else "",

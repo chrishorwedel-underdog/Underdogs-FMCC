@@ -14,7 +14,7 @@ from core import db, latest_snapshot
 from sample_reader import GROUP
 
 DATA = Path(__file__).parent / "data"
-WEIGHTS = json.loads((DATA / "position_weights.json").read_text())
+WEIGHTS = json.loads((DATA / "position_weights.json").read_text(encoding="utf-8"))
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
 MIN_PCT, MIN_PRICE = 400, 900
 CACHE: dict = {}

@@ -7,7 +7,6 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, StreamDone
 
 import roles
 from core import db, active_career, latest_two, month_minutes, now_iso, new_id, logger
@@ -38,9 +37,9 @@ async def set_key(body: KeyIn):
         raise HTTPException(403, "In the browser preview the DOF uses the Emergent universal key")
     from pathlib import Path
     cfg = Path(os.environ.get("APPDATA", Path.home())) / "FMCC" / "config.json"
-    data = json.loads(cfg.read_text()) if cfg.exists() else {}
+    data = json.loads(cfg.read_text(encoding="utf-8")) if cfg.exists() else {}
     data["OPENAI_API_KEY"] = body.key.strip()
-    cfg.write_text(json.dumps(data))
+    cfg.write_text(json.dumps(data), encoding="utf-8")
     os.environ["OPENAI_API_KEY"] = body.key.strip()
     return {"ok": True}
 
@@ -267,6 +266,7 @@ async def stream(conv_id: str, body: Ask):
     if conv["title"] == "New conversation":
         await db.dof_conversations.update_one({"id": conv_id}, {"$set": {"title": body.text[:60]}})
     system = SYSTEM + context + (f"\n\nEARLIER IN THIS CONVERSATION:\n{transcript}" if transcript else "")
+    from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, StreamDone
     chat = LlmChat(api_key=key, session_id=f"dof-{conv_id}-{new_id()}", system_message=system).with_model(*MODEL)
 
     async def gen():

@@ -255,3 +255,11 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Verified on Linux with a simulated install: clean start/stop, port-in-use message, leftover data store stopped; screens rendered. NOT verified on Windows yet - needs Save to GitHub -> CI build -> install on PC.
 - Phase 2/3 backlog: one-click self-fix, end-to-end update check on a PC, signed installer, uninstall keep/remove data, export/import.
 
+## 2026-11-11 Getting the fixed installer published (approved plan)
+- Found: GitHub build #12 (commit 35483d6) failed at "Start the packaged program and check it answers" after 7s; v0.2.11 (old launcher) is still the latest release. Job logs need repo admin; annotations are public.
+- Likely cause found and fixed: Windows reads text files as cp1252 by default; leagues_api/stats_model read non-ASCII JSON without encoding -> server crashed at import on Windows (also explains the original "refused to connect"). Fixed encodings (leagues_api, stats_model, dof_api config, launcher config). dof_api LLM import made lazy so a chat package problem can't block startup. All backend modules import under an ASCII locale; simulated install self-test passes.
+- CI self-test step: reliable exit code, 4-min limit, posts startup/output/data-store log tail as a public annotation + job summary on failure.
+- Download card: build status line from GitHub Actions (green Latest version / amber being built / grey last working version). /api/setup/download returns `build`; cache 2 min.
+- Pending: user presses Save to GitHub; confirm v0.2.12+ publishes; user installs on PC.
+
+
