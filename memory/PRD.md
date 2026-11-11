@@ -262,4 +262,6 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Download card: build status line from GitHub Actions (green Latest version / amber being built / grey last working version). /api/setup/download returns `build`; cache 2 min.
 - Pending: user presses Save to GitHub; confirm v0.2.12+ publishes; user installs on PC.
 
+- 2026-11-11 Build #13 (with encoding fix) got past import of data files; self-test annotation showed: FastAPI 'Form data requires python-multipart'. Fixed: python-multipart added to desktop/requirements-desktop.txt + hidden imports; new CI step "Check the server loads with the packaged requirements" catches missing packages before packaging. Awaiting user Save to GitHub -> build #14.
+
 

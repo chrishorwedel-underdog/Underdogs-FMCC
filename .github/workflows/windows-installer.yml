@@ -51,6 +51,13 @@ jobs:
           pip install -r desktop/requirements-desktop.txt
           pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
 
+      - name: Check the server loads with the packaged requirements
+        shell: pwsh
+        run: |
+          $env:MONGO_URL = "mongodb://127.0.0.1:1"; $env:DB_NAME = "fmcc"; $env:FMCC_READER = "fmsave"
+          python -c "import sys; sys.path.insert(0, 'backend'); import server; print('server loads')"
+          if ($LASTEXITCODE -ne 0) { Write-Output "::error title=FMCC server doesn't load::A package FMCC needs is missing from desktop/requirements-desktop.txt"; exit 1 }
+
       - name: Download the local database
         shell: pwsh
         run: |
@@ -85,7 +92,7 @@ jobs:
             --add-data "desktop/release_repo.txt;." --add-data "desktop/version.txt;." --add-data "desktop/loading-logo.png;." `
             --add-data "backend;backend" --add-data "backend/data;data" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb" --add-data "desktop/fmlibre;fmlibre" `
             --collect-all fmsave --collect-all emergentintegrations --collect-submodules uvicorn --collect-all webview `
-            --hidden-import motor --hidden-import psutil --hidden-import startup_pages @mods
+            --hidden-import motor --hidden-import psutil --hidden-import multipart --hidden-import python_multipart --hidden-import startup_pages @mods
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Start the packaged program and check it answers
