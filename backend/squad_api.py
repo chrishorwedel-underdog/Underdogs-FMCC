@@ -112,7 +112,7 @@ async def try_xi(add: str = Query("", max_length=200), formation: Optional[Forma
     latest, form, depth, info, _ = await _plan_inputs(c, formation)
     pool = (await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {}).get("players") or []
     own = {p["unique_id"] for p in latest["players"]}
-    trial = [p for p in pool if p["unique_id"] in ids and p["unique_id"] not in own]
+    trial = sorted([p for p in pool if p["unique_id"] in ids and p["unique_id"] not in own], key=lambda p: ids.index(p["unique_id"]))
     names = {u: i["name"] for u, i in info.items()} | {p["unique_id"]: p["name"] for p in trial}
     before = roles.best_xi(latest["players"], form, depth)
     players = latest["players"] + trial

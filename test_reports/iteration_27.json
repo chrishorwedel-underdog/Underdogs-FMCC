@@ -1,0 +1,36 @@
+{
+  "summary": "Try in XI tested. Backend GET /api/squad/try-xi: 12/12 pytest pass. Checked 0, 1, 3 and more than 3 ids (only the first 3 are used), own and unknown ids go to skipped, junk ids are ignored, a bad formation gives 422, an add string over 200 chars gives 422, the 433/442/4231 slot sets are right, and no ca/pa appears anywhere in the payload. Shadow signings 30500004+30500007+30500034 in 4231: strength 70 -> 72, 3 drop out, trial slots flagged. Frontend at 1920: from Scout Players -> Stats Table -> dossier, dossier-try-xi shows a toast and writes localStorage. The button is hidden for own players. Squad Lineup card shows the chips, the strength line and an 11-row table with trial rows highlighted. Switching formation (4231/442/352) updates the card. Removing a chip works. Adding a 4th player drops the oldest and shows the 'oldest taken out' toast. Removing every chip brings back the empty state. No console errors. At 390px the card and table render with no horizontal overflow.",
+  "backend_issues": {"critical": [], "minor": [
+    {"endpoint": "/api/squad/try-xi", "issue": "The trial list comes back in pool order, not the order of the add ids. In the UI, chips do not follow the order they were added (for example Marco, Rui, Noe when the add order was Marco, Noe, Rui)."}
+  ]},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "TryXI chips", "issue": "Stale ids stay stuck in localStorage with no way to remove them: a skipped id (own player, or a player gone from the save) gets no chip, so it has no remove button. It still takes one of the 3 slots, and the note about left-out players keeps showing.", "selector": "[data-testid=try-xi]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Squad > Lineup > Try in XI", "issues": [
+        "The chips use the .st class, which has margin-left:auto, so on desktop they spread across the whole row instead of sitting together on the left. Override with marginLeft:0 or use a separate chip class.",
+        "The UserPlus icon in the 'With trial players' cell sits on its own line above the name, because Tailwind preflight makes svg display:block. Use display:inline-block or verticalAlign:middle."
+      ]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_try_xi.py", "/app/test_reports/pytest/try_xi.xml"],
+  "action_items": [
+    "Fix the chip spacing in TryXI (margin-left:auto comes from .st)",
+    "Make the UserPlus icon in the try-xi-table cells inline",
+    "Let users clear skipped or stale ids: prune ids in data.skipped from localStorage, or add a 'Clear all' button",
+    "Optional: return the trial list in add-id order"
+  ],
+  "critical_code_review_comments": [
+    "squad_api.try_xi: the trial list is built by filtering the pool, so add-id order is lost. Sort it by ids.index.",
+    "TryXI only listens for its own window event. Changes from other tabs ('storage' event) are not picked up. Minor.",
+    "The formation picked in the lineup view is component state, so it resets to the default after leaving the Squad page. Expected behaviour."
+  ],
+  "updated_files": ["/app/backend/tests/test_try_xi.py"],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "seed_data_creation": "None. localStorage fmcc-try-xi was cleared after the tests. Ran $unset careers.features_seen on all careers (1 modified).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Pool non-own players that start in the XI: 30500004 (DL), 30500007 (DM), 30500034 (AMR), 30500044 (AMC), 30500037 (GK). Own player example: 20481101. Run pytest with -n 0. Formation tabs on Squad: formation-tab-4231/352/442. Navigating straight to /squad after features-done sometimes lands on Home; use nav-squad instead. After testing, $unset careers.features_seen."
+}
