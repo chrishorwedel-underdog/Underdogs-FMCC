@@ -9,6 +9,16 @@ from rules_api import current as current_rules
 
 router = APIRouter(prefix="/api")
 LOANS = {"none": "Stay at the club", "loan_lower": "Loan to a lower league", "loan_same": "Loan to a club at our level", "loan_abroad": "Loan abroad"}
+MONTH_NOTES = [(3, "big", "Big step forward this month"), (1, "up", "Improving this month"), (0, "flat", "Holding steady this month"), (None, "down", "Slipped back a little this month")]
+SEASON_NOTES = [(6, "big", "Strong progress this season"), (1, "up", "Some progress this season"), (0, "flat", "No change yet this season"), (None, "down", "Behind where he started the season")]
+
+
+def _note(delta: int, notes: list) -> dict:
+    """Plain-words progress; the underlying ability number never leaves the backend."""
+    for floor, tone, text in notes:
+        if floor is None or delta >= floor:
+            return {"tone": tone, "text": text}
+
 
 
 async def latest_plans(career_id: str) -> dict:
@@ -40,7 +50,7 @@ async def development():
         if plan:
             plan = {k: v for k, v in plan.items() if k not in ("goal_ca", "start_ca")} | {"goal_gain": goal}
         rows.append({"unique_id": uid, "name": p["name"], "age": p["age"], "positions": p["positions"],
-                     "ca_gain_month": p["ca"] - prev[uid]["ca"] if uid in prev else None, "ca_gain_season": p["ca"] - start[uid] if uid in start else None,
+                     "progress_month": _note(p["ca"] - prev[uid]["ca"], MONTH_NOTES) if uid in prev else None, "progress_season": _note(p["ca"] - start[uid], SEASON_NOTES) if uid in start else None,
                      "goals": p.get("goals", 0), "assists": p.get("assists", 0), "appearances": apps, "avg_rating": p.get("avg_rating"),
                      "minutes_per_game": round(p["minutes"] / apps) if apps else None,
                      "month_minutes": mins[uid], "season_minutes": p["minutes"], "plan": plan, "target": target,

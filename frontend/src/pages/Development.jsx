@@ -32,6 +32,8 @@ const PlanDialog = ({ row, loans, close }) => {
 };
 
 const Gain = ({ v }) => (v == null ? <span style={{ color: "var(--dim)" }}>—</span> : <span className={`mono ${v > 0 ? "up" : v < 0 ? "down" : ""}`}>{v > 0 ? "+" : ""}{v}</span>);
+const TONE = { big: "var(--grn)", up: "var(--grn)", flat: "var(--mut)", down: "var(--amb)" };
+const Progress = ({ n, small }) => (n ? <span style={{ color: TONE[n.tone], fontSize: small ? 12 : 13, display: "block" }}>{n.text}</span> : <span style={{ color: "var(--dim)", display: "block" }}>{small ? "" : "Needs two saves"}</span>);
 
 const Plans = () => {
   const { data } = useGet("development", "/development");
@@ -40,11 +42,11 @@ const Plans = () => {
   return (
     <div className="card" style={{ padding: 8, overflowX: "auto" }}>
       <table className="tbl" data-testid="plans-table">
-        <thead><tr><th>Player</th><th>Age</th><th title="CA gained since last month's save">CA gained</th><th>Goals</th><th>Assists</th><th>Mins / game</th><th>Avg rating</th><th>Minutes this month</th><th>Plan</th><th>Goal</th><th></th></tr></thead>
+        <thead><tr><th>Player</th><th>Age</th><th title="How he's coming along since last month's save and since the season started">Progress</th><th>Goals</th><th>Assists</th><th>Mins / game</th><th>Avg rating</th><th>Minutes this month</th><th>Plan</th><th>Goal</th><th></th></tr></thead>
         <tbody>{data.rows.map((r) => (
           <tr key={r.unique_id} style={{ cursor: "default" }} data-testid={`plan-row-${r.unique_id}`}>
             <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.needs_minutes && <span className="tag st a" data-testid={`needs-minutes-${r.unique_id}`}>Needs minutes</span>}</td>
-            <td>{r.age}</td><td data-testid={`dev-gain-${r.unique_id}`}><Gain v={r.ca_gain_month} />{r.ca_gain_season != null && <small style={{ display: "block", color: "var(--dim)" }}>season <Gain v={r.ca_gain_season} /></small>}</td>
+            <td>{r.age}</td><td style={{ minWidth: 190 }} data-testid={`dev-progress-${r.unique_id}`}><Progress n={r.progress_month} /><Progress n={r.progress_season} small /></td>
             <td className="mono">{r.goals}</td><td className="mono">{r.assists}</td><td className="mono">{r.minutes_per_game ?? "—"}</td><td className="mono">{r.avg_rating ?? "—"}</td>
             <td style={{ minWidth: 180 }}>{r.target ? <div className="mb" style={{ gridTemplateColumns: "1fr 70px" }}><div className="track"><i style={{ width: `${Math.min(100, (r.month_minutes / r.target) * 100)}%`, background: r.needs_minutes ? "var(--amb)" : "var(--acc)" }} /></div><span className="mono">{r.month_minutes}/{r.target}</span></div> : <span className="mono">{r.month_minutes}</span>}</td>
             <td>{r.plan ? <>{data.loans[r.plan.loan]}<small style={{ display: "block", color: "var(--dim)" }}>version {r.plan.revision}</small></> : <span style={{ color: "var(--dim)" }}>No plan</span>}</td>
@@ -61,10 +63,10 @@ export default function Development() {
   const [tab, setTab] = useState("plans");
   return (
     <div data-testid="development-page">
-      <PageHead eyebrow="Minutes, loans and goals, tracked from every save" title="Squad Development">
+      <PageHead eyebrow="Minutes, loans and goals, tracked from every save" title="Youth Development">
         <TabBar id="development" value={tab} onChange={setTab} tabs={[["plans", "Plans"], ["rules", "Rules"]]} />
       </PageHead>
-      {tab === "plans" ? <Plans /> : <RulesTab module="development" title="Squad Development rules" />}
+      {tab === "plans" ? <Plans /> : <RulesTab module="development" title="Youth Development rules" />}
     </div>
   );
 }

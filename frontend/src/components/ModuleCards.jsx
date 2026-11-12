@@ -24,7 +24,7 @@ export const ModuleCards = ({ d }) => (
       <div className="num" data-testid="home-xi-average">{d.squad.xi_average}<small>Best XI strength</small></div>
       <p className="sent">Weakest spot: <b data-testid="home-weak-spot">{d.squad.weak_spot || "—"}</b></p>
     </Card>
-    <Card id="development" icon={TrendingUp} title="Development" to="/development" delay="d3" open="Open plans" tag={d.development.count ? <span className="st a">Act</span> : <span className="st ok">On track</span>}>
+    <Card id="development" icon={TrendingUp} title="Youth Development" to="/development" delay="d3" open="Open plans" tag={d.development.count ? <span className="st a">Act</span> : <span className="st ok">On track</span>}>
       <div className="num" data-testid="home-dev-count">{d.development.count}<small>under-21s need minutes</small></div>
       <div className="mbars">
         {d.development.players.map((p) => (
