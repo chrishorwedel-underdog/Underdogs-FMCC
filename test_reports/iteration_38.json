@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only test of sortable Youth Development columns and resizable columns on the Squad, Scout Players and Club History Records tables, at desktop 1920 and mobile 390. Every requested behaviour works and there were no console or page errors. (1) Development Plans: all 11 headings sort. A number column sorts high to low on the first click and flips on the second (games: 31..0, then 0..31). Player sorts A to Z first. The arrow and aria-sort show correctly. The sort survives a reload (key dev-sort), and Default order restores the original order and hides the button. Dragging plans-resize-age widened the column from 70 to 146px without changing the sort, and so did a plain click on the handle. The width survives a reload, and Reset column widths returns it to 70 and hides the button. (2) Squad: 7 handles. A drag widened Age from 79 to 179px and the row order stayed the same. The width survives a reload. squad-reset-widths appears after a change and resets the width. ArrowRight on a focused handle also changes the width. Clicking a row still opens player-panel. (3) Scout Players: 17 handles (scout-players-key-resize-0..16). A drag widened Age from 50 to 140px without changing the sort. Clicking the heading text still sorts (Grade ↓ became Age ↓) and the width is kept after sorting. The width survives a reload, and sp-reset-widths resets it. (4) Records team: a drag widened column 0 from 503 to 623px. The width survives a reload, and records-team-reset-widths resets it. (5) Mobile 390: all 4 tables sit in scrollable cards (overflow-x auto) and the page itself does not overflow sideways.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Youth Development Plans header", "issues": ["When a heading is cut short (e.g. 'AVG RATIN…' at the default width), the sort arrow is cut off with it, so the user can't see which way the column is sorted. Only the blue colour shows it is the sorted column. Keep .sort-ar outside the ellipsis, or give it flex-shrink:0."]},
+      {"screen": "Squad / Scout tables after the first drag", "issues": ["The first drag fixes every column at its current pixel width. The table then grows wider than the card, so the last column (Squad 'Contract', Scout 'Pass completion') is cut off and needs a sideways scroll. This is expected for the design, but consider letting the last column fill the leftover space."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": ["Optional: keep the sort arrow visible when a heading is cut short (Development Plans)"],
+  "critical_code_review_comments": [
+    "useResizableTable only applies saved widths when every current heading name ('index:text') has a saved entry. If a table's headings change (a column mode adds or renames a column), all saved widths are silently dropped until the user drags again. This is acceptable, but stale keys build up in localStorage.",
+    "useResizableTable's useLayoutEffect has no deps, so it runs on every render and calls querySelector for each th. That is fine for these table sizes, but it is DOM work on every render of a big table like Scout Players.",
+    "Development sortRows: SORTS.player uses localeCompare on r.name. A null name would throw. Low risk."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "None. Only localStorage (colw:*, dev-sort) was changed, and it was reset at the end. The scout sort is left on Age ↓ (its existing persisted sort).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Widths are saved under localStorage key fmcc-mem:<careerId>:colw:<key>. The keys are development (by col name), squad, scout-players-key and records-team (by 'index:heading text'). Use page.mouse down/move/up on the handle's bounding box to drag. Records sub-tables other than team (players/matches/transfers) were not tested.",
+  "rca of the issue": ""
+}

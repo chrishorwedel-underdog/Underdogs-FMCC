@@ -7,7 +7,7 @@ import { RulesTab } from "@/components/rules/RulesTab";
 import { useColWidths, ColGroup, ResizeTh } from "@/components/ResizableCols";
 import { usePersist } from "@/lib/remember";
 
-const COLS = { player: 230, age: 70, games: 80, mpg: 135, goals: 80, assists: 90, rating: 110, month: 190, plan: 150, goal: 130, progress: 280, act: 120 };
+const COLS = { player: 230, age: 70, games: 80, mpg: 135, goals: 80, assists: 90, rating: 135, month: 190, plan: 150, goal: 130, progress: 280, act: 120 };
 const HEAD = [["player", "Player"], ["age", "Age", "n"], ["games", "Games", "n"], ["mpg", "Mins / game", "n"], ["goals", "Goals", "n"], ["assists", "Assists", "n"], ["rating", "Avg rating", "n"],
   ["month", "Minutes this month"], ["plan", "Plan"], ["goal", "Goal"], ["progress", "Progress", "", "How he's coming along since last month's save and since the season started"], ["act", ""]];
 
