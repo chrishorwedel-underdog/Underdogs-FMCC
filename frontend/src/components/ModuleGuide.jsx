@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Info, ChevronUp, Lightbulb, X, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { GUIDES } from "@/constants/guides";
 import { api, errMsg } from "@/lib/api";
-import { usePersist, useCareerId } from "@/lib/remember";
+import { usePersist, useCareerId, readPersist } from "@/lib/remember";
 import { Switch } from "@/components/ui/switch";
 
 const TIPS = {
@@ -81,12 +81,16 @@ export const ModuleGuide = () => {
   const prefs = useGuidePrefs();
   const [visited, setVisited] = usePersist("guides-visited", {});
   const cid = useCareerId();
+  const prev = useRef(null);
   useEffect(() => {
-    if (!cid || !g || visited[pathname]) { return; }
+    if (prev.current && prev.current !== pathname && prefs.open[prev.current]) { prefs.toggle(prev.current, false); }
+    prev.current = pathname;
+    if (!cid || !g) { return; }
+    if (readPersist(cid, "guides-visited", {})[pathname]) { if (readPersist(cid, "guides-open", {})[pathname]) { prefs.toggle(pathname, false); } return; }
     setVisited((v) => ({ ...v, [pathname]: true }));
     prefs.toggle(pathname, true);
   }, [pathname, cid]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!g || !prefs.on || prefs.closed[pathname] || !prefs.open[pathname]) return <Tip path={pathname} />;
+  if (!g || !prefs.on || prefs.closed[pathname] || !prefs.open[pathname]) return cid && (!g || readPersist(cid, "guides-visited", {})[pathname]) ? <Tip key={pathname} path={pathname} /> : null;
   return (
     <>
       <div className="card guide rise" data-testid="module-guide">

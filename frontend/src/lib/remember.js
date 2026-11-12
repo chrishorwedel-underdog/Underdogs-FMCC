@@ -18,6 +18,8 @@ const read = (cid, key, initial) => {
   } catch { return fallback; }
 };
 
+export const readPersist = (cid, key, initial) => read(cid, key, initial);
+
 // useState that is remembered per career on this computer.
 export const usePersist = (key, initial) => {
   const cid = useCareerId();

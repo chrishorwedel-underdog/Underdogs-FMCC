@@ -31,7 +31,7 @@ export const WhatChanged = () => {
       {!shut && (
         <div className="wc-body" data-testid="whatchanged-body">
           {isError ? <p className="note" data-testid="whatchanged-error">Nothing to compare yet. This fills in once FMCC has read your save.</p> : !data ? <Loading id="whatchanged-loading" rows={3} label="Loading what changed" /> : !data.total ? (
-            <p className="note" data-testid="whatchanged-none">Nothing changed since your last visit. Changes show up here after FMCC reads a newer save{data.compared_save ? "" : ", once it has two saves to compare"}.</p>
+            <p className="note" data-testid="whatchanged-none">Nothing changed since your last visit. Changes show up here after FMCC reads a newer save{data.compared_save ? "" : ", once it has two saves to compare"}. <Link to="/changes" style={{ color: "var(--acc)" }} data-testid="whatchanged-none-changes">Open Game changes</Link></p>
           ) : <>
             <Section id="ratings" title="Grades rose or fell" items={data.ratings.map((r) => p(r))} />
             <Section id="contracts" title="Contracts" items={data.contracts.map((r) => p(r))} />

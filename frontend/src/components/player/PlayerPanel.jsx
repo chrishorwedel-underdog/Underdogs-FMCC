@@ -60,11 +60,10 @@ const Similar = ({ uid, open }) => {
   );
 };
 
-const Actions = ({ p, close }) => {
+const Actions = ({ p, close, addCompare }) => {
   const act = useAct();
   const nav = useNavigate();
-  const [, setCompare] = usePersist("scout-compare", []);
-  const compare = () => { setCompare((c) => [...c.filter((x) => x !== p.unique_id), p.unique_id].slice(-4)); close(); nav("/scouting?tab=compare"); toast.success(`${p.name} added to Compare (up to four players)`); };
+  const compare = () => { addCompare(p.unique_id); close(); nav("/scouting?tab=compare"); toast.success(`${p.name} added to Compare (up to four players)`); };
   return (
     <div className="pp-actions" data-testid="player-panel-actions">
       {p.source !== "html" && <WatchButton uid={p.unique_id} name={p.name} id="profile-watch" />}
@@ -154,8 +153,8 @@ const History = ({ p, s, open }) => <>
         <Tooltip contentStyle={{ background: "#121519", border: "1px solid rgba(255,255,255,.13)", borderRadius: 10, fontSize: 12 }} />
         <Line type="monotone" dataKey="gain" name="Ability gained" stroke="#4C8DFF" strokeWidth={2} dot={{ r: 3 }} /></LineChart></ResponsiveContainer></div></div>}
   {p.seasons?.length > 0 && <div className="card" style={{ padding: 12 }} data-testid="profile-seasons"><div className="ttl">Seasons in this career</div><HistoryChart seasons={p.seasons} />
-    <table className="tbl"><thead><tr><th>Season</th><th>Club</th><th>Mins</th><th>Grade</th><th>npxG/90</th><th>xA/90</th></tr></thead>
-      <tbody>{p.seasons.map((x) => <tr key={x.season}><td>{x.season}</td><td>{x.club}</td><td className="mono">{x.minutes}</td><td className="mono">{x.grade ?? "—"}</td><td className="mono">{x.p90?.npxg ?? "—"}</td><td className="mono">{x.p90?.xa ?? "—"}</td></tr>)}</tbody></table></div>}
+    <div style={{ overflowX: "auto" }}><table className="tbl"><thead><tr><th>Season</th><th>Club</th><th>Mins</th><th>Grade</th><th>npxG/90</th><th>xA/90</th></tr></thead>
+      <tbody>{p.seasons.map((x) => <tr key={x.season}><td>{x.season}</td><td>{x.club}</td><td className="mono">{x.minutes}</td><td className="mono">{x.grade ?? "—"}</td><td className="mono">{x.p90?.npxg ?? "—"}</td><td className="mono">{x.p90?.xa ?? "—"}</td></tr>)}</tbody></table></div></div>}
   <div className="card" style={{ padding: 12 }} data-testid="profile-similar"><div className="ttl">Similar players</div>
     {p.similar.map((x) => <div key={x.unique_id} className="row" style={{ cursor: "pointer" }} onClick={() => open(x.unique_id)} data-testid={`similar-${x.unique_id}`}>
       <div style={{ flex: 1 }}>{x.name}<small>{x.club} · {x.age} · grade {x.grade}</small></div><span className="mono" title={`Style ${x.style} · ability ${x.ability}`}>{x.similarity}%</span></div>)}
@@ -176,6 +175,8 @@ export const PlayerPanelHost = () => {
   const [tab, setTab] = useState("overview");
   const [view] = usePersist("scout-view", "full");
   const [compare, setCompare] = usePersist("scout-compare", []);
+  const [, setMain] = usePersist("scout-main", "players");
+  const addCompare = (id) => { setCompare((c) => [...c.filter((x) => x !== id), id].slice(-4)); setMain("compare"); };
   const { prefs } = useScoutPrefs();
   const q = Number(params.get("player")) || null;
   useEffect(() => { if (q) { setUid(q); } }, [q]);
@@ -194,7 +195,7 @@ export const PlayerPanelHost = () => {
           <SheetHeader><SheetTitle style={{ color: "var(--text)" }} data-testid="player-panel-name">{ready ? p.name : <span className="skel" style={{ display: "inline-block", width: 160, height: 18, verticalAlign: "middle" }} aria-label="Loading" />}{ready && <span className="tag st n">{p.cohort}</span>}</SheetTitle>
             <SheetDescription>{ready ? `${(p.positions || []).join(", ")} · ${p.club}${p.own ? " · your player" : ""}` : ""}</SheetDescription></SheetHeader>
           {!ready ? <Loading id="player-panel-loading" rows={6} label="Loading player" /> : <div style={{ display: "grid", gap: 14, marginTop: 10, gridTemplateColumns: "minmax(0,1fr)" }}>
-            <Actions p={p} close={close} />
+            <Actions p={p} close={close} addCompare={addCompare} />
             <div style={{ overflowX: "auto" }}><TabBar id="player-panel" value={tab} onChange={setTab} tabs={TABS} /></div>
             {tab === "overview" && <Overview p={p} d={d} s={s} />}
             {tab === "stats" && <Stats p={p} d={d} view={view} toggleCompare={toggleCompare} />}
