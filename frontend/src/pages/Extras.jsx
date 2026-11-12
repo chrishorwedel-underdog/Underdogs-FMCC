@@ -1,9 +1,10 @@
 import { ExtrasCard } from "@/components/ExtrasCard";
+import { PageHead } from "@/lib/ui";
 
 export default function Extras() {
   return (
     <div data-testid="extras-page">
-      <div className="head rise"><div><div className="eyebrow">NG_Regens, Real Name Fix and other packs</div><h1 className="h">Downloads you need</h1></div></div>
+      <PageHead eyebrow="NG_Regens, Real Name Fix and other packs" title="Downloads you need" purpose="Free community packs that make FM look and read the way FMCC expects." />
       <ExtrasCard />
     </div>
   );

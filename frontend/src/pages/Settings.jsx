@@ -11,6 +11,7 @@ import { BackupsCard } from "@/components/BackupsCard";
 import { startTour } from "@/components/Tour";
 import { TestingCard } from "@/components/TestingCard";
 import { NotifySettings } from "@/components/Notify";
+import { PageHead } from "@/lib/ui";
 
 const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
   ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"],
@@ -67,7 +68,7 @@ const KeyCard = () => {
 export default function Settings({ state }) {
   return (
     <div data-testid="settings-page">
-      <div className="head rise"><div><div className="eyebrow">Careers, updates and backups</div><h1 className="h">Settings</h1></div></div>
+      <PageHead eyebrow="Careers, updates and backups" title="Settings" purpose="Your careers, what FMCC calls you, updates, backups and the tour." />
       {state.sample_mode && <div className="banner rise" style={{ marginBottom: 20 }} data-testid="sample-mode-banner">
         <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
         <span>Browser preview: FMCC is reading a built-in sample save, not your PC. Each refresh in the top bar reads the next month of that sample. The real fmsave reader is packaged in the Windows program.</span>

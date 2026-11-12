@@ -66,7 +66,7 @@ export const ModuleGuide = () => {
     <>
       <div className="card guide rise" data-testid="module-guide">
         <button className="guide-head" onClick={toggle} aria-expanded={!closed} data-testid="module-guide-toggle">
-          <Info size={15} /><b>What this page does</b><span data-testid="module-guide-what">{g.what}</span>
+          <Info size={15} /><b>What this page does</b><span className="sr-only" data-testid="module-guide-what">{g.what}</span><span style={{ color: "var(--dim)" }}>{closed ? "Show details" : "Hide details"}</span>
           {closed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
         </button>
         {!closed && (

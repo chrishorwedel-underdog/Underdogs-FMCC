@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { api, gameDate } from "@/lib/api";
 import { TacticFit } from "@/components/squad/TacticFit";
 import { PlayerSheet } from "@/components/PlayerSheet";
-import { TabBar } from "@/lib/ui";
+import { TabBar, PageHead } from "@/lib/ui";
 import { LineupView } from "@/components/squad/LineupView";
 import { TryXI } from "@/components/squad/TryXI";
 import { DepthView, RegistrationView } from "@/components/squad/DepthView";
@@ -43,8 +43,8 @@ export default function Squad() {
   const rows = (data?.players || []).filter((p) => filter === "all" || (filter === "u21" ? p.age < 21 : p.in_best_xi)).sort((a, b) => (b.best_role?.rating || 0) - (a.best_role?.rating || 0));
   return (
     <div data-testid="squad-page">
-      <div className="head rise">
-        <div><div className="eyebrow">Read from your save · {gameDate(data?.game_date)}</div><h1 className="h">Squad</h1></div>
+      <PageHead eyebrow={`Read from your save · ${gameDate(data?.game_date)}`} title="Squad" />
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 18 }}>
         <TabBar id="squad-view" value={view} onChange={(v) => setParam("view", v)} tabs={VIEWS} />
         {view === "players" && <div className="seg">{FILTERS.map(([k, l]) => <button key={k} className={filter === k ? "on" : ""} onClick={() => setParam("filter", k === "all" ? null : k)} data-testid={`squad-filter-${k}`}>{l}</button>)}</div>}
       </div>

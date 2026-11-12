@@ -19,7 +19,7 @@ export default function ClubAnalysis() {
   if (!data) return <Loading id="ca-loading" label="Looking at your squad" />;
   return (
     <div data-testid="club-analysis-page" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }}>
-      <PageHead eyebrow={data.club} title="Club Analysis" />
+      <PageHead eyebrow={data.club} title="Club Analysis" purpose="What your squad needs most, the evidence behind it and what to do first." />
       <div className="card" data-testid="ca-todo"><div className="ttl">What to do first</div>
         {data.todo.map((t, i) => <div key={t.title} className="row" data-testid={`ca-todo-${i}`}><span className="mono" style={{ width: 22 }}>{i + 1}</span><div style={{ flex: 1 }}><b>{t.title}</b><small>{t.evidence}</small></div>
           <button className="btn" onClick={() => nav(t.link)} data-testid={`ca-todo-link-${i}`}>Look<ArrowRight size={13} /></button></div>)}

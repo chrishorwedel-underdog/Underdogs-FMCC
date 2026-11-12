@@ -420,3 +420,8 @@ select.blank{cursor:pointer}
   .no-print{display:none!important}
 }
 
+/* Same header everywhere: title, one-line purpose, then tabs */
+.head .purpose{margin:6px 0 0;color:var(--mut);font-size:14px;max-width:70ch;line-height:1.45}
+.th-full{display:inline-block;max-width:96px;white-space:normal;line-height:1.2;font-size:11.5px;vertical-align:middle}
+@media (max-width:760px){.head .purpose{font-size:13px}}
+

@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 import { api, errMsg } from "@/lib/api";
+import { GUIDES } from "@/constants/guides";
 
 export const useGet = (key, url, params, opts = {}) =>
   useQuery({ queryKey: [key, params], queryFn: () => api.get(url, { params }).then((r) => r.data), ...opts });
@@ -26,11 +28,16 @@ export const TabBar = ({ tabs, value, onChange, id }) => (
   </div>
 );
 
-export const PageHead = ({ eyebrow, title, children }) => (
-  <div className="head rise">
-    <div><div className="eyebrow">{eyebrow}</div><h1 className="h">{title}</h1></div>
-    <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>{children}</div>
-  </div>
-);
+export const PageHead = ({ eyebrow, title, purpose, children }) => {
+  const { pathname } = useLocation();
+  const line = purpose ?? GUIDES[pathname]?.what;
+  return (
+    <div className="head rise">
+      <div style={{ minWidth: 0 }}><div className="eyebrow">{eyebrow}</div><h1 className="h">{title}</h1>
+        {line && <p className="purpose" data-testid="page-purpose">{line}</p>}</div>
+      {children && <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>{children}</div>}
+    </div>
+  );
+};
 
 export const money = (v) => (v >= 1e6 ? `£${(v / 1e6).toFixed(1)}m` : `£${Math.round(v / 1000)}k`);

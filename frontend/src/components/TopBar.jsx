@@ -65,7 +65,7 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
           <Wand2 size={16} /><span style={{ fontSize: 12.5 }}>Game changes</span>{pending > 0 && <span className="st a mono" style={{ margin: 0 }} data-testid="top-changes-count">{pending}</span>}
         </button>
         <button className="ib top-extra" onClick={() => nav("/connections")} title="Connections" data-testid="top-connections-button"><Plug size={16} /></button>
-        <label className="rawsw top-extra" title="Show raw numbers instead of percentiles in tables and charts" data-testid="raw-switch"><input type="checkbox" checked={raw} onChange={(e) => setRaw(e.target.checked)} />Raw</label>
+        <label className="rawsw top-extra" title="Show raw numbers instead of percentiles in tables and charts" data-testid="raw-switch"><input type="checkbox" checked={raw} onChange={(e) => setRaw(e.target.checked)} />Raw numbers</label>
         <NotifyBell />
         <button className="ib top-extra" onClick={startTour} title="Take the tour" data-testid="top-tour-button"><HelpCircle size={16} /></button>
         <button className="ib top-extra" onClick={() => nav("/settings")} title="Settings" data-testid="top-settings-button"><Settings size={16} /></button>

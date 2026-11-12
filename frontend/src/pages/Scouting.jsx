@@ -90,8 +90,8 @@ export default function Scouting({ initialTab = "players" }) {
   const prefs = saved || { currency: "GBP", wages: "week" };
   const setPrefs = (p) => act(() => api.put("/scout/prefs", p), null, ["scout-prefs"]);
   const toggleCompare = (id) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id].slice(-4)));
-  const tabs = [["stats", "Stats Table"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["board", "Shortlist board"], ["picks", "DOF picks"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
-    ["computed", "Computed stats"], ["formulas", "Formulas"], ["roles", "Role scores"], ["leagues", "Leagues"], ["possession", "Possession"], ["import", "HTML import"], ["rules", "Rules"]];
+  const tabs = [["stats", "Stats Table"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["board", "Shortlist board"], ["picks", "Director's picks"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
+    ["computed", "Your own stats"], ["formulas", "Stat formulas"], ["roles", "Role ratings"], ["leagues", "League strength"], ["possession", "Possession"], ["import", "Import from FM"], ["rules", "Rules"]];
   const more = main === "more";
   return (
     <ScoutCtx.Provider value={{ view, prefs, openPlayer: setOpen, compare, toggleCompare }}>

@@ -111,7 +111,7 @@ export const PlayersTab = () => {
         <table className="tbl pin2" data-testid="sp-table">
           <thead><tr><th></th><Th k="name">Player</Th><Th k="age">Age</Th><Th k="grade" title="Global grade: 20 + (local grade − 20) × league multiplier">Grade</Th>
             <Th k="value">Value</Th><Th k="fair_price">Fair price</Th><Th k="wage">Wage</Th><Th k="minutes">Mins</Th>
-            {statKeys.map((k) => <Th key={k} k={k} title={label[k]}>{short(k, label[k])}</Th>)}
+            {statKeys.map((k) => <Th key={k} k={k} title={`${label[k]} (${short(k, label[k])})`}>{cols === "key" ? <span className="th-full">{label[k]?.replace(" / 90", "")}</span> : short(k, label[k])}</Th>)}
             {cols === "computed" && meta?.archetypes.map((a) => <Th key={a.key} k={`c:${a.key}`}>{a.name}</Th>)}
             {cols === "formulas" && meta?.formulas.map((x) => <Th key={x.key} k={`f:${x.key}`}>{x.name}</Th>)}
             {cols === "actions" && ["Defensive actions", "Progressive actions", "Box involvement"].map((a) => <th key={a}>{a}</th>)}<th></th></tr></thead>
