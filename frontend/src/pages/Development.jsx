@@ -4,6 +4,11 @@ import { api, ago } from "@/lib/api";
 import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
 import { Loading } from "@/components/Loading";
 import { RulesTab } from "@/components/rules/RulesTab";
+import { useColWidths, ColGroup, ResizeTh } from "@/components/ResizableCols";
+
+const COLS = { player: 230, age: 70, games: 80, mpg: 135, goals: 80, assists: 90, rating: 110, month: 190, plan: 150, goal: 130, progress: 280, act: 120 };
+const HEAD = [["player", "Player"], ["age", "Age", "n"], ["games", "Games", "n"], ["mpg", "Mins / game", "n"], ["goals", "Goals", "n"], ["assists", "Assists", "n"], ["rating", "Avg rating", "n"],
+  ["month", "Minutes this month"], ["plan", "Plan"], ["goal", "Goal"], ["progress", "Progress", "", "How he's coming along since last month's save and since the season started"], ["act", ""]];
 
 const PlanDialog = ({ row, loans, close }) => {
   const act = useAct();
@@ -53,11 +58,15 @@ const Progress = ({ n, small }) => (n ? <span style={{ color: TONE[n.tone], font
 const Plans = () => {
   const { data } = useGet("development", "/development");
   const [edit, setEdit] = useState(null);
+  const cw = useColWidths("development", COLS);
   if (!data) return <Loading id="dev-loading" label="Loading plans" />;
   return (
     <div className="card" style={{ padding: 8, overflowX: "auto" }}>
-      <table className="tbl dev-tbl" data-testid="plans-table">
-        <thead><tr><th>Player</th><th className="n">Age</th><th className="n">Games</th><th className="n">Mins / game</th><th className="n">Goals</th><th className="n">Assists</th><th className="n">Avg rating</th><th>Minutes this month</th><th>Plan</th><th>Goal</th><th title="How he's coming along since last month's save and since the season started">Progress</th><th></th></tr></thead>
+      <div className="rz-bar"><small className="note">Drag the edge of any heading to resize a column. Your widths are remembered.</small>
+        {cw.changed && <button className="btn" onClick={cw.reset} data-testid="plans-reset-widths">Reset column widths</button>}</div>
+      <table className="tbl dev-tbl rz-tbl" style={{ width: cw.total }} data-testid="plans-table">
+        <ColGroup cols={Object.keys(COLS)} c={cw} />
+        <thead><tr>{HEAD.map(([k, l, cls, t]) => <ResizeTh key={k} col={k} c={cw} label={l} className={cls} title={t} id="plans" />)}</tr></thead>
         <tbody>{data.rows.map((r) => (
           <tr key={r.unique_id} style={{ cursor: "default" }} data-testid={`plan-row-${r.unique_id}`}>
             <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.needs_minutes && <span className="tag st a" data-testid={`needs-minutes-${r.unique_id}`}>Needs minutes</span>}</td>
