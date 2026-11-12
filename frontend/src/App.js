@@ -24,6 +24,7 @@ import { ComingSoon } from "@/components/ComingSoon";
 import { ModuleGuide, NeedSave } from "@/components/ModuleGuide";
 import { PageCountdown } from "@/components/Notify";
 import { Tour } from "@/components/Tour";
+import { GlossaryHost } from "@/components/Glossary";
 import Setup from "@/pages/Setup";
 import Home from "@/pages/Home";
 import Squad from "@/pages/Squad";
@@ -102,6 +103,7 @@ const Shell = ({ state }) => {
       </section>
       <CommandPalette open={pal} onClose={() => setPal(false)} />
       <WhatsNew />
+      <GlossaryHost />
       <UpdateCard />
       {state.career && <ClubColours />}
       {state.career && <FeatureGate />}

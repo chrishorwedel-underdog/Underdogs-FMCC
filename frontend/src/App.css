@@ -425,3 +425,16 @@ select.blank{cursor:pointer}
 .th-full{display:inline-block;max-width:96px;white-space:normal;line-height:1.2;font-size:11.5px;vertical-align:middle}
 @media (max-width:760px){.head .purpose{font-size:13px}}
 
+/* stat glossary */
+.gloss-btn{position:fixed;z-index:60;width:18px;height:18px;border-radius:50%;border:1px solid var(--line2);background:var(--s3);color:var(--acc);font-size:11px;font-weight:700;line-height:16px;cursor:help;transition:transform .15s var(--ease),background-color .15s}
+.gloss-btn:hover,.gloss-btn:focus-visible{transform:scale(1.15);background:var(--s2)}
+.gloss-dialog{max-width:560px}
+.gloss-search{position:relative}
+.gloss-search button{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--mut)}
+.gloss-list{max-height:min(60vh,520px);overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding-right:4px}
+.gloss-item{padding:10px 12px;border-radius:10px;border:1px solid transparent;transition:background-color .2s,border-color .2s}
+.gloss-item.on{background:var(--s3);border-color:var(--acc)}
+.gloss-term{font-weight:600;font-size:14px;display:flex;gap:8px;align-items:baseline}
+.gloss-short{font-size:11px;color:var(--mut);font-family:ui-monospace,monospace}
+.gloss-plain{font-size:13px;color:var(--mut);line-height:1.45;margin-top:2px}
+

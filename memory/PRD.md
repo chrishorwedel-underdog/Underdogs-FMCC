@@ -315,3 +315,5 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 
 
 
+- 2026-11-12 Stat glossary: hovering or focusing any table header shows a small "?" button that opens a searchable glossary (components/Glossary.jsx, constants/glossary.js) explaining every stat and common column in plain words; the term for the clicked column is highlighted. Self-verified by screenshot on desktop and phone.
+
