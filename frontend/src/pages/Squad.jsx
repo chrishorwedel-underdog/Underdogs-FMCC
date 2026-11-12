@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { usePersist, returnToRow } from "@/lib/remember";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api, gameDate } from "@/lib/api";
@@ -16,7 +16,7 @@ const FILTERS = [["all", "All"], ["xi", "Best XI"], ["u21", "Under-21"]];
 const Change = ({ v }) => (v == null ? <span style={{ color: "var(--dim)" }}>—</span> : <span className={`mono ${v > 0 ? "up" : v < 0 ? "down" : ""}`}>{v > 0 ? "+" : ""}{v}</span>);
 
 const Row = ({ p, onOpen }) => (
-  <tr onClick={() => onOpen(p.unique_id)} data-testid={`squad-row-${p.unique_id}`}>
+  <tr onClick={() => onOpen(p.unique_id)} onKeyDown={(e) => e.key === "Enter" && onOpen(p.unique_id)} tabIndex={0} data-row-uid={p.unique_id} data-testid={`squad-row-${p.unique_id}`}>
     <td><b style={{ color: "var(--text)", fontWeight: 600 }}>{p.name}</b>
       {p.age < 21 && <span className="tag st g">U21</span>}
       {p.is_new && <span className="tag st ok">New</span>}
@@ -33,12 +33,13 @@ const VIEWS = [["lineup", "Lineup"], ["depth", "Depth chart"], ["fit", "Tactic f
 
 export default function Squad() {
   const [params, setParams] = useSearchParams();
-  const [formation, setFormation] = useState(null);
+  const [formation, setFormation] = usePersist("squad-formation", null);
+  const [lastView, setLastView] = usePersist("squad-view", "lineup");
   const filter = params.get("filter") || "all";
-  const view = params.get("view") || (params.get("filter") ? "players" : "lineup");
+  const view = params.get("view") || (params.get("filter") ? "players" : lastView);
   const openId = params.get("player");
   const { data } = useQuery({ queryKey: ["squad"], queryFn: () => api.get("/squad").then((r) => r.data) });
-  const setParam = (k, v) => { const n = new URLSearchParams(params); v ? n.set(k, v) : n.delete(k); setParams(n); };
+  const setParam = (k, v) => { if (k === "view" && v) { setLastView(v); } if (k === "player" && !v && openId) { returnToRow(openId); } const n = new URLSearchParams(params); v ? n.set(k, v) : n.delete(k); setParams(n); };
   const rows = (data?.players || []).filter((p) => filter === "all" || (filter === "u21" ? p.age < 21 : p.in_best_xi)).sort((a, b) => (b.best_role?.rating || 0) - (a.best_role?.rating || 0));
   return (
     <div data-testid="squad-page">

@@ -1,5 +1,5 @@
 const KEY = "fmcc-appearance";
-export const DEFAULTS = { theme: "dark", accent: "#4C8DFF", text: 100, motion: true, grain: true, kit_accent: false };
+export const DEFAULTS = { theme: "dark", accent: "#4C8DFF", text: 100, motion: true, grain: true, kit_accent: false, contrast: false, focus: true };
 export const THEMES = {
   dark: { label: "Dark", vars: {} },
   black: { label: "Pure black", vars: { "--bg": "#000000", "--s1": "#050506", "--s2": "#0B0C0E", "--s3": "#121418" } },
@@ -33,7 +33,15 @@ export const applyAppearance = (s) => {
   root.style.setProperty("--z", String(s.text / 100));
   root.style.zoom = "";
   root.classList.toggle("no-motion", !s.motion);
-  root.classList.toggle("no-grain", !s.grain);
+  root.classList.toggle("no-grain", !s.grain || s.contrast);
+  root.classList.toggle("hc", !!s.contrast);
+  root.classList.toggle("strong-focus", s.focus !== false);
+  if (s.contrast) {
+    const light = !!(THEMES[s.theme] || {}).light;
+    Object.entries(light ? { "--text": "#000000", "--mut": "#1A1D22", "--dim": "#30353D", "--line": "rgba(0,0,0,.45)", "--line2": "rgba(0,0,0,.7)", "--bg": "#FFFFFF", "--s1": "#FFFFFF", "--s2": "#F4F4F4" }
+      : { "--text": "#FFFFFF", "--mut": "#E8EAED", "--dim": "#C9CDD3", "--line": "rgba(255,255,255,.38)", "--line2": "rgba(255,255,255,.62)", "--bg": "#000000", "--s1": "#000000", "--s2": "#0A0A0A", "--s3": "#161616", "--grn": "#5CF2A8", "--amb": "#FFD166", "--red": "#FF8A8A" })
+      .forEach(([k, v]) => root.style.setProperty(k, v));
+  }
 };
 
 export const saveAppearance = (s) => {

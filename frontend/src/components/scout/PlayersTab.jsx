@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { usePersist } from "@/lib/remember";
+import { Empty } from "@/components/Empty";
 import { useSearchParams } from "react-router-dom";
 import { Star, Scale, Download, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +13,17 @@ const SHORT = { npxg: "npxG", xa: "xA", kp: "OP-KP", progp: "PrgP", drb: "Drb", 
 const short = (k, label) => SHORT[k] || (label || k).replace(" / 90", "").slice(0, 12);
 const KEY_STATS = ["npxg", "xa", "kp", "progp", "drb", "tkw", "intc", "passc"];
 const BASE = { mode: "p90", gender: "M", source: "save", q: "", group: null, league: null, preset: null, max_value: null, max_wage: null, min_age: 15, max_age: 45, min_minutes: 0, sort: "grade", dir: "desc", adv: null };
+
+const SpEmpty = ({ f, setF, meta }) => {
+  const filtered = Object.keys(BASE).some((k) => k !== "sort" && k !== "dir" && JSON.stringify(f[k] ?? null) !== JSON.stringify(BASE[k] ?? null)) || f.group || f.league || f.preset || f.adv;
+  if ((f.min_minutes || 0) > 0 && !f.q) {
+    return <Empty id="sp-empty" reason="minutes" text={`Nobody here has ${f.min_minutes}+ minutes yet. Grades and percentiles need ${meta?.min_minutes.percentiles} minutes.`}
+      actions={[["Lower the minimum to 0", () => setF({ ...f, min_minutes: 0 })], ["Clear all filters", () => setF({ ...BASE })]]} />;
+  }
+  return filtered
+    ? <Empty id="sp-empty" reason="filters" text="No player matches every filter at once. Loosen one, or start again." actions={[["Clear all filters", () => setF({ ...BASE })], ...(f.preset ? [["Drop the ready-made search", () => setF({ ...f, preset: null })]] : []), ...(f.adv ? [["Remove advanced conditions", () => setF({ ...f, adv: null })]] : [])]} />
+    : <Empty id="sp-empty" reason="missing" text="There are no players in the scouting data yet. Read a save first." />;
+};
 
 const Filters = ({ f, setF, meta, prefs, more }) => {
   const set = (k, fn = (v) => v || null) => (e) => setF({ ...f, [k]: fn(e.target.value) });
@@ -61,12 +74,12 @@ const exportCsv = async (body) => {
 export const PlayersTab = () => {
   const { view, prefs, openPlayer, compare, toggleCompare } = useScout();
   const [params] = useSearchParams();
-  const [f, setF] = useState({ ...BASE, group: params.get("group") });
-  useEffect(() => { setF((x) => ({ ...x, group: params.get("group") })); }, [params]);
-  const [cols, setCols] = useState("key");
-  const [adv, setAdv] = useState(false);
-  const [heat, setHeat] = useState(false);
-  const [more, setMore] = useState(false);
+  const [f, setF] = usePersist("scout-filters", { ...BASE, group: params.get("group") });
+  useEffect(() => { if (params.get("group")) { setF((x) => ({ ...x, group: params.get("group") })); } }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [cols, setCols] = usePersist("scout-cols", "key");
+  const [adv, setAdv] = usePersist("scout-adv", false);
+  const [heat, setHeat] = usePersist("scout-heat", false);
+  const [more, setMore] = usePersist("scout-more", false);
   const { data: meta } = useGet("scout-meta", "/scout/meta");
   const body = { ...f, view, limit: 100 };
   const { data, isLoading } = usePost("scout-players", "/scout/players", body, { enabled: !!meta });
@@ -75,7 +88,7 @@ export const PlayersTab = () => {
   const label = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.label]));
   const isPct = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.kind === "pct"]));
   const sortBy = (k) => setF({ ...f, sort: k, dir: f.sort === k && f.dir === "desc" ? "asc" : "desc" });
-  const Th = ({ k, children, title }) => <th onClick={() => sortBy(k)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && sortBy(k)} aria-label={title || undefined} style={{ cursor: "pointer", whiteSpace: "nowrap", color: f.sort === k ? "var(--acc)" : undefined }} title={title}>{children}{f.sort === k ? (f.dir === "desc" ? " ↓" : " ↑") : ""}</th>;
+  const Th = ({ k, children, title }) => <th onClick={() => sortBy(k)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && sortBy(k)} aria-label={title || undefined} aria-sort={f.sort === k ? (f.dir === "desc" ? "descending" : "ascending") : "none"} style={{ cursor: "pointer", whiteSpace: "nowrap", color: f.sort === k ? "var(--acc)" : undefined }} title={title}>{children}{f.sort === k ? (f.dir === "desc" ? " ↓" : " ↑") : ""}</th>;
   const star = (r) => act(() => api.post("/scouting/shortlist", { unique_id: r.unique_id, action: "add" }), `${r.name} added to the shortlist`, ["rankings"]);
   return (
     <div>
@@ -105,7 +118,7 @@ export const PlayersTab = () => {
           <tbody>{data?.rows.map((r) => {
             const marker = f.mode === "adjusted" && (r.poss_mult !== 1 || r.league_mult !== 1) ? `Possession ×${r.poss_mult} · league ×${r.league_mult}` : null;
             return (
-              <tr key={r.unique_id} onClick={() => openPlayer(r.unique_id)} data-testid={`sp-row-${r.unique_id}`}>
+              <tr key={r.unique_id} onClick={() => openPlayer(r.unique_id)} onKeyDown={(e) => e.key === "Enter" && openPlayer(r.unique_id)} tabIndex={0} data-row-uid={r.unique_id} data-testid={`sp-row-${r.unique_id}`}>
                 <td onClick={(e) => e.stopPropagation()}>{!r.own && r.source === "save" && <button className="ib" style={{ width: 26, height: 26 }} onClick={() => star(r)} title="Add to shortlist" data-testid={`sp-star-${r.unique_id}`}><Star size={13} /></button>}</td>
                 <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.own && <span className="tag st g">Your club</span>}<ContractTag m={r.months_left} />{r.league_scored === false && <span className="tag st a" title={r.league_note} data-testid={`sp-noscore-${r.unique_id}`}>No strength score</span>}{r.source === "html" && !r.linked && <span className="tag st n">Not linked</span>}
                   <small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.positions?.join(", ")}</small></td>
@@ -124,6 +137,7 @@ export const PlayersTab = () => {
           })}</tbody>
         </table>
         {isLoading && <p className="note" style={{ padding: 10 }}>Loading players…</p>}
+        {data && !data.rows.length && <SpEmpty f={f} setF={setF} meta={meta} />}
         {data && <p className="note" style={{ padding: 10 }} data-testid="sp-total">{data.total} players match. Showing {Math.min(100, data.total)}. Percentiles and grades need {meta?.min_minutes.percentiles} minutes; a fair price needs {meta?.min_minutes.fair_price}.{meta?.sample ? " Match stats are SAMPLE numbers in this preview." : ""}</p>}
       </div>
     </div>

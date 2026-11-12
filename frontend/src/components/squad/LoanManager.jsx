@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowUp, ArrowDown, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { Empty } from "@/components/Empty";
 
 const TONE = { gold: "#F5C542", green: "var(--grn)", red: "var(--red)" };
 const gradeColour = (g) => (g.startsWith("A") ? "#F5C542" : g.startsWith("B") ? "var(--grn)" : g.startsWith("C") ? "var(--amb)" : "var(--red)");
@@ -55,7 +56,7 @@ const Track = () => {
             <td title={r.why} data-testid={`loan-trend-${r.unique_id}`} style={{ color: TONE[r.tone] }}>{r.arrow === "up" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}<small style={{ display: "block" }}>{r.why}</small></td>
             <td><button className="ib" aria-label="Stop tracking" onClick={() => act(() => api.delete(`/loans/track/${r.unique_id}`), "Stopped tracking", ["loans"])} data-testid={`loan-untrack-${r.unique_id}`}><X size={13} /></button></td>
           </tr>))}</tbody></table>
-      {!data.rows.length && <p className="note" style={{ padding: 10 }} data-testid="loan-track-empty">No loanees tracked yet. Grade a loan above, then press Track this loan.</p>}
+      {!data.rows.length && <div style={{ padding: 8 }}><Empty id="loan-track-empty" reason="nobody" text="No loanees tracked yet. Grade a loan above, then press Track this loan." actions={[["Grade a loan", () => document.querySelector("[data-testid=loan-player-select]")?.focus()]]} /></div>}
       <p className="note" style={{ padding: "4px 10px 10px" }}>{data.note} Gold up arrow: excellent. Green up: going well. Red down: in trouble.</p>
     </div>
   );

@@ -3,19 +3,20 @@ import { Plus, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct, TabBar } from "@/lib/ui";
 import { useScout } from "./ctx";
+import { Empty } from "@/components/Empty";
 
-const Results = ({ res, keys, label, open }) => (
+const Results = ({ res, keys, label, open, loosen }) => (
   <div className="card" style={{ padding: 8, overflowX: "auto" }} data-testid="similar-results">
     <p className="note" style={{ padding: "4px 8px 8px" }}>{res.base ? `Closest to ${res.base.name}. ` : ""}{res.how}.</p>
     <table className="tbl pin1">
       <thead><tr><th>Player</th><th>Age</th><th>Club</th>{keys.map((k) => <th key={k} title={label[k]}>{label[k]}</th>)}<th>Similarity</th></tr></thead>
       <tbody>{res.rows.map((r) => (
-        <tr key={r.unique_id} onClick={() => open(r.unique_id)} data-testid={`similar-row-${r.unique_id}`}>
+        <tr key={r.unique_id} onClick={() => open(r.unique_id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && open(r.unique_id)} data-row-uid={r.unique_id} data-testid={`similar-row-${r.unique_id}`}>
           <td><b>{r.name}</b></td><td>{r.age}</td><td>{r.club}</td>{keys.map((k) => <td key={k} className="mono">{r.values?.[k] ?? "—"}</td>)}
           <td className="mono" style={{ color: "var(--acc)" }} data-testid={`similar-score-${r.unique_id}`}>{r.similarity}%</td>
         </tr>))}</tbody>
     </table>
-    {!res.rows.length && <p className="note" style={{ padding: 10 }}>Nobody close enough. Try fewer numbers or a different position.</p>}
+    {!res.rows.length && <div style={{ padding: 8 }}><Empty id="similar-empty" reason="nobody" text="Nobody is close enough to every number. Fewer numbers or any position widens the search." actions={loosen} /></div>}
   </div>
 );
 
@@ -40,7 +41,7 @@ export const SimilarTab = () => {
         <button className="btn btn-p" disabled={!q.trim()} onClick={search} data-testid="similar-search-button">Find</button></div>}
       {res?.pick && <div className="card" data-testid="similar-pick">{res.pick.map((p) => <div className="row" key={p.unique_id}><div style={{ flex: 1 }}>{p.name}<small>{p.club} · {p.age}</small></div>
         <button className="btn" onClick={() => run({ unique_id: p.unique_id })} data-testid={`similar-pick-${p.unique_id}`}>Find players like him</button></div>)}
-        {!res.pick.length && <p className="note">No player by that name.</p>}</div>}
+        {!res.pick.length && <Empty id="similar-pick-empty" reason="nobody" text={`No player called "${q}" in the scouting data. Check the spelling or try just the surname.`} />}</div>}
       {by === "numbers" && meta && <div className="card" data-testid="similar-targets">
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
           <div className="seg">{[["p90", "Per 90"], ["total", "Season totals"]].map(([k, l]) => <button key={k} className={mode === k ? "on" : ""} onClick={() => setMode(k)} data-testid={`similar-mode-${k}`}>{l}</button>)}</div>
@@ -53,7 +54,8 @@ export const SimilarTab = () => {
           <button className="btn" disabled={Object.keys(targets).length >= 8} onClick={() => { const m = meta.metrics.find((x) => !(x.key in targets)); if (m) { setTargets({ ...targets, [m.key]: 0 }); } }} data-testid="similar-add-metric"><Plus size={13} />Add a number</button>
           <button className="btn btn-p" disabled={!Object.keys(targets).length} onClick={() => run({ targets, mode, group: group || null })} data-testid="similar-run">Find closest players</button></div>
       </div>}
-      {res?.rows && <Results res={res} keys={by === "numbers" ? Object.keys(targets) : []} label={label} open={openPlayer} />}
+      {res?.rows && <Results res={res} keys={by === "numbers" ? Object.keys(targets) : []} label={label} open={openPlayer}
+        loosen={by === "numbers" ? [...(group ? [["Any position", () => { setGroup(""); run({ targets, mode, group: null }); }]] : []), ...(Object.keys(targets).length > 1 ? [["Drop the last number", () => { const n = { ...targets }; delete n[Object.keys(n).pop()]; setTargets(n); run({ targets: n, mode, group: group || null }); }]] : [])] : []} />}
     </div>
   );
 };

@@ -12,6 +12,8 @@ import { UpdateCard } from "@/components/VersionTag";
 import { ClubColours } from "@/components/ClubColours";
 import { FeatureGate } from "@/components/FeatureGate";
 import { FinanceStrip } from "@/components/FinanceStrip";
+import { A11y, SkipLink } from "@/components/A11y";
+import { ScrollMemory } from "@/lib/remember";
 import { useFeatures } from "@/lib/features";
 import Features from "@/pages/Features";
 import TransferMarket from "@/pages/TransferMarket";
@@ -56,12 +58,15 @@ const Shell = ({ state }) => {
   }, []);
   return (
     <div className="app grain">
+      <SkipLink />
+      <A11y />
+      <ScrollMemory />
       <Sidebar />
       <Tour ready={!!state.career && feats?.ask === false} />
       <section className="main">
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
         <FinanceStrip />
-        <div className="content">
+        <div className="content" id="main-content" tabIndex={-1} role="main">
           <ModuleGuide />
           <PageCountdown />
           <Routes>

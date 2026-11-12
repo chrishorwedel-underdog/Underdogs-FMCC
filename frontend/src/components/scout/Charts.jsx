@@ -3,6 +3,7 @@ import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ReferenceLine, Responsive
 import { useGet } from "@/lib/ui";
 import { money } from "@/lib/ui";
 import { useScout } from "./ctx";
+import { MetricHeatmap } from "@/components/charts/DataHub";
 
 const AXES = (meta) => [["grade", "Global grade"], ["value", "Value"], ["age", "Age"], ["minutes", "Minutes"], ...(meta?.metrics || []).map((m) => [m.key, m.label]),
   ...(meta?.archetypes || []).map((a) => [`c:${a.key}`, `Computed: ${a.name}`]), ...(meta?.formulas || []).map((f) => [`f:${f.key}`, `Formula: ${f.name}`])];
@@ -52,11 +53,13 @@ export const Breakdown = ({ ids }) => {
   const { data } = useGet("breakdown", "/scout/breakdown", { ids: ids.join(","), key }, { enabled: ids.length > 0 });
   const parts = data?.players[0] ? Object.keys(data.players[0].parts) : [];
   const rows = (data?.players || []).map((p) => ({ name: `${p.name} (${p.score ?? "—"})`, ...p.parts }));
+  const heat = (data?.players || []).map((p) => ({ name: p.name, values: Object.fromEntries(Object.entries(p.parts).map(([k, v]) => [k, v == null ? null : Math.round(v)])) }));
   return (
     <div className="card" style={{ marginTop: 16 }} data-testid="breakdown-card">
       <div className="ttl">Computed stat broken into its parts<span style={{ marginLeft: "auto" }} />
         <select className="inp" style={{ width: 240 }} value={key} onChange={(e) => setKey(e.target.value)} data-testid="breakdown-select">{meta?.archetypes.map((a) => <option key={a.key} value={a.key}>{a.name}</option>)}</select></div>
-      <div style={{ height: 80 + rows.length * 54 }}>
+      {heat.length > 0 && <MetricHeatmap id="breakdown-heatmap" title="Heatmap: points each part adds to the score" rows={heat} cols={parts} />}
+      {rows.length > 0 && <div style={{ height: 80 + rows.length * 54 }}>
         <ResponsiveContainer>
           <BarChart data={rows} layout="vertical" margin={{ left: 40, right: 20 }}>
             <XAxis type="number" stroke="#6B7280" fontSize={11} domain={[0, 100]} /><YAxis type="category" dataKey="name" stroke="#9CA3AF" fontSize={12} width={170} />
@@ -64,7 +67,7 @@ export const Breakdown = ({ ids }) => {
             {parts.map((k, i) => <Bar key={k} dataKey={k} stackId="a" fill={COLORS[i % COLORS.length]} />)}
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </div>}
     </div>
   );
 };

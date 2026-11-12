@@ -362,3 +362,29 @@ select.blank{cursor:pointer}
 .pitchc .p[draggable]{cursor:grab}
 @media (max-width:760px){.upnext .un-row{flex-wrap:wrap}.upnext .un-row>div{flex-basis:calc(100% - 80px)!important}.upnext .un-row .btn{margin-left:76px}.fin-strip{padding:7px 12px;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.fin-i{flex-shrink:0}.un-tag{width:auto}}
 
+/* Phase 3: Data Hub charts, empty states, accessibility */
+.hub-card{border:1px solid var(--line);background:var(--s1);border-radius:14px;padding:12px 14px;margin:0;flex:1;min-width:240px}
+.hub-h{font:700 11px/1 'Geist Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.hub-row{display:flex;gap:12px;flex-wrap:wrap}
+.heat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:4px}
+.heat-cell{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;font-size:12px;background:color-mix(in srgb,var(--hc) 24%,transparent);border-left:3px solid var(--hc)}
+.heat-cell span{color:var(--mut);text-transform:capitalize;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.heat-cell b{color:var(--text)}
+.heat-tbl td,.heat-tbl th{text-align:center;padding:6px 8px}
+.empty-st{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border:1px dashed var(--line2);border-radius:12px;background:var(--s2);color:var(--mut)}
+.empty-st b{color:var(--text);font-size:14px}.empty-st p{margin:3px 0 0;font-size:13px}
+.row-flash{animation:rowflash 1.6s ease}
+@keyframes rowflash{0%,40%{background:color-mix(in srgb,var(--acc) 26%,transparent)}100%{background:transparent}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link{position:fixed;left:12px;top:-60px;z-index:1000;background:var(--acc);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;text-decoration:none;transition:top .15s}
+.skip-link:focus{top:12px}
+.content:focus{outline:none}
+.strong-focus :is(a,button,input,select,textarea,summary,[tabindex],[role=button],[role=switch],[role=tab]):focus-visible{outline:3px solid var(--acc)!important;outline-offset:2px!important;box-shadow:0 0 0 6px color-mix(in srgb,var(--acc) 30%,transparent)!important}
+.strong-focus tr[tabindex]:focus-visible{outline-offset:-3px!important}
+:is(a,button,input,select,textarea,[tabindex]):focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.hc .note,.hc small,.hc .st{opacity:1!important}
+.hc .card,.hc .hub-card,.hc .btn,.hc .inp,.hc .nav-item,.hc .fin-i,.hc .seg{border-color:var(--line2)!important}
+.hc .btn-p{color:#000!important;font-weight:700}
+.hc a{text-decoration:underline}
+.hc .nav-item a,.hc a.nav-item,.hc a.btn,.hc .brand{text-decoration:none}
+

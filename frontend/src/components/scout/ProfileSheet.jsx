@@ -6,6 +6,8 @@ import { useGet, useAct } from "@/lib/ui";
 import { Quadrant, Replacement, PriceExplained, HistoryChart } from "./Lab";
 import { ProfileLab } from "./Recruit";
 import { useScout, fmtMoney, fmtWage, pctColor, ContractTag } from "./ctx";
+import { RadarCard, AttrHeatmap, MetricHeatmap, attributeRadar } from "@/components/charts/DataHub";
+import { Empty } from "@/components/Empty";
 
 const XY = { GK: [50, 90], "D (C)": [50, 74], "D (L)": [14, 70], "D (R)": [86, 70], "WB (L)": [12, 56], "WB (R)": [88, 56], DM: [50, 60],
   "M (C)": [50, 47], "AM (C)": [50, 32], "AM (L)": [18, 30], "AM (R)": [82, 30], ST: [50, 13] };
@@ -31,11 +33,6 @@ const Pizza = ({ items }) => {
     </svg>
   );
 };
-
-const Bar = ({ label, v }) => (
-  <div style={{ marginTop: 6 }}><div style={{ display: "flex", fontSize: 12, color: "var(--mut)" }}><span style={{ textTransform: "capitalize" }}>{label}</span><span className="mono" style={{ marginLeft: "auto" }}>{v ?? "—"}</span></div>
-    <div style={{ height: 5, borderRadius: 3, background: "rgba(255,255,255,.06)" }}><div style={{ width: `${v || 0}%`, height: "100%", borderRadius: 3, background: pctColor(v) }} /></div></div>
-);
 
 const Body = ({ p, view }) => {
   const { prefs, openPlayer, compare, toggleCompare } = useScout();
@@ -70,13 +67,15 @@ const Body = ({ p, view }) => {
       {p.dof_reports?.map((r) => <div key={r.id} className="soon" style={{ marginTop: 0 }} data-testid="profile-dof-text"><b>Director of Football</b> · {r.season}<br />{r.text}</div>)}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
         <Pizza items={pizza} />
-        <div style={{ flex: 1, minWidth: 180 }} data-testid="profile-phases">{Object.entries(p.phases || {}).map(([k, v]) => <Bar key={k} label={k} v={v} />)}
-          {!pizza.length && <p className="note">Not enough minutes ({p.minutes}) for percentiles.</p>}</div>
+        <div style={{ flex: 1, minWidth: 220 }} data-testid="profile-phases">
+          {Object.keys(p.phases || {}).length >= 3 && <RadarCard id="profile-phases-radar" title="Phases of play (percentile)" data={Object.entries(p.phases).map(([k, v]) => ({ axis: k.replace(/^\w/, (c) => c.toUpperCase()), value: v ?? 0 }))} height={220} />}
+          {!pizza.length && <Empty id="profile-empty-pct" reason="minutes" text={`He has ${p.minutes} minutes. Percentiles and the radar need ${p.min_minutes || 400}; check back after a few more games.`} />}</div>
       </div>
-      {view !== "moneyball" && p.attributes && <div className="card" style={{ padding: 12 }} data-testid="profile-attributes"><div className="ttl">Attributes{view === "fair" && <span className="st n">Scout knowledge {p.knowledge}%</span>}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px 14px", marginTop: 8, fontSize: 12.5 }}>{Object.entries(p.attributes).map(([k, v]) => <div key={k} style={{ display: "flex" }}><span style={{ color: "var(--mut)", textTransform: "capitalize" }}>{k.replace(/_/g, " ")}</span><span className="mono" style={{ marginLeft: "auto" }}>{Array.isArray(v) ? (v[0] === v[1] ? v[0] : `${v[0]}–${v[1]}`) : v}</span></div>)}</div></div>}
-      {view === "full" && p.hidden && <div className="card" style={{ padding: 12 }} data-testid="profile-hidden"><div className="ttl">Hidden attributes · {p.personality}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "4px 14px", marginTop: 8, fontSize: 12.5 }}>{Object.entries(p.hidden).map(([k, v]) => <div key={k} style={{ display: "flex" }}><span style={{ color: "var(--mut)", textTransform: "capitalize" }}>{k.replace(/_/g, " ")}</span><span className="mono" style={{ marginLeft: "auto" }}>{v}</span></div>)}</div></div>}
+      {pizza.length > 0 && <MetricHeatmap id="profile-metric-heatmap" title="Key stats heatmap (percentile vs his position)" rows={[{ name: p.name, values: Object.fromEntries(pizza.map((x) => [x.k, x.p])) }]} cols={pizza.map((x) => x.k)} label={p.labels} />}
+      {view !== "moneyball" && p.attributes && <div className="hub-row" data-testid="profile-attributes">
+        <RadarCard id="profile-attr-radar" title={`Attributes by area${view === "fair" ? ` · scout knowledge ${p.knowledge}%` : ""}`} data={attributeRadar(p.attributes)} max={20} height={240} />
+        <AttrHeatmap id="profile-attr-heat" title="Attributes" attrs={p.attributes} /></div>}
+      {view === "full" && p.hidden && <AttrHeatmap id="profile-hidden" title={`Hidden attributes · ${p.personality}`} attrs={p.hidden} />}
       {p.role_ratings?.length > 0 && <div className="note">Roles: {p.role_ratings.map((r) => `${r.name} (${r.duty}) ${r.rating}`).join(" · ")}</div>}
       <div className="card" style={{ padding: 12 }} data-testid="profile-similar"><div className="ttl">Similar players</div>
         {p.similar.map((s) => <div key={s.unique_id} className="row" style={{ cursor: "pointer" }} onClick={() => openPlayer(s.unique_id)} data-testid={`similar-${s.unique_id}`}>

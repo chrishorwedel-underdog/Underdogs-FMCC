@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePersist, returnToRow } from "@/lib/remember";
 import { Star, Scale, ListPlus } from "lucide-react";
 import { sendToFm } from "@/lib/fmShortlist";
 import { api } from "@/lib/api";
@@ -75,12 +76,14 @@ const VIEW_NOTE = { full: "Full: everything, including hidden attributes, person
   moneyball: "Moneyball: match stats and price only. Attributes are switched off." };
 
 export default function Scouting({ initialTab = "players" }) {
-  const start = new URLSearchParams(window.location.search).get("tab") || initialTab;
-  const [main, setMain] = useState(MAIN_KEYS.includes(start) ? start : "more");
-  const [tab, setTab] = useState(MAIN_KEYS.includes(start) ? "stats" : start);
-  const [view, setView] = useState("full");
-  const [compare, setCompare] = useState([]);
-  const [open, setOpen] = useState(() => Number(new URLSearchParams(window.location.search).get("player")) || null);
+  const start = new URLSearchParams(window.location.search).get("tab");
+  const [main, setMain] = usePersist("scout-main", initialTab);
+  const [tab, setTab] = usePersist("scout-tab", "stats");
+  useEffect(() => { if (start) { setMain(MAIN_KEYS.includes(start) ? start : "more"); if (!MAIN_KEYS.includes(start)) { setTab(start); } } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [view, setView] = usePersist("scout-view", "full");
+  const [compare, setCompare] = usePersist("scout-compare", []);
+  const [open, setOpenRaw] = useState(() => Number(new URLSearchParams(window.location.search).get("player")) || null);
+  const setOpen = (uid) => { if (!uid && open) { returnToRow(open); } setOpenRaw(uid); };
   const { data: saved } = useGet("scout-prefs", "/scout/prefs");
   const act = useAct();
   const prefs = saved || { currency: "GBP", wages: "week" };

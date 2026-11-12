@@ -42,6 +42,12 @@ export default function Appearance() {
             <button key={c} className="btn" onClick={() => set({ accent: c })} style={{ borderColor: s.accent === c ? c : undefined }} data-testid={`appearance-accent-${l.toLowerCase()}`}>
               <span style={{ width: 14, height: 14, borderRadius: 99, background: c, display: "inline-block" }} />{l}{s.accent === c && <Check size={13} />}</button>))}
         </Row>
+        <div className="card" data-testid="appearance-accessibility">
+          <div className="ttl">Accessibility</div>
+          <div className="row"><div style={{ flex: 1 }}>High contrast<small>Brighter text, stronger borders and pure black (or white) backgrounds. Works with any theme and text size.</small></div><Switch checked={!!s.contrast} onCheckedChange={(v) => set({ contrast: v })} data-testid="appearance-contrast" /></div>
+          <div className="row"><div style={{ flex: 1 }}>Clear keyboard focus<small>A thick outline shows exactly where you are when you move around with Tab</small></div><Switch checked={s.focus !== false} onCheckedChange={(v) => set({ focus: v })} data-testid="appearance-focus" /></div>
+          <p className="note" style={{ marginTop: 6 }}>Use Text size above for bigger text. Tables are labelled for screen readers, and "Skip to content" appears when you press Tab first.</p>
+        </div>
         <div className="card">
           <div className="row"><div style={{ flex: 1 }}>Animations<small>Slide and fade effects when things open or change</small></div><Switch checked={s.motion} onCheckedChange={(v) => set({ motion: v })} data-testid="appearance-motion" /></div>
           <div className="row"><div style={{ flex: 1 }}>Film grain<small>A faint texture over the background</small></div><Switch checked={s.grain} onCheckedChange={(v) => set({ grain: v })} data-testid="appearance-grain" /></div>

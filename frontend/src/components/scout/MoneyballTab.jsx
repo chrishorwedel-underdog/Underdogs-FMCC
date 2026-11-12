@@ -1,5 +1,6 @@
 import { useGet } from "@/lib/ui";
 import { useScout, fmtMoney } from "./ctx";
+import { Empty } from "@/components/Empty";
 
 const List = ({ id, title, help, rows, open, prefs }) => (
   <div className="card" style={{ padding: 8, overflowX: "auto" }} data-testid={`mb-${id}`}>
@@ -8,12 +9,12 @@ const List = ({ id, title, help, rows, open, prefs }) => (
     <table className="tbl pin1">
       <thead><tr><th>Player</th><th>Age</th><th>Value</th><th title="Global grade from per-90 output, adjusted for league strength">Grade</th><th>Why</th></tr></thead>
       <tbody>{rows.map((r) => (
-        <tr key={r.unique_id} onClick={() => open(r.unique_id)} data-testid={`mb-${id}-row-${r.unique_id}`}>
+        <tr key={r.unique_id} onClick={() => open(r.unique_id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && open(r.unique_id)} data-row-uid={r.unique_id} data-testid={`mb-${id}-row-${r.unique_id}`}>
           <td><b>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.positions?.join(", ")}</small></td>
           <td>{r.age}</td><td className="mono">{fmtMoney(r.value, prefs)}</td><td className="mono" style={{ color: "var(--acc)" }}>{r.grade_global}</td><td><small>{r.why}</small></td>
         </tr>))}</tbody>
     </table>
-    {!rows.length && <p className="note" style={{ padding: 10 }}>Nobody qualifies yet. Players need enough minutes for a fair price and a grade.</p>}
+    {!rows.length && <div style={{ padding: 8 }}><Empty id={`mb-${id}-empty`} reason="nobody" text="No player meets this list's bar yet. Players need enough minutes for a fair price and a grade; more appear as the season goes on." actions={[["Search all players instead", () => window.location.assign("/scouting?tab=players")]]} /></div>}
   </div>
 );
 
