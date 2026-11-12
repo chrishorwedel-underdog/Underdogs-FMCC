@@ -403,7 +403,13 @@ async def home():
     b = await db.backups.find_one({}, {"_id": 0, "created_at": 1}, sort=[("created_at", -1)])
     pending = await db.changes.count_documents({"career_id": c["id"], "status": "queued"})
     address = (await get_settings()).get("address") or "Boss"
-    return dashboard.compute(snaps[0], snaps[1] if len(snaps) > 1 else None, b["created_at"] if b else None) | {"read_at": snaps[0]["read_at"], "pending_changes": pending, "address": address}
+    d = dashboard.compute(snaps[0], snaps[1] if len(snaps) > 1 else None, b["created_at"] if b else None)
+    import squad_api as SQ
+    w = await SQ.weakest(c)
+    d["attention"] = [a for a in d["attention"] if a["kind"] != "weak"] + ([{"kind": "weak", "tone": "acc", "unique_id": w["unique_id"], "text": f"{w['label']} is your weakest position in the Best XI.",
+                                                                              "sub": f"{w['name']} is the best option there (role rating {w['rating']})."}] if w else [])
+    d["squad"]["weak_spot"] = w["label"] if w else None
+    return d | {"read_at": snaps[0]["read_at"], "pending_changes": pending, "address": address}
 
 
 @api.get("/squad")
@@ -568,9 +574,11 @@ async def restore_backup(backup_id: str):
 
 
 import finance_api  # noqa: E402
+import scout_plus  # noqa: E402
+import loans_api  # noqa: E402
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router, world_api.router, creator_single.router, self_update.router, seed_api.router, features_api.router, analysis_api.router, dp_api.router, finance_api.router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router, world_api.router, creator_single.router, self_update.router, seed_api.router, features_api.router, analysis_api.router, dp_api.router, finance_api.router, scout_plus.router, loans_api.router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse

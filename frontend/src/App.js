@@ -69,7 +69,7 @@ const Shell = ({ state }) => {
             <Route path="/squad" element={<Squad />} />
             <Route path="/settings" element={<Settings state={state} />} />
             <Route path="/scouting" element={<Scouting key="scouting" />} />
-            <Route path="/moneyball" element={<Scouting key="moneyball" initialTab="compare" />} />
+            <Route path="/moneyball" element={<Navigate to="/scouting?tab=moneyball" replace />} />
             <Route path="/development" element={<Development />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/elite-training" element={<EliteTraining />} />

@@ -325,8 +325,12 @@ async def club():
         todo.append({"score": 80 + len(ending), "title": f"{len(ending)} starter{'s' if len(ending) > 1 else ''}' contracts end within a year", "evidence": ", ".join(f"{r['name']} ({r['contract_end']})" for r in ending),
                      "link": "/squad"})
     weak = sorted((p for p in pos.values() if p["count"]), key=lambda p: p["avg_top2"])[:3]
+    import squad_api as SQ
+    w = await SQ.weakest(c)
+    if w and w["group"] in pos:
+        weak = [pos[w["group"]]] + [p for p in weak if p["group"] != w["group"]][:2]
     for p in weak:
-        todo.append({"score": 60 - weak.index(p) * 5, "title": f"Weakest area: {p['label']}", "evidence": f"Your best two there average a {p['avg_top2']}% role fit, the lowest in your squad.", "link": f"/scouting?tab=stats&group={p['group']}"})
+        todo.append({"score": 60 - weak.index(p) * 5, "title": f"Weakest area: {p['label']}", "evidence": (f"{w['label']} is your weakest Best XI position (the same as Squad shows): {w['name']}, role rating {w['rating']}." if w and p is weak[0] and w["group"] == p["group"] else f"Your best two there average a {p['avg_top2']}% role fit, among the lowest in your squad."), "link": f"/scouting?tab=stats&group={p['group']}"})
     todo.sort(key=lambda t: -t["score"])
     target = weak[0] if weak else None
     ideas = {}

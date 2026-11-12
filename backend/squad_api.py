@@ -84,6 +84,11 @@ async def squad_plan(formation: Optional[Formation] = None):
     main = yours or {k: v[0] for k, v in roles.FORMATIONS.items()}
     formation = formation or next(iter(main))
     latest, form, depth, info, params = await _plan_inputs(c, formation)
+    custom = (await db.depth_orders.find_one({"career_id": c["id"], "formation": formation}, {"_id": 0}) or {}).get("slots") or {}
+    for k, order in custom.items():
+        if k in depth:
+            idx = {u: i for i, u in enumerate(order)}
+            depth[k] = sorted(depth[k], key=lambda r: idx.get(r["unique_id"], 999))
     rules = {k: int(v) for k, v in params.items()}
     best = roles.best_xi(latest["players"], form, depth)
     dev, picked, dev_why = roles.development_xi(best, form, depth, info, rules)
@@ -100,7 +105,44 @@ async def squad_plan(formation: Optional[Formation] = None):
             "best": {"slots": best, "strength": roles.strength(best, depth), "why": roles.best_why(best, form, depth, info, rules)},
             "dev": {"slots": dev, "strength": roles.strength(dev, depth), "why": dev_why, "youth": picked},
             "weak": sorted(weak, key=lambda w: w["best"]), "youth_minutes": youth, "saved": saved,
-            "weak_spot": roles.weak_spot(best, depth, labels)}
+            "weak_spot": roles.weak_spot(best, depth, labels), "depth_custom": sorted(custom)}
+
+
+def pos_group(pos: str) -> str:
+    return {"GK": "GK", "LB": "FB", "RB": "FB", "LWB": "FB", "RWB": "FB", "WBL": "FB", "WBR": "FB", "CB": "CB", "DM": "DM", "CM": "CM",
+            "LM": "W", "RM": "W", "LW": "W", "RW": "W", "AM": "AM", "CAM": "AM"}.get(pos, "ST")
+
+
+async def weakest(c: dict) -> dict | None:
+    """The one weakest Best XI position, shared by Squad, Home and Club Analysis so they always agree."""
+    yours = await team_tactics(c)
+    formation = next(iter(yours or {k: v[0] for k, v in roles.FORMATIONS.items()}))
+    latest, form, depth, info, _ = await _plan_inputs(c, formation)
+    best = roles.best_xi(latest["players"], form, depth)
+    rate = {k: {r["unique_id"]: r["rating"] for r in v} for k, v in depth.items()}
+    filled = [(rate[k][u], k, u) for k, u in best.items() if u]
+    if not filled:
+        return None
+    r, k, u = min(filled)
+    slot = next(s for s in form["slots"] if s["key"] == k)
+    return {"label": roles.LABELS_FULL(slot["label"]), "pos": slot["pos"], "group": pos_group(slot["pos"]), "rating": r, "unique_id": u, "name": info.get(u, {}).get("name")}
+
+
+class DepthIn(BaseModel):
+    formation: Formation
+    slot: str = Field(min_length=1, max_length=8)
+    order: list[int] = Field(min_length=1, max_length=60)
+
+
+@router.put("/squad/depth")
+async def set_depth(body: DepthIn):
+    """Your own order for one depth-chart position. FMCC uses it everywhere it shows this depth chart."""
+    c = await active_career()
+    _, form, depth, _, _ = await _plan_inputs(c, body.formation)
+    if body.slot not in depth or set(body.order) != {r["unique_id"] for r in depth[body.slot]}:
+        raise HTTPException(422, "That order doesn't match the players for this position. Reload and try again.")
+    await db.depth_orders.update_one({"career_id": c["id"], "formation": body.formation}, {"$set": {f"slots.{body.slot}": body.order, "at": now_iso()}}, upsert=True)
+    return {"ok": True}
 
 
 @router.get("/squad/try-xi")

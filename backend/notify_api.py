@@ -9,9 +9,9 @@ from core import db, active_career, now_iso, new_id
 import features_api
 
 router = APIRouter(prefix="/api/notify")
-TYPES = {"report": "New monthly report", "missed": "Missed dates", "countdown": "Countdown reaching 7 days", "changes": "Game changes waiting",
+TYPES = {"youth": "Youth intake happened", "report": "New monthly report", "missed": "Missed dates", "countdown": "Countdown reaching 7 days", "changes": "Game changes waiting",
          "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year"}
-PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist"}
+PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth"}
 
 
 def _d(s: str) -> date:
@@ -93,6 +93,18 @@ async def sync(c: dict) -> None:
         if _d(a["game_date"]).month != _d(b["game_date"]).month:
             addr = ((await db.settings.find_one({"_id": "app"}, {"_id": 0, "address": 1})) or {}).get("address") or "Boss"
             await _add(c["id"], "report", f"report:{_d(a['game_date']):%Y-%m}", f"{_d(a['game_date']):%B} report ready", f"Your monthly squad report is in Monthly Reports, {addr}.", b["game_date"])
+    if len(snaps) > 1:
+        import scout_plus
+        prev = _d(snaps[-2]["game_date"])
+        try:
+            rows = (await scout_plus.intake_state(c))["rows"]
+        except HTTPException:
+            rows = []
+        for r in rows:
+            m, dd = (int(v) for v in r["mmdd"].split("-"))
+            t = date(gd.year, m, min(dd, 28))
+            if r["on"] and prev < t <= gd:
+                await _add(c["id"], "youth", f"youth:{r['league']}:{t.year}", f"Youth intake: {r['league']}", f"The {r['league']} youth intake happened on {t:%-d %B}. New youngsters are in the save.", last["game_date"])
     done = {d["key"] async for d in db.missed_dates.find({"career_id": c["id"]}, {"key": 1})}
     for m in missed(snaps):
         if m["key"] not in done:

@@ -9,11 +9,13 @@ const Lines = () => (
   </svg>
 );
 
-const Token = ({ slot, uid, plan, onPick }) => {
+const Token = ({ slot, uid, plan, onPick, slots }) => {
   const p = plan.players[uid];
   const rating = plan.depth[slot.key]?.find((r) => r.unique_id === uid)?.rating;
+  const drop = (e) => { e.preventDefault(); const from = e.dataTransfer.getData("text/fmcc-slot"); if (from && from !== slot.key) onPick(slot.key, slots[from]); };
   return (
-    <div className="p" style={{ left: `${slot.x}%`, top: `${slot.y}%` }} data-testid={`pitch-slot-${slot.key}`}>
+    <div className="p" style={{ left: `${slot.x}%`, top: `${slot.y}%` }} data-testid={`pitch-slot-${slot.key}`}
+      draggable onDragStart={(e) => e.dataTransfer.setData("text/fmcc-slot", slot.key)} onDragOver={(e) => e.preventDefault()} onDrop={drop}>
       <div className="tip"><b>{p?.name}</b><span>{slot.role_name} · rating {rating}</span></div>
       <Popover>
         <PopoverTrigger asChild>
@@ -36,6 +38,6 @@ const Token = ({ slot, uid, plan, onPick }) => {
 export const Pitch = ({ plan, slots, onPick }) => (
   <div className="card pitchc rise d1" data-testid="pitch">
     <Lines />
-    {plan.formation.slots.map((s) => <Token key={s.key} slot={s} uid={slots[s.key]} plan={plan} onPick={onPick} />)}
+    {plan.formation.slots.map((s) => <Token key={s.key} slot={s} uid={slots[s.key]} slots={slots} plan={plan} onPick={onPick} />)}
   </div>
 );

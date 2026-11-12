@@ -12,7 +12,7 @@ const strengthOf = (slots, depth) => {
 
 const Side = ({ plan, mode, slots }) => {
   const cur = strengthOf(slots, plan.depth);
-  const why = mode === "custom" ? [["blu", "Your own lineup. Click any player on the pitch to swap him from the depth chart."]] : plan[mode].why;
+  const why = mode === "custom" ? [["blu", "Your own lineup. Drag a player onto another position to swap them, or click a player to pick from the depth chart. Changes save straight away."]] : plan[mode].why;
   return (
     <div>
       <div className="card rise d2"><div className="ttl">Team strength</div>
@@ -65,18 +65,20 @@ export const LineupView = ({ formation, setFormation }) => {
   const act = useAct();
   const [mode, setMode] = useState("dev");
   const [slots, setSlots] = useState({});
-  useEffect(() => { if (plan) setSlots(plan[mode === "custom" ? "dev" : mode].slots); }, [plan, formation]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (plan) setSlots(mode === "custom" && plan.saved?.kind === "custom" && plan.saved.formation === plan.formation.key ? plan.saved.slots : plan[mode === "custom" ? "dev" : mode].slots); }, [plan, formation]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!plan) return <p className="note">Working out lineups…</p>;
   const switchMode = (m) => { setMode(m); if (m !== "custom") setSlots(plan[m].slots); };
   const pick = (key, uid) => {
     const other = Object.keys(slots).find((k) => slots[k] === uid);
     if (other === key) return;
+    if (!plan.depth[key].some((r) => r.unique_id === uid)) { toast.error(`${plan.players[uid]?.name} can't play there. Pick someone else.`); return; }
     const next = { ...slots, [key]: uid };
     if (other) {
       if (!plan.depth[other].some((r) => r.unique_id === slots[key])) { toast.error(`${plan.players[slots[key]].name} can't play ${other}. Pick someone else.`); return; }
       next[other] = slots[key];
     }
     setSlots(next); setMode("custom");
+    act(() => api.post("/lineups", { formation: plan.formation.key, kind: "custom", slots: next, based_on_save_no: plan.save_no, expected_revision: plan.saved?.revision || 0 }), "Lineup updated and saved", ["plan"]);
   };
   const use = () => act(() => api.post("/lineups", { formation: plan.formation.key, kind: mode, slots, based_on_save_no: plan.save_no, expected_revision: plan.saved?.revision || 0 }),
     (d) => `Lineup saved (version ${d.revision})`, ["plan"]);

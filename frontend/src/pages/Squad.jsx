@@ -9,6 +9,7 @@ import { LineupView } from "@/components/squad/LineupView";
 import { TryXI } from "@/components/squad/TryXI";
 import { DepthView, RegistrationView } from "@/components/squad/DepthView";
 import { RulesTab } from "@/components/rules/RulesTab";
+import { LoanManager } from "@/components/squad/LoanManager";
 
 const FILTERS = [["all", "All"], ["xi", "Best XI"], ["u21", "Under-21"]];
 
@@ -28,7 +29,7 @@ const Row = ({ p, onOpen }) => (
   </tr>
 );
 
-const VIEWS = [["lineup", "Lineup"], ["depth", "Depth chart"], ["fit", "Tactic fit"], ["players", "Players"], ["registration", "Registration"], ["rules", "Rules"]];
+const VIEWS = [["lineup", "Lineup"], ["depth", "Depth chart"], ["fit", "Tactic fit"], ["players", "Players"], ["loans", "Loan Manager"], ["registration", "Registration"], ["rules", "Rules"]];
 
 export default function Squad() {
   const [params, setParams] = useSearchParams();
@@ -50,12 +51,13 @@ export default function Squad() {
       {view === "lineup" && <TryXI formation={formation} />}
       {view === "depth" && <DepthView formation={formation} />}
       {view === "fit" && <TacticFit />}
+      {view === "loans" && <LoanManager squad={data?.players || []} />}
       {view === "registration" && <RegistrationView />}
       {view === "rules" && <RulesTab module="squad" title="Development XI and registration rules" />}
       {view === "players" && <>
       <div className="card rise d1" style={{ padding: 8, overflowX: "auto" }}>
         <table className="tbl" data-testid="squad-table">
-          <thead><tr><th>Player</th><th>Age</th><th>Positions</th><th>CA gained since last save</th><th>Best role</th><th>Minutes</th><th>Contract</th></tr></thead>
+          <thead><tr><th>Player</th><th>Age</th><th>Positions</th><th>Ability gained since last save</th><th>Best role</th><th>Minutes</th><th>Contract</th></tr></thead>
           <tbody>{rows.map((p) => <Row key={p.unique_id} p={p} onOpen={(id) => setParam("player", id)} />)}</tbody>
         </table>
       </div>

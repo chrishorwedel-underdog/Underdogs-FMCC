@@ -7,10 +7,12 @@ import { useGet, useAct } from "@/lib/ui";
 import { useScout, usePost, fmtMoney, fmtWage, toGBP, ContractTag, Pct, num, pctColor } from "./ctx";
 import { AdvFilter } from "./Lab";
 
+const SHORT = { npxg: "npxG", xa: "xA", kp: "OP-KP", progp: "PrgP", drb: "Drb", tkw: "TklW", intc: "Int", passc: "Cmp%", ktk: "KeyTkl", gls: "Gls", npg: "npG", chc: "ChC", pcmp: "PasCmp", sha: "Sh%", aerw: "AerW", blk: "Blk", pwon: "PossW", plost: "PossL", fd: "FD", acr: "Crs", drr: "Drb%", saves: "Svs", mlg: "MLG", padint: "pAdjInt", xgp: "xGP", savep: "Sv%", aerr: "Aer%", tkr: "Tkl%", xakp: "xA/KP", pwl: "W/L", padbc: "pAdjB+C" };
+const short = (k, label) => SHORT[k] || (label || k).replace(" / 90", "").slice(0, 12);
 const KEY_STATS = ["npxg", "xa", "kp", "progp", "drb", "tkw", "intc", "passc"];
 const BASE = { mode: "p90", gender: "M", source: "save", q: "", group: null, league: null, preset: null, max_value: null, max_wage: null, min_age: 15, max_age: 45, min_minutes: 0, sort: "grade", dir: "desc", adv: null };
 
-const Filters = ({ f, setF, meta, prefs }) => {
+const Filters = ({ f, setF, meta, prefs, more }) => {
   const set = (k, fn = (v) => v || null) => (e) => setF({ ...f, [k]: fn(e.target.value) });
   const cap = (k, mult) => (e) => setF({ ...f, [k]: e.target.value ? Math.round(toGBP(Number(e.target.value) * mult, prefs)) : null });
   return (
@@ -19,12 +21,14 @@ const Filters = ({ f, setF, meta, prefs }) => {
       <select className="inp" style={{ width: 150 }} value={f.group || ""} onChange={set("group")} data-testid="sp-group"><option value="">All positions</option>{Object.entries(meta?.groups || {}).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
       <select className="inp" style={{ width: 170 }} value={f.league || ""} onChange={set("league")} data-testid="sp-league"><option value="">All leagues</option>{meta?.leagues.map((l) => <option key={l}>{l}</option>)}</select>
       <select className="inp" style={{ width: 230 }} value={f.preset || ""} onChange={set("preset")} data-testid="sp-preset"><option value="">Ready-made searches</option>{Object.entries(meta?.presets || {}).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+      {more && <>
       <input className="inp" style={{ width: 130 }} type="number" placeholder="Max value (m)" onChange={cap("max_value", 1e6)} data-testid="sp-max-value" />
       <input className="inp" style={{ width: 130 }} type="number" placeholder="Max wage (k/wk)" onChange={cap("max_wage", 1e3)} data-testid="sp-max-wage" />
       <input className="inp" style={{ width: 80 }} type="number" defaultValue={f.max_age} title="Max age" onBlur={(e) => { const v = Math.min(50, Math.max(14, Number(e.target.value) || 45)); e.target.value = v; setF({ ...f, max_age: v }); }} data-testid="sp-max-age" />
       <input className="inp" style={{ width: 110 }} type="number" placeholder="Min minutes" onChange={set("min_minutes", (v) => Number(v) || 0)} data-testid="sp-min-minutes" />
       <div className="seg" data-testid="sp-gender">{[["M", "Men"], ["F", "Women"]].map(([k, l]) => <button key={k} className={f.gender === k ? "on" : ""} onClick={() => setF({ ...f, gender: k })} data-testid={`sp-gender-${k}`}>{l}</button>)}</div>
       {meta?.html_imports > 0 && <div className="seg">{[["save", "From the save"], ["html", "HTML imports"]].map(([k, l]) => <button key={k} className={f.source === k ? "on" : ""} onClick={() => setF({ ...f, source: k })} data-testid={`sp-source-${k}`}>{l}</button>)}</div>}
+      </>}
     </div>
   );
 };
@@ -62,6 +66,7 @@ export const PlayersTab = () => {
   const [cols, setCols] = useState("key");
   const [adv, setAdv] = useState(false);
   const [heat, setHeat] = useState(false);
+  const [more, setMore] = useState(false);
   const { data: meta } = useGet("scout-meta", "/scout/meta");
   const body = { ...f, view, limit: 100 };
   const { data, isLoading } = usePost("scout-players", "/scout/players", body, { enabled: !!meta });
@@ -70,25 +75,30 @@ export const PlayersTab = () => {
   const label = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.label]));
   const isPct = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.kind === "pct"]));
   const sortBy = (k) => setF({ ...f, sort: k, dir: f.sort === k && f.dir === "desc" ? "asc" : "desc" });
-  const Th = ({ k, children, title }) => <th onClick={() => sortBy(k)} style={{ cursor: "pointer", whiteSpace: "nowrap", color: f.sort === k ? "var(--acc)" : undefined }} title={title}>{children}{f.sort === k ? (f.dir === "desc" ? " ↓" : " ↑") : ""}</th>;
+  const Th = ({ k, children, title }) => <th onClick={() => sortBy(k)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && sortBy(k)} aria-label={title || undefined} style={{ cursor: "pointer", whiteSpace: "nowrap", color: f.sort === k ? "var(--acc)" : undefined }} title={title}>{children}{f.sort === k ? (f.dir === "desc" ? " ↓" : " ↑") : ""}</th>;
   const star = (r) => act(() => api.post("/scouting/shortlist", { unique_id: r.unique_id, action: "add" }), `${r.name} added to the shortlist`, ["rankings"]);
   return (
     <div>
-      <Filters f={f} setF={setF} meta={meta} prefs={prefs} />
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+      <div className="sp-sticky" data-testid="sp-filters">
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <div style={{ flex: 1 }}><Filters f={f} setF={setF} meta={meta} prefs={prefs} more={more} /></div>
+        <button className={`btn${more ? " btn-p" : ""}`} onClick={() => setMore(!more)} aria-expanded={more} data-testid="sp-more-filters">{more ? "Fewer filters" : "More filters"}</button>
+      </div>
+      {more && <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }} data-testid="sp-more-panel">
         <div className="seg" data-testid="sp-mode">{[["total", "Season totals"], ["p90", "Per 90"], ["adjusted", "Possession + league adjusted"]].map(([k, l]) => <button key={k} className={f.mode === k ? "on" : ""} onClick={() => setF({ ...f, mode: k })} data-testid={`sp-mode-${k}`}>{l}</button>)}</div>
         <div className="seg" data-testid="sp-cols">{[["key", "Key stats"], ["all", `All stats (${meta?.metrics.length || 0})`], ["computed", "Computed"], ["formulas", `Formulas (${meta?.formulas.length || 0})`], ["actions", "Actions per 90"]].map(([k, l]) => <button key={k} className={cols === k ? "on" : ""} onClick={() => setCols(k)} data-testid={`sp-cols-${k}`}>{l}</button>)}</div>
         <button className={`btn${adv || f.adv ? " btn-p" : ""}`} onClick={() => setAdv(!adv)} data-testid="sp-adv-toggle">Advanced filter{f.adv ? " (on)" : ""}</button>
         <button className={`btn${heat ? " btn-p" : ""}`} onClick={() => setHeat(!heat)} data-testid="sp-heat-toggle">Heat colours</button>
         <span style={{ marginLeft: "auto" }} /><Searches f={f} setF={setF} />
         <button className="btn" onClick={() => exportCsv(body)} data-testid="sp-export-csv"><Download size={13} />Export CSV</button>
+      </div>}
       </div>
-      {adv && <AdvFilter value={f.adv} meta={meta} onChange={(v) => setF({ ...f, adv: v })} />}
+      {more && adv && <AdvFilter value={f.adv} meta={meta} onChange={(v) => setF({ ...f, adv: v })} />}
       <div className="card" style={{ padding: 8, overflowX: "auto" }}>
-        <table className="tbl" data-testid="sp-table">
+        <table className="tbl pin2" data-testid="sp-table">
           <thead><tr><th></th><Th k="name">Player</Th><Th k="age">Age</Th><Th k="grade" title="Global grade: 20 + (local grade − 20) × league multiplier">Grade</Th>
             <Th k="value">Value</Th><Th k="fair_price">Fair price</Th><Th k="wage">Wage</Th><Th k="minutes">Mins</Th>
-            {statKeys.map((k) => <Th key={k} k={k} title={label[k]}>{label[k]?.replace(" / 90", "").slice(0, 18)}</Th>)}
+            {statKeys.map((k) => <Th key={k} k={k} title={label[k]}>{short(k, label[k])}</Th>)}
             {cols === "computed" && meta?.archetypes.map((a) => <Th key={a.key} k={`c:${a.key}`}>{a.name}</Th>)}
             {cols === "formulas" && meta?.formulas.map((x) => <Th key={x.key} k={`f:${x.key}`}>{x.name}</Th>)}
             {cols === "actions" && ["Defensive actions", "Progressive actions", "Box involvement"].map((a) => <th key={a}>{a}</th>)}<th></th></tr></thead>

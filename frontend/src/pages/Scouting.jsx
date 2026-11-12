@@ -15,6 +15,12 @@ import { FormulasTab, Quadrant } from "@/components/scout/Lab";
 import { ExploreTab, BoardTab, PicksTab, Compare4 } from "@/components/scout/Recruit";
 import { PossessionTab, ImportTab } from "@/components/scout/DataTabs";
 import { StatsTable } from "@/components/analysis/StatsTable";
+import { MoneyballTab } from "@/components/scout/MoneyballTab";
+import { SimilarTab } from "@/components/scout/SimilarTab";
+import { YouthIntake } from "@/components/scout/YouthIntake";
+
+const MAIN = [["players", "Find players"], ["moneyball", "Moneyball"], ["similar", "Similar players"], ["youth", "Youth intake"], ["shortlist", "Shortlist"], ["more", "More tools"]];
+const MAIN_KEYS = MAIN.map(([k]) => k);
 
 const Shortlist = ({ open }) => {
   const { data } = useGet("rankings", "/scouting/rankings", { shortlist_only: true, sort: "score" });
@@ -25,12 +31,13 @@ const Shortlist = ({ open }) => {
       {data?.rows.length > 0 && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px 10px" }}>
         <small style={{ flex: 1, color: "var(--dim)" }}>Queue the whole list for FM's own shortlist; it goes in with your other game changes.</small>
         <button className="btn btn-p" onClick={() => sendToFm(act, data.rows.map((r) => r.unique_id))} data-testid="shortlist-send-fm"><ListPlus size={13} />Send all to FM shortlist</button></div>}
-      <table className="tbl" data-testid="rankings-table">
-        <thead><tr><th></th><th>Player</th><th>Age</th><th>Club</th><th>Best role</th><th>Value</th><th>Score</th></tr></thead>
+      <table className="tbl pin1" data-testid="rankings-table">
+        <thead><tr><th>Player</th><th></th><th>Age</th><th>Club</th><th>Best role</th><th>Value</th><th>Score</th></tr></thead>
         <tbody>{data?.rows.map((r) => (
           <tr key={r.unique_id} onClick={() => open(r.unique_id)} data-testid={`ranking-row-${r.unique_id}`}>
+            <td><b>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.nationality} · {r.positions.join(", ")}</small></td>
             <td onClick={(e) => e.stopPropagation()}><button className="ib" style={{ width: 28, height: 28, color: "var(--amb)" }} onClick={() => act(() => api.post("/scouting/shortlist", { unique_id: r.unique_id, action: "remove" }), "Removed from shortlist", ["rankings"])} data-testid={`shortlist-toggle-${r.unique_id}`}><Star size={14} fill="currentColor" /></button></td>
-            <td><b>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.nationality} · {r.positions.join(", ")}</small></td><td>{r.age}</td><td>{r.club}</td><td>{r.best_role}</td><td className="mono">{fmtMoney(r.value, prefs)}</td><td className="mono" style={{ color: "var(--acc)" }}>{r.score}</td>
+            <td>{r.age}</td><td>{r.club}</td><td>{r.best_role}</td><td className="mono">{fmtMoney(r.value, prefs)}</td><td className="mono" style={{ color: "var(--acc)" }}>{r.score}</td>
           </tr>))}</tbody>
       </table>
       {data && !data.rows.length && <p className="note" style={{ padding: 10 }}>Star players in the Players tab to shortlist them.</p>}
@@ -68,7 +75,9 @@ const VIEW_NOTE = { full: "Full: everything, including hidden attributes, person
   moneyball: "Moneyball: match stats and price only. Attributes are switched off." };
 
 export default function Scouting({ initialTab = "players" }) {
-  const [tab, setTab] = useState(new URLSearchParams(window.location.search).get("tab") || initialTab);
+  const start = new URLSearchParams(window.location.search).get("tab") || initialTab;
+  const [main, setMain] = useState(MAIN_KEYS.includes(start) ? start : "more");
+  const [tab, setTab] = useState(MAIN_KEYS.includes(start) ? "stats" : start);
   const [view, setView] = useState("full");
   const [compare, setCompare] = useState([]);
   const [open, setOpen] = useState(() => Number(new URLSearchParams(window.location.search).get("player")) || null);
@@ -77,33 +86,38 @@ export default function Scouting({ initialTab = "players" }) {
   const prefs = saved || { currency: "GBP", wages: "week" };
   const setPrefs = (p) => act(() => api.put("/scout/prefs", p), null, ["scout-prefs"]);
   const toggleCompare = (id) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id].slice(-4)));
-  const tabs = [["players", "Players"], ["stats", "Stats Table"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["board", "Shortlist board"], ["picks", "DOF picks"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
-    ["computed", "Computed stats"], ["formulas", "Formulas"], ["roles", "Role scores"], ["leagues", "Leagues"], ["possession", "Possession"], ["import", "HTML import"], ["shortlist", "Shortlist"], ["rules", "Rules"]];
+  const tabs = [["stats", "Stats Table"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["board", "Shortlist board"], ["picks", "DOF picks"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
+    ["computed", "Computed stats"], ["formulas", "Formulas"], ["roles", "Role scores"], ["leagues", "Leagues"], ["possession", "Possession"], ["import", "HTML import"], ["rules", "Rules"]];
+  const more = main === "more";
   return (
     <ScoutCtx.Provider value={{ view, prefs, openPlayer: setOpen, compare, toggleCompare }}>
       <div data-testid="scouting-page">
-        <PageHead eyebrow="A combination of match stats and advanced analytics" title={initialTab === "compare" ? "Moneyball" : "Scout Players"}>
+        <PageHead eyebrow="Search, compare and find value across every loaded league" title="Scout Players">
           <ViewBar view={view} setView={setView} prefs={prefs} setPrefs={setPrefs} />
         </PageHead>
         <p className="note" style={{ marginBottom: 10 }} data-testid="scout-view-note"><Scale size={12} style={{ display: "inline", verticalAlign: -1 }} /> {VIEW_NOTE[view]}</p>
-        <div style={{ overflowX: "auto", marginBottom: 16 }}><TabBar id="scouting" value={tab} onChange={setTab} tabs={tabs} /></div>
-        {tab === "players" && <PlayersTab />}
-        {tab === "stats" && <StatsTable />}
-        {tab === "myclub" && <MyClubTab />}
-        {tab === "deals" && <><DealsTab /><Quadrant /></>}
-        {tab === "formulas" && <FormulasTab />}
-        {tab === "scatter" && <ExploreTab open={setOpen} />}
-        {tab === "board" && <BoardTab open={setOpen} />}
-        {tab === "picks" && <PicksTab open={setOpen} onCompare={(id, many) => (many ? setCompare(id) : toggleCompare(id))} />}
-        {tab === "compare" && (compare.length ? <Compare4 ids={compare} clear={() => setCompare([])} />
+        <div style={{ overflowX: "auto", marginBottom: 12 }}><TabBar id="scout-main" value={main} onChange={setMain} tabs={MAIN} /></div>
+        {more && <div style={{ overflowX: "auto", marginBottom: 16 }}><TabBar id="scouting" value={tab} onChange={setTab} tabs={tabs} /></div>}
+        {main === "players" && <PlayersTab />}
+        {main === "moneyball" && <MoneyballTab />}
+        {main === "similar" && <SimilarTab />}
+        {main === "youth" && <YouthIntake />}
+        {main === "shortlist" && <Shortlist open={setOpen} />}
+        {more && tab === "stats" && <StatsTable />}
+        {more && tab === "myclub" && <MyClubTab />}
+        {more && tab === "deals" && <><DealsTab /><Quadrant /></>}
+        {more && tab === "formulas" && <FormulasTab />}
+        {more && tab === "scatter" && <ExploreTab open={setOpen} />}
+        {more && tab === "board" && <BoardTab open={setOpen} />}
+        {more && tab === "picks" && <PicksTab open={setOpen} onCompare={(id, many) => (many ? setCompare(id) : toggleCompare(id))} />}
+        {more && tab === "compare" && (compare.length ? <Compare4 ids={compare} clear={() => setCompare([])} />
           : <div className="soon">Pick up to 4 players with the scales button in Players or in a profile to compare them here.</div>)}
-        {tab === "computed" && <ComputedTab />}
-        {tab === "roles" && <RoleScoresTab />}
-        {tab === "leagues" && <LeaguesTab />}
-        {tab === "possession" && <PossessionTab />}
-        {tab === "import" && <ImportTab />}
-        {tab === "shortlist" && <Shortlist open={setOpen} />}
-        {tab === "rules" && <RulesTab module="scouting" title="Scouting and Moneyball rules" />}
+        {more && tab === "computed" && <ComputedTab />}
+        {more && tab === "roles" && <RoleScoresTab />}
+        {more && tab === "leagues" && <LeaguesTab />}
+        {more && tab === "possession" && <PossessionTab />}
+        {more && tab === "import" && <ImportTab />}
+        {more && tab === "rules" && <RulesTab module="scouting" title="Scouting and Moneyball rules" />}
         <ProfileSheet uid={open} onClose={() => setOpen(null)} />
       </div>
     </ScoutCtx.Provider>

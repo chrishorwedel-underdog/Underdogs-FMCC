@@ -1,4 +1,4 @@
-import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Coins, Sprout, ShieldCheck, Palette, UserCog, Gavel, Package, ToggleRight, ArrowLeftRight, ClipboardList } from "lucide-react";
+import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Sprout, ShieldCheck, Palette, UserCog, Gavel, Package, ToggleRight, ArrowLeftRight, ClipboardList } from "lucide-react";
 
 export const TOP_LINKS = [
   { to: "/safety", key: "safety", label: "Project Safety", Icon: ShieldCheck },
@@ -16,8 +16,7 @@ export const NAV = [
   { group: "Player Development", to: "/development", key: "development", label: "Development", sub: "Minutes and growth plans", c: "#34D399", Icon: Sprout },
   { group: "Player Development", to: "/dynamic-potential", key: "dp", label: "Dynamic Potential", sub: "Review development", c: "#4C8DFF", Icon: TrendingUp },
   { group: "Player Development", to: "/elite-training", key: "elite", label: "Elite Training", sub: "Nurture your next generation", c: "#E879F9", Icon: Zap },
-  { group: "Recruitment", to: "/moneyball", key: "moneyball", label: "Moneyball", sub: "Compare transfer options", c: "#F2B54A", Icon: Coins },
-  { group: "Recruitment", to: "/scouting", key: "scouting", label: "Scout Players", sub: "Scout Window", c: "#22D3EE", Icon: Search },
+  { group: "Recruitment", to: "/scouting", key: "scouting", label: "Scout Players", sub: "Search, Moneyball, youth intake", c: "#22D3EE", Icon: Search },
   { group: "Recruitment", to: "/transfer-market", key: "market", label: "Transfer Market", sub: "Who's available, what's moving", c: "#38BDF8", Icon: ArrowLeftRight },
   { group: "Reports", to: "/club-analysis", key: "club", label: "Club Analysis", sub: "What to do first", c: "#818CF8", Icon: ClipboardList },
   { group: "Reports", to: "/reports", key: "reports", label: "World Monthly Reports", sub: "Who made waves last month", c: "#A78BFA", Icon: BarChart3 },
