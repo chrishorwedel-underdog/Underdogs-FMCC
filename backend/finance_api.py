@@ -41,7 +41,12 @@ def assess(f: dict) -> list:
         tone = "red" if left is not None and left < 0 else "gold" if share is not None and share <= 50 else "green"
         out.append(_item("spent", "Incoming Transfers", spent, tone, f"Spent on players bought this season · {share}% of this year's transfer budget used" if share is not None else "Spent on players bought this season"))
     sold = f.get("transfer_received")
-    out.append(_item("sold", "Outgoing Transfers", None) if sold is None else _item("sold", "Outgoing Transfers", sold, "green" if sold > 0 else None, "Made selling players this season" if sold > 0 else "No players sold this season yet"))
+    net = sold - spent if sold is not None and spent is not None else None
+    net_txt = None if net is None else f"Net spend {'+' if net > 0 else ''}{_money(net)} (sales minus purchases)"
+    if spent is not None and net_txt:
+        out[-1]["reason"] = f"{out[-1]['reason']} · {net_txt}"
+    out.append(_item("sold", "Outgoing Transfers", None) if sold is None else _item("sold", "Outgoing Transfers", sold, "green" if sold > 0 else None, ("Made selling players this season" if sold > 0 else "No players sold this season yet") + (f" · {net_txt}" if net_txt else "")))
+    out.append(_item("net", "Net Spend", None) if net is None else _item("net", "Net Spend", f"{'+' if net > 0 else ''}{_money(net)}", "green" if net >= 0 else "gold", "Sales minus purchases this season. Positive means you've made more than you've spent.") | {"amount": net})
     if left is None:
         out.append(_item("budget", "Budget Left", None))
     else:
