@@ -3,9 +3,10 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Literal
 
-from core import db, active_career, now_iso
+from core import db, active_career, now_iso, new_id, audit
 import stats_model as sm
 
 router = APIRouter(prefix="/api/watch")
@@ -42,6 +43,48 @@ def changes_between(a: dict, b: dict) -> list:
     return out
 
 
+def rule_text(r: dict) -> str:
+    if r["kind"] == "value":
+        return f"Value {r['op']} £{r['amount'] / 1e6:g}m"
+    if r["kind"] == "grade":
+        return f"Grade {r['op']} {r['amount']:g}"
+    if r["kind"] == "contract":
+        return f"Contract ends within {int(r['amount'])} months"
+    return "Becomes a free agent or moves club"
+
+
+def rule_true(r: dict, v: dict) -> bool:
+    x = {"value": v.get("value"), "grade": v.get("grade")}.get(r["kind"])
+    if r["kind"] in ("value", "grade"):
+        return x is not None and (x < r["amount"] if r["op"] == "below" else x > r["amount"])
+    if r["kind"] == "contract":
+        return v.get("months_left") is not None and v["months_left"] <= r["amount"]
+    return False
+
+
+def _show(r: dict, v: dict) -> str:
+    if r["kind"] == "value":
+        return f"£{(v.get('value') or 0) / 1e6:.1f}m"
+    if r["kind"] == "grade":
+        return str(v.get("grade"))
+    return f"{v.get('months_left')} months left"
+
+
+def rule_hits(w: dict, now: dict) -> tuple:
+    """Custom rules alert once each time they become true; the move rule fires on each club change."""
+    out, state = [], dict(w.get("rule_state") or {})
+    for r in w["rules"]:
+        if r["kind"] == "move":
+            if now.get("club") != w["last"].get("club"):
+                out.append((f"rule-{r['id']}", (f"Became a free agent (left {w['last'].get('club')})" if _free(now.get("club")) else f"Moved from {w['last'].get('club') or 'free agency'} to {now.get('club')}") + ", your rule", "info"))
+            continue
+        t = rule_true(r, now)
+        if t and not state.get(r["id"]):
+            out.append((f"rule-{r['id']}", f"{rule_text(r)}, your rule (now {_show(r, now)})", "down" if r.get("op") == "below" or r["kind"] == "contract" else "up"))
+        state[r["id"]] = t
+    return out, state
+
+
 async def _current(c: dict) -> tuple[dict, dict]:
     data = await sm.build(c)
     if not data["players"]:
@@ -74,13 +117,14 @@ async def check(c: dict) -> int:
         if not x:
             continue
         now = _view(x)
-        for kind, text, tone in changes_between(w["last"], now):
+        hits, state = rule_hits(w, now) if w.get("rules") else (changes_between(w["last"], now), None)
+        for kind, text, tone in hits:
             n += 1
             await _add(c["id"], "watch", f"watch:{w['unique_id']}:{save_no}:{kind}", f"{now['name']}: {text.split(' (')[0][0].lower()}{text.split(' (')[0][1:]}", text + ".", data.get("game_date") or "")
             await db.notices.update_one({"career_id": c["id"], "key": f"watch:{w['unique_id']}:{save_no}:{kind}"}, {"$set": {"link": f"/scouting?tab=watchlist&player={w['unique_id']}"}})
             await db.watchlist.update_one({"career_id": c["id"], "unique_id": w["unique_id"]},
                                           {"$push": {"log": {"$each": [{"kind": kind, "text": text, "tone": tone, "game_date": data.get("game_date"), "at": now_iso()}], "$slice": -20}}})
-        await db.watchlist.update_one({"career_id": c["id"], "unique_id": w["unique_id"]}, {"$set": {"last": now}})
+        await db.watchlist.update_one({"career_id": c["id"], "unique_id": w["unique_id"]}, {"$set": {"last": now} | ({"rule_state": state} if state is not None else {})})
     await db.careers.update_one({"id": c["id"]}, {"$set": {"watch_checked_save": save_no}})
     return n
 
@@ -93,7 +137,38 @@ class WatchIn(BaseModel):
 async def watchlist():
     c = await active_career()
     rows = await db.watchlist.find({"career_id": c["id"]}, {"_id": 0, "career_id": 0}).sort("added_at", -1).to_list(500)
-    return {"rows": [r | {"latest": (r.get("log") or [None])[-1]} for r in rows], "ids": [r["unique_id"] for r in rows]}
+    return {"rows": [r | {"latest": (r.get("log") or [None])[-1], "rules": [x | {"text": rule_text(x), "now": rule_true(x, r["last"])} for x in r.get("rules") or []]} for r in rows], "ids": [r["unique_id"] for r in rows]}
+
+
+class RuleIn(BaseModel):
+    kind: Literal["value", "grade", "contract", "move"]
+    op: Literal["below", "above"] = "below"
+    amount: float = Field(0, ge=0, le=2_000_000_000)
+
+
+class RulesIn(BaseModel):
+    rules: list[RuleIn] = Field(max_length=6)
+
+
+@router.put("/{uid}/rules")
+async def set_rules(uid: int, body: RulesIn):
+    c = await active_career()
+    w = await db.watchlist.find_one({"career_id": c["id"], "unique_id": uid}, {"_id": 0})
+    if not w:
+        raise HTTPException(404, "That player isn't on your watchlist")
+    rules = []
+    for r in body.rules:
+        if r.kind == "grade" and not 0 < r.amount <= 100:
+            raise HTTPException(422, "A grade rule needs a number between 1 and 100")
+        if r.kind == "contract" and not 1 <= r.amount <= 60:
+            raise HTTPException(422, "A contract rule needs between 1 and 60 months")
+        if r.kind == "value" and r.amount <= 0:
+            raise HTTPException(422, "A value rule needs an amount above £0")
+        rules.append(r.model_dump() | {"id": new_id()})
+    state = {r["id"]: rule_true(r, w["last"]) for r in rules}
+    await db.watchlist.update_one({"career_id": c["id"], "unique_id": uid}, {"$set": {"rules": rules, "rule_state": state}})
+    await audit(c["id"], "watch rules", "watchlist", f"{w['last']['name']}: " + ("; ".join(rule_text(r) for r in rules) or "back to standard alerts"))
+    return {"rules": [r | {"text": rule_text(r), "now": state[r["id"]]} for r in rules]}
 
 
 @router.post("")

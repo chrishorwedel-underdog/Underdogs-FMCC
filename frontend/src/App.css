@@ -470,3 +470,8 @@ select.blank{cursor:pointer}
 .radar-crest{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;flex-shrink:0;border:2px solid rgba(255,255,255,.35)}
 @media print{.printing-radar .radar-brand{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 
+.rule-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rule-row select.inp{width:auto!important;min-width:120px;flex:0 0 auto}
+.rule-amt{display:inline-flex;align-items:center;gap:4px;color:var(--mut);font-size:13px}
+.rule-amt .inp{width:90px!important}
+
