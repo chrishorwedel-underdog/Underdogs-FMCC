@@ -10,8 +10,8 @@ import features_api
 
 router = APIRouter(prefix="/api/notify")
 TYPES = {"youth": "Youth intake happened", "report": "New monthly report", "missed": "Missed dates", "countdown": "Countdown reaching 7 days", "changes": "Game changes waiting",
-         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed", "breakout": "Breakout Player of the season"}
-PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist", "breakout": "/breakout"}
+         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed", "breakout": "Breakout Player of the season", "elite": "Elite Training session finished"}
+PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist", "breakout": "/breakout", "elite": "/"}
 
 
 def _d(s: str) -> date:
@@ -128,6 +128,10 @@ async def sync(c: dict) -> None:
         pass
     try:
         await awards_api.auto_breakout(c)
+    except HTTPException:
+        pass
+    try:
+        await awards_api.auto_elite(c)
     except HTTPException:
         pass
     sl = await scouting_api.shortlisted(c["id"])

@@ -5,6 +5,7 @@ import { Loading } from "@/components/Loading";
 import { ModuleCards } from "@/components/ModuleCards";
 import { UpNextPanel } from "@/components/UpNextPanel";
 import { WhatChanged } from "@/components/WhatChanged";
+import { Celebrations } from "@/components/Celebrations";
 
 const WORDS = ["Nothing", "One thing", "Two things", "Three things", "Four things", "Five things"];
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning," : h < 18 ? "Good afternoon," : "Good evening,"; };
@@ -38,6 +39,7 @@ export default function Home() {
           <div className="hchip" data-testid="home-backup-chip"><Check size={15} /><b>Backup</b> saved {ago(d.last_backup)}</div>
         </div>
       </div>
+      <Celebrations />
       <UpNextPanel attention={d.attention} />
       <WhatChanged />
       <ModuleCards d={d} />

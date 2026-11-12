@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
@@ -71,7 +73,26 @@ async def elite_withdraw(uid: int):
 @router.post("/elite/queue", dependencies=need("elite"))
 async def elite_queue():
     """Work out PA boosts for nominees under the current rules and queue them as game changes."""
-    c = await active_career()
+    return await run_elite(await active_career())
+
+
+async def auto_elite(c: dict) -> dict | None:
+    """Each Elite Training session (January and September saves) runs once, automatically, for everyone nominated."""
+    if "elite" in __import__("features_api").off(c):
+        return None
+    snap = await latest_snapshot(c["id"])
+    if not snap or int(snap["game_date"][5:7]) not in (1, 9) or c.get("elite_session_done") == snap["game_date"][:7]:
+        return None
+    await db.careers.update_one({"id": c["id"]}, {"$set": {"elite_session_done": snap["game_date"][:7]}})
+    res = await run_elite(c)
+    if res["queued"]:
+        from notify_api import _add
+        await _add(c["id"], "elite", f"elite-session:{snap['game_date'][:7]}", f"Elite Training session finished: {res['queued']} player(s) improved",
+                   "See the summary on Home and in Elite Training.", snap["game_date"])
+    return res
+
+
+async def run_elite(c: dict) -> dict:
     snap = await latest_snapshot(c["id"])
     rules = await current_rules(c["id"], "elite")
     ctxs = {x["unique_id"]: x for x in await own_contexts(c)}
@@ -169,7 +190,7 @@ async def auto_breakout(c: dict) -> dict | None:
         return None
     key = f"breakout:{snap['season']}:{x['unique_id']}"
     delta = RE.capped(x[r["action"]["target"]], RE.roll(r, f"{c['id']}:{key}"), r["max_value"])
-    await _award(c, key, "breakout", x, r, rules["version"], "official", delta, f"Best season among teammates: grade {w['grade']}")
+    await _award(c, key, "breakout", x, r, rules["version"], "official", delta, f"Season grade {w['grade']}")
     res = await queue_changes(c, "breakout", key, [{"unique_id": x["unique_id"], "name": x["name"], "field": r["action"]["target"], "delta": delta}])
     await audit(c["id"], "breakout winner", "breakout", f"{x['name']} is Breakout Player of {snap['season']} (grade {w['grade']}), applied automatically")
     from notify_api import _add
@@ -190,6 +211,48 @@ async def breakout():
     return {"season": snap["season"], "season_over": int(snap["game_date"][5:7]) in (5, 6), "min_minutes": MIN_MINUTES,
             "winner": {"unique_id": this["unique_id"], "name": this["name"], "note": this.get("note")} if this else None,
             "leader": s["ranked"][0] if s["ranked"] and not this else None, "standings": s["ranked"], "ineligible": s["ineligible"], "past": past, "_n": len(pool)}
+
+
+# ---------- Home celebration cards (general terms only; true CA/PA never shown) ----------
+def _size(delta) -> str:
+    d = abs(delta or 0)
+    return "a small" if d <= 2 else "a solid" if d <= 5 else "a big"
+
+
+def _benefit(field: str, delta) -> str:
+    what = "potential (how good he can become)" if field == "pa" else "current ability (how good he is now)"
+    return f"{_size(delta).capitalize()} boost to his {what}"
+
+
+@router.get("/celebrations")
+async def celebrations():
+    c = await active_career()
+    snap = await latest_snapshot(c["id"])
+    if not snap:
+        return {"cards": []}
+    ctxs = {x["unique_id"]: x for x in await own_contexts(c)}
+    cards, gd = [], snap["game_date"]
+    months_since = lambda ym: (int(gd[:4]) - int(ym[:4])) * 12 + int(gd[5:7]) - int(ym[5:7])  # noqa: E731
+    bo = await db.awards.find_one({"career_id": c["id"], "module": "breakout", "status": "official"}, {"_id": 0}, sort=[("at", -1)])
+    if bo:
+        season = bo["award_key"].split(":")[1]
+        end_year = f"20{season[5:7]}" if len(season) >= 7 else gd[:4]
+        if months_since(f"{end_year}-05") <= 4:
+            x = ctxs.get(bo["unique_id"]) or {}
+            cards.append({"id": f"breakout-{season}", "kind": "breakout", "title": f"{bo['name']} is your Breakout Player of {season}", "unique_id": bo["unique_id"],
+                          "stats": {k: x.get(k) for k in ("appearances", "minutes", "goals", "assists", "avg_rating")}, "note": bo.get("note"),
+                          "reward": _benefit(bo.get("field") or "pa", bo.get("delta")) + ", already applied to your save."})
+    last = await db.awards.find_one({"career_id": c["id"], "module": "elite", "status": "awarded"}, {"_id": 0, "award_key": 1}, sort=[("at", -1)])
+    if last:
+        ym = last["award_key"].split(":")[1]
+        if months_since(ym) <= 2:
+            rows = await db.awards.find({"career_id": c["id"], "module": "elite", "status": "awarded", "award_key": {"$regex": f"^elite:{ym}:"}}, {"_id": 0}).to_list(50)
+            label = datetime.strptime(ym, "%Y-%m").strftime("%B %Y")
+            cards.append({"id": f"elite-{ym}", "kind": "elite", "title": f"Elite Training session finished ({label})",
+                          "players": [{"unique_id": r["unique_id"], "name": r["name"], "age": (ctxs.get(r["unique_id"]) or {}).get("age"),
+                                       "benefit": _benefit(r.get("field") or "pa", r.get("delta")), "category": r.get("category")} for r in rows],
+                          "summary": f"{len(rows)} player{'s' if len(rows) != 1 else ''} earned a development boost from their training. It's already in your save."})
+    return {"cards": cards}
 
 
 @router.get("/awards/{award_key}/history")

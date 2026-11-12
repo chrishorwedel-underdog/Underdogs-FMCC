@@ -23,7 +23,8 @@ const Nominees = () => {
   return (
     <div className="homegrid">
       <div className="card" style={{ padding: 8, overflowX: "auto" }}>
-        <div className="ttl" style={{ padding: 10 }}>Nominees<span style={{ marginLeft: "auto" }} /><button className="btn btn-p" disabled={!data.nominees.length} onClick={queue} data-testid="elite-queue-button"><Zap size={13} />Work out PA boosts</button></div>
+        <div className="ttl" style={{ padding: 10 }}>Nominees<span style={{ marginLeft: "auto" }} /><button className="btn" disabled={!data.nominees.length} onClick={queue} title="Sessions run automatically when FMCC reads your January and September saves. Use this only to run one early." data-testid="elite-queue-button"><Zap size={13} />Run a session now</button></div>
+        <p className="note" style={{ padding: "0 10px 8px", margin: 0 }} data-testid="elite-auto-note">Sessions run automatically in January and September: every nominee who qualifies gets his boost applied, and a summary appears on Home.</p>
         <table className="tbl" data-testid="elite-table">
           <thead><tr><th>Player</th><th>Age</th><th>Training rating</th><th>Trend</th><th>Growth</th><th>Rule</th><th></th></tr></thead>
           <tbody>{data.nominees.map((n) => (
@@ -50,7 +51,7 @@ export default function EliteTraining() {
   const [tab, setTab] = useState("nominees");
   return (
     <div data-testid="elite-page">
-      <PageHead eyebrow="Nominations, training evidence and PA boosts" title="Elite Training">
+      <PageHead eyebrow="Nominations and training evidence · sessions run automatically in January and September" title="Elite Training">
         <TabBar id="elite" value={tab} onChange={setTab} tabs={[["nominees", "Nominees"], ["rules", "Rules"]]} />
       </PageHead>
       {tab === "nominees" ? <Nominees /> : <RulesTab module="elite" title="Elite Training rules" />}
