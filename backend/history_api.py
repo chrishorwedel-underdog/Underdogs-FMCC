@@ -350,6 +350,45 @@ async def leaders(season: str | None = None, mode: str = "season"):
     return {"mode": mode, "season": s["season"], "status": s["status"], "seasons": [x["season"] for x in reversed(arch)], "leaders": out,
             "completed": sum(x["status"] == "Completed" for x in arch), "min_minutes": MIN_RATE_MINUTES}
 
+WATCH_NOUN = {"goals": "goals", "assists": "assists", "appearances": "appearances", "starts": "starts", "minutes": "minutes", "avg_rating": "rating points", "clean_sheets": "clean sheets",
+              "tackles": "tackles", "duels_won": "duels won", "npxg": "npxG", "xa": "xA", "xgxa": "xG + xA", "progp": "progressive passes", "prgc": "progressive carries", "xgp": "goals prevented"}
+WATCH_SHARE = 0.75
+
+
+def record_watch(arch: list) -> list:
+    """Current-season players closing in on the club's best season for a stat (from completed seasons only)."""
+    cur = next((s for s in arch if s["status"] == "In Progress"), None)
+    done = [s for s in arch if s["status"] == "Completed"]
+    if not cur or not done:
+        return []
+    out = []
+    for key, label, _ in LEADERS:
+        bests = [(top[0], s["season"]) for s in done if (top := _ranked(s, key))]
+        if not bests:
+            continue
+        best, season = max(bests, key=lambda b: b[0]["value"])
+        if best["value"] <= 0:
+            continue
+        for r in _ranked(cur, key)[:1]:
+            if r["value"] < best["value"] * WATCH_SHARE:
+                break
+            gap = round(best["value"] - r["value"], 2)
+            g = int(gap) if float(gap).is_integer() else gap
+            noun = WATCH_NOUN[key] if g != 1 else WATCH_NOUN[key].rstrip("s")
+            text = f"{g} {noun} off the club best" if gap > 0 else ("level with the club best" if gap == 0 else "past the club best this season")
+            out.append({"id": f"{key}:{r['unique_id']}", "key": key, "label": label, "unique_id": r["unique_id"], "name": r["name"], "value": r["value"], "gap": gap, "text": text,
+                        "best": {"value": best["value"], "name": best["name"], "unique_id": best["unique_id"], "season": season}, "share": round(r["value"] / best["value"], 3)})
+    return sorted(out, key=lambda x: -x["share"])[:8]
+
+
+@router.get("/record-watch")
+async def get_record_watch():
+    c = await active_career()
+    arch = await archive(c)
+    return {"items": record_watch(arch), "completed": sum(s["status"] == "Completed" for s in arch), "season": arch[-1]["season"] if arch else None}
+
+
+
 
 @router.get("/compare")
 async def compare(a: str, b: str):

@@ -6,6 +6,7 @@ import { ModuleCards } from "@/components/ModuleCards";
 import { UpNextPanel } from "@/components/UpNextPanel";
 import { WhatChanged } from "@/components/WhatChanged";
 import { Celebrations } from "@/components/Celebrations";
+import { RecordWatch } from "@/components/RecordWatch";
 
 const WORDS = ["Nothing", "One thing", "Two things", "Three things", "Four things", "Five things"];
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning," : h < 18 ? "Good afternoon," : "Good evening,"; };
@@ -40,6 +41,7 @@ export default function Home() {
         </div>
       </div>
       <Celebrations />
+      <RecordWatch />
       <UpNextPanel attention={d.attention} />
       <WhatChanged />
       <ModuleCards d={d} />
