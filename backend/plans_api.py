@@ -20,6 +20,34 @@ def _note(delta: int, notes: list) -> dict:
             return {"tone": tone, "text": text}
 
 
+GOALS = {"small": ("Small improvement", 3), "steady": ("Steady improvement", 6), "big": ("Big improvement", 10)}
+
+
+def _level(plan: dict) -> str | None:
+    if plan.get("goal_level"):
+        return plan["goal_level"]
+    if not plan.get("goal_ca") or plan.get("start_ca") is None:
+        return None
+    d = plan["goal_ca"] - plan["start_ca"]
+    return "small" if d <= 4 else "steady" if d <= 8 else "big"
+
+
+def _public_plan(plan: dict) -> dict:
+    """Plan as the app sees it: a plain-words goal, never the ability numbers behind it."""
+    lv = _level(plan)
+    return {k: v for k, v in plan.items() if k not in ("goal_ca", "start_ca", "goal_gain")} | {"goal_level": lv, "goal_label": GOALS[lv][0] if lv else None}
+
+
+def _goal_status(gain, goal) -> dict | None:
+    if not goal or gain is None:
+        return None
+    if gain >= goal:
+        return {"tone": "done", "text": "Goal reached"}
+    if gain <= 0:
+        return {"tone": "flat", "text": "Not started yet"}
+    return {"tone": "up", "text": "Over halfway there" if gain * 2 >= goal else "On the way"}
+
+
 def _trend(vals: list) -> list:
     """Direction of each save-to-save step only (up/flat/down), never the size."""
     return ["up" if b > a else "down" if b < a else "flat" for a, b in zip(vals, vals[1:])]
@@ -55,7 +83,7 @@ async def development():
         goal = (plan["goal_ca"] - plan["start_ca"]) if plan and plan.get("goal_ca") and plan.get("start_ca") is not None else None
         apps = p.get("appearances") or 0
         if plan:
-            plan = {k: v for k, v in plan.items() if k not in ("goal_ca", "start_ca")} | {"goal_gain": goal}
+            plan = _public_plan(plan)
         rows.append({"unique_id": uid, "name": p["name"], "age": p["age"], "positions": p["positions"],
                      "progress_month": _note(p["ca"] - prev[uid]["ca"], MONTH_NOTES) if uid in prev else None, "progress_season": _note(p["ca"] - start[uid], SEASON_NOTES) if uid in start else None,
                      "trend": _trend([h[uid] for h in hist if uid in h]), "starts": p.get("starts"), "sub_apps": p.get("sub_apps"),
@@ -63,7 +91,7 @@ async def development():
                      "minutes_per_game": round(p["minutes"] / apps) if apps else None,
                      "month_minutes": mins[uid], "season_minutes": p["minutes"], "plan": plan, "target": target,
                      "needs_minutes": bool(target) and mins[uid] < target * params["needs_pct"] / 100,
-                     "goal_so_far": gain, "goal_progress": round(max(0, min(100, gain / goal * 100))) if goal and gain is not None else None})
+                     "goal_status": _goal_status(gain, goal)})
     rows.sort(key=lambda r: (r["plan"] is None, r["age"]))
     return {"game_date": latest["game_date"], "rows": rows, "loans": LOANS, "params": params}
 
@@ -72,7 +100,7 @@ class PlanIn(BaseModel):
     unique_id: int
     minutes_target: int = Field(ge=0, le=1000)
     loan: Literal["none", "loan_lower", "loan_same", "loan_abroad"] = "none"
-    goal_gain: int | None = Field(None, ge=1, le=60)
+    goal_level: Literal["small", "steady", "big"] | None = None
     note: str = Field("", max_length=300)
     expected_revision: int = Field(ge=0)
 
@@ -88,8 +116,8 @@ async def save_plan(body: PlanIn):
     rev = await next_revision("plans", {"career_id": c["id"], "unique_id": body.unique_id})
     if rev - 1 != body.expected_revision:
         raise HTTPException(409, "This plan was changed somewhere else. Reload to see the latest version.")
-    goal = {"start_ca": p["ca"], "goal_ca": min(200, p["ca"] + body.goal_gain)} if body.goal_gain else {"start_ca": p["ca"], "goal_ca": None}
-    doc = body.model_dump(exclude={"expected_revision", "goal_gain"}) | goal | {"id": new_id(), "career_id": c["id"], "revision": rev, "name": p["name"],
+    goal = {"start_ca": p["ca"], "goal_ca": min(200, p["ca"] + GOALS[body.goal_level][1])} if body.goal_level else {"start_ca": p["ca"], "goal_ca": None}
+    doc = body.model_dump(exclude={"expected_revision"}) | goal | {"id": new_id(), "career_id": c["id"], "revision": rev, "name": p["name"],
                                                              "saved_at": now_iso(), "game_date": latest["game_date"]}
     try:
         await db.plans.insert_one(dict(doc))
@@ -102,10 +130,7 @@ async def save_plan(body: PlanIn):
 async def plan_history(unique_id: int):
     c = await active_career()
     out = await db.plans.find({"career_id": c["id"], "unique_id": unique_id}, {"_id": 0}).sort("revision", -1).to_list(100)
-    for h in out:
-        g, s = h.pop("goal_ca", None), h.pop("start_ca", None)
-        h["goal_gain"] = g - s if g and s is not None else None
-    return out
+    return [_public_plan(h) for h in out]
 
 
 @router.get("/reports/months")

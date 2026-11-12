@@ -339,6 +339,8 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - 2026-11-12 Youth Development table reordered: Player, Age, Games, Mins/game, Goals, Assists, Avg rating, Minutes this month, Plan, Goal, Progress, Add plan. Wider cell spacing (.dev-tbl), numbers right-aligned, "Start/sub split on next save read" placeholder removed (split shows only when the save has it).
 - 2026-11-12 Youth Development: user-resizable column widths (components/ResizableCols.jsx: useColWidths/ColGroup/ResizeTh). Drag a heading's right edge (or focus it and use arrow keys, ±10px); widths remembered per career on this computer (localStorage colw:development); "Reset column widths" button appears once changed. Verified drag 230→350, persisted after reload, reset back to 230.
 - 2026-11-12 Sortable Youth Development headings (click = high→low, again flips; name A→Z first; "Default order" button; remembered as dev-sort). Resizable columns extended to Squad (players view), Scout Players (per column mode) and Club History Records tables via generic useResizableTable hook (DOM handles, widths keyed by heading, remembered per career, Reset column widths button; handle clicks never trigger sorting). Tested iteration_38: 100% frontend.
+- 2026-11-12 Plain-words plan goals: plan dialog now offers Small / Steady / Big improvement / No goal (goal_level; internally small=3, steady=6, big=10 ability points, never sent to the app). Older numeric plans map to a level. Goal column shows the goal name plus status (Not started yet / On the way / Over halfway there / Goal reached); history lists the goal name. API no longer returns goal_gain/goal_so_far/goal_progress. Old pytest updated to goal_level. TEST plan removed.
+
 
 
 

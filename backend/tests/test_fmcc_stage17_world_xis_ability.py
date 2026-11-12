@@ -112,20 +112,20 @@ class TestDevelopment:
             for k in ("ca_gain_month", "ca_gain_season", "goals", "assists", "minutes_per_game", "avg_rating"):
                 assert k in r
 
-    def test_save_plan_goal_gain(self):
+    def test_save_plan_goal_level(self):
         d = S.get(f"{API}/development").json()
         row = d["rows"][0]
         uid = row["unique_id"]
         hist = S.get(f"{API}/development/plans/{uid}/history").json()
         rev = hist[0]["revision"] if hist else 0
-        r = S.post(f"{API}/development/plans", json={"unique_id": uid, "minutes_target": 300, "goal_gain": 5, "note": "TEST_plan", "expected_revision": rev})
+        r = S.post(f"{API}/development/plans", json={"unique_id": uid, "minutes_target": 300, "goal_level": "steady", "note": "TEST_plan", "expected_revision": rev})
         assert r.status_code == 200, r.text
         CREATED_PLANS.append((uid, r.json()["revision"]))
         row = next(x for x in S.get(f"{API}/development").json()["rows"] if x["unique_id"] == uid)
-        assert row["plan"]["goal_gain"] == 5
+        assert row["plan"]["goal_level"] == "steady" and row["plan"]["goal_label"] == "Steady improvement"
         assert "goal_ca" not in row["plan"] and "start_ca" not in row["plan"]
         h = S.get(f"{API}/development/plans/{uid}/history").json()[0]
-        assert h["goal_gain"] == 5 and "goal_ca" not in h and "start_ca" not in h
+        assert h["goal_level"] == "steady" and "goal_ca" not in h and "start_ca" not in h
 
 
 # ---- world monthly reports ----
