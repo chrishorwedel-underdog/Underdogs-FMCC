@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Info, ChevronDown, ChevronUp, Lightbulb, X, RefreshCw } from "lucide-react";
+import { Info, ChevronUp, Lightbulb, X, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { GUIDES } from "@/constants/guides";
 import { api, errMsg } from "@/lib/api";
-import { usePersist } from "@/lib/remember";
+import { usePersist, useCareerId } from "@/lib/remember";
 import { Switch } from "@/components/ui/switch";
 
 const TIPS = {
@@ -22,8 +22,10 @@ const TIPS = {
 const read = (k) => JSON.parse(localStorage.getItem(k) || "{}");
 const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
+// Each screen tip shows during one visit only, then never again.
 const Tip = ({ path }) => {
   const [seen, setSeen] = useState(() => read("fmcc-tips-seen"));
+  useEffect(() => { if (TIPS[path] && !read("fmcc-tips-seen")[path]) { write("fmcc-tips-seen", { ...read("fmcc-tips-seen"), [path]: true }); } }, [path]);
   if (!TIPS[path] || seen[path]) return null;
   const close = () => { const n = { ...seen, [path]: true }; write("fmcc-tips-seen", n); setSeen(n); };
   return (
@@ -49,7 +51,17 @@ export const NeedSave = ({ state }) => {
 export const useGuidePrefs = () => {
   const [on, setOn] = usePersist("guides-on", true);
   const [closed, setClosed] = usePersist("guides-closed", {});
-  return { on, closed, close: (p) => setClosed((c) => ({ ...c, [p]: true })), setOn: (v) => { setOn(v); if (v) { setClosed({}); } } };
+  const [open, setOpen] = usePersist("guides-open", {});
+  return { on, closed, open, toggle: (p, v) => setOpen((o) => ({ ...o, [p]: v })), close: (p) => setClosed((c) => ({ ...c, [p]: true })), setOn: (v) => { setOn(v); if (v) { setClosed({}); } } };
+};
+
+// Small "How this page works" link shown beside each page title.
+export const GuideLink = () => {
+  const { pathname } = useLocation();
+  const g = useGuidePrefs();
+  if (!GUIDES[pathname] || !g.on || g.closed[pathname]) return null;
+  const isOpen = !!g.open[pathname];
+  return <button className="guide-link" onClick={() => g.toggle(pathname, !isOpen)} aria-expanded={isOpen} data-testid="guide-link"><Info size={13} />{isOpen ? "Hide how this page works" : "How this page works"}</button>;
 };
 
 export const GuidesCard = () => {
@@ -67,39 +79,29 @@ export const ModuleGuide = () => {
   const { pathname } = useLocation();
   const g = GUIDES[pathname];
   const prefs = useGuidePrefs();
-  const [hidden, setHidden] = useState(() => read("fmcc-guides-hidden"));
-  const [visited, setVisited] = useState(() => read("fmcc-guides-visited"));
-  const [firstHere, setFirstHere] = useState({});
+  const [visited, setVisited] = usePersist("guides-visited", {});
+  const cid = useCareerId();
   useEffect(() => {
-    const v = read("fmcc-guides-visited");
-    setFirstHere((f) => (pathname in f ? f : { ...f, [pathname]: !v[pathname] }));
-    if (!v[pathname]) { const n = { ...v, [pathname]: true }; write("fmcc-guides-visited", n); setVisited(n); }
-  }, [pathname]);
-  if (!g || !prefs.on || prefs.closed[pathname]) return <Tip path={pathname} />;
-  const closed = pathname in hidden ? !!hidden[pathname] : !(firstHere[pathname] ?? !visited[pathname]);
-  const toggle = () => {
-    const next = { ...hidden, [pathname]: !closed };
-    write("fmcc-guides-hidden", next);
-    setHidden(next);
-  };
+    if (!cid || !g || visited[pathname]) { return; }
+    setVisited((v) => ({ ...v, [pathname]: true }));
+    prefs.toggle(pathname, true);
+  }, [pathname, cid]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!g || !prefs.on || prefs.closed[pathname] || !prefs.open[pathname]) return <Tip path={pathname} />;
   return (
     <>
       <div className="card guide rise" data-testid="module-guide">
         <div style={{ display: "flex", alignItems: "center" }}>
-        <button className="guide-head" onClick={toggle} aria-expanded={!closed} data-testid="module-guide-toggle">
-          <Info size={15} /><b>What this page does</b><span className="sr-only" data-testid="module-guide-what">{g.what}</span><span style={{ color: "var(--dim)" }}>{closed ? "Show details" : "Hide details"}</span>
-          {closed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+        <button className="guide-head" onClick={() => prefs.toggle(pathname, false)} aria-expanded data-testid="module-guide-toggle">
+          <Info size={15} /><b>How this page works</b><span className="sr-only" data-testid="module-guide-what">{g.what}</span><span style={{ color: "var(--dim)" }}>Hide</span>
+          <ChevronUp size={15} />
         </button>
         <button className="ib guide-x" onClick={() => prefs.close(pathname)} aria-label="Close this box on this screen" title="Close this box on this screen. Bring it back in Settings." data-testid="module-guide-close"><X size={14} /></button>
         </div>
-        {!closed && (
-          <div className="guide-body" data-testid="module-guide-body">
-            <div><div className="eyebrow">On this page</div><ul>{g.features.map((f) => <li key={f}>{f}</li>)}</ul></div>
-            <div><div className="eyebrow">How it works</div><ol>{g.how.map((h) => <li key={h}>{h}</li>)}</ol></div>
-          </div>
-        )}
+        <div className="guide-body" data-testid="module-guide-body">
+          <div><div className="eyebrow">On this page</div><ul>{g.features.map((f) => <li key={f}>{f}</li>)}</ul></div>
+          <div><div className="eyebrow">How it works</div><ol>{g.how.map((h) => <li key={h}>{h}</li>)}</ol></div>
+        </div>
       </div>
-      <Tip path={pathname} />
     </>
   );
 };

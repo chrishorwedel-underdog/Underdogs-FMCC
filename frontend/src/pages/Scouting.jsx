@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { usePersist, returnToRow } from "@/lib/remember";
-import { Star, Scale, ListPlus } from "lucide-react";
+import { useEffect } from "react";
+import { usePersist } from "@/lib/remember";
+import { Star, Scale, ListPlus, Eye } from "lucide-react";
 import { sendToFm } from "@/lib/fmShortlist";
 import { api } from "@/lib/api";
 import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
 import { RulesTab } from "@/components/rules/RulesTab";
 import { ScoutCtx, useScout, fmtMoney } from "@/components/scout/ctx";
 import { PlayersTab } from "@/components/scout/PlayersTab";
-import { ProfileSheet } from "@/components/scout/ProfileSheet";
+import { openPlayer } from "@/components/player/PlayerPanel";
 import { MyClubTab, DealsTab } from "@/components/scout/ClubDeals";
 import { ScatterTab, Breakdown } from "@/components/scout/Charts";
 import { ComputedTab, RoleScoresTab } from "@/components/scout/Computed";
@@ -22,8 +22,19 @@ import { YouthIntake } from "@/components/scout/YouthIntake";
 import { RadarCompare } from "@/components/charts/RadarCompare";
 import { WatchlistTab } from "@/components/scout/WatchlistTab";
 
-const MAIN = [["players", "Find players"], ["moneyball", "Moneyball"], ["similar", "Similar players"], ["youth", "Youth intake"], ["shortlist", "Shortlist"], ["watchlist", "Watchlist"], ["more", "More tools"]];
+const MAIN = [["players", "Find players"], ["similar", "Similar players"], ["youth", "Youth intake"], ["lists", "Lists"], ["compare", "Compare"], ["tools", "Tools"]];
 const MAIN_KEYS = MAIN.map(([k]) => k);
+const TOOL_GROUPS = [["Your own stats", [["computed", "Your own stats"], ["formulas", "Stat formulas"], ["roles", "Role ratings"]]],
+  ["League strength", [["leagues", "League strength"], ["possession", "Possession"]]], ["Import from FM", [["import", "Import from FM"]]],
+  ["More analysis", [["stats", "Stats Table"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["picks", "Director's picks"], ["rules", "Rules"]]]];
+const TOOL_KEYS = TOOL_GROUPS.flatMap(([, t]) => t.map(([k]) => k));
+const LISTS = { shortlist: "shortlist", watchlist: "watchlist", board: "board" };
+
+const ToolPicker = ({ tab, setTab }) => (
+  <div className="tool-groups" data-testid="scout-tools">
+    {TOOL_GROUPS.map(([g, items]) => <div key={g} className="tool-group"><div className="eyebrow">{g}</div><TabBar id={`tools-${g.toLowerCase().replace(/[^a-z]+/g, "-")}`} value={tab} onChange={setTab} tabs={items} /></div>)}
+  </div>
+);
 
 const Shortlist = ({ open }) => {
   const { data } = useGet("rankings", "/scouting/rankings", { shortlist_only: true, sort: "score" });
@@ -79,21 +90,27 @@ const VIEW_NOTE = { full: "Full: everything, including hidden attributes, person
 
 export default function Scouting({ initialTab = "players" }) {
   const start = new URLSearchParams(window.location.search).get("tab");
-  const [main, setMain] = usePersist("scout-main", initialTab);
-  const [tab, setTab] = usePersist("scout-tab", "stats");
-  useEffect(() => { if (start) { setMain(MAIN_KEYS.includes(start) ? start : "more"); if (!MAIN_KEYS.includes(start)) { setTab(start); } } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [main, setMainRaw] = usePersist("scout-main", initialTab);
+  const [tab, setTab] = usePersist("scout-tool", "computed");
+  const [list, setList] = usePersist("scout-list", "shortlist");
+  const [cmpView, setCmpView] = usePersist("scout-compare-view", "radar");
   const [view, setView] = usePersist("scout-view", "full");
+  const setMain = (k) => setMainRaw(k);
+  useEffect(() => {
+    if (!start) { return; }
+    if (start === "moneyball") { setMainRaw("players"); setView("moneyball"); }
+    else if (LISTS[start]) { setMainRaw("lists"); setList(start); }
+    else if (TOOL_KEYS.includes(start)) { setMainRaw("tools"); setTab(start); }
+    else if (MAIN_KEYS.includes(start)) { setMainRaw(start); }
+  }, [start]); // eslint-disable-line react-hooks/exhaustive-deps
+  const shown = MAIN_KEYS.includes(main) ? main : "players";
   const [compare, setCompare] = usePersist("scout-compare", []);
-  const [open, setOpenRaw] = useState(() => Number(new URLSearchParams(window.location.search).get("player")) || null);
-  const setOpen = (uid) => { if (!uid && open) { returnToRow(open); } setOpenRaw(uid); };
+  const setOpen = (uid) => { if (uid) { openPlayer(uid); } };
   const { data: saved } = useGet("scout-prefs", "/scout/prefs");
   const act = useAct();
   const prefs = saved || { currency: "GBP", wages: "week" };
   const setPrefs = (p) => act(() => api.put("/scout/prefs", p), null, ["scout-prefs"]);
   const toggleCompare = (id) => setCompare((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id].slice(-4)));
-  const tabs = [["stats", "Stats Table"], ["myclub", "My Club"], ["deals", "Deals & Offers"], ["scatter", "Explore"], ["board", "Shortlist board"], ["picks", "Director's picks"], ["compare", `Compare${compare.length ? ` (${compare.length})` : ""}`],
-    ["computed", "Your own stats"], ["formulas", "Stat formulas"], ["roles", "Role ratings"], ["leagues", "League strength"], ["possession", "Possession"], ["import", "Import from FM"], ["rules", "Rules"]];
-  const more = main === "more";
   return (
     <ScoutCtx.Provider value={{ view, prefs, openPlayer: setOpen, compare, toggleCompare }}>
       <div data-testid="scouting-page">
@@ -101,30 +118,35 @@ export default function Scouting({ initialTab = "players" }) {
           <ViewBar view={view} setView={setView} prefs={prefs} setPrefs={setPrefs} />
         </PageHead>
         <p className="note" style={{ marginBottom: 10 }} data-testid="scout-view-note"><Scale size={12} style={{ display: "inline", verticalAlign: -1 }} /> {VIEW_NOTE[view]}</p>
-        <div style={{ overflowX: "auto", marginBottom: 12 }}><TabBar id="scout-main" value={main} onChange={setMain} tabs={MAIN} /></div>
-        {more && <div style={{ overflowX: "auto", marginBottom: 16 }}><TabBar id="scouting" value={tab} onChange={setTab} tabs={tabs} /></div>}
-        {main === "players" && <PlayersTab />}
-        {main === "moneyball" && <MoneyballTab />}
-        {main === "similar" && <SimilarTab />}
-        {main === "youth" && <YouthIntake />}
-        {main === "shortlist" && <Shortlist open={setOpen} />}
-        {main === "watchlist" && <WatchlistTab open={setOpen} />}
-        {more && tab === "stats" && <StatsTable />}
-        {more && tab === "myclub" && <MyClubTab />}
-        {more && tab === "deals" && <><DealsTab /><Quadrant /></>}
-        {more && tab === "formulas" && <FormulasTab />}
-        {more && tab === "scatter" && <ExploreTab open={setOpen} />}
-        {more && tab === "board" && <BoardTab open={setOpen} />}
-        {more && tab === "picks" && <PicksTab open={setOpen} onCompare={(id, many) => (many ? setCompare(id) : toggleCompare(id))} />}
-        {more && tab === "compare" && (compare.length ? <><RadarCompare ids={compare} view={view} /><Compare4 ids={compare} clear={() => setCompare([])} /><Breakdown ids={compare} /></>
-          : <div className="soon">Pick up to 4 players with the scales button in Players or in a profile to compare them here.</div>)}
-        {more && tab === "computed" && <ComputedTab />}
-        {more && tab === "roles" && <RoleScoresTab />}
-        {more && tab === "leagues" && <LeaguesTab />}
-        {more && tab === "possession" && <PossessionTab />}
-        {more && tab === "import" && <ImportTab />}
-        {more && tab === "rules" && <RulesTab module="scouting" title="Scouting and Moneyball rules" />}
-        <ProfileSheet uid={open} onClose={() => setOpen(null)} />
+        <div style={{ overflowX: "auto", marginBottom: 14 }}><TabBar id="scout-main" value={shown} onChange={setMain} tabs={MAIN.map(([k, l]) => [k, k === "compare" && compare.length ? `${l} (${compare.length})` : l])} /></div>
+        {shown === "players" && <>{view === "moneyball" && <div style={{ marginBottom: 16 }} data-testid="moneyball-view"><div className="eyebrow" style={{ marginBottom: 8 }}>Value for money</div><MoneyballTab /></div>}<PlayersTab /></>}
+        {shown === "similar" && <SimilarTab />}
+        {shown === "youth" && <YouthIntake />}
+        {shown === "lists" && <>
+          <div style={{ marginBottom: 12 }}><TabBar id="scout-lists" value={list} onChange={setList} tabs={[["shortlist", "Shortlist"], ["watchlist", "Watchlist"], ["board", "Shortlist board"]]} /></div>
+          <p className="note" style={{ marginBottom: 10 }} data-testid="lists-explainer"><Star size={12} style={{ display: "inline", verticalAlign: -1 }} /> Shortlist: players you're considering, and the ones you can send to FM's own shortlist. <Eye size={12} style={{ display: "inline", verticalAlign: -1 }} /> Watchlist: players you get bell alerts about, with your own rules.</p>
+          {list === "shortlist" && <Shortlist open={setOpen} />}
+          {list === "watchlist" && <WatchlistTab open={setOpen} />}
+          {list === "board" && <BoardTab open={setOpen} />}</>}
+        {shown === "compare" && (compare.length ? <>
+          <div style={{ marginBottom: 12 }}><TabBar id="compare-view" value={cmpView} onChange={setCmpView} tabs={[["radar", "Radar"], ["side", "Side by side"], ["breakdown", "Stat breakdown"]]} /></div>
+          {cmpView === "radar" && <RadarCompare ids={compare} view={view} />}
+          {cmpView === "side" && <Compare4 ids={compare} clear={() => setCompare([])} />}
+          {cmpView === "breakdown" && <Breakdown ids={compare} />}</>
+          : <div className="soon" data-testid="compare-empty">Press Compare in any player panel, or the scales button in Find players, to add up to four players here.</div>)}
+        {shown === "tools" && <ToolPicker tab={tab} setTab={setTab} />}
+        {shown === "tools" && tab === "stats" && <StatsTable />}
+        {shown === "tools" && tab === "myclub" && <MyClubTab />}
+        {shown === "tools" && tab === "deals" && <><DealsTab /><Quadrant /></>}
+        {shown === "tools" && tab === "formulas" && <FormulasTab />}
+        {shown === "tools" && tab === "scatter" && <ExploreTab open={setOpen} />}
+        {shown === "tools" && tab === "picks" && <PicksTab open={setOpen} onCompare={(id, many) => (many ? setCompare(id) : toggleCompare(id))} />}
+        {shown === "tools" && tab === "computed" && <ComputedTab />}
+        {shown === "tools" && tab === "roles" && <RoleScoresTab />}
+        {shown === "tools" && tab === "leagues" && <LeaguesTab />}
+        {shown === "tools" && tab === "possession" && <PossessionTab />}
+        {shown === "tools" && tab === "import" && <ImportTab />}
+        {shown === "tools" && tab === "rules" && <RulesTab module="scouting" title="Scouting and Moneyball rules" />}
       </div>
     </ScoutCtx.Provider>
   );

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { NAV } from "@/constants/nav";
 import { GUIDES } from "@/constants/guides";
 
-const STEPS = [...NAV.map((n) => ({ to: n.to, key: n.key, label: n.label })), { to: "/safety", key: "safety", label: "Project Safety" },
-  { to: "/changes", key: "top-changes-button", label: "Game changes", what: "Every change FMCC makes in FM is recorded here, and you can undo it. Changes apply automatically unless you switch on Review changes before applying in Features." },
+const STEPS = [...NAV.map((n) => ({ to: n.to, key: n.key, label: n.label })), { to: "/settings?section=safety", key: "safety", label: "Project Safety" },
+  { to: "/changes", key: "top-more-button", label: "Game changes", what: "Every change FMCC makes in FM is recorded in Game changes (in the More menu), and you can undo it. Changes apply automatically unless you switch on Review changes before applying in Settings, Features." },
   { to: "/dof", key: "ask-dof", label: "Director of Football" }];
 
 export const startTour = () => window.dispatchEvent(new Event("fmcc-tour"));
@@ -12,12 +12,13 @@ export const startTour = () => window.dispatchEvent(new Event("fmcc-tour"));
 export const Tour = ({ ready }) => {
   const [i, setI] = useState(null);
   const nav = useNavigate();
+  const { pathname } = useLocation();
   useEffect(() => {
     const go = () => setI(0);
     window.addEventListener("fmcc-tour", go);
-    if (ready && !localStorage.getItem("fmcc-tour-done")) go();
+    if (ready && pathname === "/" && !window.location.search && !localStorage.getItem("fmcc-tour-done")) go();
     return () => window.removeEventListener("fmcc-tour", go);
-  }, [ready]);
+  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (i === null) { return undefined; }
     const s = STEPS[i];
@@ -28,7 +29,7 @@ export const Tour = ({ ready }) => {
     return () => el?.classList.remove("tour-spot");
   }, [i, nav]);
   if (i === null) return null;
-  const end = () => { localStorage.setItem("fmcc-tour-done", "1"); setI(null); nav("/"); };
+  const end = () => { localStorage.setItem("fmcc-tour-done", "1"); setI(null); };
   const done = i >= STEPS.length;
   const s = STEPS[i];
   return (

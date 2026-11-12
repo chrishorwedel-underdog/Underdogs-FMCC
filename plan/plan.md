@@ -1,61 +1,97 @@
-# FMCC Polish Round: Easier Lookups, Branded Comparisons, Tidier Layout
+# FMCC Clean-Up: One Player Panel, One Settings Page, Calmer Screens
 
-A round of improvements to FM Command Centre that makes stats easier to look up and tidies the layout.
-It brands the Radar Compare card, adds a weekly "What changed" summary, adds Watchlist alerts and moves the download button into the footer.
+This round fixes what makes FM Command Centre confusing: duplicate panels, scattered settings, overlapping tools, crowded screens and links that land on the wrong page.
+Every feature stays available. It just appears once, in one obvious place. The Director of Football button gets a sharper Wrexham-red look.
 
 ## Who it's for
-Football Manager players using FMCC alongside their save, in the browser preview and in FMCC for Windows.
+Football Manager players using FMCC alongside their save, in the browser preview and in FMCC for Windows. This includes new users opening FMCC for the first time and long-time users who know where everything is today.
+
+## What the review found
+1. **Three different player panels.** The Squad player sheet, the Scout profile and the Dossier each show a player differently, with different buttons. Watch, Shortlist, Compare and Try in XI are only on some of them.
+2. **Settings in five places.** Settings, Appearance, Features, Project Safety and Connections are separate pages. They are reached from the top bar (gear), the footer and the More menu.
+3. **Too much guidance stacked at the top of each page.** The purpose line under the title, the "What this page does" box, the screen tip, the window countdown and the first-use tour all explain the page. On phones this fills the first screen before any content.
+4. **Scout Players is overloaded.** It has two rows of tabs, three view modes (Full / Fair play / Moneyball) plus a separate Moneyball tab, and 14 tools under "More tools".
+5. **Overlapping lists and compare tools.**
+   - Shortlist, Watchlist and "send to FM shortlist" sound alike but behave differently.
+   - Players can be compared in Radar Compare, the Dossier compare, the four-player compare and the stat breakdown.
+6. **Change history in three places.** "Game changes" in the top bar, the change record in Project Safety and the "What changed" panel all list changes FMCC made.
+7. **Links that land on Home.** Opening a page directly, such as a bell notice link to the Watchlist or a bookmarked Squad page, can show Home or another page instead of the right screen and tab.
+8. **Finance strip on every page.** It also shows on pages where money doesn't matter, such as Settings, Downloads and the editors.
+9. **A crowded top bar.** Raw numbers, Game changes, Connection, Help, Settings and the bell sit side by side. On phones most of them are in "More".
+10. **An inconsistent menu.**
+    - "World Monthly Reports" uses a different name style from other items.
+    - The Director of Football button looks soft and blurry, with a glow, a gradient and two-line wrapped text.
 
 ## Core features and experience
-1. **Stat lookup in Ctrl K search**: typing a stat name or its short form (for example "xA", "npxG" or "tackles") shows matching stats in the search results. Picking one opens the stat glossary at that stat.
-2. **Glossary shows where each stat is used**: every glossary entry lists the screens that show that stat (for example Scout Players, Squad or Club Analysis). Each screen name is a link that goes there.
-3. **Club-branded Radar Compare card**: the saved or printed card shows your club crest, club name and club colours. If the save has no colours yet, the card uses the current FMCC theme colours.
-4. **Fix Print firing twice**: one click on Print on the Radar Compare card opens the print window once.
-5. **Replace the last "Loading…" texts**: the remaining screens that still show plain "Loading…" text get shaped placeholders instead, matching the rest of the app.
-6. **Weekly "What changed" panel on Home**: shows what has changed since your last visit:
-   - players whose ratings rose or fell, using scouting views only (real CA/PA are never shown)
-   - contracts that started, were extended or are now ending soon
-   - FMCC changes that were applied to the save (for example Dynamic Potential reviews, edits and punishments)
-   - each item links to the player or screen it is about, and the panel can be collapsed.
-7. **Watchlist alerts**:
-   - a star or "Watch" button on any player (Scout Players, Squad and player profiles) adds them to your watchlist.
-   - you get a bell notice when a watched player's grade, value or contract status changes. Contract status covers a new deal, entering the last 6 months, free agency or a transfer.
-   - a Watchlist view in Scout Players lists everyone you watch, with their latest change. You can remove anyone from there.
-   - your watchlist is kept for each career. Watched players' changes also appear in the "What changed" panel.
-8. **White group names in the left menu**: the group headings (My Club, Player Development, Recruitment, Reports, Utilities) turn white so they are easier to read. In high-contrast mode they stay as readable as they are now.
-9. **Finance strip lines up with the page box**: the finance strip becomes exactly as wide as the "What this page does" box, with its five boxes spaced equally across the full width. On phones it keeps scrolling sideways in one line.
-10. **Close the "What this page does" boxes completely**:
-    - each box gets an X that hides it on that screen.
-    - Settings gets an on/off switch, "Show 'What this page does' boxes". Turning it on brings back every box you closed.
-    - this is remembered for each career.
-11. **Smaller download button in the footer**: the large "Download FMCC for Windows" box leaves the page and becomes a small "Download for Windows" link in the bottom footer, next to Project Safety, Downloads, Appearance and Features.
-    - hovering over it shows the version, release date, file size and build status.
-    - the note "The installer isn't code-signed yet, so Windows may say it protected your PC. Choose More info, then Run anyway." no longer shows anywhere on its own. It appears only after the download button is clicked, as a short message that stays until you close it, while the download starts.
+1. **One player panel everywhere.**
+   - Any player, from any screen, opens the same side panel. Its tabs are Overview, Stats, Radar & heatmap, Contract & value, and History.
+   - It always has the same action buttons: Watch, Shortlist, Compare, Try in XI and Open in Squad (for your own players). It never shows real CA or PA.
+   - It replaces the Squad player sheet, the Scout profile and the Dossier. Everything each of them shows today moves into one of the tabs.
+2. **One Settings page with sections.**
+   - Settings sections: You & your career, Appearance, Features, Alerts & notices, Project Safety (backups, change record) and Connections & updates.
+   - The gear in the top bar opens it. The footer links to its sections. Old page addresses go to the matching section.
+   - The "Show 'What this page does' boxes" switch, the tour restart and "Read new saves automatically" all live there.
+   - **What the game calls you**:
+     - It is set during first-time setup, on step 1 (Find FM), and setup can't continue without it.
+     - Afterwards it is the first card in the **You & your career** section, so it is easy to find and change.
+     - A change shows straight away on Home, in the Director of Football chat and in the weekly reports.
+3. **Calmer page tops.**
+   - Each page shows, in order: title, one purpose line, then tabs. The "What this page does" box starts closed after the first visit and opens as a small "How this page works" link beside the title.
+   - Screen tips appear one at a time, at most once per screen. The window countdown moves into the "Up Next" panel on Home and the bell.
+4. **Scout Players regrouped.**
+   - One row of main tabs: **Find players, Similar players, Youth intake, Lists, Compare, Tools**.
+   - Moneyball becomes a view mode only (Full / Fair play / Moneyball). The separate Moneyball tab is retired, and its value-for-money columns move into the Moneyball view.
+   - "Tools" groups the remaining tools under three headings: **Your own stats** (formulas, role ratings), **League strength**, and **Import from FM**.
+5. **Lists made clear.** A "Lists" tab holds two clearly labelled lists:
+   - **Shortlist**: players you're considering, with the "Send to FM shortlist" button.
+   - **Watchlist**: players you get alerts about, with custom rules.
+   - Each player row shows both a star and an eye, with tooltips explaining the difference.
+6. **One compare tool.**
+   - Radar Compare becomes the only compare screen, with up to four players. It has three views: Radar, Side by side (the old four-player table) and Stat breakdown.
+   - The Dossier compare and the separate compare screens are folded into it. "Compare" in the player panel adds the player to it.
+7. **One change history.**
+   - "Game changes" in the top bar becomes the single place to see, undo or review changes FMCC made to the save.
+   - The Project Safety change record links to it instead of repeating it. The "What changed" panel on Home links to it for full detail.
+8. **Links always open the right screen.** Any FMCC address, including bell notice links, bookmarks and refreshes, opens the correct page, tab and player panel.
+9. **Finance strip only where it helps, and the same width as the page.**
+   - It shows on Home, Squad, Scout Players, Transfer Market, Club Analysis and Matches, and is hidden elsewhere.
+   - It no longer runs edge to edge across the screen under the top bar. It sits inside the page as its own bar, starting and ending exactly where the boxes below it start and end (for example the "What this page does" box and the page cards).
+   - The full-width background band and line under it go away. The bar keeps its five boxes spaced equally across that width.
+   - On phones it stays one line that scrolls sideways, lined up with the page edges.
+10. **A lighter top bar.** It keeps search, the save status, the bell and the gear. Raw numbers, Game changes, Connection and Help move into one "More" menu with clear labels, on all screen sizes.
+11. **Menu tidy-up and a sharper Director of Football button.**
+    - "World Monthly Reports" is renamed to "Monthly Awards". Group names stay white.
+    - **Director of Football button:**
+      - The text is one size larger than today, and the label fits on one line where the menu width allows.
+      - It is solid Wrexham red (#E72A2C) with white text. There is no gradient, glow or blur.
+      - It has crisp edges: a thin, slightly darker red border, small rounded corners in the same style as the other menu items, and a clean icon at the same size as the text.
+      - Hover darkens it slightly, pressing nudges it down 1px, and keyboard focus shows a clear white ring.
+      - The red stays the same in every theme and is not replaced by the club colours or kit accent. In high-contrast mode it keeps white text with a white border.
 
 ## User flow
-- Press Ctrl K anywhere, type "xA" and pick "Expected assists". The glossary opens on that stat and lists the screens that show it. Click "Scout Players" to go there.
-- In Scout Players, star a player to watch them. When their value, grade or contract changes after the next save read, the bell shows a notice that links to the player.
-- Open Home and read the "What changed" panel for this week's rises, falls, contracts, applied changes and watchlist news.
-- Open Radar Compare, add players and save or print the card. It now shows your crest and club colours, and Print opens once.
-- Close a "What this page does" box with its X. To bring the boxes back, or to switch them off everywhere, use the switch in Settings.
-- Click the small download link in the footer. The installer starts downloading, and a short message explains what to do if Windows says it protected your PC.
+- Click any player name, whether on Squad, Scout Players, Matches or Club Analysis. The same panel opens with the same buttons.
+- Press the gear to reach every setting on one page. Jump to Appearance or Project Safety from the footer.
+- Open Scout Players and see one row of tabs. Switch the view to Moneyball for value-for-money, or open Lists to manage your shortlist and watchlist.
+- Press Compare on a player, add up to three more, then switch between Radar, Side by side and Stat breakdown.
+- Click a bell notice. It opens the exact screen, tab and player it is about.
+- Press the red Director of Football button at the bottom of the menu to open the chat.
 
 ## UI/UX feel
-These changes follow the existing FMCC look, themes, kit accent, text size and accessibility settings. The menu group names become white but stay small. The finance strip and the page box line up along the same edges. The footer download link uses the same small style as the other footer links, with a green dot when a fresh build is available. The "What changed" panel and watchlist use the same card style and red, green and gold meanings as the rest of Home.
+These changes keep the current FMCC look, themes, kit accent, club colours, text size and accessibility settings. Pages feel shorter and quieter at the top. Buttons and panels behave the same on every screen. The same red, green and gold meanings are used everywhere. On phones, real content shows on the first screen. The Director of Football button reads as a crisp, solid Wrexham-red call to action rather than a glowing block.
 
 ## Implementation phases
-- **Phase 1 (built now)**: all eleven items above.
-- **Phase 2**: a weekly digest bell notice or email, a digest history you can look back through, and custom alert rules per watched player (for example "only tell me if value drops below £5m").
-- **Phase 3**: Radar Compare card style choices (light, dark, kit) and one-click sharing of the card image.
+- **Phase 1 (built now)**: all eleven items above, including the Director of Football button restyle.
+- **Phase 2**: a short "What's new in this layout" guide for existing users. A search inside Settings. Remembered player-panel tab per career.
+- **Phase 3**: a fully customisable menu (reorder, hide, pin favourite screens) and a customisable Home layout.
 
 ## Assumptions
-- The "What changed" panel covers the period since your last visit, up to a maximum of 7 days. It only shows changes FMCC saw when reading your save; nothing is estimated. In the browser preview it uses sample data, which is labelled as sample.
-- Rating rises and falls in both the panel and watchlist alerts use FMCC's grades and scouting views only. Real CA/PA are never shown.
-- Watchlist alerts trigger on any change in grade of 2 or more points, a value change of 10% or more, or any change in contract status. Watchlist changes are checked each time FMCC reads the save.
-- The existing Scout Players shortlist stays as it is. The watchlist is separate and only drives alerts.
-- Closing one box hides it only on that screen. The Settings switch controls all boxes, and turning it back on brings back every box you closed. The setting is saved for each career.
-- The crest and club colours come from the save when FMCC can read them. Otherwise the theme colours and the club's initials badge are used.
-- Stat lookup shows at most 5 stat results so screen and player results stay visible.
-- The footer download link only shows where the download box shows today, so it stays hidden where downloading isn't offered.
-- The "Print twice" problem will be fixed on both the browser and Windows versions. Windows behaviour can only be confirmed on a Windows PC.
-- Everything here is built in preview. Production stays as it is until you publish again.
+- For "how bold", the answer was read as both: every tool is regrouped, and tools that only repeat another tool are folded in. No ability is lost. This covers the Moneyball tab, the extra compare screens, the Dossier as a separate panel, and the repeated change records.
+- Wrexham red is taken as #E72A2C, the red used in the Wrexham AFC crest.
+- "One size larger" means one step up on FMCC's text scale. It still grows with the Text size setting.
+- Old page addresses and bookmarks keep working and go to their new place.
+- Saved shortlists, watchlists, rules, remembered screen state and settings carry over unchanged for every career.
+- Nothing about save reading, automatic applying, manual review, Dynamic Potential rules or real-save writing changes.
+- The finance strip page list above is a default and can be adjusted later.
+- Real CA/PA stay hidden everywhere, including in the merged player panel.
+- Windows-only behaviour (installer, updates, real saves) can only be confirmed on a Windows PC.
+- Everything is built in preview. Production (https://fm-command-hub-1.emergent.host) stays as it is until you publish again.

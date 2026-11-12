@@ -37,7 +37,7 @@ export const WhatChanged = () => {
             <Section id="contracts" title="Contracts" items={data.contracts.map((r) => p(r))} />
             <Section id="applied" title="FMCC changes applied to the save" items={data.applied.map((g) => ({ name: `${g.label}: ${g.count}`, text: g.names.join(", "), to: g.link, tone: "info" }))} />
             <Section id="watch" title="Your watchlist" items={data.watch.map((r) => p(r, true))} />
-            <small className="note">Uses FMCC grades and scouting views only. Real CA and PA are never shown.</small>
+            <small className="note">Uses FMCC grades and scouting views only. Real CA and PA are never shown. <Link to="/changes" style={{ color: "var(--acc)" }} data-testid="whatchanged-all-changes">See every change in Game changes</Link></small>
           </>}
         </div>
       )}

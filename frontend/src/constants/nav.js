@@ -1,10 +1,10 @@
 import { Home, Users, TrendingUp, Search, Activity, BarChart3, Zap, Star, Sprout, ShieldCheck, Palette, UserCog, Gavel, Package, ToggleRight, ArrowLeftRight, ClipboardList } from "lucide-react";
 
 export const TOP_LINKS = [
-  { to: "/safety", key: "safety", label: "Project Safety", Icon: ShieldCheck },
+  { to: "/settings?section=safety", key: "safety", label: "Project Safety", Icon: ShieldCheck },
   { to: "/extras", key: "extras", label: "Downloads", Icon: Package },
-  { to: "/appearance", key: "appearance", label: "Appearance", Icon: Palette },
-  { to: "/features", key: "features", label: "Features", Icon: ToggleRight },
+  { to: "/settings?section=appearance", key: "appearance", label: "Appearance", Icon: Palette },
+  { to: "/settings?section=features", key: "features", label: "Features", Icon: ToggleRight },
 ];
 
 export const GROUPS = ["My Club", "Player Development", "Recruitment", "Reports", "Utilities"];
@@ -19,7 +19,7 @@ export const NAV = [
   { group: "Recruitment", to: "/scouting", key: "scouting", label: "Scout Players", sub: "Search, Moneyball, youth intake", c: "#22D3EE", Icon: Search },
   { group: "Recruitment", to: "/transfer-market", key: "market", label: "Transfer Market", sub: "Who's available, what's moving", c: "#38BDF8", Icon: ArrowLeftRight },
   { group: "Reports", to: "/club-analysis", key: "club", label: "Club Analysis", sub: "What to do first", c: "#818CF8", Icon: ClipboardList },
-  { group: "Reports", to: "/reports", key: "reports", label: "World Monthly Reports", sub: "Who made waves last month", c: "#A78BFA", Icon: BarChart3 },
+  { group: "Reports", to: "/reports", key: "reports", label: "Monthly Awards", sub: "Who made waves last month", c: "#A78BFA", Icon: BarChart3 },
   { group: "Utilities", to: "/editor", key: "editor", label: "Player & Teams Editor", sub: "Faces, logos, names and clubs", c: "#F472B6", Icon: UserCog },
   { group: "Utilities", to: "/punish", key: "punish", label: "Punish a Club", sub: "Penalties for any club", c: "#F87171", Icon: Gavel },
 ];

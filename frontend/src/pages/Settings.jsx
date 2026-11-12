@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -7,12 +8,17 @@ import { api, ago, gameDate, errMsg } from "@/lib/api";
 import { CareersCard } from "@/components/CareersCard";
 import { AddressCard } from "@/components/AddressPick";
 import { UpdatesCard } from "@/components/UpdatesCard";
-import { BackupsCard } from "@/components/BackupsCard";
 import { startTour } from "@/components/Tour";
 import { TestingCard } from "@/components/TestingCard";
 import { NotifySettings } from "@/components/Notify";
-import { PageHead } from "@/lib/ui";
+import { PageHead, TabBar, EmbedCtx } from "@/lib/ui";
 import { GuidesCard } from "@/components/ModuleGuide";
+import Appearance from "@/pages/Appearance";
+import Features from "@/pages/Features";
+import Safety from "@/pages/Safety";
+import Connections from "@/pages/Connections";
+
+const SECTIONS = [["career", "You & your career"], ["appearance", "Appearance"], ["features", "Features"], ["alerts", "Alerts & notices"], ["safety", "Project Safety"], ["connections", "Connections & updates"]];
 
 const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
   ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"],
@@ -67,30 +73,37 @@ const KeyCard = () => {
 };
 
 export default function Settings({ state }) {
+  const [params, setParams] = useSearchParams();
+  const sec = SECTIONS.some(([k]) => k === params.get("section")) ? params.get("section") : "career";
+  const go = (k) => { const n = new URLSearchParams(params); n.set("section", k); n.delete("save"); setParams(n); };
+  const col = { display: "grid", gap: 20, alignContent: "start" };
   return (
     <div data-testid="settings-page">
-      <PageHead eyebrow="Careers, updates and backups" title="Settings" purpose="Your careers, what FMCC calls you, updates, backups and the tour." />
-      {state.sample_mode && <div className="banner rise" style={{ marginBottom: 20 }} data-testid="sample-mode-banner">
+      <PageHead eyebrow="Everything you can set, in one place" title="Settings" purpose="You and your career, how FMCC looks, features, alerts, safety and connections." />
+      <div style={{ overflowX: "auto", marginBottom: 20 }}><TabBar id="settings-section" value={sec} onChange={go} tabs={SECTIONS} /></div>
+      {state.sample_mode && sec === "career" && <div className="banner rise" style={{ marginBottom: 20 }} data-testid="sample-mode-banner">
         <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
         <span>Browser preview: FMCC is reading a built-in sample save, not your PC. Each refresh in the top bar reads the next month of that sample. The real fmsave reader is packaged in the Windows program.</span>
       </div>}
-      <div style={{ marginBottom: 20 }}><TestingCard /></div>
-      <div className="sgrid">
-        <div style={{ display: "grid", gap: 20, alignContent: "start" }}><CareersCard career={state.career} key={state.career.id} /><AddressCard current={state.address} key={state.address} /><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /></div>
-        <div style={{ display: "grid", gap: 20, alignContent: "start" }}>
-          <UpdatesCard autoInstall={state.auto_install_updates} />
-          <BackupsCard />
-          {!state.sample_mode && <KeyCard />}
-          <NotifySettings />
-          <GuidesCard />
-          <div className="card rise d5" data-testid="tour-settings-card"><div className="ttl">Guided tour</div><p className="note" style={{ marginTop: 4 }}>A click-through of every page. Replaying it never changes any data.</p><button className="btn btn-p" style={{ marginTop: 8 }} onClick={startTour} data-testid="settings-take-tour">Take the tour</button></div>
-          <div className="card rise d5" data-testid="credits-card">
+      <EmbedCtx.Provider value>
+      {sec === "career" && <><div className="sgrid">
+        <div style={col}><AddressCard current={state.address} key={state.address} /><CareersCard career={state.career} key={state.career.id} /></div>
+        <div style={col}><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /></div>
+      </div><div style={{ marginTop: 20 }}><TestingCard /></div></>}
+      {sec === "appearance" && <Appearance />}
+      {sec === "features" && <Features />}
+      {sec === "alerts" && <div className="sgrid"><div style={col}><NotifySettings /></div>
+        <div style={col}><GuidesCard />
+          <div className="card rise d5" data-testid="tour-settings-card"><div className="ttl">Guided tour</div><p className="note" style={{ marginTop: 4 }}>A click-through of every page. Replaying it never changes any data.</p><button className="btn btn-p" style={{ marginTop: 8 }} onClick={startTour} data-testid="settings-take-tour">Take the tour</button></div></div></div>}
+      {sec === "safety" && <Safety />}
+      {sec === "connections" && <><Connections /><div className="sgrid" style={{ marginTop: 20 }}>
+        <div style={col}><UpdatesCard autoInstall={state.auto_install_updates} />{!state.sample_mode && <KeyCard />}</div>
+        <div style={col}><div className="card rise d5" data-testid="credits-card">
             <div className="ttl">Credits</div>
             {CREDITS.map(([n, l, r]) => <div className="row" key={n}><div style={{ flex: 1 }}>{n}<small>{r}</small></div><span className="st n">{l}</span></div>)}
             <p className="note" style={{ marginTop: 8 }}>FMCC is released as open source under GPL-3.0. Last update check {ago(state.last_update_check)}.</p>
-          </div>
-        </div>
-      </div>
+          </div></div></div></>}
+      </EmbedCtx.Provider>
     </div>
   );
 }

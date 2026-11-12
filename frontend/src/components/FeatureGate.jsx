@@ -17,7 +17,7 @@ export const FeatureGate = () => {
   const badges = useNotices().data?.badges || [];
   useEffect(() => {
     if (!feats) { return; }
-    if (feats.ask && pathname !== "/features") { nav("/features"); return; }
+    if (feats.ask && !(pathname === "/settings" && window.location.search.includes("section=features"))) { nav("/settings?section=features"); return; }
     const key = PATHS[pathname];
     if (key && feats.features[key] === false) { toast.info("Turned off for this career. Turn it on in Features."); nav("/"); }
   }, [feats, pathname]); // eslint-disable-line react-hooks/exhaustive-deps

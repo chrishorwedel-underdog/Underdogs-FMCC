@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { api } from "@/lib/api";
@@ -15,14 +15,12 @@ import { FinanceStrip } from "@/components/FinanceStrip";
 import { A11y, SkipLink } from "@/components/A11y";
 import { ScrollMemory } from "@/lib/remember";
 import { useFeatures } from "@/lib/features";
-import Features from "@/pages/Features";
 import TransferMarket from "@/pages/TransferMarket";
 import ClubAnalysis from "@/pages/ClubAnalysis";
-import { DossierHost } from "@/components/analysis/Dossier";
+import { PlayerPanelHost } from "@/components/player/PlayerPanel";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModuleGuide, NeedSave } from "@/components/ModuleGuide";
-import { PageCountdown } from "@/components/Notify";
 import { Tour } from "@/components/Tour";
 import { GlossaryHost } from "@/components/Glossary";
 import Setup from "@/pages/Setup";
@@ -35,10 +33,7 @@ import Reports from "@/pages/Reports";
 import EliteTraining from "@/pages/EliteTraining";
 import DynamicPotentialPage from "@/pages/DynamicPotentialPage";
 import BreakoutPage from "@/pages/BreakoutPage";
-import Connections from "@/pages/Connections";
-import Safety from "@/pages/Safety";
 import Extras from "@/pages/Extras";
-import Appearance from "@/pages/Appearance";
 import PlayerTeamsEditor from "@/pages/PlayerTeamsEditor";
 import Changes from "@/pages/Changes";
 import Matches from "@/pages/Matches";
@@ -46,6 +41,19 @@ import Dof from "@/pages/Dof";
 import Punish from "@/pages/Punish";
 
 const LATER = [];
+const MONEY = ["/", "/squad", "/scouting", "/transfer-market", "/club-analysis", "/matches"];
+
+const ToSection = ({ section }) => {
+  const { search } = useLocation();
+  const q = new URLSearchParams(search);
+  q.set("section", section);
+  return <Navigate to={`/settings?${q}`} replace />;
+};
+
+const Finance = () => {
+  const { pathname } = useLocation();
+  return MONEY.includes(pathname) ? <FinanceStrip /> : null;
+};
 
 const Shell = ({ state }) => {
   const [pal, setPal] = useState(false);
@@ -66,11 +74,10 @@ const Shell = ({ state }) => {
       <Tour ready={!!state.career && feats?.ask === false} />
       <section className="main">
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
-        <FinanceStrip />
         <div className="content" id="main-content" tabIndex={-1} role="main">
           <NeedSave state={state} />
+          <Finance />
           <ModuleGuide />
-          <PageCountdown />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/squad" element={<Squad />} />
@@ -83,11 +90,11 @@ const Shell = ({ state }) => {
             <Route path="/dynamic-potential" element={<DynamicPotentialPage />} />
             <Route path="/breakout" element={<BreakoutPage />} />
             <Route path="/awards" element={<Navigate to="/dynamic-potential" replace />} />
-            <Route path="/connections" element={<Connections />} />
-            <Route path="/safety" element={<Safety />} />
+            <Route path="/connections" element={<ToSection section="connections" />} />
+            <Route path="/safety" element={<ToSection section="safety" />} />
             <Route path="/extras" element={<Extras />} />
-            <Route path="/appearance" element={<Appearance />} />
-            <Route path="/features" element={<Features />} />
+            <Route path="/appearance" element={<ToSection section="appearance" />} />
+            <Route path="/features" element={<ToSection section="features" />} />
             <Route path="/transfer-market" element={<TransferMarket />} />
             <Route path="/club-analysis" element={<ClubAnalysis />} />
             <Route path="/editor" element={<PlayerTeamsEditor />} />
@@ -107,7 +114,7 @@ const Shell = ({ state }) => {
       <UpdateCard />
       {state.career && <ClubColours />}
       {state.career && <FeatureGate />}
-      {state.career && <DossierHost />}
+      {state.career && <PlayerPanelHost />}
     </div>
   );
 };

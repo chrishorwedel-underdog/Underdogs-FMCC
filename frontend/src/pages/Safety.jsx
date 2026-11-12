@@ -2,9 +2,15 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FileCheck2 } from "lucide-react";
 import { useGet, PageHead } from "@/lib/ui";
+import { Link } from "react-router-dom";
 import { ago, gameDate } from "@/lib/api";
 import { BackupsCard } from "@/components/BackupsCard";
-import { AuditCard } from "@/components/AuditCard";
+
+const ChangesLink = () => (
+  <div className="card rise d3" data-testid="safety-changes-link-card"><div className="ttl">Change record</div>
+    <p className="note" style={{ marginTop: 4 }}>Everything FMCC changed in your save, with undo and review, is kept in one place: Game changes.</p>
+    <Link to="/changes" className="btn btn-p" style={{ marginTop: 8, width: "fit-content" }} data-testid="safety-open-changes">Open Game changes</Link></div>
+);
 
 const List = ({ title, items, id }) => (
   <div style={{ marginTop: 10 }} data-testid={`check-${id}`}>
@@ -45,7 +51,7 @@ export default function Safety() {
     <div data-testid="safety-page">
       <PageHead eyebrow="Backups, save checks and the game-change record" title="Project Safety" />
       <div className="homegrid">
-        <div style={{ display: "grid", gap: 16, alignContent: "start" }}><SaveCheck /><AuditCard /></div>
+        <div style={{ display: "grid", gap: 16, alignContent: "start" }}><SaveCheck /><ChangesLink /></div>
         <div style={{ display: "grid", gap: 16, alignContent: "start" }}><BackupsCard /></div>
       </div>
     </div>

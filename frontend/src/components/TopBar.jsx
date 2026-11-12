@@ -27,7 +27,7 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
     notes.forEach((n) => {
       api.post(`/notices/${n.id}/seen`);
       if (n.kind === "save_read") {
-        toast.success(`New save read: ${gameDate(n.game_date, { day: "numeric", month: "long", year: "numeric" })} · ${n.players} players`, { id: n.id, duration: 12000, action: { label: "Check my save", onClick: () => nav(`/safety?save=${n.save_no}`) } });
+        toast.success(`New save read: ${gameDate(n.game_date, { day: "numeric", month: "long", year: "numeric" })} · ${n.players} players`, { id: n.id, duration: 12000, action: { label: "Check my save", onClick: () => nav(`/settings?section=safety&save=${n.save_no}`) } });
         qc.invalidateQueries();
       } else {
         toast.error(`FMCC couldn't read ${n.file_name}: ${n.message}`, { id: n.id, duration: 15000 });
@@ -55,28 +55,21 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
       </div>
       <div className="srch" onClick={onSearch} data-testid="top-search-button"><Search size={15} />Search players, screens, actions…<kbd>Ctrl K</kbd></div>
       <div className="tr">
-        <div className={`link ${tone}`} data-testid="game-link-pill" title={sample ? "Browser preview: reading a sample save" : "Open Connections"} onClick={() => nav("/connections")} style={{ cursor: "pointer" }}>
+        <div className={`link ${tone}`} data-testid="game-link-pill" title={sample ? "Browser preview: reading a sample save" : "Open Connections"} onClick={() => nav("/settings?section=connections")} style={{ cursor: "pointer" }}>
           <span className="pulse" /><span className="lt">{sample ? "Sample save" : "Game linked"} · save read {ago(career?.last_read_at)}</span>
         </div>
         <button className="ib" onClick={readSave} disabled={busy} title="Read latest save" data-testid="read-save-button">
           <RefreshCw size={16} className={busy ? "animate-spin" : ""} />
         </button>
-        <button className="ib top-extra" style={{ position: "relative", width: "auto", padding: "0 10px", gap: 6, display: "flex" }} onClick={() => nav("/changes")} title="Game changes" data-testid="top-changes-button">
-          <Wand2 size={16} /><span style={{ fontSize: 12.5 }}>Game changes</span>{pending > 0 && <span className="st a mono" style={{ margin: 0 }} data-testid="top-changes-count">{pending}</span>}
-        </button>
-        <button className="ib top-extra" onClick={() => nav("/connections")} title="Connections" data-testid="top-connections-button"><Plug size={16} /></button>
-        <label className="rawsw top-extra" title="Show raw numbers instead of percentiles in tables and charts" data-testid="raw-switch"><input type="checkbox" checked={raw} onChange={(e) => setRaw(e.target.checked)} />Raw numbers</label>
         <NotifyBell />
-        <button className="ib top-extra" onClick={startTour} title="Take the tour" data-testid="top-tour-button"><HelpCircle size={16} /></button>
-        <button className="ib top-extra" onClick={() => nav("/settings")} title="Settings" data-testid="top-settings-button"><Settings size={16} /></button>
+        <button className="ib" onClick={() => nav("/settings")} title="Settings" aria-label="Settings" data-testid="top-settings-button"><Settings size={16} /></button>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild><button className="ib top-more" title="More" aria-label="More" data-testid="top-more-button"><MoreHorizontal size={16} /></button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><button className="ib top-more" style={{ position: "relative" }} title="More" aria-label="More" data-testid="top-more-button"><MoreHorizontal size={16} />{pending > 0 && <span className="more-count mono" data-testid="top-changes-count">{pending}</span>}</button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" data-testid="top-more-menu">
-            <DropdownMenuItem onClick={() => nav("/changes")} data-testid="top-more-changes">Game changes{pending ? ` (${pending})` : ""}</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => nav("/connections")} data-testid="top-more-connections">Connections</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setRaw(!raw)} data-testid="top-more-raw">{raw ? "Show percentiles" : "Show raw numbers"}</DropdownMenuItem>
-            <DropdownMenuItem onClick={startTour} data-testid="top-more-tour">Take the tour</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => nav("/settings")} data-testid="top-more-settings">Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/changes")} data-testid="top-more-changes"><Wand2 size={14} />Game changes{pending ? ` (${pending} waiting)` : ""}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setRaw(!raw)} data-testid="top-more-raw">{raw ? "Show percentiles instead of raw numbers" : "Show raw numbers instead of percentiles"}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/settings?section=connections")} data-testid="top-more-connections"><Plug size={14} />Connections</DropdownMenuItem>
+            <DropdownMenuItem onClick={startTour} data-testid="top-more-tour"><HelpCircle size={14} />Help: take the tour</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

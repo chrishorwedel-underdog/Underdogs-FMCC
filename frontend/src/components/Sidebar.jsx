@@ -45,10 +45,9 @@ export const Sidebar = () => {
     </nav>
     <div className="foot">
       {dofOff ? <div className="dofbtn locked" role="button" tabIndex={0} title={HINT} onClick={() => toast.info(HINT)} data-testid="nav-ask-dof">
-        <b><Lock size={16} />Chat with your</b><small>Director of Football</small></div>
+        <b><Lock size={18} />Chat with your Director of Football</b></div>
         : <NavLink to="/dof" className="dofbtn" data-testid="nav-ask-dof">
-          <b><Sparkles size={18} strokeWidth={2.3} />Chat with your</b>
-          <small>Director of Football</small>
+          <b><Sparkles size={18} strokeWidth={2.2} />Chat with your Director of Football</b>
         </NavLink>}
     </div>
   </aside>

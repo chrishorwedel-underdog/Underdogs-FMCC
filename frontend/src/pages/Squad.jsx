@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api, gameDate } from "@/lib/api";
 import { TacticFit } from "@/components/squad/TacticFit";
-import { PlayerSheet } from "@/components/PlayerSheet";
 import { TabBar, PageHead } from "@/lib/ui";
 import { LineupView } from "@/components/squad/LineupView";
 import { TryXI } from "@/components/squad/TryXI";
@@ -69,7 +68,6 @@ export default function Squad() {
         </div>
       )}
       </>}
-      <PlayerSheet uid={openId ? Number(openId) : null} onClose={() => setParam("player", null)} />
     </div>
   );
 }
