@@ -577,9 +577,10 @@ import finance_api  # noqa: E402
 import scout_plus  # noqa: E402
 import loans_api  # noqa: E402
 import watch_api  # noqa: E402
+import history_api  # noqa: E402
 
 app.include_router(api)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router, world_api.router, creator_single.router, self_update.router, seed_api.router, features_api.router, analysis_api.router, dp_api.router, finance_api.router, scout_plus.router, loans_api.router, watch_api.router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router, world_api.router, creator_single.router, self_update.router, seed_api.router, features_api.router, analysis_api.router, dp_api.router, finance_api.router, scout_plus.router, loans_api.router, watch_api.router, history_api.router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse

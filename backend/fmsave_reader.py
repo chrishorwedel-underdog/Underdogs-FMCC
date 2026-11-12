@@ -214,6 +214,20 @@ def _finance(club) -> dict:
             "turnover": num("turnover", "revenue", "finances.turnover"), "ffp_status": ffp if ffp in ("comfortable", "compliant", "at_risk", "breach") else None}
 
 
+def _club_history(club) -> dict:
+    """Honours, cup runs, awards and ground figures, if this fmsave version exposes them. Missing stays None/empty. UNVERIFIED."""
+    def lst(*keys):
+        v = _first(club, *keys)
+        return [dict(x) if isinstance(x, dict) else {k: _get(x, k) for k in ("competition", "season", "kind", "stage", "manager", "opponent", "score", "venue", "scorers", "player_uid", "player", "award", "title", "date")} for x in v] if isinstance(v, (list, tuple)) else []
+    def num(*keys):
+        v = _first(club, *keys)
+        return int(v) if isinstance(v, (int, float)) else None
+    return {"honours": lst("honours", "trophies", "history.honours"), "cups": lst("cup_runs", "competitions", "history.cups"), "awards": lst("awards", "player_awards", "history.awards"),
+            "milestones": lst("milestones", "history.milestones"), "attendance": num("average_attendance", "attendance", "stadium.average_attendance"),
+            "capacity": num("stadium_capacity", "stadium.capacity"), "stadium": _first(club, "stadium_name", "stadium.name"), "facilities": _first(club, "training_facilities", "facilities"),
+            "academy": _first(club, "youth_academy", "academy_level", "youth_facilities"), "manager": _first(club, "manager_name", "manager.name")}
+
+
 def read_save(path: Path, club_name_hint: str) -> dict:
     import fmsave  # only installed in the Windows build
 
@@ -262,4 +276,4 @@ def read_save(path: Path, club_name_hint: str) -> dict:
     gd = game_date if isinstance(game_date, date) else date.fromisoformat(str(game_date)[:10])
     season_year = gd.year if gd.month >= 7 else gd.year - 1
     return {"file_name": path.name, "club_name": club_name, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
-            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "finance": _finance(club), "file_mtime": path.stat().st_mtime}
+            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "finance": _finance(club), "history": _club_history(club), "file_mtime": path.stat().st_mtime}

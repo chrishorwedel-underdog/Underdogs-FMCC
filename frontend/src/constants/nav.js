@@ -10,13 +10,13 @@ export const TOP_LINKS = [
 export const GROUPS = ["My Club", "Player Development", "Recruitment", "Reports", "Utilities"];
 
 export const NAV = [
+  { group: "My Club", to: "/club-history", key: "club-history", label: "Club History", sub: "Trophies, seasons and records", c: "#F5C542", Icon: Trophy },
   { group: "My Club", to: "/matches", key: "matches", label: "Matches", sub: "Chalkboard and match stats", c: "#FB923C", Icon: Activity },
   { group: "My Club", to: "/squad", key: "squad", label: "Squad", sub: "Lineups and depth charts", c: "#2DD4BF", Icon: Users },
   { group: "Player Development", to: "/breakout", key: "breakout", label: "Breakout Player", sub: "Picks the season's winner", c: "#FACC15", Icon: Star },
   { group: "Player Development", to: "/development", key: "development", label: "Development", sub: "Minutes and growth plans", c: "#34D399", Icon: Sprout },
   { group: "Player Development", to: "/dynamic-potential", key: "dp", label: "Dynamic Potential", sub: "Review development", c: "#4C8DFF", Icon: TrendingUp },
   { group: "Player Development", to: "/elite-training", key: "elite", label: "Elite Training", sub: "Nurture your next generation", c: "#E879F9", Icon: Zap },
-  { group: "Player Development", to: "/trophies", key: "trophies", label: "Trophy Cabinet", sub: "Every award across your career", c: "#F5C542", Icon: Trophy },
   { group: "Recruitment", to: "/scouting", key: "scouting", label: "Scout Players", sub: "Search, Moneyball, youth intake", c: "#22D3EE", Icon: Search },
   { group: "Recruitment", to: "/transfer-market", key: "market", label: "Transfer Market", sub: "Who's available, what's moving", c: "#38BDF8", Icon: ArrowLeftRight },
   { group: "Reports", to: "/club-analysis", key: "club", label: "Club Analysis", sub: "What to do first", c: "#818CF8", Icon: ClipboardList },

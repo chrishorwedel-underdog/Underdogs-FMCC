@@ -504,3 +504,21 @@ select.blank{cursor:pointer}
 .cel .wc-row{background:none;border:0;text-align:left;width:100%;cursor:pointer}
 @media (max-width:760px){.cel-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
+/* club history */
+.unavail{color:var(--dim);font-style:italic;font-size:.92em}
+.linkish{color:var(--acc);background:none;border:0;padding:0;cursor:pointer;text-align:left;font:inherit}
+.linkish:hover{text-decoration:underline}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.facts div{background:var(--s2);border-radius:10px;padding:8px 10px;display:grid;gap:2px}
+.facts small{color:var(--dim);font-size:11px}
+.facts b{color:var(--text);font-size:15px}
+.timeline{display:grid;gap:2px}
+.tl-item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:10px;transition:background-color .2s}
+.tl-item:hover{background:var(--s2)}
+.tl-item.pinned{background:rgba(245,197,66,.08)}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);flex-shrink:0}
+.tl-item.pinned .tl-dot{background:#F5C542}
+.tl-season{font-size:11px;color:var(--dim);min-width:56px}
+.lead-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.cab-latest{border-left:3px solid #F5C542}
+
