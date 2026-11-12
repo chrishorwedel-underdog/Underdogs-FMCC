@@ -5,6 +5,7 @@ import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
 import { Loading } from "@/components/Loading";
 import { RulesTab } from "@/components/rules/RulesTab";
 import { useColWidths, ColGroup, ResizeTh } from "@/components/ResizableCols";
+import { usePersist } from "@/lib/remember";
 
 const COLS = { player: 230, age: 70, games: 80, mpg: 135, goals: 80, assists: 90, rating: 110, month: 190, plan: 150, goal: 130, progress: 280, act: 120 };
 const HEAD = [["player", "Player"], ["age", "Age", "n"], ["games", "Games", "n"], ["mpg", "Mins / game", "n"], ["goals", "Goals", "n"], ["assists", "Assists", "n"], ["rating", "Avg rating", "n"],
@@ -55,19 +56,34 @@ const Games = ({ r }) => (
 const TONE = { big: "var(--grn)", up: "var(--grn)", flat: "var(--mut)", down: "var(--amb)" };
 const Progress = ({ n, small }) => (n ? <span style={{ color: TONE[n.tone], fontSize: small ? 12 : 13, display: "block" }}>{n.text}</span> : <span style={{ color: "var(--dim)", display: "block" }}>{small ? "" : "Needs two saves"}</span>);
 
+const PROG = { big: 3, up: 2, flat: 1, down: 0 };
+const SORTS = {
+  player: (r) => r.name, age: (r) => r.age, games: (r) => r.appearances, mpg: (r) => r.minutes_per_game ?? -1, goals: (r) => r.goals, assists: (r) => r.assists,
+  rating: (r) => r.avg_rating ?? -1, month: (r) => r.month_minutes, plan: (r) => (r.plan ? 1 : 0), goal: (r) => r.goal_progress ?? -1,
+  progress: (r) => (r.progress_month ? PROG[r.progress_month.tone] * 10 : -10) + (r.progress_season ? PROG[r.progress_season.tone] : 0),
+};
+const sortRows = (rows, s) => {
+  if (!s?.col) return rows;
+  const f = SORTS[s.col], m = s.dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => { const x = f(a), y = f(b); return (typeof x === "string" ? x.localeCompare(y) : x - y) * m; });
+};
+
 const Plans = () => {
   const { data } = useGet("development", "/development");
   const [edit, setEdit] = useState(null);
   const cw = useColWidths("development", COLS);
+  const [sort, setSort] = usePersist("dev-sort", null);
+  const sortBy = (col) => setSort((s) => (s?.col === col ? { col, dir: s.dir === "desc" ? "asc" : "desc" } : { col, dir: col === "player" ? "asc" : "desc" }));
   if (!data) return <Loading id="dev-loading" label="Loading plans" />;
   return (
     <div className="card" style={{ padding: 8, overflowX: "auto" }}>
-      <div className="rz-bar"><small className="note">Drag the edge of any heading to resize a column. Your widths are remembered.</small>
-        {cw.changed && <button className="btn" onClick={cw.reset} data-testid="plans-reset-widths">Reset column widths</button>}</div>
+      <div className="rz-bar"><small className="note">Click a heading to sort; click again to flip. Drag the edge of any heading to resize a column. Both are remembered.</small>
+        <span style={{ display: "flex", gap: 8 }}>{sort && <button className="btn" onClick={() => setSort(null)} data-testid="plans-clear-sort">Default order</button>}
+        {cw.changed && <button className="btn" onClick={cw.reset} data-testid="plans-reset-widths">Reset column widths</button>}</span></div>
       <table className="tbl dev-tbl rz-tbl" style={{ width: cw.total }} data-testid="plans-table">
         <ColGroup cols={Object.keys(COLS)} c={cw} />
-        <thead><tr>{HEAD.map(([k, l, cls, t]) => <ResizeTh key={k} col={k} c={cw} label={l} className={cls} title={t} id="plans" />)}</tr></thead>
-        <tbody>{data.rows.map((r) => (
+        <thead><tr>{HEAD.map(([k, l, cls, t]) => <ResizeTh key={k} col={k} c={cw} label={l} className={cls} title={t} id="plans" sort={k === "act" ? null : { onClick: () => sortBy(k), dir: sort?.col === k ? sort.dir : null }} />)}</tr></thead>
+        <tbody>{sortRows(data.rows, sort).map((r) => (
           <tr key={r.unique_id} style={{ cursor: "default" }} data-testid={`plan-row-${r.unique_id}`}>
             <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.needs_minutes && <span className="tag st a" data-testid={`needs-minutes-${r.unique_id}`}>Needs minutes</span>}</td>
             <td className="mono n">{r.age}</td><Games r={r} /><td className="mono n">{r.minutes_per_game ?? "—"}</td>

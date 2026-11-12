@@ -9,6 +9,7 @@ import { TryXI } from "@/components/squad/TryXI";
 import { DepthView, RegistrationView } from "@/components/squad/DepthView";
 import { RulesTab } from "@/components/rules/RulesTab";
 import { LoanManager } from "@/components/squad/LoanManager";
+import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
 
 const FILTERS = [["all", "All"], ["xi", "Best XI"], ["u21", "Under-21"]];
 
@@ -39,6 +40,7 @@ export default function Squad() {
   const openId = params.get("player");
   const { data } = useQuery({ queryKey: ["squad"], queryFn: () => api.get("/squad").then((r) => r.data) });
   const setParam = (k, v) => { if (k === "view" && v) { setLastView(v); } if (k === "player" && !v && openId) { returnToRow(openId); } const n = new URLSearchParams(params); v ? n.set(k, v) : n.delete(k); setParams(n); };
+  const rz = useResizableTable("squad");
   const rows = (data?.players || []).filter((p) => filter === "all" || (filter === "u21" ? p.age < 21 : p.in_best_xi)).sort((a, b) => (b.best_role?.rating || 0) - (a.best_role?.rating || 0));
   return (
     <div data-testid="squad-page">
@@ -56,7 +58,8 @@ export default function Squad() {
       {view === "rules" && <RulesTab module="squad" title="Development XI and registration rules" />}
       {view === "players" && <>
       <div className="card rise d1" style={{ padding: 8, overflowX: "auto" }}>
-        <table className="tbl" data-testid="squad-table">
+        <ResetWidths rz={rz} id="squad" />
+        <table className="tbl" ref={rz.ref} data-testid="squad-table">
           <thead><tr><th>Player</th><th>Age</th><th>Positions</th><th>Ability gained since last save</th><th>Best role</th><th>Minutes</th><th>Contract</th></tr></thead>
           <tbody>{rows.map((p) => <Row key={p.unique_id} p={p} onOpen={(id) => setParam("player", id)} />)}</tbody>
         </table>

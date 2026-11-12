@@ -8,6 +8,7 @@ import { api, errMsg } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { useScout, usePost, fmtMoney, fmtWage, toGBP, ContractTag, Pct, num, pctColor } from "./ctx";
 import { AdvFilter } from "./Lab";
+import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
 import { WatchButton } from "@/components/WatchButton";
 import { Loading } from "@/components/Loading";
 
@@ -79,6 +80,7 @@ export const PlayersTab = () => {
   const [f, setF] = usePersist("scout-filters", { ...BASE, group: params.get("group") });
   useEffect(() => { if (params.get("group")) { setF((x) => ({ ...x, group: params.get("group") })); } }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
   const [cols, setCols] = usePersist("scout-cols", "key");
+  const rz = useResizableTable(`scout-players-${cols}`);
   const [adv, setAdv] = usePersist("scout-adv", false);
   const [heat, setHeat] = usePersist("scout-heat", false);
   const [more, setMore] = usePersist("scout-more", false);
@@ -110,7 +112,8 @@ export const PlayersTab = () => {
       </div>
       {more && adv && <AdvFilter value={f.adv} meta={meta} onChange={(v) => setF({ ...f, adv: v })} />}
       <div className="card" style={{ padding: 8, overflowX: "auto" }}>
-        <table className="tbl pin2" data-testid="sp-table">
+        <ResetWidths rz={rz} id="sp" />
+        <table className="tbl pin2" ref={rz.ref} data-testid="sp-table">
           <thead><tr><th></th><Th k="name">Player</Th><Th k="age">Age</Th><Th k="grade" title="Global grade: 20 + (local grade − 20) × league multiplier">Grade</Th>
             <Th k="value">Value</Th><Th k="fair_price">Fair price</Th><Th k="wage">Wage</Th><Th k="minutes">Mins</Th>
             {statKeys.map((k) => <Th key={k} k={k} title={`${label[k]} (${short(k, label[k])})`}>{cols === "key" ? <span className="th-full">{label[k]?.replace(" / 90", "")}</span> : short(k, label[k])}</Th>)}

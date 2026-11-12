@@ -7,19 +7,24 @@ import { useGet, TabBar } from "@/lib/ui";
 import { Loading } from "@/components/Loading";
 import { openPlayer } from "@/components/player/PlayerPanel";
 import { U, money } from "@/components/history/Cabinet";
+import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
 
 const fmt = (r, v) => (v == null ? null : r.unit === " £" ? money(v) : `${v}${r.unit || ""}`);
 const Holder = ({ h }) => <>{h.unique_id ? <button className="linkish" onClick={() => openPlayer(h.unique_id)}>{h.name}</button> : h.link ? <Link className="linkish" to={h.link}>{h.name || h.season}</Link> : h.name}</>;
 
-const RecordRows = ({ id, rows }) => (
+const RecordRows = ({ id, rows }) => {
+  const rz = useResizableTable(`records-${id}`);
+  return (
   <div className="card" style={{ padding: 8, overflowX: "auto" }} data-testid={`records-${id}`}>
-    <table className="tbl"><thead><tr><th>Record</th><th>Holder</th><th>Value</th><th>Season / date</th><th>Previous holders</th></tr></thead>
+    <ResetWidths rz={rz} id={`records-${id}`} />
+    <table className="tbl" ref={rz.ref}><thead><tr><th>Record</th><th>Holder</th><th>Value</th><th>Season / date</th><th>Previous holders</th></tr></thead>
       <tbody>{rows.map((r) => <tr key={r.key} data-testid={`record-${r.key}`}>
         <td><b>{r.label}</b>{r.save && <small style={{ display: "block", color: "var(--dim)" }}>Whole save: {r.save.name} ({r.save.value})</small>}</td>
         <td>{r.holder ? <Holder h={r.holder} /> : <U v={null} />}</td><td className="mono">{r.holder ? fmt(r, r.holder.value) : "—"}</td>
         <td>{r.holder ? (r.holder.link ? <Link className="linkish" to={r.holder.link}>{r.holder.date || r.holder.season}</Link> : r.holder.date || r.holder.season) : "—"}</td>
         <td><small>{r.previous.length ? r.previous.map((p) => `${p.name || p.season} ${fmt(r, p.value)}`).join(" · ") : "—"}</small></td></tr>)}</tbody></table></div>
-);
+  );
+};
 
 export const Records = () => {
   const [scope, setScope] = useState("league");
