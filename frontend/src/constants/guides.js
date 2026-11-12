@@ -49,8 +49,8 @@ export const GUIDES = {
     how: ["Read a save so FMCC has your latest squad", "Start with the first item in What to do first", "Open a player to see his details, or jump to Squad or Scout Players to act on it"],
   },
   "/club-history": {
-    what: "Your club's story in this save: trophies, a permanent page for every season, club records, analytical leaders, a Hall of Fame and a milestone timeline.",
-    features: ["Trophy Cabinet: latest honour, last three seasons, trophies, promotions, runner-up finishes, individual awards and milestones", "Seasons: one permanent page per season, kept as it happened", "Records: team, player, match and transfer records with previous holders, in League or All competitions", "Analytical Leaders: npxG, xA, xG + xA, progressive passes and carries, goals prevented", "Compare Seasons side by side", "Hall of Fame for your club legends", "Timeline with pinned moments"],
+    what: "Your club's story in this save: trophies, a permanent page for every season, club records, statistical leaders, a Hall of Fame and a milestone timeline.",
+    features: ["Trophy Cabinet: latest honour, last three seasons, trophies, promotions, runner-up finishes, individual awards and milestones", "Seasons: one permanent page per season, kept as it happened", "Records: team, player, match and transfer records with previous holders, in League or All competitions", "Statistical Leaders: goals, assists, appearances, starts, minutes, average rating, clean sheets, tackles, duels won, plus npxG, xA, xG + xA, progressive passes and carries, goals prevented. Current season (top five) or All-Time (every season's leader ranked, this season in gold)", "Compare Seasons side by side", "Hall of Fame for your club legends", "Timeline with pinned moments"],
     how: ["FMCC adds to it every time it reads a save", "Click any season, player, match or record to see where it came from", "Missing figures show as Unavailable and fill in when a later save includes them"],
   },
   "/transfer-market": {

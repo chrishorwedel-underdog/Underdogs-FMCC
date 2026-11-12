@@ -9,7 +9,7 @@ import { Cabinet, SeasonTable, Timeline } from "@/components/history/Cabinet";
 import { SeasonPage } from "@/components/history/SeasonPage";
 import { Records, Leaders, Compare, HallOfFame } from "@/components/history/Records";
 
-const TABS = [["cabinet", "Trophy Cabinet"], ["seasons", "Seasons"], ["records", "Records"], ["leaders", "Analytical Leaders"], ["compare", "Compare Seasons"], ["hall", "Hall of Fame"], ["timeline", "Timeline"]];
+const TABS = [["cabinet", "Trophy Cabinet"], ["seasons", "Seasons"], ["records", "Records"], ["leaders", "Statistical Leaders"], ["compare", "Compare Seasons"], ["hall", "Hall of Fame"], ["timeline", "Timeline"]];
 
 const PinForm = ({ seasons }) => {
   const qc = useQueryClient();

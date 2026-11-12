@@ -39,18 +39,36 @@ export const Records = () => {
   </div>;
 };
 
+const SeasonRows = ({ l }) => l.rows.map((r, i) => <div key={r.unique_id} className="row" style={{ cursor: "pointer" }} onClick={() => openPlayer(r.unique_id)} data-testid={`leader-${l.key}-row-${i}`}><span className="mono" style={{ width: 18 }}>{i + 1}</span><div style={{ flex: 1 }}><b>{r.name}</b><small>{r.minutes} minutes</small></div><b className="mono">{r.value}</b></div>);
+
+const AllTimeRows = ({ l }) => {
+  const max = Math.max(...l.rows.map((r) => r.value), 0) || 1;
+  return l.rows.map((r, i) => <button key={r.season} className={`at-row${r.current ? " now" : ""}`} onClick={() => openPlayer(r.unique_id)} title={r.current ? "Current season, still in progress" : `${r.season} season leader`} data-testid={`alltime-${l.key}-row-${i}`}>
+    <span className="mono">{i + 1}</span><span className="at-who"><b>{r.name}</b><small>{r.season}{r.current ? " · this season" : ""}</small></span><b className="mono">{r.value}</b>
+    <span className="at-bar" style={{ width: `${Math.max(4, (r.value / max) * 100)}%` }} /></button>);
+};
+
+const LeaderGroup = ({ title, list, mode }) => <><div className="over" style={{ marginTop: 6 }}>{title}</div>
+  <div className="lead-grid">{list.map((l) => <div key={l.key} className="card" data-testid={`leader-${l.key}`}><div className="ttl">{l.label}</div>
+    {!l.available ? <p className="note"><U v={null} />{mode === "alltime" ? " in any season yet." : " for this season."}</p> : mode === "alltime" ? <AllTimeRows l={l} /> : <SeasonRows l={l} />}</div>)}</div></>;
+
 export const Leaders = () => {
+  const [mode, setMode] = useState("season");
   const [season, setSeason] = useState(null);
-  const { data } = useGet(["history-leaders", season], "/history/leaders", season ? { season } : undefined);
-  if (!data) return <Loading id="leaders-loading" rows={6} label="Loading leaders" />;
+  const { data } = useGet(["history-leaders", mode, season], "/history/leaders", { mode, ...(season ? { season } : {}) });
   return <div style={{ display: "grid", gap: 12 }}>
-    <div style={{ display: "flex", gap: 10, alignItems: "center" }}><span className="note">Season</span>
-      <select className="inp" style={{ width: "auto" }} value={data.season || ""} onChange={(e) => setSeason(e.target.value)} data-testid="leaders-season">{data.seasons.map((s) => <option key={s}>{s}</option>)}</select>
-      {data.status === "In Progress" && <span className="st a">In Progress</span>}</div>
-    <div className="lead-grid">{data.leaders.map((l) => <div key={l.key} className="card" data-testid={`leader-${l.key}`}><div className="ttl">{l.label}</div>
-      {l.available ? l.rows.map((r, i) => <div key={r.unique_id} className="row" style={{ cursor: "pointer" }} onClick={() => openPlayer(r.unique_id)}><span className="mono" style={{ width: 18 }}>{i + 1}</span><div style={{ flex: 1 }}><b>{r.name}</b><small>{r.minutes} minutes</small></div><b className="mono">{r.value}</b></div>)
-        : <p className="note"><U v={null} /> for this season.</p>}</div>)}</div>
-    <small className="note">Season totals from FMCC's per-90 numbers for players at your club.</small>
+    <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+      <TabBar id="leaders-mode" value={mode} onChange={setMode} tabs={[["season", "Current season"], ["alltime", "All-Time"]]} />
+      {data && mode === "season" && <><span className="note">Season</span>
+        <select className="inp" style={{ width: "auto" }} value={data.season || ""} onChange={(e) => setSeason(e.target.value)} data-testid="leaders-season">{data.seasons.map((s) => <option key={s}>{s}</option>)}</select>
+        {data.status === "In Progress" && <span className="st a">In Progress</span>}</>}
+      {data && mode === "alltime" && <span className="note" data-testid="alltime-note">Each season's leader, ranked. {data.completed} completed season{data.completed === 1 ? "" : "s"} plus <span className="gold-t">this season in gold</span>.</span>}
+    </div>
+    {!data ? <Loading id="leaders-loading" rows={6} label="Loading leaders" /> : <>
+      <LeaderGroup title="Regular stats" list={data.leaders.filter((l) => l.group === "regular")} mode={data.mode} />
+      <LeaderGroup title="Analytical stats" list={data.leaders.filter((l) => l.group === "analytical")} mode={data.mode} />
+      <small className="note">Season totals for players at your club. Average rating needs at least {data.min_minutes} minutes; clean sheets count goalkeepers only.{data.mode === "alltime" ? " The current season's line moves as the season goes on." : ""}</small>
+    </>}
   </div>;
 };
 

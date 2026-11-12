@@ -520,6 +520,14 @@ select.blank{cursor:pointer}
 .tl-item.pinned .tl-dot{background:#F5C542}
 .tl-season{font-size:11px;color:var(--dim);min-width:56px}
 .lead-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.at-row{position:relative;display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 6px 12px;color:inherit;cursor:pointer;transition:background-color .15s}
+.at-row:hover{background:rgba(255,255,255,.04)}
+.at-row:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.at-who small{display:block;color:var(--dim)}
+.at-bar{position:absolute;left:6px;bottom:4px;height:4px;border-radius:2px;background:var(--acc);opacity:.7;max-width:calc(100% - 12px)}
+.at-row.now .at-bar{background:#E5B53A;opacity:1}
+.at-row.now b{color:#E5B53A}
+.gold-t{color:#E5B53A;font-weight:600}
 .cab-latest{border-left:3px solid #F5C542}
 [data-testid="history-tabs"] button,.seg button{white-space:nowrap}
 

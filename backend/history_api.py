@@ -8,7 +8,10 @@ from core import db, active_career, now_iso, new_id, audit
 router = APIRouter(prefix="/api/history")
 SQUAD_KEYS = ("unique_id", "name", "age", "positions", "appearances", "minutes", "goals", "assists", "avg_rating", "homegrown")
 MIN_RATE_MINUTES = 900
-LEADERS = [("npxg", "Non-penalty xG"), ("xa", "Expected assists"), ("xgxa", "xG + xA"), ("progp", "Progressive passes"), ("prgc", "Progressive carries"), ("xgp", "Goals prevented")]
+LEADERS = [("goals", "Goals", "regular"), ("assists", "Assists", "regular"), ("appearances", "Appearances", "regular"), ("starts", "Starts", "regular"), ("minutes", "Minutes", "regular"),
+           ("avg_rating", "Average rating (min 900 minutes)", "regular"), ("clean_sheets", "Clean sheets (goalkeepers)", "regular"), ("tackles", "Tackles", "regular"), ("duels_won", "Duels won", "regular"),
+           ("npxg", "Non-penalty xG", "analytical"), ("xa", "Expected assists", "analytical"), ("xgxa", "xG + xA", "analytical"), ("progp", "Progressive passes", "analytical"),
+           ("prgc", "Progressive carries", "analytical"), ("xgp", "Goals prevented", "analytical")]
 
 
 def _honour_kind(h: dict) -> str:
@@ -324,18 +327,28 @@ async def records(scope: str = "league"):
     return {"scope": scope, "team": team, "players": players, "matches": matches_r, "h2h": sorted(h2h.values(), key=lambda o: -o["p"])[:8], "transfers": transfers, "min_minutes": MIN_RATE_MINUTES}
 
 
+def _ranked(s: dict, key: str) -> list:
+    ok = lambda r: r.get(key) is not None and (key != "avg_rating" or (r.get("minutes") or 0) >= MIN_RATE_MINUTES) and (key != "clean_sheets" or "GK" in (r.get("positions") or []))  # noqa: E731
+    return sorted([{"unique_id": r["unique_id"], "name": r["name"], "value": r[key] + 0, "minutes": r["minutes"]} for r in s["squad"] if ok(r)], key=lambda r: -r["value"])
+
+
 @router.get("/leaders")
-async def leaders(season: str | None = None):
+async def leaders(season: str | None = None, mode: str = "season"):
+    """Season: top five per stat. All-time: each season's leader (current season included), ranked."""
     c = await active_career()
     arch = await archive(c)
     s = next((x for x in arch if x["season"] == season), arch[-1] if arch else None)
     if not s:
-        return {"season": None, "seasons": [], "leaders": []}
+        return {"mode": mode, "season": None, "seasons": [], "leaders": []}
     out = []
-    for key, label in LEADERS:
-        rows = sorted([{"unique_id": r["unique_id"], "name": r["name"], "value": r[key], "minutes": r["minutes"]} for r in s["squad"] if r.get(key) is not None], key=lambda r: -r["value"])[:5]
-        out.append({"key": key, "label": label, "rows": rows, "available": bool(rows)})
-    return {"season": s["season"], "status": s["status"], "seasons": [x["season"] for x in reversed(arch)], "leaders": out}
+    for key, label, group in LEADERS:
+        if mode == "alltime":
+            rows = sorted([top[0] | {"season": x["season"], "current": x["status"] == "In Progress"} for x in arch if (top := _ranked(x, key))], key=lambda r: -r["value"])
+        else:
+            rows = _ranked(s, key)[:5]
+        out.append({"key": key, "label": label, "group": group, "rows": rows, "available": bool(rows)})
+    return {"mode": mode, "season": s["season"], "status": s["status"], "seasons": [x["season"] for x in reversed(arch)], "leaders": out,
+            "completed": sum(x["status"] == "Completed" for x in arch), "min_minutes": MIN_RATE_MINUTES}
 
 
 @router.get("/compare")
