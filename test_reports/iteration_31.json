@@ -1,0 +1,48 @@
+{
+  "summary": "Tested FMCC QoL Phase 1 in sample mode, both backend and frontend. New pytest file test_qol_phase1.py: 18/18 pass. Covered: the finance API; the review switch; auto-apply vs review on, via Elite (review on: the change stays queued, preview current/new are null; review off: auto_applied true, the batch finishes, the 'N change(s) applied to your save' notice appears, old/new_value null); no CA/PA values in the audit, rankings or rules fields; rules impact, save, changed_at and reset for squad/scouting/reports/development; elite rules impact; DP settings impact, including malformed data giving 422. DP winter review with review off: started true, 8 PA changes auto-applied as 1 batch, notice text 'Kieran Doyle: potential +3 ...', records have status auto with auto_note. UI (Playwright): 5 nav groups, alphabetical, no nav-home; the DoF button is visible at 1920x800 with no page scroll; the logo goes to '/'; home-up-next has 10 items (2 Urgent, 5 Soon, 3 Later) and all 10 action buttons navigate correctly; the finance strip is on all 16 pages with the expected values and a title reason, and is focusable; the Features switch toggles and the Changes change-mode-text follows it; reveal-dp is gone; dp-review-auto-note shows only when review is off; Squad rule items show Now/Default/Last changed, and per-rule reset, Check who it affects, impact count, Save (toast 'Rules saved as version 4'), Keep editing and Reset all work; Scouting/Reports/Development impact counts work; Elite rule-card-0 contains rule-item-rule-0 and its reset clears the draft; DP Settings has 13 rule-item-dp-* sections, impact '22 of 23', save, and Reset everything restores defaults; DP Overview, Balance preview, Needs review and Settings render with no PA/CA numbers. Mobile 390: the finance strip scrolls sideways (scrollWidth 788 vs 390) and the page doesn't overflow. No page errors. Everything is cleaned up: rules and DP settings are back to defaults, review is off, DP batch undone, my dp_records/changes/batches/notices/awards/nominations deleted, game_edits net zero.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/dp/settings/impact", "issue": "The review kind is picked by date only (game_date > winter_date gives season_end), not by stage. Before the winter review has run but after the winter date (the sample is in this state: stage before_winter, next_review winter), impact runs the season-end review, where all 23 players are 'waiting'. So big changes (e.g. rating_weight 80/20) show '0 of 23 affected', which is misleading. Use the same next_review logic as overview()."},
+      {"endpoint": "POST /api/rules/{elite|breakout}/impact", "issue": "Only counts players whose matching rule id changes. Changing a reward range (rule-max-0 from 5 to 6) shows '0 of 23 players affected' although the nominees' reward changes. Consider also counting players who match a rule whose action or max_value changed."},
+      {"endpoint": "POST /api/rules/squad|development/impact", "issue": "A heuristic: any squad param change returns the whole squad (23 of 23) and development returns all under-21s, whatever the change. It is not a real 'who it affects' calculation."},
+      {"endpoint": "POST /api/elite/queue (auto-apply)", "issue": "queue_changes is called once per nominee, so each nominee gets its own batch, backup and notice ('1 change(s) applied' xN) instead of one batch for the month. Collect the items and call queue_changes once."},
+      {"endpoint": "notices after undo", "issue": "The 'N change(s) applied to your save' notice stays (unread) after the batch is undone. Mark or replace it on undo."},
+      {"endpoint": "queue with review off", "issue": "4 dp changes from 2026-11-10 are still queued with review off, and the old '4 game changes waiting' notice is still there. Switching review off doesn't flush or offer to apply items already queued."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "DP Needs review with review off", "issue": "After a winter review with review off, 10 records still show in Needs your review (9 needs_review and 1 held, all change 0, Approve disabled). The banner just above says reviews apply automatically, so the two disagree. Explain why these still wait, or hide change-0 items.", "affected_selectors": ["[data-testid=dp-review-auto-note]", "[data-testid=dp-needs-review]"]}
+    ],
+    "design_issues": [
+      {"screen": "Home Up next", "issues": ["Ben Okafor's contract shows twice: 'contract ends on 2028-06-30' (Soon, attention) and 'contract ends in 4 months 1 day' (Later, countdown). Dedupe attention items against countdowns.", "The hero says 'Five things need your attention' while the panel says '2 urgent'. The counts aren't aligned."]},
+      {"screen": "Mobile 390px top bar", "issues": ["Club name/'FM27 · March 2028' wraps over 3 lines and overlaps the finance strip ('2028' is hidden behind it).", "Up next rows squeeze the text column next to the button (e.g. 'Breakout Player of the season...' wraps to 4 lines). Stack the action under the text on narrow screens."]},
+      {"screen": "DP Settings rule meta", "issues": ["Now/Default say 'Your own values' / 'Rulesheet values' rather than the actual values, which tells the user less than the params rules do."]},
+      {"screen": "First visit", "issues": ["The onboarding tour (1 of 16) starts automatically and goes to /matches, so the first logo click lands on /matches until the tour is skipped. Expected behaviour, but automated tests must click 'Skip tour' first."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_qol_phase1.py", "/app/test_reports/pytest/qol_phase1.xml"],
+  "action_items": [
+    "dp_api.settings_impact: choose the review kind from the stage (winter if no winter records yet), not from the date alone",
+    "Elite/Breakout rules impact: count players affected by reward (action/max_value) changes, not just changes to which rule matches",
+    "elite_queue: queue all nominees in one queue_changes call so there is one batch and one notification",
+    "Undo a batch: update or remove its 'changes applied' notice",
+    "Home Up next: dedupe contract-end items (attention vs countdown) and align the hero count with the panel",
+    "Mobile top bar: stop the club name/date wrapping over the finance strip; stack Up next buttons on narrow screens",
+    "Needs review with review off: explain or hide the change-0 needs_review/held items"
+  ],
+  "critical_code_review_comments": [
+    "run_review (review off) promotes needs_review/held/flag records with a non-zero change straight to 'auto'. This bypasses the rulesheet's safeguards (ratings-only growth above +4, small comparison groups). This matches the spec, but the auto_note should name which safeguard was skipped.",
+    "Auto-apply start_batch is called without 'expected' values, so in LIVE mode apply_one has nothing to compare (expected None) and old/new_value stay null on auto batches for every field, not only pa/ca. In LIVE mode this makes undo impossible for non-PA/CA fields (undo needs old_value).",
+    "TRUE_VALUES audit regex rewrites only 'PA/CA x → y' and 'put back to N'. Any other wording with an absolute number (e.g. 'PA set to 150') would leak. Prefer not storing absolute values in audit at all.",
+    "changes_api.py is 472 lines and fine; dp settings are global (no career_id): 'One set for all careers' is stated in the UI."
+  ],
+  "updated_files": ["/app/backend/tests/test_qol_phase1.py"],
+  "success_rate": {"backend": "100% (18/18 pytest), plus a manual DP winter auto-apply flow that passed", "frontend": "~95% (all requested flows work; only minor UX/design issues)"},
+  "seed_data_creation": "None kept. Created and then removed: elite nominations for Mateus Costa and Luca Romano, 1 rejected and 1 undone elite change, a DP winter review (23 records, 8 changes, batch undone), squad rules v1-v4, scouting/reports/development v1-v2, DP settings v1-v2. Everything is back to defaults. Rule/settings version history rows stay (append-only), so 'Last changed' shows recent times for some rules.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && REACT_APP_BACKEND_URL=... pytest tests/test_qol_phase1.py -n 0 -o addopts=''. It toggles review on/off, nominates elite suggestions[0]/[1], rejects/undoes, and saves+resets rules. Afterwards, delete the leftover changes docs (their idempotency keys block re-queueing elite-<month> for those players). Playwright: on a fresh browser, click 'Skip tour' first. The tour sends you to /matches. The squad rules tab is at /squad?view=rules, other modules use <id>-tab-rules (elite-tab-rules etc.), and DP tabs are dp-tab-overview/preview/review/settings. Rules reset uses window.confirm, so accept the dialog. Sample state: DP stage before_winter with game_date past the winter date. 4 pre-existing queued dp changes (2026-11-10) were not touched."
+}

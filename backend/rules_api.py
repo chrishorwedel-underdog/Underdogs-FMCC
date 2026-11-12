@@ -142,9 +142,9 @@ async def rules_impact(module: Module, body: ImpactIn):
     if module in RE.REWARD_MODULES:
         scope = cur.get("scope") if module == "dp" else {"my_club": True, "nations": [], "leagues": []}
         ctxs = await contexts(c, scope)
-        pick = lambda rules, x: (RE.first_match(rules, x) or {}).get("id")  # noqa: E731
+        pick = lambda rules, x: RE.first_match(rules, x)  # noqa: E731
         hit = sum(pick(cur["rules"], x) != pick(draft["rules"], x) for x in ctxs)
-        return {"affected": hit, "population": len(ctxs), "note": "Players who would qualify for a different rule (or stop or start qualifying) with this draft."}
+        return {"affected": hit, "population": len(ctxs), "note": "Players whose matching rule or its reward would change with this draft."}
     changed = {k for k in draft["params"] if draft["params"][k] != cur["params"].get(k)}
     if module == "scouting":
         import scouting_api

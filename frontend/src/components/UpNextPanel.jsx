@@ -9,7 +9,8 @@ const OPEN = { reports: "Open reports", development: "Open Development", dp: "Op
 const build = (attention, cd) => {
   const out = [];
   (cd?.missed || []).filter((m) => !m.handled).forEach((m) => out.push({ id: `missed-${m.key}`, level: "urgent", text: m.text, sub: `You can still make it late from save #${m.nearest_save}; it will be labelled as late.`, missed: m }));
-  attention.forEach((a) => out.push({ id: `att-${a.kind}-${a.unique_id}`, level: a.kind === "minutes" ? "urgent" : "soon", text: a.text, sub: a.sub, link: `/squad?player=${a.unique_id}`, label: "View player" }));
+  const cdKeys = new Set((cd?.items || []).map((c) => c.key.split(":").slice(0, 2).join(":")));
+  attention.filter((a) => !(a.kind === "contract" && cdKeys.has(`contract:${a.unique_id}`))).forEach((a) => out.push({ id: `att-${a.kind}-${a.unique_id}`, level: a.kind === "minutes" ? "urgent" : "soon", text: a.text, sub: a.sub, link: `/squad?player=${a.unique_id}`, label: "View player" }));
   (cd?.items || []).forEach((c) => out.push({ id: `cd-${c.key}`, level: c.days <= 7 ? "urgent" : c.days <= 31 ? "soon" : "later", text: c.text, sub: `${c.date}${c.estimated ? " · estimated from the league's usual dates" : ""}`, link: c.link, label: OPEN[c.page] || "Open", days: c.days }));
   return out.sort((a, b) => RANK[a.level] - RANK[b.level] || (a.days ?? -1) - (b.days ?? -1));
 };

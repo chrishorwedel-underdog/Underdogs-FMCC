@@ -51,7 +51,16 @@ async def put_review(body: ReviewIn):
     c = await active_career()
     await db.careers.update_one({"id": c["id"]}, {"$set": {"review_changes": body.on}})
     await audit(c["id"], "setting", "features", "Review changes before applying: " + ("on" if body.on else "off (changes apply automatically)"))
-    return {"review_changes": body.on}
+    applied = 0
+    if not body.on:
+        from changes_api import start_batch, notice
+        ids = [d["id"] async for d in db.changes.find({"career_id": c["id"], "status": "queued", "source": {"$in": ["elite", "breakout", "dp"]}}, {"id": 1})]
+        if ids:
+            try:
+                applied = (await start_batch(c | {"review_changes": False}, ids))["total"]
+            except HTTPException as exc:
+                await notice(c["id"], f"waiting:flush:{len(ids)}", "Changes waiting for the game", f"{len(ids)} waiting change(s) couldn't be applied yet: {exc.detail}")
+    return {"review_changes": body.on, "applied_waiting": applied}
 
 
 class FeaturesIn(BaseModel):

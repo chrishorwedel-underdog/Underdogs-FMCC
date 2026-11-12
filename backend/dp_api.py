@@ -224,7 +224,7 @@ async def settings_impact(body: ImpactIn):
         raise HTTPException(422, "; ".join(errs))
     c = await active_career()
     s = await _season(c)
-    kind = "winter" if s["game_date"] <= s["winter_date"] else "season_end"
+    kind = "season_end" if await _latest_records(c["id"], s["season"], "winter") else "winter"
     targets = await contexts(c, (await current_rules(c["id"], "dp"))["data"]["scope"])
     everyone = await contexts(c, {"all_players": True})
     first, ages = await _evidence(c, s, kind)

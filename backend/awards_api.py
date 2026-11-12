@@ -78,23 +78,24 @@ async def elite_queue():
     rules = await current_rules(c["id"], "elite")
     ctxs = {x["unique_id"]: x for x in await own_contexts(c)}
     month = snap["game_date"][:7]
-    items_total = {"queued": 0, "skipped_duplicates": 0, "not_qualified": 0}
+    items_total = {"queued": 0, "skipped_duplicates": 0, "not_qualified": 0, "auto_applied": False}
+    items = []
+    award_id = f"elite-{month}"
     for n in await active_nominees(c["id"], "elite"):
         x = ctxs.get(n["unique_id"])
         r = RE.first_match(rules["data"]["rules"], x) if x else None
         if not r:
             items_total["not_qualified"] += 1
             continue
-        award_id = f"elite-{month}"
         if await db.changes.find_one({"key": f"{c['id']}:elite:{award_id}:{x['unique_id']}:{r['action']['target']}"}, {"_id": 1}):
             items_total["skipped_duplicates"] += 1
             continue
         delta = RE.capped(x[r["action"]["target"]], RE.roll(r, f"{c['id']}:{award_id}:{x['unique_id']}"), r["max_value"])
         await _award(c, f"elite:{month}:{x['unique_id']}", "elite", x, r, rules["version"], "awarded", delta)
-        res = await queue_changes(c, "elite", award_id, [{"unique_id": x["unique_id"], "name": x["name"], "field": r["action"]["target"], "delta": delta}])
-        items_total["queued"] += res["queued"]
-        items_total["auto_applied"] = items_total.get("auto_applied") or res["auto_applied"]
-        items_total["skipped_duplicates"] += res["skipped_duplicates"]
+        items.append({"unique_id": x["unique_id"], "name": x["name"], "field": r["action"]["target"], "delta": delta})
+    if items:
+        res = await queue_changes(c, "elite", award_id, items)
+        items_total |= {"queued": res["queued"], "auto_applied": res["auto_applied"], "skipped_duplicates": items_total["skipped_duplicates"] + res["skipped_duplicates"]}
     return items_total
 
 

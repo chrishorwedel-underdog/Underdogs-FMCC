@@ -12,11 +12,13 @@ export const NeedsReview = () => {
   const { data: feats } = useFeatures();
   const act = useAct();
   const [open, setOpen] = useState(null);
-  const rows = data.filter((r) => ["needs_review", "held", "flag"].includes(r.status));
+  const waiting = data.filter((r) => ["needs_review", "held", "flag"].includes(r.status));
+  const rows = feats?.review_changes ? waiting : waiting.filter((r) => r.change);
+  const noChange = waiting.length - rows.length;
   const decide = (r, approve) => act(() => api.post(`/dp/records/${r.id}/decide`, { approve }), approve ? `${r.name}: approved and sent to your save` : `${r.name}: rejected`, ["dp-records", "dp-overview", "changes"]);
   return (
     <div style={{ display: "grid", gap: 12 }} data-testid="dp-needs-review">
-      {!feats?.review_changes && <div className="banner" data-testid="dp-review-auto-note"><span>Review changes before applying is off, so new reviews apply these changes automatically and list them in a notification. Switch it on in <Link to="/features">Features</Link> to approve them here instead.</span></div>}
+      {!feats?.review_changes && <div className="banner" data-testid="dp-review-auto-note"><span>Review changes before applying is off, so new reviews apply these changes automatically and list them in a notification. Switch it on in <Link to="/features">Features</Link> to approve them here instead.{noChange > 0 && ` ${noChange} player(s) with no change yet are waiting for more evidence; they're settled at the next review.`}</span></div>}
       <p className="note">Ratings-only growth above +4, assessments with too few comparison players, and declines held for missing evidence wait here.</p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 12 }}>
         {rows.map((r) => (

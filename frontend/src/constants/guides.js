@@ -7,7 +7,7 @@ export const GUIDES = {
   },
   "/": {
     what: "Your club at a glance. Everything important from your latest save on one screen. A dot next to a menu item means that page has something new; opening the page clears it.",
-    features: ["Cards with your squad, development, scouting, awards, game changes and reports (cards for features you've turned off are hidden)", "Needs your attention: contracts ending, players short of minutes and changes waiting for approval", "Your next match", "Updates, backups and careers"],
+    features: ["Up next in your save: urgent items first, then what's coming soon, each with one button", "The finance strip under the top bar: FFP, wages against turnover, transfer spending, budget and bank", "Cards with your squad, development, scouting, awards, game changes and reports (cards for features you've turned off are hidden)", "Your next match"],
     how: ["Play FM and save the game", "FMCC reads the new save on its own (or press the refresh button at the top)", "Click any card to open that module"],
   },
   "/dynamic-potential": {

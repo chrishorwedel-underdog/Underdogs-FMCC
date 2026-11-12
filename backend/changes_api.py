@@ -453,6 +453,7 @@ async def undo_batch(batch_id: str):
             undone += 1
     await db.changes.update_many({"batch_id": batch_id, "status": "approved"}, {"$set": {"status": "queued", "batch_id": None}})
     await db.batches.update_one({"id": batch_id}, {"$set": {"status": "undone"}})
+    await db.notices.update_one({"career_id": c["id"], "key": f"batch:{batch_id}"}, {"$set": {"title": f"Undone: {undone} change(s) put back", "read": True}})
     await audit(c["id"], "batch undone", "editor", f"{undone} change(s) reversed", batch_id=batch_id)
     return {"undone": undone}
 
