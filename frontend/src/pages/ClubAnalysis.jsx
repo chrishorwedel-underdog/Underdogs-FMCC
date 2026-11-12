@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useGet, PageHead } from "@/lib/ui";
 import { money, openDossier } from "@/components/analysis/StatsTable";
+import { RadarCard, MetricHeatmap } from "@/components/charts/DataHub";
 
 const Idea = ({ title, rows, id }) => (
   <div className="card" data-testid={`ca-ideas-${id}`}><div className="ttl">{title}</div>
@@ -22,6 +23,10 @@ export default function ClubAnalysis() {
         {data.todo.map((t, i) => <div key={t.title} className="row" data-testid={`ca-todo-${i}`}><span className="mono" style={{ width: 22 }}>{i + 1}</span><div style={{ flex: 1 }}><b>{t.title}</b><small>{t.evidence}</small></div>
           <button className="btn" onClick={() => nav(t.link)} data-testid={`ca-todo-link-${i}`}>Look<ArrowRight size={13} /></button></div>)}
         {!data.todo.length && <p className="note">Nothing urgent. Your squad looks balanced.</p>}</div>
+      <div className="hub-row" data-testid="ca-charts">
+        <RadarCard id="ca-area-radar" title="Squad strength by area (top-two role fit %)" data={data.positions.map((p) => ({ axis: p.label, value: p.avg_top2 }))} height={300} />
+        <MetricHeatmap id="ca-area-heatmap" title="Area heatmap: role fit %" rows={data.positions.map((p) => ({ name: `${p.label} (${p.count})`, values: { best: p.best, top2: p.avg_top2 } }))} cols={["best", "top2"]} first="Area (players)" label={{ best: "Best fit", top2: "Top two average" }} />
+      </div>
       <div className="card" data-testid="ca-positions"><div className="ttl">Where to strengthen</div>
         <div style={{ overflowX: "auto" }}><table className="tbl"><thead><tr><th>Area</th><th>Players</th><th>Best fit</th><th>Top two average</th><th>Average age</th></tr></thead>
           <tbody>{[...data.positions].sort((a, b) => a.avg_top2 - b.avg_top2).map((p) => <tr key={p.group} style={{ cursor: "default" }}><td><b>{p.label}</b></td><td>{p.count}</td><td className="mono">{p.best}%</td><td className="mono">{p.avg_top2}%</td><td>{p.avg_age ?? "—"}</td></tr>)}</tbody></table></div></div>

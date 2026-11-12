@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { api, gameDate } from "@/lib/api";
+import { SquadRadars } from "@/components/squad/SquadRadars";
 
 const Fact = ({ k, v, id }) => <div className="row"><span style={{ color: "var(--mut)", flex: 1 }}>{k}</span><b data-testid={id}>{v}</b></div>;
 
@@ -22,6 +23,7 @@ export const PlayerSheet = ({ uid, onClose }) => {
             <Fact k="First seen" v={gameDate(data.identity.first_seen_date)} />
           </div>
         )}
+        {uid && <SquadRadars uid={uid} />}
         {data?.role_ratings?.length > 0 && (
           <div className="card" style={{ marginTop: 20, padding: 14 }} data-testid="player-sheet-roles">
             <div className="ttl" style={{ marginBottom: 6 }}>Role ratings</div>
@@ -32,14 +34,14 @@ export const PlayerSheet = ({ uid, onClose }) => {
         )}
         {data?.history?.length > 0 && (
           <div className="card" style={{ marginTop: 20, padding: 14 }}>
-            <div className="ttl" style={{ marginBottom: 10 }}>CA gained across saves</div>
+            <div className="ttl" style={{ marginBottom: 10 }}>Ability gained across saves</div>
             <div style={{ height: 180 }} data-testid="player-sheet-chart">
               <ResponsiveContainer>
                 <LineChart data={data.history.map((h) => ({ gain: h.ca - data.history[0].ca, label: gameDate(h.game_date, { month: "short" }) }))}>
                   <XAxis dataKey="label" stroke="#5C626C" fontSize={11} tickLine={false} />
                   <YAxis stroke="#5C626C" fontSize={11} domain={["dataMin - 3", "dataMax + 3"]} width={32} tickLine={false} />
                   <Tooltip contentStyle={{ background: "#121519", border: "1px solid rgba(255,255,255,.13)", borderRadius: 10, fontSize: 12 }} />
-                  <Line type="monotone" dataKey="gain" name="CA gained" stroke="#4C8DFF" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="gain" name="Ability gained" stroke="#4C8DFF" strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

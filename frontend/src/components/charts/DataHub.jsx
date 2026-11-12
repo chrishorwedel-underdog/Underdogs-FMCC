@@ -50,12 +50,12 @@ export const AttrHeatmap = ({ id, title, attrs }) => (
   </div>
 );
 
-export const MetricHeatmap = ({ id, title, rows, cols, label }) => (
+export const MetricHeatmap = ({ id, title, rows, cols, label, first = "Player" }) => (
   <div className="hub-card" style={{ overflowX: "auto" }} data-testid={id}>
     <div className="hub-h">{title}</div>
     <table className="tbl heat-tbl">
       <caption className="sr-only">{title}. Each cell is a percentile from 0 to 100.</caption>
-      <thead><tr><th scope="col">Player</th>{cols.map((c) => <th scope="col" key={c} title={label?.[c] || c}>{label?.[c] || c}</th>)}</tr></thead>
+      <thead><tr><th scope="col">{first}</th>{cols.map((c) => <th scope="col" key={c} title={label?.[c] || c}>{label?.[c] || c}</th>)}</tr></thead>
       <tbody>{rows.map((r) => (
         <tr key={r.name} style={{ cursor: "default" }}><th scope="row" style={{ textAlign: "left" }}>{r.name}</th>
           {cols.map((c) => <td key={c} className="mono" style={{ background: `color-mix(in srgb, ${pctColour(r.values[c])} 30%, transparent)` }}>{r.values[c] ?? "—"}</td>)}</tr>))}</tbody>
