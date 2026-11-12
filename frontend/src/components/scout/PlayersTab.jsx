@@ -35,10 +35,10 @@ const Filters = ({ f, setF, meta, prefs, more }) => {
       <select className="inp" style={{ width: 170 }} value={f.league || ""} onChange={set("league")} data-testid="sp-league"><option value="">All leagues</option>{meta?.leagues.map((l) => <option key={l}>{l}</option>)}</select>
       <select className="inp" style={{ width: 230 }} value={f.preset || ""} onChange={set("preset")} data-testid="sp-preset"><option value="">Ready-made searches</option>{Object.entries(meta?.presets || {}).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
       {more && <>
-      <input className="inp" style={{ width: 150 }} type="number" placeholder="Max value (m)" onChange={cap("max_value", 1e6)} data-testid="sp-max-value" />
-      <input className="inp" style={{ width: 160 }} type="number" placeholder="Max wage (k/wk)" onChange={cap("max_wage", 1e3)} data-testid="sp-max-wage" />
-      <input className="inp" style={{ width: 80 }} type="number" defaultValue={f.max_age} title="Max age" onBlur={(e) => { const v = Math.min(50, Math.max(14, Number(e.target.value) || 45)); e.target.value = v; setF({ ...f, max_age: v }); }} data-testid="sp-max-age" />
-      <input className="inp" style={{ width: 130 }} type="number" placeholder="Min minutes" onChange={set("min_minutes", (v) => Number(v) || 0)} data-testid="sp-min-minutes" />
+      <input className="inp" style={{ width: 150 }} type="number" placeholder="Max value (m)" key={`mv-${f.max_value}`} defaultValue={f.max_value ? Math.round((f.max_value / toGBP(1, prefs) / 1e6) * 10) / 10 : ""} onBlur={cap("max_value", 1e6)} onKeyDown={(e) => e.key === "Enter" && e.target.blur()} data-testid="sp-max-value" />
+      <input className="inp" style={{ width: 160 }} type="number" placeholder="Max wage (k/wk)" key={`mw-${f.max_wage}`} defaultValue={f.max_wage ? Math.round(f.max_wage / toGBP(1, prefs) / 1e3) : ""} onBlur={cap("max_wage", 1e3)} onKeyDown={(e) => e.key === "Enter" && e.target.blur()} data-testid="sp-max-wage" />
+      <input className="inp" style={{ width: 80 }} type="number" key={`ma-${f.max_age}`} defaultValue={f.max_age} title="Max age" onBlur={(e) => { const v = Math.min(50, Math.max(14, Number(e.target.value) || 45)); e.target.value = v; setF({ ...f, max_age: v }); }} data-testid="sp-max-age" />
+      <input className="inp" style={{ width: 130 }} type="number" placeholder="Min minutes" value={f.min_minutes || ""} onChange={set("min_minutes", (v) => Number(v) || 0)} data-testid="sp-min-minutes" />
       <div className="seg" data-testid="sp-gender">{[["M", "Men"], ["F", "Women"]].map(([k, l]) => <button key={k} className={f.gender === k ? "on" : ""} onClick={() => setF({ ...f, gender: k })} data-testid={`sp-gender-${k}`}>{l}</button>)}</div>
       {meta?.html_imports > 0 && <div className="seg">{[["save", "From the save"], ["html", "HTML imports"]].map(([k, l]) => <button key={k} className={f.source === k ? "on" : ""} onClick={() => setF({ ...f, source: k })} data-testid={`sp-source-${k}`}>{l}</button>)}</div>}
       </>}
@@ -118,7 +118,7 @@ export const PlayersTab = () => {
           <tbody>{data?.rows.map((r) => {
             const marker = f.mode === "adjusted" && (r.poss_mult !== 1 || r.league_mult !== 1) ? `Possession ×${r.poss_mult} · league ×${r.league_mult}` : null;
             return (
-              <tr key={r.unique_id} onClick={() => openPlayer(r.unique_id)} onKeyDown={(e) => e.key === "Enter" && openPlayer(r.unique_id)} tabIndex={0} data-row-uid={r.unique_id} data-testid={`sp-row-${r.unique_id}`}>
+              <tr key={r.unique_id} onClick={() => openPlayer(r.unique_id)} onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) { e.preventDefault(); openPlayer(r.unique_id); } }} tabIndex={0} data-row-uid={r.unique_id} data-testid={`sp-row-${r.unique_id}`}>
                 <td onClick={(e) => e.stopPropagation()}>{!r.own && r.source === "save" && <button className="ib" style={{ width: 26, height: 26 }} onClick={() => star(r)} title="Add to shortlist" data-testid={`sp-star-${r.unique_id}`}><Star size={13} /></button>}</td>
                 <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.own && <span className="tag st g">Your club</span>}<ContractTag m={r.months_left} />{r.league_scored === false && <span className="tag st a" title={r.league_note} data-testid={`sp-noscore-${r.unique_id}`}>No strength score</span>}{r.source === "html" && !r.linked && <span className="tag st n">Not linked</span>}
                   <small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.positions?.join(", ")}</small></td>

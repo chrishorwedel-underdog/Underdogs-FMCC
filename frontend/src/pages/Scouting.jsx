@@ -113,7 +113,7 @@ export default function Scouting({ initialTab = "players" }) {
         {more && tab === "scatter" && <ExploreTab open={setOpen} />}
         {more && tab === "board" && <BoardTab open={setOpen} />}
         {more && tab === "picks" && <PicksTab open={setOpen} onCompare={(id, many) => (many ? setCompare(id) : toggleCompare(id))} />}
-        {more && tab === "compare" && (compare.length ? <Compare4 ids={compare} clear={() => setCompare([])} />
+        {more && tab === "compare" && (compare.length ? <><Compare4 ids={compare} clear={() => setCompare([])} /><Breakdown ids={compare} /></>
           : <div className="soon">Pick up to 4 players with the scales button in Players or in a profile to compare them here.</div>)}
         {more && tab === "computed" && <ComputedTab />}
         {more && tab === "roles" && <RoleScoresTab />}

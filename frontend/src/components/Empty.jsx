@@ -1,6 +1,6 @@
 import { Info } from "lucide-react";
 
-const TITLE = { filters: "Your filters rule everyone out", minutes: "Not enough minutes yet", missing: "This isn't in the save yet", nobody: "Nobody qualifies yet" };
+const TITLE = { filters: "Your filters rule everyone out", minutes: "Not enough minutes yet", missing: "This isn't in the save yet", nobody: "Nobody qualifies yet", none: "Nothing here yet", notfound: "No match for that name" };
 
 // Says why something is empty and offers the matching fix.
 export const Empty = ({ id, reason = "nobody", text, actions = [] }) => (

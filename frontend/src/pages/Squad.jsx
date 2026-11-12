@@ -16,7 +16,7 @@ const FILTERS = [["all", "All"], ["xi", "Best XI"], ["u21", "Under-21"]];
 const Change = ({ v }) => (v == null ? <span style={{ color: "var(--dim)" }}>—</span> : <span className={`mono ${v > 0 ? "up" : v < 0 ? "down" : ""}`}>{v > 0 ? "+" : ""}{v}</span>);
 
 const Row = ({ p, onOpen }) => (
-  <tr onClick={() => onOpen(p.unique_id)} onKeyDown={(e) => e.key === "Enter" && onOpen(p.unique_id)} tabIndex={0} data-row-uid={p.unique_id} data-testid={`squad-row-${p.unique_id}`}>
+  <tr onClick={() => onOpen(p.unique_id)} onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) { e.preventDefault(); onOpen(p.unique_id); } }} tabIndex={0} data-row-uid={p.unique_id} data-testid={`squad-row-${p.unique_id}`}>
     <td><b style={{ color: "var(--text)", fontWeight: 600 }}>{p.name}</b>
       {p.age < 21 && <span className="tag st g">U21</span>}
       {p.is_new && <span className="tag st ok">New</span>}

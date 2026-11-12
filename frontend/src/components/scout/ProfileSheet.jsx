@@ -41,7 +41,7 @@ const Body = ({ p, view }) => {
   const pizza = (p.profile_keys || []).filter((k) => p.pct?.[k] != null).map((k) => ({ k, p: p.pct[k], label: p.labels[k] }));
   const dof = async () => { setBusy(true); await act(() => api.post(`/scout/player/${p.unique_id}/dof-report`), "Report written", ["scout-player"]); setBusy(false); };
   return (
-    <div style={{ display: "grid", gap: 14, marginTop: 10 }}>
+    <div style={{ display: "grid", gap: 14, marginTop: 10, gridTemplateColumns: "minmax(0,1fr)" }}>
       <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
         <MiniPitch positions={p.positions || []} />
         <div style={{ fontSize: 13, color: "var(--mut)", lineHeight: 1.7 }}>

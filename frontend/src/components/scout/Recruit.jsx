@@ -163,7 +163,7 @@ export const ProfileLab = ({ uid, view, onCompare }) => {
   if (!d) return null;
   const P = d.player;
   return (
-    <div style={{ display: "grid", gap: 12, marginTop: 12 }} data-testid="profile-lab">
+    <div style={{ display: "grid", gap: 12, marginTop: 12, gridTemplateColumns: "minmax(0,1fr)" }} data-testid="profile-lab">
       <div className="soon" style={{ display: "flex", gap: 14, flexWrap: "wrap" }} data-testid="profile-lab-header">
         <small>Age {P.age}{P.height ? ` · ${P.height} cm` : ""}{P.foot ? ` · ${P.foot} foot` : ""} · {P.nationality}</small>
         <small>{P.minutes} min{P.avg_rating ? ` · avg ${P.avg_rating}` : ""} · {P.best_role || "–"}</small>

@@ -11,7 +11,7 @@ const Results = ({ res, keys, label, open, loosen }) => (
     <table className="tbl pin1">
       <thead><tr><th>Player</th><th>Age</th><th>Club</th>{keys.map((k) => <th key={k} title={label[k]}>{label[k]}</th>)}<th>Similarity</th></tr></thead>
       <tbody>{res.rows.map((r) => (
-        <tr key={r.unique_id} onClick={() => open(r.unique_id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && open(r.unique_id)} data-row-uid={r.unique_id} data-testid={`similar-row-${r.unique_id}`}>
+        <tr key={r.unique_id} onClick={() => open(r.unique_id)} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) { e.preventDefault(); open(r.unique_id); } }} data-row-uid={r.unique_id} data-testid={`similar-row-${r.unique_id}`}>
           <td><b>{r.name}</b></td><td>{r.age}</td><td>{r.club}</td>{keys.map((k) => <td key={k} className="mono">{r.values?.[k] ?? "—"}</td>)}
           <td className="mono" style={{ color: "var(--acc)" }} data-testid={`similar-score-${r.unique_id}`}>{r.similarity}%</td>
         </tr>))}</tbody>
@@ -41,7 +41,7 @@ export const SimilarTab = () => {
         <button className="btn btn-p" disabled={!q.trim()} onClick={search} data-testid="similar-search-button">Find</button></div>}
       {res?.pick && <div className="card" data-testid="similar-pick">{res.pick.map((p) => <div className="row" key={p.unique_id}><div style={{ flex: 1 }}>{p.name}<small>{p.club} · {p.age}</small></div>
         <button className="btn" onClick={() => run({ unique_id: p.unique_id })} data-testid={`similar-pick-${p.unique_id}`}>Find players like him</button></div>)}
-        {!res.pick.length && <Empty id="similar-pick-empty" reason="nobody" text={`No player called "${q}" in the scouting data. Check the spelling or try just the surname.`} />}</div>}
+        {!res.pick.length && <Empty id="similar-pick-empty" reason="notfound" text={`No player called "${q}" in the scouting data. Check the spelling or try just the surname.`} />}</div>}
       {by === "numbers" && meta && <div className="card" data-testid="similar-targets">
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
           <div className="seg">{[["p90", "Per 90"], ["total", "Season totals"]].map(([k, l]) => <button key={k} className={mode === k ? "on" : ""} onClick={() => setMode(k)} data-testid={`similar-mode-${k}`}>{l}</button>)}</div>

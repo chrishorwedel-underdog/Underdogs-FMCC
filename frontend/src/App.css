@@ -363,7 +363,12 @@ select.blank{cursor:pointer}
 @media (max-width:760px){.upnext .un-row{flex-wrap:wrap}.upnext .un-row>div{flex-basis:calc(100% - 80px)!important}.upnext .un-row .btn{margin-left:76px}.fin-strip{padding:7px 12px;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.fin-i{flex-shrink:0}.un-tag{width:auto}}
 
 /* Phase 3: Data Hub charts, empty states, accessibility */
-.hub-card{border:1px solid var(--line);background:var(--s1);border-radius:14px;padding:12px 14px;margin:0;flex:1;min-width:240px}
+.hub-card{border:1px solid var(--line);background:var(--s1);border-radius:14px;padding:12px 14px;margin:0;flex:1;min-width:min(240px,100%)}
+[data-testid=profile-sheet] > div,[data-testid=profile-sheet] .hub-row,[data-testid=profile-sheet] [data-testid=profile-phases],[data-testid=profile-sheet] .card,[data-testid=profile-sheet] .soon{min-width:0;max-width:100%}
+[data-testid=profile-sheet] select.inp{max-width:100%}
+[data-testid=profile-sheet] .card,[data-testid=profile-sheet] .hub-card{overflow-x:auto}
+[data-testid=profile-sheet] .acts{flex-wrap:wrap}
+@media (max-width:520px){[data-testid=profile-sheet] [data-testid=profile-phases]{min-width:0!important;flex-basis:100%}.heat-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}}
 .hub-h{font:700 11px/1 'Geist Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
 .hub-row{display:flex;gap:12px;flex-wrap:wrap}
 .heat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:4px}
@@ -385,6 +390,5 @@ select.blank{cursor:pointer}
 .hc .note,.hc small,.hc .st{opacity:1!important}
 .hc .card,.hc .hub-card,.hc .btn,.hc .inp,.hc .nav-item,.hc .fin-i,.hc .seg{border-color:var(--line2)!important}
 .hc .btn-p{color:#000!important;font-weight:700}
-.hc a{text-decoration:underline}
-.hc .nav-item a,.hc a.nav-item,.hc a.btn,.hc .brand{text-decoration:none}
+.hc .content a:not(.btn):not(.nav-item){text-decoration:underline}
 

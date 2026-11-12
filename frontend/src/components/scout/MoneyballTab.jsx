@@ -9,7 +9,7 @@ const List = ({ id, title, help, rows, open, prefs }) => (
     <table className="tbl pin1">
       <thead><tr><th>Player</th><th>Age</th><th>Value</th><th title="Global grade from per-90 output, adjusted for league strength">Grade</th><th>Why</th></tr></thead>
       <tbody>{rows.map((r) => (
-        <tr key={r.unique_id} onClick={() => open(r.unique_id)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && open(r.unique_id)} data-row-uid={r.unique_id} data-testid={`mb-${id}-row-${r.unique_id}`}>
+        <tr key={r.unique_id} onClick={() => open(r.unique_id)} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) { e.preventDefault(); open(r.unique_id); } }} data-row-uid={r.unique_id} data-testid={`mb-${id}-row-${r.unique_id}`}>
           <td><b>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.positions?.join(", ")}</small></td>
           <td>{r.age}</td><td className="mono">{fmtMoney(r.value, prefs)}</td><td className="mono" style={{ color: "var(--acc)" }}>{r.grade_global}</td><td><small>{r.why}</small></td>
         </tr>))}</tbody>

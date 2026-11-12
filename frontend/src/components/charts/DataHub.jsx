@@ -21,7 +21,7 @@ export const RadarCard = ({ id, title, data, max = 100, unit = "", height = 240 
     <figcaption className="hub-h">{title}</figcaption>
     <div style={{ height }} aria-hidden="true">
       <ResponsiveContainer>
-        <RadarChart data={data} outerRadius="72%">
+        <RadarChart data={data} outerRadius="62%" margin={{ top: 10, right: 34, bottom: 10, left: 34 }}>
           <PolarGrid stroke="var(--line2)" />
           <PolarAngleAxis dataKey="axis" tick={{ fill: "var(--mut)", fontSize: 11 }} />
           <PolarRadiusAxis domain={[0, max]} tick={false} axisLine={false} />
@@ -34,6 +34,7 @@ export const RadarCard = ({ id, title, data, max = 100, unit = "", height = 240 
 );
 
 export const attributeRadar = (attrs) => Object.entries(GROUPS)
+  .filter(([axis]) => axis !== "Goalkeeping" || mid(attrs.handling) >= 8 || mid(attrs.reflexes) >= 8)
   .map(([axis, keys]) => { const vs = keys.map((k) => mid(attrs[k])).filter((v) => v != null); return vs.length ? { axis, value: Math.round((vs.reduce((a, b) => a + b, 0) / vs.length) * 10) / 10 } : null; })
   .filter(Boolean);
 

@@ -38,7 +38,7 @@ export const applyAppearance = (s) => {
   root.classList.toggle("strong-focus", s.focus !== false);
   if (s.contrast) {
     const light = !!(THEMES[s.theme] || {}).light;
-    Object.entries(light ? { "--text": "#000000", "--mut": "#1A1D22", "--dim": "#30353D", "--line": "rgba(0,0,0,.45)", "--line2": "rgba(0,0,0,.7)", "--bg": "#FFFFFF", "--s1": "#FFFFFF", "--s2": "#F4F4F4" }
+    Object.entries(light ? { "--text": "#000000", "--mut": "#1A1D22", "--dim": "#30353D", "--line": "rgba(0,0,0,.45)", "--line2": "rgba(0,0,0,.7)", "--bg": "#FFFFFF", "--s1": "#FFFFFF", "--s2": "#F4F4F4", "--s3": "#E4E4E4", "--grn": "#006B3F", "--amb": "#8A5200", "--red": "#B00020" }
       : { "--text": "#FFFFFF", "--mut": "#E8EAED", "--dim": "#C9CDD3", "--line": "rgba(255,255,255,.38)", "--line2": "rgba(255,255,255,.62)", "--bg": "#000000", "--s1": "#000000", "--s2": "#0A0A0A", "--s3": "#161616", "--grn": "#5CF2A8", "--amb": "#FFD166", "--red": "#FF8A8A" })
       .forEach(([k, v]) => root.style.setProperty(k, v));
   }
