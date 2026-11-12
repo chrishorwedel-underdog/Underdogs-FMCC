@@ -7,6 +7,8 @@ export const SIMPLE = {
   "/breakout": "At the end of each season FMCC picks the first-team player who had the best season compared with his teammates, gives him a small boost in FM and does it all for you.",
   "/club-analysis": "Looks at your whole club and tells you, in order, what to fix first: weak positions, ageing players, contracts and money.",
   "/transfer-market": "Shows which players are for sale, who is cheap for how good he is, and what is moving around the world in your save.",
+  "/trophies": "Keeps a list of every award your players have won in this career, so you can look back at them any time.",
+
   "/scouting": "Helps you find good players to sign, using their real match numbers and price, and tells you which ones are worth it.",
   "/reports": "A monthly news page for the whole football world in your save: who won, who scored and who moved clubs.",
   "/moneyball": "Shows which players give you the most for your money.",
@@ -45,6 +47,11 @@ export const GUIDES = {
     what: "Your whole club in one report: the weakest areas, what to do first, values, contracts and player radars.",
     features: ["What to do first, in order", "Weakest positions compared with your best options", "Squad value, wages and contracts", "Radar and heatmap views for your players", "Click any player to open his panel"],
     how: ["Read a save so FMCC has your latest squad", "Start with the first item in What to do first", "Open a player to see his details, or jump to Squad or Scout Players to act on it"],
+  },
+  "/trophies": {
+    what: "Every Breakout Player and Elite Training session across your career.",
+    features: ["Totals for your whole career", "Every Breakout Player by season, with his season grade", "Every Elite Training session and who improved", "Rewards in plain words, never true CA or PA"],
+    how: ["Awards are added automatically as FMCC reads your saves", "Click any player to open his panel"],
   },
   "/transfer-market": {
     what: "Who is available, what they cost and what is moving across your save's world.",

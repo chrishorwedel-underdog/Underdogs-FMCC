@@ -31,6 +31,7 @@ import Scouting from "@/pages/Scouting";
 import Development from "@/pages/Development";
 import Reports from "@/pages/Reports";
 import EliteTraining from "@/pages/EliteTraining";
+import Trophies from "@/pages/Trophies";
 import DynamicPotentialPage from "@/pages/DynamicPotentialPage";
 import BreakoutPage from "@/pages/BreakoutPage";
 import Extras from "@/pages/Extras";
@@ -87,6 +88,7 @@ const Shell = ({ state }) => {
             <Route path="/development" element={<Development />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/elite-training" element={<EliteTraining />} />
+            <Route path="/trophies" element={<Trophies />} />
             <Route path="/dynamic-potential" element={<DynamicPotentialPage />} />
             <Route path="/breakout" element={<BreakoutPage />} />
             <Route path="/awards" element={<Navigate to="/dynamic-potential" replace />} />

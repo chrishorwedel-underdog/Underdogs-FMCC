@@ -255,6 +255,24 @@ async def celebrations():
     return {"cards": cards}
 
 
+# ---------- Trophy Cabinet ----------
+@router.get("/trophies")
+async def trophies():
+    """Every Breakout winner and Elite Training session across the career, in general terms only."""
+    c = await active_career()
+    ctxs = {x["unique_id"]: x for x in await own_contexts(c)}
+    breakout = [{"season": a["award_key"].split(":")[1], "unique_id": a["unique_id"], "name": a["name"], "note": a.get("note"), "reward": _benefit(a.get("field") or "pa", a.get("delta")),
+                 "still_here": a["unique_id"] in ctxs}
+                async for a in db.awards.find({"career_id": c["id"], "module": "breakout", "status": "official"}, {"_id": 0}).sort("award_key", -1)]
+    sessions: dict = {}
+    async for a in db.awards.find({"career_id": c["id"], "module": "elite", "status": "awarded"}, {"_id": 0}).sort("award_key", -1):
+        ym = a["award_key"].split(":")[1]
+        s = sessions.setdefault(ym, {"id": ym, "label": datetime.strptime(ym, "%Y-%m").strftime("%B %Y"), "players": []})
+        s["players"].append({"unique_id": a["unique_id"], "name": a["name"], "category": a.get("category"), "benefit": _benefit(a.get("field") or "pa", a.get("delta")), "still_here": a["unique_id"] in ctxs})
+    elite = sorted(sessions.values(), key=lambda s: s["id"], reverse=True)
+    return {"breakout": breakout, "elite": elite, "totals": {"breakout": len(breakout), "sessions": len(elite), "boosts": sum(len(s["players"]) for s in elite)}}
+
+
 @router.get("/awards/{award_key}/history")
 async def award_history(award_key: str):
     c = await active_career()
