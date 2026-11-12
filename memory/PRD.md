@@ -324,6 +324,8 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Phase 2 backlog: "What's new in this layout" guide, search inside Settings, remembered player-panel tab per career. Phase 3: customisable menu and Home layout.
 - 2026-11-12 Finance strip: labels "Wages/Turnover", "Incoming Transfers" (spent on players bought this season), new "Outgoing Transfers" (made selling players this season; reader key transfer_received/transfer_income), "Budget Left"; strip now 6 equal boxes.
 - 2026-11-12 Up next panel shows the first 3 items (or all Urgent ones if more) with a "Show N more / Show fewer" button (up-next-expand); no 10-item cap. Finance strip adds "Net Spend" (sales minus purchases, + when positive) before Budget Left (7 boxes); hovering Incoming/Outgoing Transfers also shows the net spend.
+- 2026-11-12 Transfer breakdown: clicking (or Enter on) Incoming Transfers, Outgoing Transfers or Net Spend opens a dialog with this season's Buys and Sales (player, other club, date, fee; rows open the player panel). Backend GET /api/finance/transfers: season from 1 July, moves from pool last_move (fee/date) plus squad differences across this season's saves (fee shown as "Fee not in save", never estimated).
+
 
 
 

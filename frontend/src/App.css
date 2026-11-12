@@ -476,6 +476,11 @@ select.blank{cursor:pointer}
 .gloss-where button{color:var(--acc);text-decoration:underline;text-underline-offset:2px}
 /* radar brand */
 .radar-brand{display:flex;align-items:center;gap:12px;margin:-12px -14px 12px;padding:10px 14px;border-radius:10px 10px 0 0}
+.fin-i.fin-click{cursor:pointer}
+.fin-i.fin-click:hover{border-color:var(--acc)}
+.tr-sum{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-bottom:6px}
+.tr-sum b{color:var(--text);margin-left:4px}
+
 .radar-brand b{display:block;font-size:15px}
 .radar-brand small{display:block;font-size:12px;opacity:.85}
 .radar-crest{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;flex-shrink:0;border:2px solid rgba(255,255,255,.35)}

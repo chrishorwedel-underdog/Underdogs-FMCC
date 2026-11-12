@@ -67,3 +67,44 @@ async def finance():
     c = await active_career()
     snap = await db.snapshots.find_one({"career_id": c["id"]}, {"_id": 0, "finance": 1, "game_date": 1}, sort=[("save_no", -1)]) or {}
     return {"items": assess(snap.get("finance") or {}), "game_date": snap.get("game_date")}
+
+
+def _season_start(game_date: str) -> str:
+    y, m = int(game_date[:4]), int(game_date[5:7])
+    return f"{y if m >= 7 else y - 1}-07-01"
+
+
+@router.get("/finance/transfers")
+async def transfers():
+    """This season's buys and sales for your club, from what FMCC saw in the save. Fees missing from the save are shown as unknown, never estimated."""
+    c = await active_career()
+    snaps = await db.snapshots.find({"career_id": c["id"]}, {"_id": 0, "save_no": 1, "game_date": 1, "club_name": 1, "players.unique_id": 1, "players.name": 1, "players.age": 1, "players.positions": 1}).sort("save_no", -1).to_list(60)
+    if not snaps:
+        return {"season_start": None, "buys": [], "sales": [], "total_in": 0, "total_out": 0}
+    cur, club = snaps[0], snaps[0].get("club_name") or c.get("club_name")
+    start = _season_start(cur.get("game_date") or "2000-07-01")
+    season = [s for s in snaps if (s.get("game_date") or "") >= start] or [cur]
+    pool = (await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players.unique_id": 1, "players.name": 1, "players.age": 1, "players.club": 1, "players.positions": 1, "players.last_move": 1}) or {}).get("players") or []
+    moves = {p["unique_id"]: p for p in pool if (p.get("last_move") or {}).get("date", "") >= start}
+    buys, sales, seen_b, seen_s = [], [], set(), set()
+    for p in moves.values():
+        lm = p["last_move"]
+        if p.get("club") == club and lm.get("from_club") != club:
+            buys.append({"unique_id": p["unique_id"], "name": p["name"], "age": p.get("age"), "positions": p.get("positions") or [], "other_club": lm.get("from_club"), "fee": lm.get("fee"), "date": lm.get("date")}); seen_b.add(p["unique_id"])
+        elif lm.get("from_club") == club and p.get("club") != club:
+            sales.append({"unique_id": p["unique_id"], "name": p["name"], "age": p.get("age"), "positions": p.get("positions") or [], "other_club": p.get("club") or "Free agent", "fee": lm.get("fee"), "date": lm.get("date")}); seen_s.add(p["unique_id"])
+    if len(season) > 1:
+        first = {p["unique_id"]: p for p in season[-1]["players"]}
+        now = {p["unique_id"]: p for p in cur["players"]}
+        where = {p["unique_id"]: p.get("club") for p in pool}
+        for u, p in now.items():
+            if u not in first and u not in seen_b:
+                buys.append({"unique_id": u, "name": p["name"], "age": p.get("age"), "positions": p.get("positions") or [], "other_club": None, "fee": None, "date": None})
+        for u, p in first.items():
+            if u not in now and u not in seen_s:
+                sales.append({"unique_id": u, "name": p["name"], "age": p.get("age"), "positions": p.get("positions") or [], "other_club": where.get(u), "fee": None, "date": None})
+    key = lambda t: (t["date"] or "", t["fee"] or 0)  # noqa: E731
+    buys.sort(key=key, reverse=True)
+    sales.sort(key=key, reverse=True)
+    return {"season_start": start, "club": club, "buys": buys, "sales": sales,
+            "total_in": sum(t["fee"] or 0 for t in buys), "total_out": sum(t["fee"] or 0 for t in sales), "unknown_fees": sum(1 for t in buys + sales if not t["fee"])}
