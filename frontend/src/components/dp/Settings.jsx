@@ -1,3 +1,5 @@
+import { Loading } from "@/components/Loading";
+
 import { useEffect, useState } from "react";
 import { RotateCcw, History } from "lucide-react";
 import { api } from "@/lib/api";
@@ -53,7 +55,7 @@ export const DPSettings = () => {
   const [d, setD] = useState(null);
   const [note, setNote] = useState("");
   useEffect(() => { if (data) { setD(structuredClone(data.data)); } }, [data]);
-  if (!data || !d) return <p className="note">Loading settings…</p>;
+  if (!data || !d) return <Loading id="dp-settings-loading" rows={4} label="Loading settings" />;
   const edited = Object.keys(SECTIONS).filter((k) => JSON.stringify(d[k]) !== JSON.stringify(data.data[k]));
   const keys = ["dp-settings", "dp-overview"];
   return (

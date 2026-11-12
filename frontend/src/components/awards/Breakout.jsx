@@ -1,3 +1,5 @@
+import { Loading } from "@/components/Loading";
+
 import { useState } from "react";
 import { Award } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -22,7 +24,7 @@ export const Breakout = () => {
   const act = useAct();
   const [confirm, setConfirm] = useState(false);
   const [nom, setNom] = useState("");
-  if (!data) return <p className="note">Loading Breakout…</p>;
+  if (!data) return <Loading id="breakout-loading" rows={5} label="Loading Breakout" />;
   const prov = data.candidates.filter((c) => c.review?.status === "provisional").length;
   return (
     <div>

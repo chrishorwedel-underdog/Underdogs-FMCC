@@ -1,3 +1,5 @@
+import { Loading } from "@/components/Loading";
+
 import { useMemo, useState } from "react";
 import { Download, Save, Trash2, Plus, X, SlidersHorizontal } from "lucide-react";
 import { useGet } from "@/lib/ui";
@@ -65,7 +67,7 @@ export const StatsTable = () => {
   }, [rows, f, conds, mode, sort]);
   const base = against === "save" ? rows : against === "league" ? rows.filter((x) => x.league === (f.league || shown[0]?.league)) : against === "position" ? rows.filter((x) => x.group === (f.group || shown[0]?.group)) : shown;
   const pcts = useMemo(() => Object.fromEntries(cols.map((k) => [k, pct(base, k)])), [base, cols]);
-  if (!meta || !data) return <p className="note">Loading every player in your save…</p>;
+  if (!meta || !data) return <Loading id="stats-table-loading" rows={6} label="Loading every player in your save" />;
   const opts = (k) => [...new Set(rows.map((r) => r[k]).filter(Boolean))].sort();
   const csv = () => {
     const head = ["Name", "Club", "League", "Positions", ...cols.map((k) => label[k] || k)];

@@ -1,0 +1,33 @@
+{
+  "summary": "Tested the FMCC polish round. Backend: new pytest file test_watchlist_digest.py, 6 of 6 pass. It covers watch CRUD (GET shape, 404 for an unknown uid, 422 for a bad body, POST twice does not duplicate, DELETE then 404) and the alert flow: changing watchlist.last grade/value/club in Mongo and unsetting watch_checked_save, then calling GET /api/watch/digest, gives exactly 3 'watch' notices (grade rose, value fell, transfer) with the watchlist link, plus log entries and a refreshed 'last'. A second call adds no duplicates, an unchanged watched player gives no items, /api/notify works, no CA/PA keys appear, and the digest total is consistent. Frontend (Playwright, 1920 and 390): Ctrl K works. 'xA' gives Expected assists first, 'npxG' 1 result, 'tackles' 3, and every result count is 5 or fewer. Enter opens glossary-dialog with .gloss-item.on scrolled into view. Shown on: links (scouting/squad/club-analysis) close the dialog and go to /scouting. The header '?' glossary button works. The What changed panel works: header shows '10 changes since ... · sample data', applied groups link to /editor etc., and collapsed/expanded is remembered after reload (restored to expanded). Watchlist works: sp-watch toggles aria-pressed and shows a toast without opening the profile; profile-watch and player-sheet-watch toggle; the Watchlist tab lists rows with 'No change yet'; watch-remove works and doesn't open the profile; watchlist-empty shows. Radar Compare shows radar-brand (crest 'TE', 'TEST FC', club colour #1F4E9C), and radar-print calls window.print once per click. Module guide works: X hides it on that screen only and stays hidden after reload; the Settings switch off hides it everywhere, on restores closed boxes. Footer download link shows on Home only, download-box is gone, its title shows version/date/size/build status, and the SmartScreen 'Run anyway' toast appears only after the click and stays. Sidebar headings are rgb(255,255,255). The finance strip's 5 boxes are equal width (306px) and line up with the module guide (316 to 1884). On a 390px phone the strip is one row (nowrap, overflow-x auto) and scrolls sideways. One failure: 9 'Loading…' text placeholders are still in the code.",
+  "backend_issues": {"critical": [], "minor": [
+    {"endpoint": "GET /api/watch/digest", "issue": "This GET has side effects: it runs check(), which raises notices and writes grade_marks and watch_checked_save, and it moves digest_prev_visit/digest_visit. Fine for the feature, but every call marks a 'visit', and it returns 404 when there is no scouting data (WhatChanged would then stay on the skeleton forever because there is no error state)."}
+  ]},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Loading placeholders (item 5)", "issue": "Plain 'Loading…' text is still used in: pages/Matches.jsx:47,106; components/dp/Settings.jsx:56; squad/DepthView.jsx:37; analysis/StatsTable.jsx:68; scout/YouthIntake.jsx:11; awards/DynamicPotential.jsx:41; awards/Breakout.jsx:25. The Editor, Recruit and profile/dossier titles are fixed.", "selector": "p.note", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "WhatChanged panel", "issue": "useQuery has no error branch. If /watch/digest fails (404 when there is no data yet), the panel shows the skeleton forever.", "affected_selectors": ["whatchanged-loading"]}
+    ],
+    "design_issues": [
+      {"screen": "Radar Compare Print", "issues": ["A second click within about 1.8 s of the first is ignored by the 'printing' guard when afterprint doesn't fire. This prevents double dialogs and is probably intended."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_watchlist_digest.py", "/app/test_reports/pytest/pytest_watch.xml"],
+  "action_items": [
+    "Replace the 9 remaining 'Loading…' <p className='note'> texts with <Loading/> skeletons (files listed above)",
+    "Add an error state to WhatChanged when /api/watch/digest fails"
+  ],
+  "critical_code_review_comments": [
+    "watch_api.check notice title uses text.split(' (')[0][0].lower() + rest, which is fine but fragile; build the title explicitly instead.",
+    "check() does a separate update_one to set the notice link after _add; pass the link into _add instead.",
+    "The guide prefs and the What changed collapsed state live in localStorage, keyed by career id ('fmcc-mem:<career>:'), so they're per career on this machine only."
+  ],
+  "updated_files": ["/app/backend/tests/test_watchlist_digest.py"],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "seed_data_creation": "None kept. Watch entries for 20481103/20481104/20481107/30500004/30500107 were added and then removed. The 3 watch notices were deleted. careers.watch_checked_save was restored to 7. The guides switch is back ON and the What changed panel is expanded. GET /digest calls updated digest_visit timestamps and added grade_marks docs (an unavoidable side effect of the GET).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest normally; pytest.ini uses xdist, so tests must use different UIDs to avoid collisions. The tour navigates to /matches, so click tour-skip first and then nav via the nav-scouting link. Sample-save own player uids are 2048110x; other-club uids are 305000xx. The alert test changes watchlist.last in Mongo and unsets careers.watch_checked_save, then restores it."
+}

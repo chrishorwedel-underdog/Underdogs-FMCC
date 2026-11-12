@@ -9,6 +9,7 @@ import { useGet, useAct } from "@/lib/ui";
 import { useScout, usePost, fmtMoney, fmtWage, toGBP, ContractTag, Pct, num, pctColor } from "./ctx";
 import { AdvFilter } from "./Lab";
 import { WatchButton } from "@/components/WatchButton";
+import { Loading } from "@/components/Loading";
 
 const SHORT = { npxg: "npxG", xa: "xA", kp: "OP-KP", progp: "PrgP", drb: "Drb", tkw: "TklW", intc: "Int", passc: "Cmp%", ktk: "KeyTkl", gls: "Gls", npg: "npG", chc: "ChC", pcmp: "PasCmp", sha: "Sh%", aerw: "AerW", blk: "Blk", pwon: "PossW", plost: "PossL", fd: "FD", acr: "Crs", drr: "Drb%", saves: "Svs", mlg: "MLG", padint: "pAdjInt", xgp: "xGP", savep: "Sv%", aerr: "Aer%", tkr: "Tkl%", xakp: "xA/KP", pwl: "W/L", padbc: "pAdjB+C" };
 const short = (k, label) => SHORT[k] || (label || k).replace(" / 90", "").slice(0, 12);
@@ -137,7 +138,7 @@ export const PlayersTab = () => {
               </tr>);
           })}</tbody>
         </table>
-        {isLoading && <p className="note" style={{ padding: 10 }}>Loading players…</p>}
+        {isLoading && <div style={{ padding: 10 }}><Loading id="players-loading" rows={6} label="Loading players" /></div>}
         {data && !data.rows.length && <SpEmpty f={f} setF={setF} meta={meta} />}
         {data && <p className="note" style={{ padding: 10 }} data-testid="sp-total">{data.total} players match. Showing {Math.min(100, data.total)}. Percentiles and grades need {meta?.min_minutes.percentiles} minutes; a fair price needs {meta?.min_minutes.fair_price}.{meta?.sample ? " Match stats are SAMPLE numbers in this preview." : ""}</p>}
       </div>

@@ -1,3 +1,5 @@
+import { Loading } from "@/components/Loading";
+
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
@@ -38,7 +40,7 @@ const ReviewList = () => {
 export const DynamicPotential = () => {
   const { data } = useGet("dp", "/dp/scope");
   const act = useAct();
-  if (!data) return <p className="note">Loading Dynamic Potential…</p>;
+  if (!data) return <Loading id="dp-loading" rows={5} label="Loading Dynamic Potential" />;
   const save = (scope) => act(() => api.put("/dp/scope", { scope, expected_version: data.version }), null, ["dp", "dp-review", "rules", "dp-overview"]);
   return (
     <div className="homegrid" data-testid="dp-view">

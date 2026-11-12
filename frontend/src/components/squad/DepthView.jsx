@@ -1,3 +1,5 @@
+import { Loading } from "@/components/Loading";
+
 import { GripVertical } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
@@ -34,7 +36,7 @@ const Slot = ({ s, plan, formation }) => {
 
 export const DepthView = ({ formation }) => {
   const { data: plan } = useGet("plan", "/squad/plan", { formation });
-  if (!plan) return <p className="note">Loading depth chart…</p>;
+  if (!plan) return <Loading id="depth-loading" rows={5} label="Loading depth chart" />;
   return (
     <div className="homegrid">
       <div className="bento" data-testid="depth-chart">

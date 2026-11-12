@@ -1,3 +1,5 @@
+import { Loading } from "@/components/Loading";
+
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +10,7 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 export const YouthIntake = () => {
   const { data } = useGet("youth-intake", "/youth-intake");
   const act = useAct();
-  if (!data) return <p className="note">Loading intake dates…</p>;
+  if (!data) return <Loading id="youth-loading" rows={4} label="Loading intake dates" />;
   const set = (league, body) => act(() => api.put("/youth-intake", { league, ...body }), null, ["youth-intake"]);
   const on = data.rows.filter((r) => r.on);
   return (

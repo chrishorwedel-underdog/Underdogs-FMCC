@@ -1,3 +1,5 @@
+import { Loading } from "@/components/Loading";
+
 import { useEffect, useState } from "react";
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { PlayCircle, Plug } from "lucide-react";
@@ -44,7 +46,7 @@ const MatchView = ({ id }) => {
   const { data: m } = useGet("match", `/matches/${id}`, { id });
   const [layer, setLayer] = useState("shots");
   const [f, setF] = useState({ team: "both", half: "all", player: "", kind: "all" });
-  if (!m) return <p className="note">Loading match…</p>;
+  if (!m) return <Loading id="match-loading" rows={5} label="Loading match" />;
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -103,7 +105,7 @@ export default function Matches() {
   const [id, setId] = useState(null);
   const newest = data?.matches?.[0]?.id;
   useEffect(() => { if (newest) setId(newest); }, [newest]);
-  if (!data) return <p className="note">Loading matches…</p>;
+  if (!data) return <Loading id="matches-loading" rows={5} label="Loading matches" />;
   return (
     <div data-testid="matches-page">
       <PageHead eyebrow="Sample matches · Sofascore/Opta-style view" title="Matches">

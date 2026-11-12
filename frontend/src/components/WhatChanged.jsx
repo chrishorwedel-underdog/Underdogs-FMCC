@@ -18,7 +18,7 @@ const Section = ({ id, title, items }) => !items.length ? null : (
 
 export const WhatChanged = () => {
   const [shut, setShut] = usePersist("digest-collapsed", false);
-  const { data } = useQuery({ queryKey: ["home-digest"], queryFn: () => api.get("/watch/digest").then((r) => r.data) });
+  const { data, isError } = useQuery({ queryKey: ["home-digest"], queryFn: () => api.get("/watch/digest").then((r) => r.data), retry: false });
   const p = (r, watch) => ({ ...r, to: watch ? `/scouting?tab=watchlist&player=${r.unique_id}` : `/squad?player=${r.unique_id}` });
   const since = data && new Date(data.since).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
   return (
@@ -30,7 +30,7 @@ export const WhatChanged = () => {
       </button>
       {!shut && (
         <div className="wc-body" data-testid="whatchanged-body">
-          {!data ? <Loading id="whatchanged-loading" rows={3} label="Loading what changed" /> : !data.total ? (
+          {isError ? <p className="note" data-testid="whatchanged-error">Nothing to compare yet. This fills in once FMCC has read your save.</p> : !data ? <Loading id="whatchanged-loading" rows={3} label="Loading what changed" /> : !data.total ? (
             <p className="note" data-testid="whatchanged-none">Nothing changed since your last visit. Changes show up here after FMCC reads a newer save{data.compared_save ? "" : ", once it has two saves to compare"}.</p>
           ) : <>
             <Section id="ratings" title="Grades rose or fell" items={data.ratings.map((r) => p(r))} />
