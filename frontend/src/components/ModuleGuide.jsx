@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Info, ChevronDown, ChevronUp, Lightbulb, X, RefreshCw } from "lucide-react";
@@ -25,7 +25,7 @@ const Tip = ({ path }) => {
   if (!TIPS[path] || seen[path]) return null;
   const close = () => { const n = { ...seen, [path]: true }; write("fmcc-tips-seen", n); setSeen(n); };
   return (
-    <div className="tip rise" role="note" data-testid="screen-tip"><Lightbulb size={15} aria-hidden="true" /><span>{TIPS[path]}</span>
+    <div className="screen-tip rise" role="note" data-testid="screen-tip"><Lightbulb size={15} aria-hidden="true" /><span>{TIPS[path]}</span>
       <button className="ib" style={{ width: 26, height: 26, marginLeft: "auto" }} onClick={close} aria-label="Dismiss tip" data-testid="screen-tip-dismiss"><X size={13} /></button></div>
   );
 };
@@ -48,9 +48,15 @@ export const ModuleGuide = () => {
   const { pathname } = useLocation();
   const g = GUIDES[pathname];
   const [hidden, setHidden] = useState(() => read("fmcc-guides-hidden"));
-  const [visits] = useState(() => { const v = read("fmcc-guides-visited"); const was = !!v[pathname]; write("fmcc-guides-visited", { ...v, [pathname]: true }); return { [pathname]: was }; });
+  const [visited, setVisited] = useState(() => read("fmcc-guides-visited"));
+  const [firstHere, setFirstHere] = useState({});
+  useEffect(() => {
+    const v = read("fmcc-guides-visited");
+    setFirstHere((f) => (pathname in f ? f : { ...f, [pathname]: !v[pathname] }));
+    if (!v[pathname]) { const n = { ...v, [pathname]: true }; write("fmcc-guides-visited", n); setVisited(n); }
+  }, [pathname]);
   if (!g) return <Tip path={pathname} />;
-  const closed = pathname in hidden ? !!hidden[pathname] : !!(visits[pathname] ?? read("fmcc-guides-visited")[pathname]);
+  const closed = pathname in hidden ? !!hidden[pathname] : !(firstHere[pathname] ?? !visited[pathname]);
   const toggle = () => {
     const next = { ...hidden, [pathname]: !closed };
     write("fmcc-guides-hidden", next);

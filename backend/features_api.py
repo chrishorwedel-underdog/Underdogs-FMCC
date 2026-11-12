@@ -54,7 +54,7 @@ async def put_review(body: ReviewIn):
     applied = 0
     if not body.on:
         from changes_api import start_batch, notice
-        ids = [d["id"] async for d in db.changes.find({"career_id": c["id"], "status": "queued", "source": {"$in": ["elite", "breakout", "dp"]}}, {"id": 1})]
+        ids = [d["id"] async for d in db.changes.find({"career_id": c["id"], "status": "queued", "source": {"$in": ["elite", "breakout", "dp", "editor", "punish"]}}, {"id": 1})]
         if ids:
             try:
                 applied = (await start_batch(c | {"review_changes": False}, ids))["total"]

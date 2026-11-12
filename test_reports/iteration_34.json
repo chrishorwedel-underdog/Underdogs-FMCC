@@ -1,0 +1,52 @@
+{
+  "summary": "Tested the FMCC Polish Pass end to end: backend pytest (13 tests, 11 pass) plus Playwright on desktop 1920 and phone 390. WORKING: POST /api/scout/radar-compare returns role/roles/keys/labels/players/verdict, sends 422 for 1 or 5 ids and for a bad view, sends 404 for an unknown uid, has no ca/pa keys, and gives role values of null for a 0-minute player with verdict null. Radar Compare UI: profile-compare-with opens compare-dialog, search/pick adds players, radar-card draws an SVG, radar-kind tabs give 6/4/7 axes, the radar-role select changes the verdict, radar-verdict shows text and the 2 biggest gaps, the gap table appears at 3-4 players, the picker hides at 4 and comes back when you remove one, radar-missing shows for a low-minute player, Save image downloads fmcc-radar-compare.png and Print calls print. The Squad Players row opens player-sheet-compare-with and the same dialog works. Scout > More tools > Compare(2) shows radar-compare above compare4, and Breakdown now renders (fixes the iteration 33 failure). Editor Clubs queue (review off): toast says '1 change(s) applied to your save', it stays on /editor, a batch is created and the bell shows the notice. With review on, the toast says 'waiting in Game changes', it navigates to /changes and the change is queued. Punish queue auto-applies (backend). Phone top bar is one line (64px, no overflow), club name has an ellipsis, search/changes/connections/raw/tour/settings are hidden, and top-more-menu has all 5 items, which work. Contracts are grouped into one 'Contracts ending (8)' chip with its list. Rules impact is exact: squad target_minutes 0 gives 8 of 23, max_senior 11 gives 7, development needs_pct 100 gives 1 of 23, an unchanged draft gives 0, and the UI shows the same counts. Shaped loading placeholders (role=status) seen for dev, reports, elite and market. Pressing Enter on a row now keeps the profile open (iteration 33 bug fixed). No console errors apart from face-image 404s on the Editor. FAILURES: (1) CRITICAL: undoing an auto-applied Editor or Punish club change blanks the club value (sets it to None). (2) Screen tips are invisible and can't be clicked because of a CSS class clash. (3) ModuleGuide only records the first page it mounted on, so every other page shows the guide expanded on every visit.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/editor/clubs/{uid}/attributes and POST /api/punish/{pid}/queue -> changes_api.auto_apply -> POST /api/changes/batches/{id}/undo", "issue": "auto_apply calls start_batch(career, ids) with no 'expected' map, so in sample mode apply_one (club branch) returns old_value=None. The change is stored as old_value None, and Undo then runs club_edits $set field=None, which blanks the club attribute. Reproduced: TEST FC training 7 -> auto-apply 5 -> undo -> None. AC Valdora reputation also ended up None after undo. I restored both by hand (training 7, reputation 4899). Fix: in apply_one's sample club branch, read the current value (editor_api.club_values) before writing and return it as old, or build 'expected' in auto_apply the same way /changes/preview does. Undo should also refuse when old_value is None.", "priority": "CRITICAL"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/scout/radar-compare", "issue": "Duplicate ids (e.g. [x, x]) are not rejected. The verdict then compares a player with himself. Add a uniqueness check (422)."},
+      {"endpoint": "changes_api.auto_apply", "issue": "It applies ALL queued changes from that source, including older ones queued while review was on. Also, PUT /api/features/review {on:false} only flushes elite/breakout/dp, so editor/punish changes queued under review stay queued after you switch review off."},
+      {"endpoint": "POST /api/rules/squad/impact", "issue": "Changing min_homegrown (and possibly max_team_drop/max_slot_drop) always reports 0 affected, because squad_outcome doesn't model homegrown. The count may not match what the rule really does."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ModuleGuide Tip (screen-tip)", "issue": "App.css line 305 already defines .tip (pitch hover tooltip: position:absolute; opacity:0; pointer-events:none; bottom:calc(100%+8px)). The new .tip at line 396 doesn't override those, so every screen tip renders invisible (computed opacity 0, absolute, pointer-events none) and the dismiss button can't be clicked (Playwright: finance-strip intercepts pointer events). Rename the class (e.g. .screen-tip). Persistence works when dismissed by JS (fmcc-tips-seen).", "selector": "[data-testid=screen-tip]", "priority": "HIGH"},
+      {"component": "ModuleGuide visited memory", "issue": "visits is set once in a useState initializer of a component mounted once in App.js (not keyed by pathname). Only the first page is ever written to fmcc-guides-visited, so /squad, /development etc. show the guide expanded on every visit and after reload (verified: LS stays {\"/\":true}). Also, the write inside the useState initializer runs twice under React.StrictMode, so in preview the very first page (Home) is already collapsed on first visit. Fix: write visited in a useEffect keyed on pathname, or key ModuleGuide by pathname.", "selector": "[data-testid=module-guide-toggle]", "priority": "HIGH"},
+      {"component": "RadarCompare Print", "issue": "Window.print was called 2 times for one click (even with a single DOM .click()). Check this on a production build. It may be caused by the dev tooling, but it could open the print dialog twice.", "selector": "[data-testid=radar-print]", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Editor club edit -> Game changes Undo", "issue": "Undo of an auto-applied club edit blanks the value (see backend critical).", "affected_selectors": ["[data-testid=club-attrs-queue]", "Undo batch"]}
+    ],
+    "design_issues": [
+      {"screen": "Phone 390 - ModuleGuide collapsed header", "issues": ["The collapsed guide on Home is about 300px tall because the 'what' text wraps in a narrow column next to the title. Stack it or hide the 'what' text on phones."]},
+      {"screen": "Phone 390 - Radar Compare dialog", "issues": ["Radar axis labels are cut off left and right ('Progressive pas', 'Possession-adju', 'xpected assists'). Reduce the outer radius or shorten labels on small widths.", "The radar-kind tab labels wrap onto 2 lines ('Role / fit', 'Phases of / play')."]},
+      {"screen": "Scout profile action row (desktop)", "issues": ["'Compare with…' and 'DOF report from the numbers' wrap onto two lines inside the buttons."]},
+      {"screen": "Editor > Clubs", "issues": ["The note still says 'Changes go to Game changes, where you approve them as a batch…', which no longer matches auto-apply."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_polish_pass_radar_autoapply.py", "/app/test_reports/pytest/pytest_polish.xml"],
+  "action_items": [
+    "CRITICAL: make auto-applied club changes (Editor/Punish) record the real old_value in sample mode (apply_one club branch, or pass 'expected' from auto_apply), and stop undo from writing None.",
+    "Rename the new screen-tip CSS class: it clashes with the existing .tip tooltip (opacity 0 / absolute / pointer-events none), so tips are invisible.",
+    "ModuleGuide: record visited per pathname in a useEffect (or key by pathname). Don't write localStorage inside a useState initializer.",
+    "Phone: shorten or shrink the collapsed guide header and the radar axis labels and kind tabs at 390px.",
+    "Update the ClubsTab note to match auto-apply. Add scope='col' to the radar-gap-table th (Phase 3 accessibility standard).",
+    "Optional: reject duplicate ids in radar-compare. Flush editor/punish queued changes when review is turned off (or explain in the UI). Check the double print() call."
+  ],
+  "critical_code_review_comments": [
+    "changes_api.apply_one (sample club branch) returns exp, which is None for batches made without a preview. Every non-preview path (auto_apply, queue_changes auto, features flush) records old_value None. For player entities, undo uses -delta so it's fine, but for club/target entities undo writes None.",
+    "ModuleGuide.jsx: side effects inside a useState initializer, and a per-mount (not per-route) visited snapshot.",
+    "App.css: duplicate .tip selectors at lines 305 and 396.",
+    "Some 'Loading…' text remains in PlayerTeamsEditor, FacePicker, Dossier, Recruit and ProfileSheet (not in the requested list).",
+    "RadarCompare gap table: th has no scope attribute."
+  ],
+  "updated_files": ["/app/backend/tests/test_polish_pass_radar_autoapply.py"],
+  "success_rate": {"backend": "85% (11/13; the 2 failures are the same old_value=None bug)", "frontend": "85%"},
+  "seed_data_creation": "No seed data. A TEST_punish punishment was created and deleted. Auto-applied batches on TEST FC (training) and AC Valdora (reputation) were created; values were restored to the originals (training 7, reputation 4899) through re-apply batches and a direct $unset of the None fields in club_edits. One review-mode queued change was rejected. Review switch reset to off. Squad/Dev rules were not saved (drafts cancelled).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Each browser_automation call is a fresh context. On phones nav-* links are hidden, so click them with page.evaluate(\"document.querySelector('[data-testid=nav-scouting]').click()\"). Club 900000 = TEST FC (training 7), AC Valdora uid 910757 (reputation 4899). DON'T undo auto-applied club batches until the old_value bug is fixed: it blanks the value. The test file restores values by re-queueing instead. Squad impact: target_minutes 0 -> 8/23. Dev needs_pct 100 -> 1/23. Screen tip dismiss must use a JS click until the CSS clash is fixed.",
+  "rca of the issue": "Undo blanking: auto_apply -> start_batch(career, ids) with expected={} -> run_batch -> apply_one sample club branch returns (exp=None, target) -> change saved with old_value None -> undo_batch sample club branch $set field: old_value (None). Repro: POST /api/editor/clubs/900000/attributes {values:{training:5}} -> POST /api/changes/batches/{id}/undo -> GET attributes shows training None. Fix: read the current value before writing in the sample branch. Invisible tip: CSS cascade of two .tip rules."
+}

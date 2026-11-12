@@ -216,6 +216,8 @@ async def start_batch(career: dict, ids: list, expected: dict | None = None) -> 
     failed = [x for x in checks if not x["ok"]]
     if failed:
         raise HTTPException(409, "Nothing was applied: " + "; ".join(f"{x['label']}: {x['detail']}" for x in failed))
+    if expected is None:
+        expected = await current_values(career, await db.changes.find({"id": {"$in": ids}, "career_id": career["id"]}, {"_id": 0}).to_list(None))
     save_backup = None
     if LIVE:
         import live_editor

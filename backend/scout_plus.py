@@ -83,6 +83,13 @@ class RadarIn(BaseModel):
     role: str | None = None
     view: str = Field("full", pattern="^(full|fair|moneyball)$")
 
+    @field_validator("ids")
+    @classmethod
+    def unique(cls, v):
+        if len(set(v)) != len(v):
+            raise ValueError("Pick different players")
+        return v
+
 
 @router.post("/scout/radar-compare")
 async def radar_compare(body: RadarIn):

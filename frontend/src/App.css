@@ -393,7 +393,7 @@ select.blank{cursor:pointer}
 .hc .content a:not(.btn):not(.nav-item){text-decoration:underline}
 
 /* Polish pass: tips, skeletons, top bar on phones, consistent tables and headers, printing */
-.tip{display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:14px;border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);background:color-mix(in srgb,var(--acc) 7%,transparent);border-radius:12px;font-size:13px;color:var(--text)}
+.screen-tip{display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:14px;border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);background:color-mix(in srgb,var(--acc) 7%,transparent);border-radius:12px;font-size:13px;color:var(--text)}
 .skel-wrap{display:grid;gap:10px;padding:6px 0}
 .skel{height:14px;border-radius:8px;background:linear-gradient(90deg,var(--s2) 0%,var(--s3) 50%,var(--s2) 100%);background-size:200% 100%;animation:skel 1.3s ease-in-out infinite}
 @keyframes skel{0%{background-position:100% 0}100%{background-position:-100% 0}}
