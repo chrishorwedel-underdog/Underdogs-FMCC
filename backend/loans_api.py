@@ -40,7 +40,7 @@ class TryIn(BaseModel):
 @router.get("/clubs")
 async def clubs():
     _, data = await _data()
-    return sorted({x["club"] for x in data["players"] if not x.get("own") and x.get("club") and x.get("source") == "save"})
+    return sorted({x["club"] for x in data["players"] if not x.get("own") and x.get("club") and x.get("source") == "save" and x.get("gender", "M") == "M"})
 
 
 @router.post("/try")
@@ -49,7 +49,7 @@ async def try_loan(body: TryIn):
     x = next((p for p in data["players"] if p["unique_id"] == body.unique_id and p.get("own")), None)
     if not x:
         raise HTTPException(404, "Pick a player from your own squad")
-    club = [p for p in data["players"] if p.get("club") == body.club and not p.get("own")]
+    club = [p for p in data["players"] if p.get("club") == body.club and not p.get("own") and p.get("gender", "M") == x.get("gender", "M")]
     if not club:
         raise HTTPException(404, "That club isn't in the scouting data")
     return {"player": {"unique_id": x["unique_id"], "name": x["name"], "age": x["age"], "group": x.get("group")}, "club": body.club} | assess(x, club)
@@ -57,7 +57,9 @@ async def try_loan(body: TryIn):
 
 @router.post("/track")
 async def track(body: TryIn):
-    c = await active_career()
+    c, data = await _data()
+    if not any(p["unique_id"] == body.unique_id and p.get("own") for p in data["players"]) or not any(p.get("club") == body.club for p in data["players"]):
+        raise HTTPException(404, "Pick one of your players and a club from the save")
     await db.loans.update_one({"career_id": c["id"], "unique_id": body.unique_id}, {"$set": {"club": body.club, "at": now_iso(), "active": True}}, upsert=True)
     return {"ok": True}
 
@@ -65,7 +67,7 @@ async def track(body: TryIn):
 @router.delete("/track/{uid}")
 async def untrack(uid: int):
     c = await active_career()
-    await db.loans.update_one({"career_id": c["id"], "unique_id": uid}, {"$set": {"active": False}})
+    await db.loans.delete_one({"career_id": c["id"], "unique_id": uid})
     return {"ok": True}
 
 

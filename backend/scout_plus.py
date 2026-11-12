@@ -1,9 +1,10 @@
 """Scout Players extras: Moneyball lists, Find Similar Players (by player or by target numbers) and the Youth Intake Tracker."""
+import calendar
 import math
 from datetime import date
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 import stats_model as sm
 from core import db, active_career, latest_two
@@ -23,14 +24,14 @@ def _p(x: dict) -> dict:
 @router.get("/scout/moneyball")
 async def moneyball():
     _, data = await _data()
-    pool = [x for x in data["players"] if not x.get("own") and x.get("source") == "save" and x.get("value") and x.get("grade_global") is not None and (x.get("minutes") or 0) >= sm.MIN_PRICE]
-    bargains = sorted([x for x in pool if x.get("fair_price") and x["fair_price"] >= 1.3 * x["value"]], key=lambda x: -x["fair_price"] / x["value"])[:15]
+    pool = [x for x in data["players"] if not x.get("own") and x.get("gender", "M") == "M" and x.get("source") == "save" and x.get("value") and x.get("grade_global") is not None and (x.get("minutes") or 0) >= sm.MIN_PRICE]
+    bargains = sorted([x for x in pool if x.get("fair_price") and x["fair_price"] >= 1.3 * x["value"] and x["grade_global"] >= 45], key=lambda x: -x["fair_price"] / x["value"])[:15]
     vfm = sorted(pool, key=lambda x: -x["grade_global"] / math.log10(max(x["value"], 100_000)))[:15]
     med = {}
     for x in pool:
         med.setdefault(x["cohort"], []).append(x["value"])
     med = {k: sorted(v)[len(v) // 2] for k, v in med.items()}
-    under = sorted([x for x in pool if x["value"] <= med[x["cohort"]] and x["grade_global"] >= 55], key=lambda x: -x["grade_global"])[:15]
+    under = sorted([x for x in pool if x["value"] <= med[x["cohort"]] and x["grade_global"] >= 50], key=lambda x: -x["grade_global"])[:15]
     return {"bargains": [_p(x) | {"why": f"Fair price {round(x['fair_price'] / x['value'], 1)}× his value"} for x in bargains],
             "vfm": [_p(x) | {"why": f"Grade {x['grade_global']} for the money"} for x in vfm],
             "undervalued": [_p(x) | {"why": f"Grade {x['grade_global']} per-90 output, valued below a typical {x['cohort'].lower()}"} for x in under],
@@ -52,14 +53,15 @@ async def similar(body: SimilarIn):
         x = next((p for p in data["players"] if p["unique_id"] == body.unique_id), None)
         if not x:
             raise HTTPException(404, "That player isn't in the scouting data")
-        rows = [r for r in sm.similar(data, x, 25) if r["age"] <= body.max_age][:15]
+        own = {p["unique_id"] for p in data["players"] if p.get("own")}
+        rows = [r for r in sm.similar(data, x, 40) if r["age"] <= body.max_age and r["unique_id"] not in own][:15]
         return {"base": _p(x), "rows": rows, "how": "Playing style (weighted per-90 profile) and level, same position group"}
     keys = [k for k in body.targets if k in sm.METRICS]
     if not keys:
         raise HTTPException(422, "Pick at least one number to match")
     out = []
     for p in data["players"]:
-        if (body.group and p.get("group") != body.group) or p["age"] > body.max_age or (p.get("minutes") or 0) < sm.MIN_PCT:
+        if p.get("own") or p.get("gender", "M") != "M" or (body.group and p.get("group") != body.group) or p["age"] > body.max_age or (p.get("minutes") or 0) < sm.MIN_PCT:
             continue
         src = p["p90"] if body.mode == "p90" else {k: (v or 0) * (p.get("minutes") or 0) / 90 for k, v in p["p90"].items() if v is not None}
         have = [k for k in keys if src.get(k) is not None]
@@ -71,10 +73,14 @@ async def similar(body: SimilarIn):
     return {"rows": sorted(out, key=lambda r: -r["similarity"])[:15], "how": "Closeness to your numbers, scaled by how much each stat usually varies"}
 
 
-def _next(gd: date, mmdd: str) -> date:
+def intake_day(year: int, mmdd: str) -> date:
     m, d = (int(v) for v in mmdd.split("-"))
-    t = date(gd.year, m, min(d, 28 if m == 2 else d))
-    return t if t >= gd else date(gd.year + 1, m, min(d, 28 if m == 2 else d))
+    return date(year, m, min(d, calendar.monthrange(year, m)[1]))
+
+
+def _next(gd: date, mmdd: str) -> date:
+    t = intake_day(gd.year, mmdd)
+    return t if t >= gd else intake_day(gd.year + 1, mmdd)
 
 
 async def intake_state(c: dict) -> dict:
@@ -103,6 +109,15 @@ class IntakeIn(BaseModel):
     league: str = Field(min_length=1, max_length=80)
     on: bool | None = None
     mmdd: str | None = Field(None, pattern=r"^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
+
+    @field_validator("mmdd")
+    @classmethod
+    def real_day(cls, v):
+        if v:
+            m, d = (int(x) for x in v.split("-"))
+            if d > calendar.monthrange(2028, m)[1]:
+                raise ValueError("That day doesn't exist in that month")
+        return v
 
 
 @router.put("/youth-intake")

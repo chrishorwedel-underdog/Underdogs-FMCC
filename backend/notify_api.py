@@ -98,11 +98,10 @@ async def sync(c: dict) -> None:
         prev = _d(snaps[-2]["game_date"])
         try:
             rows = (await scout_plus.intake_state(c))["rows"]
-        except HTTPException:
+        except (HTTPException, ValueError):
             rows = []
         for r in rows:
-            m, dd = (int(v) for v in r["mmdd"].split("-"))
-            t = date(gd.year, m, min(dd, 28))
+            t = scout_plus.intake_day(gd.year, r["mmdd"])
             if r["on"] and prev < t <= gd:
                 await _add(c["id"], "youth", f"youth:{r['league']}:{t.year}", f"Youth intake: {r['league']}", f"The {r['league']} youth intake happened on {t:%-d %B}. New youngsters are in the save.", last["game_date"])
     done = {d["key"] async for d in db.missed_dates.find({"career_id": c["id"]}, {"key": 1})}

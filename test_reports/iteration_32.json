@@ -1,0 +1,47 @@
+{
+  "summary": "QoL Phase 2 (Scouting + Loan Manager + DnD lineups/depth) tested end-to-end: backend pytest (16 tests: 15 pass, 1 fail) + youth-notice crossing test (pass) + Phase 1 regression (pass), and Playwright UI on all requested flows. Nearly everything works. Sidebar has no nav-moneyball. /moneyball redirects to /scouting?tab=moneyball. Main tabs, Find players simple filters and More filters, pinned player column (pin2, sticky, stays put while scrolling sideways), short headers with full names on hover, sticky filters, ?tab=stats -> More tools > Stats Table, Moneyball's 3 lists with no CA/PA, Similar (both modes, 422 with no targets, profile opens), Youth intake (default Serie A only, switch, MM-DD save drops 'est.', countdown chips), youth bell notice on a date crossing (tracked only), Loan Manager try/grade/depth/track/untrack with red/green/gold trend, pitch drag swap with autosave toast, invalid-swap error toast, popover pick autosave (revision 2), depth drag reorder plus 'Your order' badge plus depth_custom, and Home/Squad/Club Analysis all agree on Left Back. Bugs found: (1) youth date 04-31 (or 06-31/09-31/11-31) is accepted and then GET /api/youth-intake returns 500 and the notification sync breaks; (2) Moneyball, Similar 'match my numbers' and loan clubs mix in women's players and clubs; (3) a custom depth order changes the 'Weakest positions' list; (4) a saved custom lineup isn't shown again when you come back to the Lineup tab.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "PUT /api/youth-intake {mmdd:'04-31'}", "issue": "The regex allows day 31 in any month, so the PUT returns 200 and stores it. Then scout_plus._next calls date(y,4,31), which raises ValueError, so GET /api/youth-intake returns 500 and the Youth tab breaks. notify_api.sync only catches HTTPException, so GET /api/notify (the bell) will also return 500 until the DB is fixed by hand. The UI input sends any \\d{2}-\\d{2} on blur, so a user can do this. Fix: check the date with datetime in IntakeIn (or a validator) and return 422; make _next and sync clamp the day to the month length (calendar.monthrange). Also, sync uses min(dd,28) while intake_state uses the real day, so for 03-29..31 they work out different dates.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/scout/moneyball", "issue": "There's no gender filter, so women's players (e.g. Marta Silva, Ines Pereira of Northbridge Athletic Women) are mixed into Bargains/VFM. Other scout endpoints default to gender M. Bargains are dominated by very low grades (25-40, e.g. Chidi Eze 25.4) because of the fair_price/value ratio. Consider a minimum grade. Undervalued returns only 3 rows."},
+      {"endpoint": "POST /api/scout/similar (targets mode)", "issue": "No gender filter (women appear in the results) and your own players (TEST FC) are included. 'Like a player' mode also includes your own players."},
+      {"endpoint": "GET /api/loans/clubs, POST /api/loans/try", "issue": "Women's clubs are listed, so you can 'loan' a male player to Northbridge Athletic Women and get an A+ grade. Filter clubs by the player's gender."},
+      {"endpoint": "POST /api/loans/track", "issue": "Doesn't check that the player is your own or that the club exists. DELETE only sets active:false, so the docs are never removed."},
+      {"endpoint": "GET /api/squad/plan weak[]", "issue": "weak[].best uses depth[slot][0].rating after the custom order is applied. Moving a weaker player to the top changes the 'Weakest positions' list (Centre Back showed 68 instead of 72). It could even make Squad's weak list disagree with weak_spot/Home. Use the max rating, not depth[0]."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LineupView", "issue": "After an auto-saved custom lineup (drag or popover), leaving and coming back resets mode to 'Development XI'. The pitch shows the dev XI, not your saved lineup, even though 'Saved: Custom lineup · version 2' shows. useState('dev') ignores plan.saved.kind==='custom'.", "selector": "[data-testid=lineup-mode-tabs]", "priority": "MEDIUM"},
+      {"component": "SimilarTab Match my numbers", "issue": "In 'Season totals' mode the metric dropdown labels still say '/ 90' (e.g. 'Non-penalty expected goals / 90').", "selector": "[data-testid^=similar-metric-]", "priority": "LOW"},
+      {"component": "LineupView rapid edits", "issue": "pick() sends expected_revision from the plan that isn't refreshed yet. Two drags in quick succession (before the plan refetches) will get a 409.", "selector": "[data-testid^=pitch-slot-]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Scout Players > Find players", "issues": ["The sticky filter bar has no solid backing above it, so table rows show through the gap above the bar while scrolling.", "The table header row isn't sticky, so column names are lost when you scroll down.", "Placeholders are cut off: 'Max value (m', 'Max wage (k/', 'Min minute'."]},
+      {"screen": "Squad", "issues": ["8 contract countdown chips plus the 'What this page does' card push the tabs/pitch far down the first screen."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_qol_phase2.py", "/app/backend/tests/test_qol_phase2_youth_notice.py", "/app/backend/tests/test_qol_phase1.py", "/app/test_reports/pytest/qol_phase2.xml"],
+  "action_items": [
+    "Validate youth intake MM-DD as a real date (422 for 04-31 etc.) and make _next/sync robust (clamp the day to the month length; use the same day logic in both)",
+    "Add a gender filter (default M, or the player's gender) to /scout/moneyball, /scout/similar and /loans/clubs + /loans/try",
+    "Restore the saved custom lineup (mode 'custom') on LineupView when plan.saved.kind==='custom'",
+    "Compute squad_plan weak[].best from the max rating, not the custom-ordered depth[0]",
+    "Change metric labels to totals wording in Similar 'Season totals' mode; fix the cut-off placeholders and give the sticky filter bar a solid background"
+  ],
+  "critical_code_review_comments": [
+    "scout_plus._next: min(d, 28 if m==2 else d) doesn't protect 30-day months. Use calendar.monthrange.",
+    "notify_api.sync youth: t = date(gd.year, ...) misses intakes when a save read crosses a year boundary (prev in Dec, latest in Jan with a Jan/Dec date). It only catches HTTPException.",
+    "loans_api.loans(): next(p.get('league') for p in data['players'] if club==...) is O(n) per row. That's fine now; precompute a club->league map.",
+    "LoanManager uses the squad prop's ages; trend() marks <270 min as red 'Hardly playing' even early in a season."
+  ],
+  "updated_files": ["/app/backend/tests/test_qol_phase2.py", "/app/backend/tests/test_qol_phase2_youth_notice.py"],
+  "success_rate": {"backend": "94% (16/17 in the new suites; Phase 1 regression all pass)", "frontend": "92% (all requested flows work; 1 medium lineup-restore bug)"},
+  "seed_data_creation": "None. Cleanup: careers.youth_intake unset (back to default), tracked loans deleted, depth_orders for the career deleted, no youth notices left. 2 custom lineup revisions (4231, rev 1 and 2) stay in db.lineups as allowed. Note: the test_qol_phase1 regression run adds squad rules revisions (Edited then Reset to default, now v6).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run with: export REACT_APP_BACKEND_URL=... ; pytest backend/tests/test_qol_phase2*.py. Active career id comes from db.settings{_id:'app'}.active_career_id. Sample: game date 2028-03-01, previous save 2028-02-01, formation 4231, weakest = Left Back (Rafael Mendes 64). test_invalid_day_for_month is expected to fail until the 04-31 fix. Playwright HTML5 drag_to works for pitch-slot-* and depth-row-*. Always click 'Skip tour'. The page_url path is ignored by the tool, so navigate with nav-* clicks."
+}

@@ -93,7 +93,7 @@ async def squad_plan(formation: Optional[Formation] = None):
     best = roles.best_xi(latest["players"], form, depth)
     dev, picked, dev_why = roles.development_xi(best, form, depth, info, rules)
     labels = {s["key"]: s["label"] for s in form["slots"]}
-    weak = [{"slot": s["key"], "label": s["label"], "best": depth[s["key"]][0]["rating"] if depth[s["key"]] else 0,
+    weak = [{"slot": s["key"], "label": s["label"], "best": max((r["rating"] for r in depth[s["key"]]), default=0),
              "options": len(depth[s["key"]])} for s in form["slots"]]
     saved = await db.lineups.find_one({"career_id": c["id"], "formation": formation}, {"_id": 0}, sort=[("revision", -1)])
     for i in info.values():

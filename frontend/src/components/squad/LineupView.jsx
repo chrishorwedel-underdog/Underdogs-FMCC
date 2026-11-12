@@ -63,10 +63,18 @@ const Formations = ({ plan, formation, setFormation }) => {
 export const LineupView = ({ formation, setFormation }) => {
   const { data: plan } = useGet("plan", "/squad/plan", { formation });
   const act = useAct();
-  const [mode, setMode] = useState("dev");
+  const [mode, setMode] = useState(null);
   const [slots, setSlots] = useState({});
-  useEffect(() => { if (plan) setSlots(mode === "custom" && plan.saved?.kind === "custom" && plan.saved.formation === plan.formation.key ? plan.saved.slots : plan[mode === "custom" ? "dev" : mode].slots); }, [plan, formation]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!plan) return <p className="note">Working out lineups…</p>;
+  const [rev, setRev] = useState(null);
+  useEffect(() => {
+    if (!plan) { return; }
+    const custom = plan.saved?.kind === "custom" && plan.saved.formation === plan.formation.key;
+    const m = mode || (custom ? "custom" : "dev");
+    if (!mode) { setMode(m); }
+    setSlots(m === "custom" && custom ? plan.saved.slots : plan[m === "custom" ? "dev" : m].slots);
+    setRev(plan.saved?.revision || 0);
+  }, [plan, formation]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!plan || !mode) return <p className="note">Working out lineups…</p>;
   const switchMode = (m) => { setMode(m); if (m !== "custom") setSlots(plan[m].slots); };
   const pick = (key, uid) => {
     const other = Object.keys(slots).find((k) => slots[k] === uid);
@@ -78,7 +86,7 @@ export const LineupView = ({ formation, setFormation }) => {
       next[other] = slots[key];
     }
     setSlots(next); setMode("custom");
-    act(() => api.post("/lineups", { formation: plan.formation.key, kind: "custom", slots: next, based_on_save_no: plan.save_no, expected_revision: plan.saved?.revision || 0 }), "Lineup updated and saved", ["plan"]);
+    act(() => api.post("/lineups", { formation: plan.formation.key, kind: "custom", slots: next, based_on_save_no: plan.save_no, expected_revision: rev ?? (plan.saved?.revision || 0) }), "Lineup updated and saved", ["plan"]).then((r) => r && setRev(r.revision));
   };
   const use = () => act(() => api.post("/lineups", { formation: plan.formation.key, kind: mode, slots, based_on_save_no: plan.save_no, expected_revision: plan.saved?.revision || 0 }),
     (d) => `Lineup saved (version ${d.revision})`, ["plan"]);

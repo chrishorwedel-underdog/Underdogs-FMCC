@@ -22,10 +22,10 @@ const Filters = ({ f, setF, meta, prefs, more }) => {
       <select className="inp" style={{ width: 170 }} value={f.league || ""} onChange={set("league")} data-testid="sp-league"><option value="">All leagues</option>{meta?.leagues.map((l) => <option key={l}>{l}</option>)}</select>
       <select className="inp" style={{ width: 230 }} value={f.preset || ""} onChange={set("preset")} data-testid="sp-preset"><option value="">Ready-made searches</option>{Object.entries(meta?.presets || {}).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
       {more && <>
-      <input className="inp" style={{ width: 130 }} type="number" placeholder="Max value (m)" onChange={cap("max_value", 1e6)} data-testid="sp-max-value" />
-      <input className="inp" style={{ width: 130 }} type="number" placeholder="Max wage (k/wk)" onChange={cap("max_wage", 1e3)} data-testid="sp-max-wage" />
+      <input className="inp" style={{ width: 150 }} type="number" placeholder="Max value (m)" onChange={cap("max_value", 1e6)} data-testid="sp-max-value" />
+      <input className="inp" style={{ width: 160 }} type="number" placeholder="Max wage (k/wk)" onChange={cap("max_wage", 1e3)} data-testid="sp-max-wage" />
       <input className="inp" style={{ width: 80 }} type="number" defaultValue={f.max_age} title="Max age" onBlur={(e) => { const v = Math.min(50, Math.max(14, Number(e.target.value) || 45)); e.target.value = v; setF({ ...f, max_age: v }); }} data-testid="sp-max-age" />
-      <input className="inp" style={{ width: 110 }} type="number" placeholder="Min minutes" onChange={set("min_minutes", (v) => Number(v) || 0)} data-testid="sp-min-minutes" />
+      <input className="inp" style={{ width: 130 }} type="number" placeholder="Min minutes" onChange={set("min_minutes", (v) => Number(v) || 0)} data-testid="sp-min-minutes" />
       <div className="seg" data-testid="sp-gender">{[["M", "Men"], ["F", "Women"]].map(([k, l]) => <button key={k} className={f.gender === k ? "on" : ""} onClick={() => setF({ ...f, gender: k })} data-testid={`sp-gender-${k}`}>{l}</button>)}</div>
       {meta?.html_imports > 0 && <div className="seg">{[["save", "From the save"], ["html", "HTML imports"]].map(([k, l]) => <button key={k} className={f.source === k ? "on" : ""} onClick={() => setF({ ...f, source: k })} data-testid={`sp-source-${k}`}>{l}</button>)}</div>}
       </>}
