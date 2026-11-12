@@ -32,6 +32,21 @@ const PlanDialog = ({ row, loans, close }) => {
 };
 
 const Gain = ({ v }) => (v == null ? <span style={{ color: "var(--dim)" }}>—</span> : <span className={`mono ${v > 0 ? "up" : v < 0 ? "down" : ""}`}>{v > 0 ? "+" : ""}{v}</span>);
+const Trend = ({ steps, id }) => {
+  if (!steps?.length) return null;
+  let y = 0;
+  const pts = [0, ...steps.map((s) => (y += s === "up" ? 1 : s === "down" ? -1 : 0))];
+  const lo = Math.min(...pts), hi = Math.max(...pts), span = Math.max(2, hi - lo);
+  const xy = pts.map((v, i) => `${(i / (pts.length - 1)) * 56 + 2},${16 - ((v - lo) / span) * 12}`).join(" ");
+  const last = pts[pts.length - 1] - pts[0];
+  const col = last > 0 ? "var(--grn)" : last < 0 ? "var(--amb)" : "var(--mut)";
+  const label = `${steps.filter((s) => s === "up").length} up, ${steps.filter((s) => s === "down").length} down, ${steps.filter((s) => s === "flat").length} steady over the last ${pts.length} saves`;
+  return <svg width="60" height="20" viewBox="0 0 60 20" role="img" aria-label={label} data-testid={`dev-trend-${id}`}><title>{label}</title><polyline points={xy} fill="none" stroke={col} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+};
+const Games = ({ r }) => (
+  <td data-testid={`dev-games-${r.unique_id}`}><span className="mono" style={{ color: "var(--text)" }}>{r.appearances}</span>
+    <small style={{ display: "block", color: "var(--dim)" }}>{r.starts != null ? `${r.starts} started · ${r.sub_apps} off the bench` : "Start/sub split on next save read"}</small></td>
+);
 const TONE = { big: "var(--grn)", up: "var(--grn)", flat: "var(--mut)", down: "var(--amb)" };
 const Progress = ({ n, small }) => (n ? <span style={{ color: TONE[n.tone], fontSize: small ? 12 : 13, display: "block" }}>{n.text}</span> : <span style={{ color: "var(--dim)", display: "block" }}>{small ? "" : "Needs two saves"}</span>);
 
@@ -42,11 +57,11 @@ const Plans = () => {
   return (
     <div className="card" style={{ padding: 8, overflowX: "auto" }}>
       <table className="tbl" data-testid="plans-table">
-        <thead><tr><th>Player</th><th>Age</th><th title="How he's coming along since last month's save and since the season started">Progress</th><th>Goals</th><th>Assists</th><th>Mins / game</th><th>Avg rating</th><th>Minutes this month</th><th>Plan</th><th>Goal</th><th></th></tr></thead>
+        <thead><tr><th>Player</th><th>Age</th><th>Games</th><th title="How he's coming along since last month's save and since the season started">Progress</th><th>Goals</th><th>Assists</th><th>Mins / game</th><th>Avg rating</th><th>Minutes this month</th><th>Plan</th><th>Goal</th><th></th></tr></thead>
         <tbody>{data.rows.map((r) => (
           <tr key={r.unique_id} style={{ cursor: "default" }} data-testid={`plan-row-${r.unique_id}`}>
             <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.needs_minutes && <span className="tag st a" data-testid={`needs-minutes-${r.unique_id}`}>Needs minutes</span>}</td>
-            <td>{r.age}</td><td style={{ minWidth: 190 }} data-testid={`dev-progress-${r.unique_id}`}><Progress n={r.progress_month} /><Progress n={r.progress_season} small /></td>
+            <td>{r.age}</td><Games r={r} /><td style={{ minWidth: 250 }} data-testid={`dev-progress-${r.unique_id}`}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div><Progress n={r.progress_month} /><Progress n={r.progress_season} small /></div><Trend steps={r.trend} id={r.unique_id} /></div></td>
             <td className="mono">{r.goals}</td><td className="mono">{r.assists}</td><td className="mono">{r.minutes_per_game ?? "—"}</td><td className="mono">{r.avg_rating ?? "—"}</td>
             <td style={{ minWidth: 180 }}>{r.target ? <div className="mb" style={{ gridTemplateColumns: "1fr 70px" }}><div className="track"><i style={{ width: `${Math.min(100, (r.month_minutes / r.target) * 100)}%`, background: r.needs_minutes ? "var(--amb)" : "var(--acc)" }} /></div><span className="mono">{r.month_minutes}/{r.target}</span></div> : <span className="mono">{r.month_minutes}</span>}</td>
             <td>{r.plan ? <>{data.loans[r.plan.loan]}<small style={{ display: "block", color: "var(--dim)" }}>version {r.plan.revision}</small></> : <span style={{ color: "var(--dim)" }}>No plan</span>}</td>

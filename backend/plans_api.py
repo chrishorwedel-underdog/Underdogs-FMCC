@@ -20,6 +20,11 @@ def _note(delta: int, notes: list) -> dict:
             return {"tone": tone, "text": text}
 
 
+def _trend(vals: list) -> list:
+    """Direction of each save-to-save step only (up/flat/down), never the size."""
+    return ["up" if b > a else "down" if b < a else "flat" for a, b in zip(vals, vals[1:])]
+
+
 
 async def latest_plans(career_id: str) -> dict:
     pipeline = [{"$match": {"career_id": career_id}}, {"$sort": {"revision": -1}}, {"$group": {"_id": "$unique_id", "doc": {"$first": "$$ROOT"}}},
@@ -39,6 +44,8 @@ async def development():
     plans = await latest_plans(c["id"])
     prev = {p["unique_id"]: p for p in snaps[1]["players"]} if len(snaps) > 1 else {}
     start = await season_start_ca(c["id"], latest["season"])
+    recent = await db.snapshots.find({"career_id": c["id"]}, {"_id": 0, "players.unique_id": 1, "players.ca": 1}).sort("save_no", -1).limit(6).to_list(6)
+    hist = [{p["unique_id"]: p["ca"] for p in s["players"]} for s in reversed(recent)]
     rows = []
     for p in latest["players"]:
         uid = p["unique_id"]
@@ -51,6 +58,7 @@ async def development():
             plan = {k: v for k, v in plan.items() if k not in ("goal_ca", "start_ca")} | {"goal_gain": goal}
         rows.append({"unique_id": uid, "name": p["name"], "age": p["age"], "positions": p["positions"],
                      "progress_month": _note(p["ca"] - prev[uid]["ca"], MONTH_NOTES) if uid in prev else None, "progress_season": _note(p["ca"] - start[uid], SEASON_NOTES) if uid in start else None,
+                     "trend": _trend([h[uid] for h in hist if uid in h]), "starts": p.get("starts"), "sub_apps": p.get("sub_apps"),
                      "goals": p.get("goals", 0), "assists": p.get("assists", 0), "appearances": apps, "avg_rating": p.get("avg_rating"),
                      "minutes_per_game": round(p["minutes"] / apps) if apps else None,
                      "month_minutes": mins[uid], "season_minutes": p["minutes"], "plan": plan, "target": target,

@@ -181,10 +181,11 @@ def read_save(save_no: int, club_name: str, edits: dict | None = None) -> dict:
         for m in range(months_played):
             played += max(0, int(mins * random.Random(uid + m).uniform(0.6, 1.15)))
         apps = -(-played // 85)
+        starts = min(apps, round(played / 90 * 0.9))
         players.append({
             "unique_id": uid, "name": name, "birth_date": birth, "age": _age(birth, game_date),
             "nationality": nat, "positions": pos, "ca": cur, "pa": pa,
-            "contract_end": contract, "wage": wage, "minutes": played, "appearances": apps,
+            "contract_end": contract, "wage": wage, "minutes": played, "appearances": apps, "starts": starts, "sub_apps": apps - starts,
             "avg_rating": round(6.4 + (cur - 100) / 120 + rng.uniform(-0.2, 0.2), 2) if apps else None,
             "goals": int(played / 90 * (0.5 if "ST" in pos else 0.2 if any(x.startswith("AM") for x in pos) else 0.04)),
             "assists": int(played / 90 * (0.3 if any(x.startswith("AM") for x in pos) else 0.08)),
