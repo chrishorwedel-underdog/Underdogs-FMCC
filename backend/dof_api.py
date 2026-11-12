@@ -182,7 +182,7 @@ Never state Current Ability or Potential Ability numbers (CA/PA), even if asked;
 You may draft ONE action when it clearly helps. Put it on the very last line, exactly in this form, with nothing after it:
 ACTION: {"type": "lineup", "kind": "dev" or "best", "formation": "433" or "4231", "summary": "..."}
 ACTION: {"type": "shortlist", "unique_id": <scouting id>, "summary": "..."}
-ACTION: {"type": "nomination", "module": "elite" or "breakout", "unique_id": <squad id>, "summary": "..."}
+ACTION: {"type": "nomination", "module": "elite", "unique_id": <squad id>, "summary": "..."} (Breakout Player is picked automatically at season end, never nominated)
 ACTION: {"type": "plan", "unique_id": <squad id>, "minutes_target": <int>, "loan": "none" | "loan_lower" | "loan_same" | "loan_abroad", "summary": "..."}
 ACTION: {"type": "suggestions", "summary": "...", "items": [{"unique_id": <id from TRANSFER CANDIDATES>, "gap": "<position it fills>", "reason": "<one sentence>", "numbers": "<the formula and stat numbers you used>"}]}
 When the manager asks who to sign, which gap to fill, the cheapest upgrade or a young player to develop, use the suggestions action with 1-5 players taken ONLY from TRANSFER CANDIDATES or DOF PICKS.
@@ -329,7 +329,7 @@ async def accept(msg_id: str):
             done = "Added to your shortlist"
         elif a["type"] == "nomination":
             mod = a.get("module", "elite")
-            await awards_api._nominate(c, mod if mod in ("elite", "breakout") else "elite", int(a["unique_id"]), "active", "Suggested by DOF")
+            await awards_api._nominate(c, "elite", int(a["unique_id"]), "active", "Suggested by DOF")
             done = "Nomination saved"
         else:
             prev = await db.plans.find_one({"career_id": c["id"], "unique_id": int(a["unique_id"])}, {"_id": 0, "revision": 1}, sort=[("revision", -1)])

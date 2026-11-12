@@ -1,60 +1,42 @@
+import { Award, Trophy } from "lucide-react";
 import { Loading } from "@/components/Loading";
+import { useGet } from "@/lib/ui";
+import { openPlayer } from "@/components/player/PlayerPanel";
 
-import { useState } from "react";
-import { Award } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { api } from "@/lib/api";
-import { useGet, useAct } from "@/lib/ui";
-
-const Review = ({ c, rules, act }) => {
-  const [rule, setRule] = useState(c.review?.category ? rules.find((r) => r.name === c.review.category)?.id : c.rule_id || rules[0]?.id);
-  const official = c.review?.status === "official";
-  const send = (decision) => act(() => api.post("/breakout/review", { unique_id: c.unique_id, rule_id: rule, decision, note: "" }), decision === "provisional" ? "Provisional pick saved" : "Marked as not picked", ["breakout"]);
-  return official ? <span className="st ok">Official · {c.review.category}</span> : (
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-      <select className="inp" style={{ height: 32, width: 200 }} value={rule || ""} onChange={(e) => setRule(e.target.value)} data-testid={`breakout-category-${c.unique_id}`}>{rules.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
-      <button className="btn" onClick={() => send("provisional")} data-testid={`breakout-provisional-${c.unique_id}`}>Pick</button>
-      <button className="btn" onClick={() => send("rejected")} data-testid={`breakout-reject-${c.unique_id}`}>No</button>
-    </div>
-  );
-};
+const Row = ({ r, top }) => (
+  <tr onClick={() => openPlayer(r.unique_id)} style={{ cursor: "pointer" }} data-testid={`breakout-row-${r.unique_id}`}>
+    <td className="mono">{r.rank ?? "—"}</td>
+    <td><b style={{ color: "var(--text)" }}>{r.name}</b>{top && <span className="tag st ok">Leading</span>}<small style={{ display: "block", color: "var(--dim)" }}>{r.position}</small></td>
+    <td>{r.age}</td><td className="mono">{r.minutes}</td><td className="mono">{r.avg_rating ?? "—"}</td>
+    <td className="mono" data-testid={`breakout-grade-${r.unique_id}`}>{r.grade ?? "—"}</td>
+    <td className="mono">{r.teammate_pct != null ? `Better than ${r.teammate_pct}%` : <span style={{ color: "var(--dim)" }}>{r.reason}</span>}</td>
+  </tr>
+);
 
 export const Breakout = () => {
   const { data } = useGet("breakout", "/breakout");
-  const act = useAct();
-  const [confirm, setConfirm] = useState(false);
-  const [nom, setNom] = useState("");
   if (!data) return <Loading id="breakout-loading" rows={5} label="Loading Breakout" />;
-  const prov = data.candidates.filter((c) => c.review?.status === "provisional").length;
+  const w = data.winner;
   return (
-    <div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
-        <span className="note">Season {data.season} · {data.season_over ? "season end: picks can be made official" : "season still running"}</span>
-        <input className="inp mono" style={{ width: 160, marginLeft: "auto" }} placeholder="Nominate by game ID" value={nom} onChange={(e) => setNom(e.target.value)} data-testid="breakout-nominate-id" />
-        <button className="btn" disabled={!nom} onClick={() => act(() => api.post("/breakout/nominations", { unique_id: Number(nom), note: "" }), "Nominated", ["breakout"]).then(() => setNom(""))} data-testid="breakout-nominate-button">Nominate</button>
-        <button className="btn btn-p" disabled={!prov} onClick={() => setConfirm(true)} data-testid="breakout-finalise-button"><Award size={13} />Make {prov} pick(s) official</button>
+    <div style={{ display: "grid", gap: 16 }}>
+      <div className="card" data-testid="breakout-status">
+        {w ? <div style={{ display: "flex", gap: 12, alignItems: "center" }}><Trophy size={22} color="#F5C542" />
+          <div><div className="ttl" data-testid="breakout-winner">{w.name} is your Breakout Player of {data.season}</div><p className="note" style={{ margin: 0 }}>{w.note}. Picked and applied automatically.</p></div></div>
+          : <div style={{ display: "flex", gap: 12, alignItems: "center" }}><Award size={22} color="var(--acc)" />
+            <div><div className="ttl">Season {data.season}: {data.leader ? `${data.leader.name} is leading` : "no eligible player yet"}</div>
+              <p className="note" style={{ margin: 0 }} data-testid="breakout-how">The winner is picked and applied automatically when FMCC reads your season-end save (May or June). Nothing to approve.</p></div></div>}
       </div>
+      <p className="note" style={{ margin: 0 }} data-testid="breakout-rules-note">Fair for every position: each player's season grade is scored against players in his own position, then ranked against your teammates. First-team players only (22 and over, not U21 or U18), at least {data.min_minutes} minutes, and each player can only win once in his career.</p>
       <div className="card" style={{ padding: 8, overflowX: "auto" }}>
         <table className="tbl" data-testid="breakout-table">
-          <thead><tr><th>Player</th><th>Age</th><th>Minutes</th><th>Rating</th><th>Growth</th><th>Goals+Assists</th><th>Qualifies for</th><th>Review</th></tr></thead>
-          <tbody>{data.candidates.map((c) => (
-            <tr key={c.unique_id} style={{ cursor: "default" }} data-testid={`breakout-row-${c.unique_id}`}>
-              <td><b style={{ color: "var(--text)" }}>{c.name}</b>{c.nominated && <span className="tag st b">Nominated</span>}{c.review?.status === "provisional" && <span className="tag st a">Provisional</span>}{c.review?.status === "rejected" && <span className="tag st n">Not picked</span>}
-                {c.review && <small style={{ display: "block", color: "var(--dim)" }}>{c.review.revisions} review version(s)</small>}</td>
-              <td>{c.age}</td><td className="mono">{c.minutes}</td><td className="mono">{c.avg_rating ?? "—"}</td><td className="mono">{c.ca_growth > 0 ? "+" : ""}{c.ca_growth}</td><td className="mono">{c.goals + c.assists}</td>
-              <td>{c.category || <span style={{ color: "var(--dim)" }}>No rule yet</span>}</td><td><Review c={c} rules={data.rules} act={act} /></td>
-            </tr>))}</tbody>
+          <thead><tr><th>#</th><th>Player</th><th>Age</th><th>Minutes</th><th>Avg rating</th><th>Season grade</th><th>Among teammates</th></tr></thead>
+          <tbody>{data.standings.map((r, i) => <Row key={r.unique_id} r={r} top={i === 0 && !w} />)}
+            {data.ineligible.map((r) => <Row key={r.unique_id} r={r} />)}</tbody>
         </table>
-        {!data.candidates.length && <p className="note" style={{ padding: 10 }}>No candidates yet. Players appear here once they meet a Breakout rule or you nominate them.</p>}
+        {!data.standings.length && <p className="note" style={{ padding: 10 }} data-testid="breakout-empty">No first-team player is eligible yet. Players need {data.min_minutes} minutes this season.</p>}
       </div>
-      <AlertDialog open={confirm} onOpenChange={setConfirm}>
-        <AlertDialogContent data-testid="breakout-finalise-dialog">
-          <AlertDialogHeader><AlertDialogTitle>Make {prov} pick(s) official?</AlertDialogTitle>
-            <AlertDialogDescription>{data.season_over ? "" : "The season isn't over yet. "}Each reward is rolled within its rule's range and added to Game changes. Official picks can't be revised.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => act(() => api.post("/breakout/finalise"), (d) => `${d.official} pick(s) made official and queued`, ["breakout", "changes", "home"])} data-testid="breakout-finalise-confirm">Make official</AlertDialogAction></AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {data.past.length > 0 && <div className="card" data-testid="breakout-past"><div className="ttl">Past winners (can't win again)</div>
+        {data.past.map((p) => <div key={p.season} className="row" style={{ cursor: "pointer" }} onClick={() => openPlayer(p.unique_id)} data-testid={`breakout-past-${p.season}`}><div style={{ flex: 1 }}><b>{p.name}</b><small>{p.note}</small></div><span className="st n">{p.season}</span></div>)}</div>}
     </div>
   );
 };

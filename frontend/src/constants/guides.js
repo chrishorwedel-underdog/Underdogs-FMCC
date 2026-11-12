@@ -4,7 +4,9 @@ export const SIMPLE = {
   "/": "Shows you the most important things about your club right now, so you know what to do next.",
   "/punish": "Lets you punish any club, for example by taking points off them or fining them, and puts it into your FM save for you.",
   "/dynamic-potential": "Players who play well can become better in the future, and players who play badly can lose some of their future. FMCC checks this twice a season.",
-  "/breakout": "Picks the one player who surprised everyone most this season and gives him a small boost in FM as a reward.",
+  "/breakout": "At the end of each season FMCC picks the first-team player who had the best season compared with his teammates, gives him a small boost in FM and does it all for you.",
+  "/club-analysis": "Looks at your whole club and tells you, in order, what to fix first: weak positions, ageing players, contracts and money.",
+  "/transfer-market": "Shows which players are for sale, who is cheap for how good he is, and what is moving around the world in your save.",
   "/scouting": "Helps you find good players to sign, using their real match numbers and price, and tells you which ones are worth it.",
   "/reports": "A monthly news page for the whole football world in your save: who won, who scored and who moved clubs.",
   "/moneyball": "Shows which players give you the most for your money.",
@@ -35,9 +37,19 @@ export const GUIDES = {
     how: ["Check the winter review date that splits the season", "Press Run winter review when the winter window opens, and Run season-end review after the last match", "Approve or reject anything under Needs your review"],
   },
   "/breakout": {
-    what: "FMCC picks the season's Breakout Player: the player who performed furthest above what was expected. The winner is awarded a CA (current ability) bonus in FM.",
-    features: ["FMCC ranks the candidates from match numbers and growth and puts its pick first", "You confirm the pick (or choose someone else) for each category", "The winner gets a CA bonus, rolled within your rule's range and queued in Game changes", "The reasons behind each nomination", "One award per player per season, so nobody is rewarded twice", "Your own rules, thresholds and bonus sizes"],
-    how: ["Open the nominations: FMCC's pick is at the top", "Confirm it with Pick, or pick someone else", "Make it official at season end: the winner's CA bonus goes to Game changes for you to confirm"],
+    what: "FMCC picks the season's Breakout Player automatically: the first-team player with the best season compared with his teammates. The reward is applied to your save for you.",
+    features: ["A live ranking of your first-team players (22 and over) by season grade", "Fair for every position: each grade is scored against players in the same position", "At least 900 minutes to qualify", "Each player can only win once in his career", "Past winners", "Your own reward rules in Rules"],
+    how: ["Play your season: the ranking updates with every save FMCC reads", "When FMCC reads your May or June save, the leader wins automatically", "His reward is applied to the save and you get a bell notice. Undo it in Game changes if you need to"],
+  },
+  "/club-analysis": {
+    what: "Your whole club in one report: the weakest areas, what to do first, values, contracts and player radars.",
+    features: ["What to do first, in order", "Weakest positions compared with your best options", "Squad value, wages and contracts", "Radar and heatmap views for your players", "Click any player to open his panel"],
+    how: ["Read a save so FMCC has your latest squad", "Start with the first item in What to do first", "Open a player to see his details, or jump to Squad or Scout Players to act on it"],
+  },
+  "/transfer-market": {
+    what: "Who is available, what they cost and what is moving across your save's world.",
+    features: ["Players for sale, on loan or with release clauses", "Best value for money", "Young players worth watching", "Recent transfers between clubs", "Click any player to open his panel"],
+    how: ["Pick a list at the top", "Sort or filter to narrow it down", "Open a player, then Watch, Shortlist or Compare him"],
   },
   "/scouting": {
     what: "Finds and judges every player in your save using a combination of match stats and advanced analytics.",

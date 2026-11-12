@@ -10,8 +10,8 @@ import features_api
 
 router = APIRouter(prefix="/api/notify")
 TYPES = {"youth": "Youth intake happened", "report": "New monthly report", "missed": "Missed dates", "countdown": "Countdown reaching 7 days", "changes": "Game changes waiting",
-         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed"}
-PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist"}
+         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed", "breakout": "Breakout Player of the season"}
+PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist", "breakout": "/breakout"}
 
 
 def _d(s: str) -> date:
@@ -121,8 +121,13 @@ async def sync(c: dict) -> None:
     if waiting:
         await _add(c["id"], "dof", f"dof:{last['save_no']}:{waiting}", f"{waiting} DOF suggestion{'s' if waiting > 1 else ''} waiting", "Open the DOF chat to accept or dismiss.", last["game_date"])
     import watch_api
+    import awards_api
     try:
         await watch_api.check(c)
+    except HTTPException:
+        pass
+    try:
+        await awards_api.auto_breakout(c)
     except HTTPException:
         pass
     sl = await scouting_api.shortlisted(c["id"])

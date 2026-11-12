@@ -1,5 +1,3 @@
-from typing import Literal
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
@@ -118,81 +116,80 @@ async def latest_awards(career_id: str, module: str, prefix: str) -> dict:
     return {d["unique_id"]: d async for d in db.awards.aggregate(pipeline)}
 
 
-# ---------- Annual Breakout ----------
+# ---------- Annual Breakout (automatic) ----------
+MIN_MINUTES = 900
+
+
+async def _past_winners(career_id: str) -> dict:
+    return {d["unique_id"]: d async for d in db.awards.find({"career_id": career_id, "module": "breakout", "status": "official"}, {"_id": 0})}
+
+
+async def _standings(c: dict) -> dict:
+    """First-team players (22+) ranked against their teammates by FMCC's position-fair season grade."""
+    import stats_model as sm
+    snap = await latest_snapshot(c["id"])
+    data = await sm.build(c)
+    grades = {x["unique_id"]: x for x in data["players"] if x.get("own")}
+    ctxs = {x["unique_id"]: x for x in await own_contexts(c)}
+    winners = await _past_winners(c["id"])
+    rows = []
+    for uid, x in ctxs.items():
+        g = grades.get(uid) or {}
+        why = ("Under 21: not first team" if (x["age"] or 0) <= 21 else "Already won it" if uid in winners else
+               f"Under {MIN_MINUTES} minutes" if (x["minutes"] or 0) < MIN_MINUTES else "No season grade yet" if g.get("grade_global") is None else None)
+        rows.append({"unique_id": uid, "name": x["name"], "age": x["age"], "minutes": x["minutes"], "avg_rating": x["avg_rating"],
+                     "position": (g.get("cohort") or ""), "grade": g.get("grade_global"), "eligible": why is None, "reason": why})
+    ok = sorted([r for r in rows if r["eligible"]], key=lambda r: (-(r["grade"] or 0), -(r["avg_rating"] or 0)))
+    n = len(ok)
+    for i, r in enumerate(ok):
+        r["rank"] = i + 1
+        r["teammate_pct"] = round(100 * (n - 1 - i) / (n - 1)) if n > 1 else 100
+    rest = sorted([r for r in rows if not r["eligible"]], key=lambda r: -(r["grade"] or 0))
+    return {"snap": snap, "ctxs": ctxs, "ranked": ok, "ineligible": rest, "winners": winners}
+
+
+async def auto_breakout(c: dict) -> dict | None:
+    """At season end (May/June save), pick the top eligible teammate and apply the reward automatically. Once per season, once per player career."""
+    if "breakout" in __import__("features_api").off(c):
+        return None
+    snap = await latest_snapshot(c["id"])
+    if not snap or int(snap["game_date"][5:7]) not in (5, 6):
+        return None
+    if await db.awards.find_one({"career_id": c["id"], "module": "breakout", "status": "official", "award_key": {"$regex": f"^breakout:{snap['season']}:"}}, {"_id": 1}):
+        return None
+    s = await _standings(c)
+    if not s["ranked"]:
+        return None
+    w = s["ranked"][0]
+    x = s["ctxs"][w["unique_id"]]
+    rules = await current_rules(c["id"], "breakout")
+    on = [r for r in rules["data"]["rules"] if r["enabled"]]
+    r = RE.first_match(on, x) or (on[0] if on else None)
+    if not r:
+        return None
+    key = f"breakout:{snap['season']}:{x['unique_id']}"
+    delta = RE.capped(x[r["action"]["target"]], RE.roll(r, f"{c['id']}:{key}"), r["max_value"])
+    await _award(c, key, "breakout", x, r, rules["version"], "official", delta, f"Best season among teammates: grade {w['grade']}")
+    res = await queue_changes(c, "breakout", key, [{"unique_id": x["unique_id"], "name": x["name"], "field": r["action"]["target"], "delta": delta}])
+    await audit(c["id"], "breakout winner", "breakout", f"{x['name']} is Breakout Player of {snap['season']} (grade {w['grade']}), applied automatically")
+    from notify_api import _add
+    await _add(c["id"], "breakout", f"breakout-win:{snap['season']}", f"{x['name']} is your Breakout Player of {snap['season']}",
+               f"Best season among your first-team players (grade {w['grade']}). His reward was {'applied to your save' if res.get('auto_applied') else 'added to Game changes for your review'}.", snap["game_date"])
+    return {"unique_id": x["unique_id"], "name": x["name"]}
+
+
 @router.get("/breakout")
 async def breakout():
     c = await active_career()
-    snap = await latest_snapshot(c["id"])
-    rules = await current_rules(c["id"], "breakout")
-    ctxs = {x["unique_id"]: x for x in await own_contexts(c)}
-    noms = {n["unique_id"]: n for n in await active_nominees(c["id"], "breakout")}
-    reviews = await latest_awards(c["id"], "breakout", f"breakout:{snap['season']}:")
-    cands = []
-    for x in ctxs.values():
-        r = RE.first_match(rules["data"]["rules"], x)
-        if r or x["unique_id"] in noms or x["unique_id"] in reviews:
-            rv = reviews.get(x["unique_id"])
-            cands.append({k: x[k] for k in ("unique_id", "name", "age", "minutes", "avg_rating", "ca_growth", "goals", "assists")} |
-                         {"category": r["name"] if r else None, "rule_id": r["id"] if r else None, "nominated": x["unique_id"] in noms,
-                          "nomination_note": noms.get(x["unique_id"], {}).get("note"), "review": {k: rv[k] for k in ("status", "category", "revision", "revisions", "note", "award_key")} if rv else None})
-    cands.sort(key=lambda r: (r["category"] is None, -(r["avg_rating"] or 0)))
-    month = int(snap["game_date"][5:7])
-    return {"season": snap["season"], "season_over": month in (5, 6), "rules": [{"id": r["id"], "name": r["name"]} for r in rules["data"]["rules"] if r["enabled"]],
-            "candidates": cands, "rules_version": rules["version"]}
-
-
-@router.post("/breakout/nominations")
-async def breakout_nominate(body: NominateIn):
-    c = await active_career()
-    return await _nominate(c, "breakout", body.unique_id, "active", body.note)
-
-
-class ReviewIn(BaseModel):
-    unique_id: int
-    rule_id: str | None = None
-    decision: Literal["provisional", "rejected"]
-    note: str = Field("", max_length=300)
-
-
-@router.post("/breakout/review")
-async def breakout_review(body: ReviewIn):
-    """Provisional reviews are append-only revisions; nothing is written to the game yet."""
-    c = await active_career()
-    snap = await latest_snapshot(c["id"])
-    rules = await current_rules(c["id"], "breakout")
-    x = next((p for p in await own_contexts(c) if p["unique_id"] == body.unique_id), None)
-    if not x:
-        raise HTTPException(404, "This player is no longer in your squad")
-    key = f"breakout:{snap['season']}:{x['unique_id']}"
-    cur = (await latest_awards(c["id"], "breakout", key)).get(x["unique_id"])
-    if cur and cur["status"] == "official":
-        raise HTTPException(409, "This award is already official and can't be changed")
-    r = next((r for r in rules["data"]["rules"] if r["id"] == body.rule_id), None) if body.rule_id else RE.first_match(rules["data"]["rules"], x)
-    if body.decision == "provisional" and not r:
-        raise HTTPException(422, "Pick an award category")
-    rev = await _award(c, key, "breakout", x, r, rules["version"], body.decision, note=body.note)
-    return {"revision": rev}
-
-
-@router.post("/breakout/finalise", dependencies=need("breakout"))
-async def breakout_finalise():
-    """Make provisional awards official, roll the reward within the rule's range and queue it as a game change."""
-    c = await active_career()
-    snap = await latest_snapshot(c["id"])
-    rules = await current_rules(c["id"], "breakout")
-    by_id = {r["id"]: r for r in rules["data"]["rules"]}
-    ctxs = {x["unique_id"]: x for x in await own_contexts(c)}
-    done = 0
-    for uid, aw in (await latest_awards(c["id"], "breakout", f"breakout:{snap['season']}:")).items():
-        if aw["status"] != "provisional" or uid not in ctxs or aw["rule_id"] not in by_id:
-            continue
-        r, x = by_id[aw["rule_id"]], ctxs[uid]
-        delta = RE.capped(x[r["action"]["target"]], RE.roll(r, f"{c['id']}:{aw['award_key']}"), r["max_value"])
-        await _award(c, aw["award_key"], "breakout", x, r, rules["version"], "official", delta, aw.get("note", ""))
-        await queue_changes(c, "breakout", aw["award_key"], [{"unique_id": uid, "name": x["name"], "field": r["action"]["target"], "delta": delta}])
-        done += 1
-    await audit(c["id"], "breakout picks official", "breakout", f"{done} Breakout pick(s) made official for {snap['season']}")
-    return {"official": done}
+    await auto_breakout(c)
+    s = await _standings(c)
+    snap = s["snap"]
+    pool = {**{x["unique_id"]: x for x in s["ranked"]}}
+    this = next((w for w in s["winners"].values() if w["award_key"].startswith(f"breakout:{snap['season']}:")), None)
+    past = sorted([{"season": w["award_key"].split(":")[1], "unique_id": w["unique_id"], "name": w["name"], "note": w.get("note")} for w in s["winners"].values()], key=lambda w: w["season"], reverse=True)
+    return {"season": snap["season"], "season_over": int(snap["game_date"][5:7]) in (5, 6), "min_minutes": MIN_MINUTES,
+            "winner": {"unique_id": this["unique_id"], "name": this["name"], "note": this.get("note")} if this else None,
+            "leader": s["ranked"][0] if s["ranked"] and not this else None, "standings": s["ranked"], "ineligible": s["ineligible"], "past": past, "_n": len(pool)}
 
 
 @router.get("/awards/{award_key}/history")
