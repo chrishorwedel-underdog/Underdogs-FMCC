@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Loading } from "@/components/Loading";
+
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ReferenceLine, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, Legend } from "recharts";
 import { Star, Scale, Download, Crosshair } from "lucide-react";
 import { api } from "@/lib/api";
@@ -91,7 +93,7 @@ export const Compare4 = ({ ids, clear }) => {
   const [mode, setMode] = useState("profile");
   const raw = useRaw();
   const { data } = useGet("recruit-compare", "/recruit/compare", { ids: ids.join(",") });
-  if (!data) return <div className="soon">Loading…</div>;
+  if (!data) return <Loading id="recruit-loading" rows={5} />;
   const n = data.players.length;
   return (
     <div className="card" data-testid="compare4">

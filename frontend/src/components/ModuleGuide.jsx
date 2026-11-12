@@ -5,6 +5,8 @@ import { Info, ChevronDown, ChevronUp, Lightbulb, X, RefreshCw } from "lucide-re
 import { toast } from "sonner";
 import { GUIDES } from "@/constants/guides";
 import { api, errMsg } from "@/lib/api";
+import { usePersist } from "@/lib/remember";
+import { Switch } from "@/components/ui/switch";
 
 const TIPS = {
   "/": "Start with Up next: urgent things are at the top, each with one button.",
@@ -44,9 +46,27 @@ export const NeedSave = ({ state }) => {
   );
 };
 
+export const useGuidePrefs = () => {
+  const [on, setOn] = usePersist("guides-on", true);
+  const [closed, setClosed] = usePersist("guides-closed", {});
+  return { on, closed, close: (p) => setClosed((c) => ({ ...c, [p]: true })), setOn: (v) => { setOn(v); if (v) { setClosed({}); } } };
+};
+
+export const GuidesCard = () => {
+  const g = useGuidePrefs();
+  return (
+    <div className="card rise d5" data-testid="guides-settings-card">
+      <div className="ttl" style={{ display: "flex", alignItems: "center", gap: 10 }}>Show 'What this page does' boxes
+        <Switch style={{ marginLeft: "auto" }} checked={g.on} onCheckedChange={g.setOn} data-testid="guides-show-switch" /></div>
+      <p className="note" style={{ marginTop: 4 }}>Turning this on brings back every box you closed. Saved for this career.</p>
+    </div>
+  );
+};
+
 export const ModuleGuide = () => {
   const { pathname } = useLocation();
   const g = GUIDES[pathname];
+  const prefs = useGuidePrefs();
   const [hidden, setHidden] = useState(() => read("fmcc-guides-hidden"));
   const [visited, setVisited] = useState(() => read("fmcc-guides-visited"));
   const [firstHere, setFirstHere] = useState({});
@@ -55,7 +75,7 @@ export const ModuleGuide = () => {
     setFirstHere((f) => (pathname in f ? f : { ...f, [pathname]: !v[pathname] }));
     if (!v[pathname]) { const n = { ...v, [pathname]: true }; write("fmcc-guides-visited", n); setVisited(n); }
   }, [pathname]);
-  if (!g) return <Tip path={pathname} />;
+  if (!g || !prefs.on || prefs.closed[pathname]) return <Tip path={pathname} />;
   const closed = pathname in hidden ? !!hidden[pathname] : !(firstHere[pathname] ?? !visited[pathname]);
   const toggle = () => {
     const next = { ...hidden, [pathname]: !closed };
@@ -65,10 +85,13 @@ export const ModuleGuide = () => {
   return (
     <>
       <div className="card guide rise" data-testid="module-guide">
+        <div style={{ display: "flex", alignItems: "center" }}>
         <button className="guide-head" onClick={toggle} aria-expanded={!closed} data-testid="module-guide-toggle">
           <Info size={15} /><b>What this page does</b><span className="sr-only" data-testid="module-guide-what">{g.what}</span><span style={{ color: "var(--dim)" }}>{closed ? "Show details" : "Hide details"}</span>
           {closed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
         </button>
+        <button className="ib guide-x" onClick={() => prefs.close(pathname)} aria-label="Close this box on this screen" title="Close this box on this screen. Bring it back in Settings." data-testid="module-guide-close"><X size={14} /></button>
+        </div>
         {!closed && (
           <div className="guide-body" data-testid="module-guide-body">
             <div><div className="eyebrow">On this page</div><ul>{g.features.map((f) => <li key={f}>{f}</li>)}</ul></div>

@@ -5,6 +5,7 @@ import { api, gameDate } from "@/lib/api";
 import { SquadRadars } from "@/components/squad/SquadRadars";
 import { CompareDialog } from "@/components/charts/CompareDialog";
 import { useState } from "react";
+import { WatchButton } from "@/components/WatchButton";
 
 const Fact = ({ k, v, id }) => <div className="row"><span style={{ color: "var(--mut)", flex: 1 }}>{k}</span><b data-testid={id}>{v}</b></div>;
 
@@ -17,6 +18,7 @@ export const PlayerSheet = ({ uid, onClose }) => {
       <SheetContent className="w-[440px] sm:max-w-[440px] overflow-y-auto" style={{ background: "var(--s1)" }} data-testid="player-sheet">
         <SheetHeader>
           <SheetTitle data-testid="player-sheet-name">{data?.identity?.name}</SheetTitle>
+          {data?.identity?.name && <div><WatchButton uid={Number(uid)} name={data.identity.name} id="player-sheet-watch" /></div>}
           <SheetDescription>Game ID <span className="mono" data-testid="player-sheet-uid">{uid}</span> · matched across saves by this ID</SheetDescription>
         </SheetHeader>
         {p && (

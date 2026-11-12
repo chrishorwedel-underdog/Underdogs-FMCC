@@ -23,9 +23,14 @@ export const usePersist = (key, initial) => {
   const cid = useCareerId();
   const [v, setV] = useState(() => read(cid, key, initial));
   useEffect(() => { setV(read(cid, key, initial)); }, [cid, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const on = (e) => { if (e.detail === keyOf(cid, key)) { setV(read(cid, key, initial)); } };
+    window.addEventListener("fmcc-mem", on);
+    return () => { window.removeEventListener("fmcc-mem", on); };
+  }, [cid, key]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (n) => setV((old) => {
     const val = typeof n === "function" ? n(old) : n;
-    if (cid) { localStorage.setItem(keyOf(cid, key), JSON.stringify(val)); }
+    if (cid) { localStorage.setItem(keyOf(cid, key), JSON.stringify(val)); setTimeout(() => window.dispatchEvent(new CustomEvent("fmcc-mem", { detail: keyOf(cid, key) })), 0); }
     return val;
   });
   return [v, set];

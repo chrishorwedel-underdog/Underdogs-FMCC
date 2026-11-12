@@ -80,7 +80,7 @@ export const DossierHost = () => {
     <>
       <Sheet open={!!uid} onOpenChange={(o) => !o && setUid(null)}>
         <SheetContent side="right" className="dossier-sheet" data-testid="dossier-sheet">
-          <SheetHeader><SheetTitle data-testid="dossier-name">{d?.name || "Loading…"}</SheetTitle><SheetDescription>{d ? `${(d.positions || []).join(", ")} · Player dossier` : ""}</SheetDescription></SheetHeader>
+          <SheetHeader><SheetTitle data-testid="dossier-name">{d?.name || <span className="skel" style={{ display: "inline-block", width: 160, height: 18, verticalAlign: "middle" }} aria-label="Loading" />}</SheetTitle><SheetDescription>{d ? `${(d.positions || []).join(", ")} · Player dossier` : ""}</SheetDescription></SheetHeader>
           {d && d.unique_id === uid && <Body d={d} addCompare={() => { setCmp((c) => [...new Set([...c, uid])].slice(-5)); setShowCmp(true); }} />}
         </SheetContent>
       </Sheet>

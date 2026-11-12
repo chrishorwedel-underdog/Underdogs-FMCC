@@ -1,95 +1,61 @@
-# FMCC Polish Pass: Radar Compare and Friendlier First Use
+# FMCC Polish Round: Easier Lookups, Branded Comparisons, Tidier Layout
 
-This pass adds Radar Compare and a set of changes that make FM Command Centre easier to pick up and more consistent to look at.
-Nothing is removed. Ease of use comes first, so new users get the full program with clearer guidance and calmer screens.
-
-## Status of today's earlier plan
-All three phases of today's quality-of-life plan are built. Some items are still open:
-- Player & Teams Editor and Punish a Club changes still wait in Game changes. Fixed in Phase 1.
-- In Squad and Development rules, "who it affects" counts every player the setting covers, not just the players who would actually change. Fixed in Phase 3.
-- On phones, the top bar wraps onto several lines. Fixed in Phase 1.
-- Lineups are saved in FMCC only, because the game editor can't write FM's team selection. This stays as it is.
-- Nothing has been checked against a real FM save on Windows. This needs a Windows PC with FM running.
+A round of improvements to FM Command Centre that makes stats easier to look up and tidies the layout.
+It brands the Radar Compare card, adds a weekly "What changed" summary, adds Watchlist alerts and moves the download button into the footer.
 
 ## Who it's for
-- New FMCC users opening the program for the first time.
-- Regular users who want screens that look and behave the same everywhere.
+Football Manager players using FMCC alongside their save, in the browser preview and in FMCC for Windows.
 
 ## Core features and experience
-
-### Radar Compare
-- Overlays players' radars in one chart, each player in a different colour, with a legend.
-- Three radar choices:
-  - **Role fit:** the stats that matter for a chosen role.
-  - **Phases of play:** finishing, creating, carrying and defending.
-  - **Attributes by area.**
-- Pick a role to get a plain verdict, such as "Player A fits this role better: stronger in 4 of 6 areas", with the biggest gaps named.
-- **Where it's available:**
-  - a "Compare with…" button on every player profile in Scout Players and Squad, which opens a player search
-  - the Compare tool in Scout Players
-- Works for your own players and players at other clubs. No real CA/PA is used or shown.
-- **Phase 3 additions:**
-  - compare up to four players at once
-  - a comparison card you can print or save as an image
-
-### Automatic applying for every module
-- Player & Teams Editor edits and Punish a Club penalties go into the save straight away. The bell lists what changed.
-- The "Review changes before applying" switch in Features also covers these two modules.
-
-### First-use guidance (regular mode, no starter mode)
-- The walkthrough tour and the "What this page does" guides stay. The tour can be restarted from Settings.
-- "What this page does" guides start collapsed after your first visit to each page.
-- Short tips appear the first time a screen is opened. Each tip can be dismissed and stays gone.
-- Where a term is jargon, the visible label uses plain words and the short stat name appears on hover.
-- A page that needs a save which hasn't been read yet says "Read a save first" and has a button to read one.
-
-### Look and polish
-- **Phone top bar:** the club name and main buttons fit on one line. Less-used buttons move into a "More" menu.
-- **Contract countdowns:** grouped into one "Contracts ending (N)" chip that opens the list, instead of one chip per player.
-- **Page headers:** every page uses the same layout of title, one-line purpose and then tabs, with at most one main button.
-- **Tables:** the same row height, number alignment, hover state and pinned player column across the app.
-- **Loading:** shaped placeholders replace "Loading…" text.
-- **Ongoing cleanup:** spacing, wording, button labels and clutter are tidied across all pages as the work goes. The aim is fewer things on first view, with advanced options one click away.
-
-### Exact impact counts (Phase 3)
-- "Check who it affects" in Squad and Development rules counts exactly the players whose result would change, as the other modules already do.
+1. **Stat lookup in Ctrl K search**: typing a stat name or its short form (for example "xA", "npxG" or "tackles") shows matching stats in the search results. Picking one opens the stat glossary at that stat.
+2. **Glossary shows where each stat is used**: every glossary entry lists the screens that show that stat (for example Scout Players, Squad or Club Analysis). Each screen name is a link that goes there.
+3. **Club-branded Radar Compare card**: the saved or printed card shows your club crest, club name and club colours. If the save has no colours yet, the card uses the current FMCC theme colours.
+4. **Fix Print firing twice**: one click on Print on the Radar Compare card opens the print window once.
+5. **Replace the last "Loading…" texts**: the remaining screens that still show plain "Loading…" text get shaped placeholders instead, matching the rest of the app.
+6. **Weekly "What changed" panel on Home**: shows what has changed since your last visit:
+   - players whose ratings rose or fell, using scouting views only (real CA/PA are never shown)
+   - contracts that started, were extended or are now ending soon
+   - FMCC changes that were applied to the save (for example Dynamic Potential reviews, edits and punishments)
+   - each item links to the player or screen it is about, and the panel can be collapsed.
+7. **Watchlist alerts**:
+   - a star or "Watch" button on any player (Scout Players, Squad and player profiles) adds them to your watchlist.
+   - you get a bell notice when a watched player's grade, value or contract status changes. Contract status covers a new deal, entering the last 6 months, free agency or a transfer.
+   - a Watchlist view in Scout Players lists everyone you watch, with their latest change. You can remove anyone from there.
+   - your watchlist is kept for each career. Watched players' changes also appear in the "What changed" panel.
+8. **White group names in the left menu**: the group headings (My Club, Player Development, Recruitment, Reports, Utilities) turn white so they are easier to read. In high-contrast mode they stay as readable as they are now.
+9. **Finance strip lines up with the page box**: the finance strip becomes exactly as wide as the "What this page does" box, with its five boxes spaced equally across the full width. On phones it keeps scrolling sideways in one line.
+10. **Close the "What this page does" boxes completely**:
+    - each box gets an X that hides it on that screen.
+    - Settings gets an on/off switch, "Show 'What this page does' boxes". Turning it on brings back every box you closed.
+    - this is remembered for each career.
+11. **Smaller download button in the footer**: the large "Download FMCC for Windows" box leaves the page and becomes a small "Download for Windows" link in the bottom footer, next to Project Safety, Downloads, Appearance and Features.
+    - hovering over it shows the version, release date, file size and build status.
+    - the note "The installer isn't code-signed yet, so Windows may say it protected your PC. Choose More info, then Run anyway." no longer shows anywhere on its own. It appears only after the download button is clicked, as a short message that stays until you close it, while the download starts.
 
 ## User flow
-1. Open any player and press "Compare with…". Pick a second player and a role, then read the overlaid radar and the verdict. In Phase 3, add up to two more players and save or print the comparison card.
-2. Make an edit in Player & Teams Editor or set a penalty in Punish a Club. It applies straight away and the bell lists it.
-3. A new user takes the tour and sees a one-time tip on each new screen. Every page has the same layout, and a "Read a save first" message appears where it's needed.
+- Press Ctrl K anywhere, type "xA" and pick "Expected assists". The glossary opens on that stat and lists the screens that show it. Click "Scout Players" to go there.
+- In Scout Players, star a player to watch them. When their value, grade or contract changes after the next save read, the bell shows a notice that links to the player.
+- Open Home and read the "What changed" panel for this week's rises, falls, contracts, applied changes and watchlist news.
+- Open Radar Compare, add players and save or print the card. It now shows your crest and club colours, and Print opens once.
+- Close a "What this page does" box with its X. To bring the boxes back, or to switch them off everywhere, use the switch in Settings.
+- Click the small download link in the footer. The installer starts downloading, and a short message explains what to do if Windows says it protected your PC.
 
 ## UI/UX feel
-- Calm and consistent: the same header, table, loading and empty-state patterns on every page.
-- Radars use Data Hub styling, with each player in a distinct colour that stays readable in high contrast.
-- Current themes, kit accent, text sizes and accessibility settings are unchanged.
+These changes follow the existing FMCC look, themes, kit accent, text size and accessibility settings. The menu group names become white but stay small. The finance strip and the page box line up along the same edges. The footer download link uses the same small style as the other footer links, with a green dot when a fresh build is available. The "What changed" panel and watchlist use the same card style and red, green and gold meanings as the rest of Home.
 
 ## Implementation phases
-All three phases are built now, as one project, in order:
-- **Phase 1:**
-  - Radar Compare for two players, from profiles and from the Compare tool
-  - automatic applying for Player & Teams Editor and Punish a Club
-  - the phone top bar fix
-  - "What this page does" guides collapsed by default after the first visit
-  - grouped contract countdowns
-- **Phase 2:**
-  - one-time screen tips
-  - "Read a save first" messages
-  - the plain-label pass
-  - consistent page headers and table styling
-  - loading placeholders
-  - the cleanup pass across all pages
-- **Phase 3:**
-  - exact "who it affects" counts in Squad and Development rules
-  - Radar Compare for up to four players
-  - the printable comparison card, also saved as an image
+- **Phase 1 (built now)**: all eleven items above.
+- **Phase 2**: a weekly digest bell notice or email, a digest history you can look back through, and custom alert rules per watched player (for example "only tell me if value drops below £5m").
+- **Phase 3**: Radar Compare card style choices (light, dark, kit) and one-click sharing of the card image.
 
 ## Assumptions
-- The role verdict counts the radar areas where each player scores higher and names the biggest differences. It is guidance, not a guarantee.
-- Comparisons follow the current scouting view (Full, Fair play or Moneyball). In Fair play, a range of attribute values is plotted at its middle.
-- If a player doesn't have enough minutes, the stat-based radars show the matching empty message instead of a misleading shape.
-- With four players, only the first two are compared in the verdict. The others are shown on the chart and in a table of the gaps.
-- The comparison card is saved as an image on this computer. No sharing service is used.
-- Editor and Punish a Club changes need FMCC for Windows with the game connected. In browser or sample mode they only change sample data, but they still send a notification.
-- Tips and collapsed guides are remembered on this computer and apply to every career.
-- The cleanup pass changes layout, wording and spacing only. Features and data stay as they are.
+- The "What changed" panel covers the period since your last visit, up to a maximum of 7 days. It only shows changes FMCC saw when reading your save; nothing is estimated. In the browser preview it uses sample data, which is labelled as sample.
+- Rating rises and falls in both the panel and watchlist alerts use FMCC's grades and scouting views only. Real CA/PA are never shown.
+- Watchlist alerts trigger on any change in grade of 2 or more points, a value change of 10% or more, or any change in contract status. Watchlist changes are checked each time FMCC reads the save.
+- The existing Scout Players shortlist stays as it is. The watchlist is separate and only drives alerts.
+- Closing one box hides it only on that screen. The Settings switch controls all boxes, and turning it back on brings back every box you closed. The setting is saved for each career.
+- The crest and club colours come from the save when FMCC can read them. Otherwise the theme colours and the club's initials badge are used.
+- Stat lookup shows at most 5 stat results so screen and player results stay visible.
+- The footer download link only shows where the download box shows today, so it stays hidden where downloading isn't offered.
+- The "Print twice" problem will be fixed on both the browser and Windows versions. Windows behaviour can only be confirmed on a Windows PC.
+- Everything here is built in preview. Production stays as it is until you publish again.

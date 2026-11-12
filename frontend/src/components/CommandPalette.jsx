@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { NAV, TOP_LINKS, HOME } from "@/constants/nav";
 import { openGlossary } from "@/components/Glossary";
+import { searchTerms } from "@/constants/glossary";
 
 const SCREENS = [...[HOME, ...NAV].map((n) => ({ group: "Screens", label: n.label, sub: n.sub, to: n.to })),
   ...TOP_LINKS.map((n) => ({ group: "Screens", label: n.label, sub: n.key === "safety" ? "Backups, save checks and change record" : n.key === "extras" ? "NG_Regens, Real Name Fix and other packs" : n.key === "appearance" ? "Text size, theme and colours" : "Coming soon", to: n.to })),
@@ -23,6 +24,7 @@ export const CommandPalette = ({ open, onClose }) => {
   if (!open) return null;
   const ql = q.toLowerCase();
   const items = [...players.map((p) => ({ group: "Players", label: p.name, sub: `${p.age} · ${p.positions.join(", ")}`, to: `/squad?player=${p.unique_id}` })),
+    ...searchTerms(q).map((g) => ({ group: "Stats", label: g.term, sub: `${g.names[0] !== g.term ? `${g.names[0]} · ` : ""}${g.plain}`, to: `#stat-${g.term}`, act: () => openGlossary(g.term) })),
     ...SCREENS.filter((s) => `${s.label} ${s.words || ""}`.toLowerCase().includes(ql))];
   const run = (i) => { const it = items[i]; if (it) { onClose(); it.act ? it.act() : nav(it.to); } };
   const onKey = (e) => {

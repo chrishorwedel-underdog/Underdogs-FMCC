@@ -8,6 +8,7 @@ import { api, errMsg } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { useScout, usePost, fmtMoney, fmtWage, toGBP, ContractTag, Pct, num, pctColor } from "./ctx";
 import { AdvFilter } from "./Lab";
+import { WatchButton } from "@/components/WatchButton";
 
 const SHORT = { npxg: "npxG", xa: "xA", kp: "OP-KP", progp: "PrgP", drb: "Drb", tkw: "TklW", intc: "Int", passc: "Cmp%", ktk: "KeyTkl", gls: "Gls", npg: "npG", chc: "ChC", pcmp: "PasCmp", sha: "Sh%", aerw: "AerW", blk: "Blk", pwon: "PossW", plost: "PossL", fd: "FD", acr: "Crs", drr: "Drb%", saves: "Svs", mlg: "MLG", padint: "pAdjInt", xgp: "xGP", savep: "Sv%", aerr: "Aer%", tkr: "Tkl%", xakp: "xA/KP", pwl: "W/L", padbc: "pAdjB+C" };
 const short = (k, label) => SHORT[k] || (label || k).replace(" / 90", "").slice(0, 12);
@@ -119,7 +120,7 @@ export const PlayersTab = () => {
             const marker = f.mode === "adjusted" && (r.poss_mult !== 1 || r.league_mult !== 1) ? `Possession ×${r.poss_mult} · league ×${r.league_mult}` : null;
             return (
               <tr key={r.unique_id} onClick={() => openPlayer(r.unique_id)} onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) { e.preventDefault(); openPlayer(r.unique_id); } }} tabIndex={0} data-row-uid={r.unique_id} data-testid={`sp-row-${r.unique_id}`}>
-                <td onClick={(e) => e.stopPropagation()}>{!r.own && r.source === "save" && <button className="ib" style={{ width: 26, height: 26 }} onClick={() => star(r)} title="Add to shortlist" data-testid={`sp-star-${r.unique_id}`}><Star size={13} /></button>}</td>
+                <td onClick={(e) => e.stopPropagation()}><span style={{ display: "inline-flex", gap: 4 }}>{!r.own && r.source === "save" && <button className="ib" style={{ width: 26, height: 26 }} onClick={() => star(r)} title="Add to shortlist" data-testid={`sp-star-${r.unique_id}`}><Star size={13} /></button>}{r.source === "save" && <WatchButton compact uid={r.unique_id} name={r.name} id={`sp-watch-${r.unique_id}`} />}</span></td>
                 <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.own && <span className="tag st g">Your club</span>}<ContractTag m={r.months_left} />{r.league_scored === false && <span className="tag st a" title={r.league_note} data-testid={`sp-noscore-${r.unique_id}`}>No strength score</span>}{r.source === "html" && !r.linked && <span className="tag st n">Not linked</span>}
                   <small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.positions?.join(", ")}</small></td>
                 <td>{r.age}</td>

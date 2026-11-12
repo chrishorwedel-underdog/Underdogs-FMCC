@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sparkles, Star, Scale } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { WatchButton } from "@/components/WatchButton";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { Quadrant, Replacement, PriceExplained, HistoryChart } from "./Lab";
@@ -59,6 +60,7 @@ const Body = ({ p, view }) => {
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         {!p.own && <button className="btn" onClick={() => act(() => api.post("/scouting/shortlist", { unique_id: p.unique_id, action: "add" }), "Added to shortlist", ["rankings"])} data-testid="profile-shortlist"><Star size={13} />Shortlist</button>}
+        {p.source !== "html" && <WatchButton uid={p.unique_id} name={p.name} id="profile-watch" />}
         <button className="btn" onClick={() => setCmp(true)} data-testid="profile-compare-with"><Scale size={13} />Compare with…</button>
         <button className={`btn${compare.includes(p.unique_id) ? " btn-p" : ""}`} onClick={() => toggleCompare(p.unique_id)} data-testid="profile-compare"><Scale size={13} />Compare</button>
         <button className="btn" disabled={busy || !pizza.length} onClick={dof} data-testid="profile-dof-report"><Sparkles size={13} />{busy ? "Writing…" : "DOF report from the numbers"}</button>
@@ -98,7 +100,7 @@ export const ProfileSheet = ({ uid, onClose }) => {
   return (
     <Sheet open={!!uid} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="overflow-y-auto" style={{ width: 620, maxWidth: "100vw", background: "var(--s1)", borderColor: "var(--line)" }} data-testid="profile-sheet">
-        <SheetHeader><SheetTitle style={{ color: "var(--text)" }} data-testid="profile-name">{data?.name || "Loading…"}<span className="tag st n">{data?.cohort}</span></SheetTitle></SheetHeader>
+        <SheetHeader><SheetTitle style={{ color: "var(--text)" }} data-testid="profile-name">{data?.name || <span className="skel" style={{ display: "inline-block", width: 160, height: 18, verticalAlign: "middle" }} aria-label="Loading" />}<span className="tag st n">{data?.cohort}</span></SheetTitle></SheetHeader>
         {data && data.unique_id === uid && <Body p={data} view={view} />}
       </SheetContent>
     </Sheet>

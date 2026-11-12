@@ -20,8 +20,9 @@ import { MoneyballTab } from "@/components/scout/MoneyballTab";
 import { SimilarTab } from "@/components/scout/SimilarTab";
 import { YouthIntake } from "@/components/scout/YouthIntake";
 import { RadarCompare } from "@/components/charts/RadarCompare";
+import { WatchlistTab } from "@/components/scout/WatchlistTab";
 
-const MAIN = [["players", "Find players"], ["moneyball", "Moneyball"], ["similar", "Similar players"], ["youth", "Youth intake"], ["shortlist", "Shortlist"], ["more", "More tools"]];
+const MAIN = [["players", "Find players"], ["moneyball", "Moneyball"], ["similar", "Similar players"], ["youth", "Youth intake"], ["shortlist", "Shortlist"], ["watchlist", "Watchlist"], ["more", "More tools"]];
 const MAIN_KEYS = MAIN.map(([k]) => k);
 
 const Shortlist = ({ open }) => {
@@ -107,6 +108,7 @@ export default function Scouting({ initialTab = "players" }) {
         {main === "similar" && <SimilarTab />}
         {main === "youth" && <YouthIntake />}
         {main === "shortlist" && <Shortlist open={setOpen} />}
+        {main === "watchlist" && <WatchlistTab open={setOpen} />}
         {more && tab === "stats" && <StatsTable />}
         {more && tab === "myclub" && <MyClubTab />}
         {more && tab === "deals" && <><DealsTab /><Quadrant /></>}

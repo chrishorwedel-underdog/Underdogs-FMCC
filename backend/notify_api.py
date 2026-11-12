@@ -10,8 +10,8 @@ import features_api
 
 router = APIRouter(prefix="/api/notify")
 TYPES = {"youth": "Youth intake happened", "report": "New monthly report", "missed": "Missed dates", "countdown": "Countdown reaching 7 days", "changes": "Game changes waiting",
-         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year"}
-PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth"}
+         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed"}
+PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist"}
 
 
 def _d(s: str) -> date:
@@ -120,6 +120,11 @@ async def sync(c: dict) -> None:
     waiting = await db.dof_messages.count_documents({"conversation_id": {"$in": convs}, "draft.status": "pending"})
     if waiting:
         await _add(c["id"], "dof", f"dof:{last['save_no']}:{waiting}", f"{waiting} DOF suggestion{'s' if waiting > 1 else ''} waiting", "Open the DOF chat to accept or dismiss.", last["game_date"])
+    import watch_api
+    try:
+        await watch_api.check(c)
+    except HTTPException:
+        pass
     sl = await scouting_api.shortlisted(c["id"])
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players.unique_id": 1, "players.name": 1, "players.contract_end": 1}) or {"players": []}
     for p in pool["players"]:

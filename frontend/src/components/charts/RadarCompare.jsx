@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { Plus, X, Printer, ImageDown } from "lucide-react";
 import { api } from "@/lib/api";
@@ -34,7 +35,31 @@ const Picker = ({ onPick, exclude }) => {
   );
 };
 
-const saveImage = (el, name) => {
+const fg = (hex) => { const h = (hex || "").replace("#", ""); if (h.length !== 6) return "#fff"; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); return r * 0.299 + g * 0.587 + b * 0.114 > 150 ? "#0B0D10" : "#FFFFFF"; };
+
+const useBrand = () => {
+  const { data: st } = useQuery({ queryKey: ["state"], queryFn: () => api.get("/state").then((r) => r.data) });
+  const { data: cc } = useQuery({ queryKey: ["club-colours"], queryFn: () => api.get("/club-colours").then((r) => r.data) });
+  const cs = getComputedStyle(document.documentElement);
+  const primary = cc?.primary || cs.getPropertyValue("--acc").trim() || "#4C8DFF";
+  const secondary = cc?.secondary || cs.getPropertyValue("--s3").trim() || "#191D23";
+  const club = st?.career?.club_name || "";
+  return { primary, secondary, club, initials: club.slice(0, 2).toUpperCase(), fromSave: !!cc?.primary };
+};
+
+let printing = false;
+const printCard = () => {
+  if (printing) return;
+  printing = true;
+  const root = document.documentElement;
+  root.classList.add("printing-radar");
+  const done = () => { root.classList.remove("printing-radar"); window.removeEventListener("afterprint", done); setTimeout(() => { printing = false; }, 300); };
+  window.addEventListener("afterprint", done);
+  window.print();
+  setTimeout(() => { if (printing) done(); }, 1500);
+};
+
+const saveImage = (el, name, brand) => {
   const svg = el.querySelector("svg.recharts-surface");
   if (!svg) return;
   const { width, height } = svg.getBoundingClientRect();
@@ -43,11 +68,16 @@ const saveImage = (el, name) => {
   const txt = new XMLSerializer().serializeToString(svg).replace(/var\(--([a-z0-9]+)\)/g, (_, v) => cs.getPropertyValue(`--${v}`).trim() || "#888");
   img.onload = () => {
     const c = document.createElement("canvas");
-    c.width = width * 2; c.height = (height + 70) * 2;
+    c.width = width * 2; c.height = (height + 96) * 2;
     const g = c.getContext("2d");
-    g.scale(2, 2); g.fillStyle = cs.getPropertyValue("--bg") || "#08090B"; g.fillRect(0, 0, width, height + 70);
-    g.fillStyle = cs.getPropertyValue("--text") || "#fff"; g.font = "600 15px sans-serif"; g.fillText(name, 14, 24);
-    g.drawImage(img, 0, 40, width, height);
+    g.scale(2, 2); g.fillStyle = cs.getPropertyValue("--bg") || "#08090B"; g.fillRect(0, 0, width, height + 96);
+    g.fillStyle = brand.primary; g.fillRect(0, 0, width, 56);
+    g.fillStyle = brand.secondary; g.fillRect(0, 56, width, 4);
+    g.fillStyle = brand.secondary; g.beginPath(); g.arc(34, 28, 18, 0, Math.PI * 2); g.fill();
+    g.fillStyle = fg(brand.secondary); g.font = "700 13px sans-serif"; g.textAlign = "center"; g.fillText(brand.initials, 34, 33); g.textAlign = "left";
+    g.fillStyle = fg(brand.primary); g.font = "700 16px sans-serif"; g.fillText(brand.club, 62, 26);
+    g.font = "500 12px sans-serif"; g.fillText(name, 62, 44);
+    g.drawImage(img, 0, 70, width, height);
     const a = document.createElement("a"); a.href = c.toDataURL("image/png"); a.download = "fmcc-radar-compare.png"; a.click();
   };
   img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(txt)}`;
@@ -60,6 +90,7 @@ export const RadarCompare = ({ ids: start = [], view = "full" }) => {
   const [role, setRole] = useState(null);
   const [d, setD] = useState(null);
   const card = useRef(null);
+  const brand = useBrand();
   useEffect(() => { setIds(start.slice(0, 4)); }, [start.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ids.length < 2) { setD(null); return; }
@@ -71,13 +102,17 @@ export const RadarCompare = ({ ids: start = [], view = "full" }) => {
     <div style={{ display: "grid", gap: 12, gridTemplateColumns: "minmax(0,1fr)" }} data-testid="radar-compare">
       {ids.length < 4 && <Picker onPick={(u) => setIds([...ids, u])} exclude={ids} />}
       {ids.length < 2 && <p className="note">Add {2 - ids.length} more player{ids.length ? "" : "s"} to compare. You can compare up to four.</p>}
-      {d && <div className="hub-card print-card" ref={card} data-testid="radar-card">
+      {d && <div className="hub-card print-card radar-branded" ref={card} style={{ borderTop: `4px solid ${brand.primary}` }} data-testid="radar-card">
+        <div className="radar-brand" style={{ background: brand.primary, color: fg(brand.primary) }} data-testid="radar-brand">
+          <span className="radar-crest" style={{ background: brand.secondary, color: fg(brand.secondary) }} data-testid="radar-crest">{brand.initials}</span>
+          <span><b data-testid="radar-club-name">{brand.club}</b><small>{d.players.map((p) => p.name).join(" vs ")}</small></span>
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
           <TabBar id="radar-kind" value={kind} onChange={setKind} tabs={KIND} />
           {kind === "role" && <select className="inp" style={{ width: 220 }} value={d.role} onChange={(e) => setRole(e.target.value)} aria-label="Role" data-testid="radar-role">{d.roles.map((r) => <option key={r}>{r}</option>)}</select>}
           <span style={{ marginLeft: "auto" }} />
-          <button className="btn no-print" onClick={() => saveImage(card.current, d.players.map((p) => p.name).join(" vs "))} data-testid="radar-save-image"><ImageDown size={13} />Save image</button>
-          <button className="btn no-print" onClick={() => { document.documentElement.classList.add("printing-radar"); window.print(); setTimeout(() => document.documentElement.classList.remove("printing-radar"), 500); }} data-testid="radar-print"><Printer size={13} />Print</button>
+          <button className="btn no-print" onClick={() => saveImage(card.current, d.players.map((p) => p.name).join(" vs "), brand)} data-testid="radar-save-image"><ImageDown size={13} />Save image</button>
+          <button className="btn no-print" onClick={printCard} data-testid="radar-print"><Printer size={13} />Print</button>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
           {d.players.map((p, i) => <span key={p.unique_id} className="hchip" style={{ borderColor: COLOURS[i] }} data-testid={`radar-player-${p.unique_id}`}>

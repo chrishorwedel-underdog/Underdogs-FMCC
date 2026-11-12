@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BookOpen, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -22,18 +23,20 @@ const useHeaderTrigger = () => {
   return [spot, setSpot];
 };
 
-const Entry = ({ g, active }) => {
+const Entry = ({ g, active, go }) => {
   const ref = useRef(null);
   useEffect(() => { if (active) { ref.current?.scrollIntoView({ block: "center" }); } }, [active]);
   return (
     <div ref={ref} className={`gloss-item${active ? " on" : ""}`} data-testid={`glossary-term-${g.keys[0].replace(/[^a-z0-9]+/g, "-")}`}>
       <div className="gloss-term">{g.term}{g.names[0] !== g.term && <span className="gloss-short">{g.names[0]}</span>}</div>
       <div className="gloss-plain">{g.plain}</div>
+      <div className="gloss-where">Shown on: {g.where.map((w, i) => <span key={w.to}>{i > 0 && ", "}<button onClick={() => go(w.to)} data-testid={`glossary-where-${g.keys[0].replace(/[^a-z0-9]+/g, "-")}-${w.to.slice(1)}`}>{w.label}</button></span>)}</div>
     </div>
   );
 };
 
 export const GlossaryHost = () => {
+  const nav = useNavigate();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [focus, setFocus] = useState(null);
@@ -63,7 +66,7 @@ export const GlossaryHost = () => {
             {q && <button onClick={() => setQ("")} aria-label="Clear search" data-testid="glossary-clear-button"><X size={14} /></button>}
           </div>
           <div className="gloss-list" data-testid="glossary-list">
-            {list.map((g) => <Entry key={g.term} g={g} active={!n && g.term === focus} />)}
+            {list.map((g) => <Entry key={g.term} g={g} active={!n && g.term === focus} go={(to) => { setOpen(false); nav(to); }} />)}
             {!list.length && <div className="gloss-plain" data-testid="glossary-empty">No stat matches "{q}".</div>}
           </div>
         </DialogContent>

@@ -12,6 +12,7 @@ import { startTour } from "@/components/Tour";
 import { TestingCard } from "@/components/TestingCard";
 import { NotifySettings } from "@/components/Notify";
 import { PageHead } from "@/lib/ui";
+import { GuidesCard } from "@/components/ModuleGuide";
 
 const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
   ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"],
@@ -81,6 +82,7 @@ export default function Settings({ state }) {
           <BackupsCard />
           {!state.sample_mode && <KeyCard />}
           <NotifySettings />
+          <GuidesCard />
           <div className="card rise d5" data-testid="tour-settings-card"><div className="ttl">Guided tour</div><p className="note" style={{ marginTop: 4 }}>A click-through of every page. Replaying it never changes any data.</p><button className="btn btn-p" style={{ marginTop: 8 }} onClick={startTour} data-testid="settings-take-tour">Take the tour</button></div>
           <div className="card rise d5" data-testid="credits-card">
             <div className="ttl">Credits</div>

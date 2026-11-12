@@ -83,7 +83,7 @@ const Browse = ({ player, folders, defaultFolder, onClose }) => {
           <select className="inp" style={{ width: 240, height: 34 }} value={folder} onChange={(e) => setFolder(e.target.value)} data-testid="face-picker-folder">
             {folders.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
-          <span className="note" data-testid="face-picker-count">{data ? `${data.total} pictures${data.total > PAGE ? ` · ${offset + 1}–${Math.min(offset + PAGE, data.total)}` : ""}` : "Loading…"}</span>
+          <span className="note" data-testid="face-picker-count">{data ? `${data.total} pictures${data.total > PAGE ? ` · ${offset + 1}–${Math.min(offset + PAGE, data.total)}` : ""}` : <span className="skel" style={{ display: "inline-block", width: 90, height: 12 }} aria-label="Loading" />}</span>
           <span style={{ marginLeft: "auto" }} />
           <button className="btn" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE))} data-testid="face-picker-prev">Previous</button>
           <button className="btn" disabled={!data || offset + PAGE >= data.total} onClick={() => setOffset(offset + PAGE)} data-testid="face-picker-next">Next</button>

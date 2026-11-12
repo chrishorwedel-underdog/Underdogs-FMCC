@@ -64,9 +64,22 @@ const RAW = [
   ["Expected goals per shot", ["xG/Sh", "Average xG per shot"], "How good the player's average shooting chance is. Higher means they shoot from better spots."],
 ];
 
+const SCREENS = { "/scouting": "Scout Players", "/squad": "Squad", "/club-analysis": "Club Analysis", "/transfer-market": "Transfer Market", "/development": "Development", "/matches": "Matches" };
+const WHERE = { Grade: ["/scouting", "/squad", "/club-analysis", "/transfer-market"], Age: ["/scouting", "/squad"], Value: ["/scouting", "/transfer-market", "/squad"], Wage: ["/scouting", "/transfer-market", "/squad"],
+  Minutes: ["/scouting", "/squad", "/development"], Appearances: ["/squad", "/development"], "Average rating": ["/squad", "/matches"], Position: ["/scouting", "/squad"], Contract: ["/squad", "/scouting"],
+  "Per 90": ["/scouting", "/club-analysis", "/matches"], Percentile: ["/scouting", "/club-analysis"], "Defensive actions": ["/scouting"], "Progressive actions": ["/scouting"], "Box involvement": ["/scouting"] };
+const STAT_WHERE = ["/scouting", "/squad", "/club-analysis"];
+
 const norm = (s) => (s || "").toLowerCase().replace(/[↑↓]/g, "").replace(/\s*\/\s*90\b/g, "").replace(/\s+/g, " ").trim();
 
-export const GLOSSARY = RAW.map(([term, names, plain]) => ({ term, names, plain, keys: [term, ...names].map(norm) }));
+export const GLOSSARY = RAW.map(([term, names, plain]) => ({ term, names, plain, keys: [term, ...names].map(norm), where: (WHERE[term] || STAT_WHERE).map((to) => ({ to, label: SCREENS[to] })) }));
+
+export const searchTerms = (q, max = 5) => {
+  const n = norm(q);
+  if (n.length < 2) return [];
+  const exact = GLOSSARY.filter((g) => g.keys.includes(n));
+  return [...exact, ...GLOSSARY.filter((g) => !exact.includes(g) && g.keys.some((k) => k.includes(n)))].slice(0, max);
+};
 
 export const findTerm = (text) => {
   const t = norm(text);

@@ -4,7 +4,7 @@ import { api, ago, gameDate } from "@/lib/api";
 import { Loading } from "@/components/Loading";
 import { ModuleCards } from "@/components/ModuleCards";
 import { UpNextPanel } from "@/components/UpNextPanel";
-import { DownloadButton } from "@/components/DownloadButton";
+import { WhatChanged } from "@/components/WhatChanged";
 
 const WORDS = ["Nothing", "One thing", "Two things", "Three things", "Four things", "Five things"];
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning," : h < 18 ? "Good afternoon," : "Good evening,"; };
@@ -39,7 +39,7 @@ export default function Home() {
         </div>
       </div>
       <UpNextPanel attention={d.attention} />
-      <DownloadButton compact />
+      <WhatChanged />
       <ModuleCards d={d} />
       {d.next_fixture && <div className="home-bottom" style={{ gridTemplateColumns: "1fr" }} data-testid="home-bottom">
         <NextMatch f={d.next_fixture} club={d.club_name} />
