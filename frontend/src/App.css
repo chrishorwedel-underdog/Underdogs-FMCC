@@ -521,4 +521,5 @@ select.blank{cursor:pointer}
 .tl-season{font-size:11px;color:var(--dim);min-width:56px}
 .lead-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 .cab-latest{border-left:3px solid #F5C542}
+[data-testid="history-tabs"] button,.seg button{white-space:nowrap}
 

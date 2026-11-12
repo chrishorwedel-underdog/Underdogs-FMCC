@@ -1,0 +1,45 @@
+{
+  "summary": "Club History feature tested on backend (16 pytest cases) and frontend (desktop 1920 + mobile 390). Working: all GET endpoints (seasons, cabinet save/full, seasons/2027/28 + 404 for missing, records league/all, leaders + season param, compare + 404, milestones, players, hall-of-fame), with no ca/pa keys anywhere. Hall of Fame induct, 404 for a non-club player, 422 for a bad body, remove, then 404 when removed again. Custom pin needs a title and season (422 otherwise); create, list and unpin work. UI: nav-club-history shows under My Club, Trophy Cabinet nav item is gone, /trophies redirects to /club-history, all 7 tabs render with no page errors, the season page opens from the Seasons table and the back button returns to ?tab=seasons, squad/HoF/leader names open the player panel, Unavailable labels show, the HoF induct/remove UI flow works, the custom pin add/unpin UI flow works, no CA/PA text, and no horizontal overflow at 390px. Found 2 bugs plus 1 that is confirmed by code review only.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "DELETE /api/history/pins/{pid}", "issue": "Auto milestone ids contain '/' from the season (e.g. 'start-2027/28', 'honour-2027/28-X', 'div-2027/28-X', 'save-2027/28-...', 'breakout-<key with ':'>'). DELETE /api/history/pins/start-2027/28 returns 404 because the route is {pid} (one path segment). Encoding it as %2F also gives 404. So an auto milestone can be pinned but never unpinned. In the UI the user sees a 'Not Found' toast and the button stays on 'Unpin'. Fix: declare the route as '/pins/{pid:path}', or make milestone ids slash-free (replace '/' with '-'), or unpin via POST/DELETE with the id in the body. The frontend should also encodeURIComponent the id.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/history/cabinet?scope=full", "issue": "Full club history can never show pre-save honours. It reads arch[-1].get('history'), but season_archive documents built by _build_season have no 'history' key. Also, _build_season already drops honours whose season differs from the current one. As a result scope=full always matches scope=save. Fix: keep the raw snapshot history.honours (all seasons) in the archive, or read the latest snapshot's history directly."},
+      {"endpoint": "GET /api/history/* (all)", "issue": "Every GET calls archive(), which rebuilds the in-progress season and upserts season_archive. Each page view does writes plus several queries per season. Not broken, but it is a side effect on GET and a performance risk as seasons grow."},
+      {"endpoint": "GET /api/history/records (transfers)", "issue": "Transfer record 'season' is the year from the date (e.g. '2028'), not the YYYY/YY format used everywhere else. Not tested with data, because the sample has no fees."},
+      {"endpoint": "POST /api/history/hall-of-fame", "issue": "The HofIn.note field is accepted but the UI offers no way to enter it, and hall-of-fame members' honours only include FMCC awards."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PinForm (ClubHistory.jsx)", "issue": "useState(seasons[0] || '') runs before /history/seasons loads, so the season state stays ''. The select visually shows '2027/28', but the Pin button stays disabled after typing a title until the user re-selects the season. Reproduced by opening /club-history?tab=timeline directly. Fix: useEffect to set s once seasons arrive, or use s || seasons[0] when saving and in the disabled check.", "selector": "[data-testid='pin-save']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Timeline: unpin an auto milestone", "issue": "Clicking milestone-pin-start-2027/28 a second time shows a 'Not Found' toast and the milestone stays pinned (backend route bug above). api.delete uses the raw m.id without encoding.", "affected_selectors": ["[data-testid^='milestone-pin-']"]}
+    ],
+    "design_issues": [
+      {"screen": "Club History tabs at 390px", "issues": ["Tab labels like 'Trophy Cabinet' and 'Analytical Leaders' wrap onto two lines inside the scrollable tab bar. Readable, but white-space: nowrap would look cleaner."]},
+      {"screen": "Testids", "issues": ["The milestone row testid 'milestone-{id}' collides by prefix with 'milestone-pin-{id}' for custom pins (id starts with 'pin-'). A selector like [data-testid^=milestone-pin-] matches both the row and the button. Consider 'milestone-row-{id}'."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_club_history.py", "/app/test_reports/pytest/pytest_club_history.xml"],
+  "action_items": [
+    "Fix unpinning of auto milestones: route '/pins/{pid:path}' (or slash-free milestone ids) and encodeURIComponent(m.id) in Timeline pin()",
+    "Fix PinForm season default when the seasons list loads after mount",
+    "Make cabinet scope=full actually include pre-save honours (the archive doc has no 'history'; honours are filtered to the current season)"
+  ],
+  "critical_code_review_comments": [
+    "history_api.py: every GET has write side effects through archive(). Consider rebuilding only after a save read.",
+    "_milestones: next(r for r in s['squad'] if r['name'] == name) matches by name and can pick the wrong player if two share a name. Match by unique_id instead.",
+    "_honour_kind treats any honour without kind/stage as 'trophy'. Fine, but runner-up detection depends on the reader's labels.",
+    "Records 'profit' record is always empty (_rec with []), so it always shows Unavailable."
+  ],
+  "updated_files": ["/app/backend/tests/test_club_history.py"],
+  "success_rate": {"backend": "94% (15/16; the pin_auto_milestone unpin test fails on a real bug)", "frontend": "~88% (unpinning an auto milestone fails; PinForm needs a re-select on direct load)"},
+  "seed_data_creation": "None kept. Created and removed: 1 HoF inductee via the API, 1 via the UI, and custom pins via the API and UI (deleted through the API). The auto-milestone pin 'start-2027/28' was created twice and could not be removed through the API, so I deleted it directly from db.history_pins by exact id each time. history_pins and hall_of_fame are now empty.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The sample save has 1 season (2027/28, In Progress) and club TEST FC. Records/league/match data are mostly Unavailable. Leaders have npxG/xA/progp/xgp data, but prgc is Unavailable. Player uids are 201481xx (e.g. 20481103 Marco Silvestri). Run: cd /app/backend && REACT_APP_BACKEND_URL=... pytest tests/test_club_history.py. test_pin_auto_milestone leaves a pin behind if the unpin bug is still present; clean it with db.history_pins.delete_one({'id':'start-2027/28'}). Opening /club-history?tab=timeline directly reproduces the PinForm bug.",
+  "rca of the issue": "Unpin bug: milestone ids embed the season string 'YYYY/YY'. FastAPI's '/pins/{pid}' path param doesn't match '/', and Starlette decodes %2F before routing, so DELETE always 404s. Repro: POST /api/history/pins {id:'start-2027/28'} -> 200, then DELETE /api/history/pins/start-2027/28 -> 404. Mitigation: use {pid:path} or slash-free ids."
+}

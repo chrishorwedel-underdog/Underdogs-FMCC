@@ -28,11 +28,11 @@ export const SeasonTable = ({ rows, id = "seasons-table" }) => (
 export const Timeline = ({ items, full }) => {
   const qc = useQueryClient();
   const pin = async (m) => {
-    try { if (m.pinned) { await api.delete(`/history/pins/${m.id}`); } else { await api.post("/history/pins", { id: m.id }); } qc.invalidateQueries({ queryKey: ["history-cabinet"] }); qc.invalidateQueries({ queryKey: ["history-milestones"] }); } catch (e) { toast.error(errMsg(e)); }
+    try { if (m.pinned) { await api.delete(`/history/pins/${encodeURIComponent(m.id)}`); } else { await api.post("/history/pins", { id: m.id }); } qc.invalidateQueries({ queryKey: ["history-cabinet"] }); qc.invalidateQueries({ queryKey: ["history-milestones"] }); } catch (e) { toast.error(errMsg(e)); }
   };
   if (!items.length) return <p className="note">No milestones yet.</p>;
   return <div className="timeline" data-testid="history-timeline">{items.map((m) => (
-    <div key={m.id} className={`tl-item${m.pinned ? " pinned" : ""}`} data-testid={`milestone-${m.id}`}>
+    <div key={m.id} className={`tl-item${m.pinned ? " pinned" : ""}`} data-testid={`milestone-row-${m.id}`}>
       <span className="tl-dot" /><span className="mono tl-season">{m.season}</span>
       <div style={{ flex: 1 }}>{m.unique_id ? <button className="linkish" onClick={() => openPlayer(m.unique_id)}><b>{m.title}</b></button> : m.link ? <Link to={m.link} className="linkish"><b>{m.title}</b></Link> : <b>{m.title}</b>}
         {m.note && <small style={{ display: "block", color: "var(--dim)" }}>{m.note}</small>}</div>

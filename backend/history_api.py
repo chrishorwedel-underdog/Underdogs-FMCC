@@ -182,7 +182,8 @@ async def cabinet(scope: str = "save"):
         for h in s["honours"]:
             hon.append(h | {"tenure": True, "link_season": s["season"]})
     if scope == "full":
-        for h in ((arch[-1].get("history") or {}) if arch else {}).get("honours") or []:
+        snap = await db.snapshots.find_one({"career_id": c["id"]}, {"_id": 0, "history.honours": 1}, sort=[("save_no", -1)]) or {}
+        for h in (snap.get("history") or {}).get("honours") or []:
             if (h.get("season") or "") < (first or ""):
                 hon.append(h | {"kind": _honour_kind(h), "tenure": False, "pre_save": True})
     hon.sort(key=lambda h: h.get("season") or "", reverse=True)
@@ -224,13 +225,20 @@ async def pin(body: PinIn):
     return {"ok": True, "id": doc["id"]}
 
 
-@router.delete("/pins/{pid}")
+@router.delete("/pins/{pid:path}")
 async def unpin(pid: str):
     c = await active_career()
     r = await db.history_pins.delete_one({"career_id": c["id"], "id": pid})
     if not r.deleted_count:
         raise HTTPException(404, "That moment isn't pinned")
     return {"ok": True}
+
+
+def _season_of(d: str | None) -> str | None:
+    if not d or len(d) < 7:
+        return None
+    y = int(d[:4]) if int(d[5:7]) >= 7 else int(d[:4]) - 1
+    return f"{y}/{str(y + 1)[2:]}"
 
 
 def _progress(items: list, better) -> list:
@@ -309,8 +317,8 @@ async def records(scope: str = "league"):
     pool = (await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players.unique_id": 1, "players.name": 1, "players.club": 1, "players.last_move": 1}) or {}).get("players") or []
     club = arch[-1]["club"] if arch else None
     homegrown = {r["unique_id"] for s in arch for r in s["squad"] if r.get("homegrown")}
-    buys = [{"season": (p["last_move"].get("date") or "")[:4], "value": p["last_move"]["fee"], "unique_id": p["unique_id"], "name": p["name"], "date": p["last_move"].get("date")} for p in pool if (p.get("last_move") or {}).get("fee") and p.get("club") == club]
-    sales = [{"season": (p["last_move"].get("date") or "")[:4], "value": p["last_move"]["fee"], "unique_id": p["unique_id"], "name": p["name"], "date": p["last_move"].get("date")} for p in pool if (p.get("last_move") or {}).get("fee") and p["last_move"].get("from_club") == club]
+    buys = [{"season": _season_of(p["last_move"].get("date")), "value": p["last_move"]["fee"], "unique_id": p["unique_id"], "name": p["name"], "date": p["last_move"].get("date")} for p in pool if (p.get("last_move") or {}).get("fee") and p.get("club") == club]
+    sales = [{"season": _season_of(p["last_move"].get("date")), "value": p["last_move"]["fee"], "unique_id": p["unique_id"], "name": p["name"], "date": p["last_move"].get("date")} for p in pool if (p.get("last_move") or {}).get("fee") and p["last_move"].get("from_club") == club]
     transfers += [_rec("fee_paid", "Record fee paid", sorted(buys, key=lambda x: x["date"] or ""), unit=" £"), _rec("fee_received", "Record fee received", sorted(sales, key=lambda x: x["date"] or ""), unit=" £"),
                   _rec("profit", "Highest profit on a sale", []), _rec("academy_sale", "Highest fee for an academy graduate", sorted([x for x in sales if x["unique_id"] in homegrown], key=lambda x: x["date"] or ""), unit=" £")]
     return {"scope": scope, "team": team, "players": players, "matches": matches_r, "h2h": sorted(h2h.values(), key=lambda o: -o["p"])[:8], "transfers": transfers, "min_minutes": MIN_RATE_MINUTES}

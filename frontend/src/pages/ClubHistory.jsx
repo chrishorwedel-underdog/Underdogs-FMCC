@@ -14,7 +14,8 @@ const TABS = [["cabinet", "Trophy Cabinet"], ["seasons", "Seasons"], ["records",
 const PinForm = ({ seasons }) => {
   const qc = useQueryClient();
   const [t, setT] = useState("");
-  const [s, setS] = useState(seasons[0] || "");
+  const [pick, setS] = useState("");
+  const s = pick || seasons[0] || "";
   const save = async () => { try { await api.post("/history/pins", { title: t, season: s }); setT(""); toast.success("Moment pinned"); qc.invalidateQueries({ queryKey: ["history-milestones"] }); } catch (e) { toast.error(errMsg(e)); } };
   return <div className="card" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }} data-testid="pin-form">
     <b>Pin a moment</b><input className="inp" style={{ flex: 1, minWidth: 200 }} value={t} maxLength={120} onChange={(e) => setT(e.target.value)} placeholder="e.g. Last-minute winner in the derby" data-testid="pin-title" />
