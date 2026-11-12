@@ -336,6 +336,8 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - 2026-11-12 Menu: "Player Development" group renamed "Active Player Development" (Breakout, Dynamic Potential, Elite Training). "Development" moved to Reports and renamed "Youth Development" (route /development unchanged).
 - 2026-11-12 Youth Development: "CA gained" column replaced by "Progress" with plain-words notes (month: Big step forward / Improving / Holding steady / Slipped back a little; season: Strong progress / Some progress / No change yet / Behind where he started). API (/api/development) no longer returns ca_gain_month/ca_gain_season numbers (progress_month/progress_season {tone,text}). Page heading, rules title and Home card renamed "Youth Development". Note: plan dialog still asks "CA to gain" and Goal column shows CA-based goal progress (not changed, flagged to user).
 - 2026-11-12 Youth Development: new "Games" column (total, "X started · Y off the bench"); readers now store starts + sub_apps per player (fmsave_reader from starts/substitute_appearances, sample_reader derived). Older snapshots lack the split and show "Start/sub split on next save read". Progress column kept, now with a small trend line over the last six saves; API returns only step directions (up/flat/down), never sizes.
+- 2026-11-12 Youth Development table reordered: Player, Age, Games, Mins/game, Goals, Assists, Avg rating, Minutes this month, Plan, Goal, Progress, Add plan. Wider cell spacing (.dev-tbl), numbers right-aligned, "Start/sub split on next save read" placeholder removed (split shows only when the save has it).
+
 
 
 

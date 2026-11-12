@@ -44,8 +44,8 @@ const Trend = ({ steps, id }) => {
   return <svg width="60" height="20" viewBox="0 0 60 20" role="img" aria-label={label} data-testid={`dev-trend-${id}`}><title>{label}</title><polyline points={xy} fill="none" stroke={col} strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 };
 const Games = ({ r }) => (
-  <td data-testid={`dev-games-${r.unique_id}`}><span className="mono" style={{ color: "var(--text)" }}>{r.appearances}</span>
-    <small style={{ display: "block", color: "var(--dim)" }}>{r.starts != null ? `${r.starts} started · ${r.sub_apps} off the bench` : "Start/sub split on next save read"}</small></td>
+  <td className="n" data-testid={`dev-games-${r.unique_id}`}><span className="mono" style={{ color: "var(--text)" }}>{r.appearances}</span>
+    {r.starts != null && <small style={{ display: "block", color: "var(--dim)" }}>{r.starts} started · {r.sub_apps} off the bench</small>}</td>
 );
 const TONE = { big: "var(--grn)", up: "var(--grn)", flat: "var(--mut)", down: "var(--amb)" };
 const Progress = ({ n, small }) => (n ? <span style={{ color: TONE[n.tone], fontSize: small ? 12 : 13, display: "block" }}>{n.text}</span> : <span style={{ color: "var(--dim)", display: "block" }}>{small ? "" : "Needs two saves"}</span>);
@@ -56,16 +56,17 @@ const Plans = () => {
   if (!data) return <Loading id="dev-loading" label="Loading plans" />;
   return (
     <div className="card" style={{ padding: 8, overflowX: "auto" }}>
-      <table className="tbl" data-testid="plans-table">
-        <thead><tr><th>Player</th><th>Age</th><th>Games</th><th title="How he's coming along since last month's save and since the season started">Progress</th><th>Goals</th><th>Assists</th><th>Mins / game</th><th>Avg rating</th><th>Minutes this month</th><th>Plan</th><th>Goal</th><th></th></tr></thead>
+      <table className="tbl dev-tbl" data-testid="plans-table">
+        <thead><tr><th>Player</th><th className="n">Age</th><th className="n">Games</th><th className="n">Mins / game</th><th className="n">Goals</th><th className="n">Assists</th><th className="n">Avg rating</th><th>Minutes this month</th><th>Plan</th><th>Goal</th><th title="How he's coming along since last month's save and since the season started">Progress</th><th></th></tr></thead>
         <tbody>{data.rows.map((r) => (
           <tr key={r.unique_id} style={{ cursor: "default" }} data-testid={`plan-row-${r.unique_id}`}>
             <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.needs_minutes && <span className="tag st a" data-testid={`needs-minutes-${r.unique_id}`}>Needs minutes</span>}</td>
-            <td>{r.age}</td><Games r={r} /><td style={{ minWidth: 250 }} data-testid={`dev-progress-${r.unique_id}`}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div><Progress n={r.progress_month} /><Progress n={r.progress_season} small /></div><Trend steps={r.trend} id={r.unique_id} /></div></td>
-            <td className="mono">{r.goals}</td><td className="mono">{r.assists}</td><td className="mono">{r.minutes_per_game ?? "—"}</td><td className="mono">{r.avg_rating ?? "—"}</td>
+            <td className="mono n">{r.age}</td><Games r={r} /><td className="mono n">{r.minutes_per_game ?? "—"}</td>
+            <td className="mono n">{r.goals}</td><td className="mono n">{r.assists}</td><td className="mono n">{r.avg_rating ?? "—"}</td>
             <td style={{ minWidth: 180 }}>{r.target ? <div className="mb" style={{ gridTemplateColumns: "1fr 70px" }}><div className="track"><i style={{ width: `${Math.min(100, (r.month_minutes / r.target) * 100)}%`, background: r.needs_minutes ? "var(--amb)" : "var(--acc)" }} /></div><span className="mono">{r.month_minutes}/{r.target}</span></div> : <span className="mono">{r.month_minutes}</span>}</td>
             <td>{r.plan ? <>{data.loans[r.plan.loan]}<small style={{ display: "block", color: "var(--dim)" }}>version {r.plan.revision}</small></> : <span style={{ color: "var(--dim)" }}>No plan</span>}</td>
             <td>{r.goal_progress != null ? <span className="mono"><Gain v={r.goal_so_far} /> of +{r.plan.goal_gain} ({r.goal_progress}%)</span> : "—"}</td>
+            <td data-testid={`dev-progress-${r.unique_id}`}><div className="dev-prog"><div><Progress n={r.progress_month} /><Progress n={r.progress_season} small /></div><Trend steps={r.trend} id={r.unique_id} /></div></td>
             <td><button className="btn" onClick={() => setEdit(r)} data-testid={`plan-edit-${r.unique_id}`}>{r.plan ? "Revise" : "Add plan"}</button></td>
           </tr>))}</tbody>
       </table>
