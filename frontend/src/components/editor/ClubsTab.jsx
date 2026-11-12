@@ -48,7 +48,7 @@ const Attributes = ({ uid, act }) => {
   useEffect(() => { setV({}); }, [uid]);
   if (!data) return <p className="note">Reading club…</p>;
   const changed = Object.fromEntries(Object.entries(v).filter(([k, x]) => x !== "" && Number(x) !== data.fields.find((f) => f.key === k)?.value).map(([k, x]) => [k, Number(x)]));
-  const queue = async () => { const r = await act(() => api.post(`/editor/clubs/${uid}/attributes`, { values: changed }), (x) => `${x.queued} change(s) added to Game changes`, ["changes", "club-attrs"]); if (r) { setV({}); nav("/changes"); } };
+  const queue = async () => { const r = await act(() => api.post(`/editor/clubs/${uid}/attributes`, { values: changed }), (x) => `${x.queued} change(s) ${x.auto_applied ? "applied to your save" : "waiting in Game changes"}`, ["changes", "club-attrs"]); if (r) { setV({}); if (!r.auto_applied) { nav("/changes"); } } };
   return (
     <div className="card" data-testid="club-attributes-card"><div className="ttl">Club attributes</div>
       {data.read_only ? <p className="note" style={{ marginTop: 6 }}>{data.read_only}</p> : <>

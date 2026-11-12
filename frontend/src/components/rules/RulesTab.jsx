@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { api, ago } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { ParamsEditor } from "@/components/rules/ParamsEditor";
 import { RuleItem, ImpactSave } from "@/components/rules/RuleItem";
 
@@ -84,7 +85,7 @@ export const RulesTab = ({ module, title, extra }) => {
   const act = useAct();
   const [draft, setDraft] = useState(null);
   const [test, setTest] = useState(null);
-  if (!doc) return <p className="note">Loading rules…</p>;
+  if (!doc) return <Loading id="rules-loading" label="Loading rules" />;
   const data = draft?.version === doc.version ? draft.data : doc.data;
   const setData = (d) => setDraft({ version: doc.version, data: d });
   const save = () => act(() => api.put(`/rules/${module}`, { data, expected_version: doc.version, note: "Edited" }), (d) => `Rules saved as version ${d.version}`, ["rules", "plan", "registration", "elite", "breakout", "dp", "rankings", "development", "report"]).then((r) => { if (r) { setDraft(null); } return r; });

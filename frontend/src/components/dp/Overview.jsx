@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Play, Snowflake, Flag, TrendingUp, TrendingDown, Minus, PauseCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { PlayerDetail } from "./PlayerDetail";
 
 const KEYS = ["dp-overview", "dp-records", "changes"];
@@ -60,7 +61,7 @@ export const Overview = () => {
   const { data: recs = [] } = useGet("dp-records", "/dp/records");
   const act = useAct();
   const [open, setOpen] = useState(null);
-  if (!o) return <p className="note">Loading Dynamic Potential…</p>;
+  if (!o) return <Loading id="dp-loading" label="Loading Dynamic Potential" />;
   const latest = recs.filter((r) => r.kind === (o.reviewed.season_end ? "season_end" : "winter"));
   return (
     <div style={{ display: "grid", gap: 16 }} data-testid="dp-overview">

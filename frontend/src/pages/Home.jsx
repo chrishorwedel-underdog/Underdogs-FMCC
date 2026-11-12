@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Check } from "lucide-react";
 import { api, ago, gameDate } from "@/lib/api";
+import { Loading } from "@/components/Loading";
 import { ModuleCards } from "@/components/ModuleCards";
 import { UpNextPanel } from "@/components/UpNextPanel";
 import { DownloadButton } from "@/components/DownloadButton";
@@ -22,7 +23,7 @@ const NextMatch = ({ f, club }) => (
 
 export default function Home() {
   const { data: d, isLoading } = useQuery({ queryKey: ["home"], queryFn: () => api.get("/home").then((r) => r.data) });
-  if (isLoading || !d) return <p className="note">Loading your club…</p>;
+  if (isLoading || !d) return <Loading id="home-loading" rows={6} label="Loading your club" />;
   const n = d.attention.length;
   return (
     <div className="home-v2" data-testid="home-page">

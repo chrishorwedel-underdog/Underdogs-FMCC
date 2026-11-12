@@ -3,12 +3,15 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { api, gameDate } from "@/lib/api";
 import { SquadRadars } from "@/components/squad/SquadRadars";
+import { CompareDialog } from "@/components/charts/CompareDialog";
+import { useState } from "react";
 
 const Fact = ({ k, v, id }) => <div className="row"><span style={{ color: "var(--mut)", flex: 1 }}>{k}</span><b data-testid={id}>{v}</b></div>;
 
 export const PlayerSheet = ({ uid, onClose }) => {
   const { data } = useQuery({ queryKey: ["player", uid], queryFn: () => api.get(`/players/${uid}`).then((r) => r.data), enabled: !!uid });
   const p = data?.latest;
+  const [cmp, setCmp] = useState(false);
   return (
     <Sheet open={!!uid} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-[440px] sm:max-w-[440px] overflow-y-auto" style={{ background: "var(--s1)" }} data-testid="player-sheet">
@@ -23,6 +26,8 @@ export const PlayerSheet = ({ uid, onClose }) => {
             <Fact k="First seen" v={gameDate(data.identity.first_seen_date)} />
           </div>
         )}
+        {uid && <><button className="btn" style={{ marginTop: 14 }} onClick={() => setCmp(true)} data-testid="player-sheet-compare-with">Compare with…</button>
+          <CompareDialog uid={uid} open={cmp} onClose={() => setCmp(false)} /></>}
         {uid && <SquadRadars uid={uid} />}
         {data?.role_ratings?.length > 0 && (
           <div className="card" style={{ marginTop: 20, padding: 14 }} data-testid="player-sheet-roles">

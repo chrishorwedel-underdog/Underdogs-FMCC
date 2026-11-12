@@ -8,6 +8,7 @@ import { ProfileLab } from "./Recruit";
 import { useScout, fmtMoney, fmtWage, pctColor, ContractTag } from "./ctx";
 import { RadarCard, AttrHeatmap, MetricHeatmap, attributeRadar } from "@/components/charts/DataHub";
 import { Empty } from "@/components/Empty";
+import { CompareDialog } from "@/components/charts/CompareDialog";
 
 const XY = { GK: [50, 90], "D (C)": [50, 74], "D (L)": [14, 70], "D (R)": [86, 70], "WB (L)": [12, 56], "WB (R)": [88, 56], DM: [50, 60],
   "M (C)": [50, 47], "AM (C)": [50, 32], "AM (L)": [18, 30], "AM (R)": [82, 30], ST: [50, 13] };
@@ -38,6 +39,7 @@ const Body = ({ p, view }) => {
   const { prefs, openPlayer, compare, toggleCompare } = useScout();
   const act = useAct();
   const [busy, setBusy] = useState(false);
+  const [cmp, setCmp] = useState(false);
   const pizza = (p.profile_keys || []).filter((k) => p.pct?.[k] != null).map((k) => ({ k, p: p.pct[k], label: p.labels[k] }));
   const dof = async () => { setBusy(true); await act(() => api.post(`/scout/player/${p.unique_id}/dof-report`), "Report written", ["scout-player"]); setBusy(false); };
   return (
@@ -57,10 +59,12 @@ const Body = ({ p, view }) => {
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         {!p.own && <button className="btn" onClick={() => act(() => api.post("/scouting/shortlist", { unique_id: p.unique_id, action: "add" }), "Added to shortlist", ["rankings"])} data-testid="profile-shortlist"><Star size={13} />Shortlist</button>}
+        <button className="btn" onClick={() => setCmp(true)} data-testid="profile-compare-with"><Scale size={13} />Compare with…</button>
         <button className={`btn${compare.includes(p.unique_id) ? " btn-p" : ""}`} onClick={() => toggleCompare(p.unique_id)} data-testid="profile-compare"><Scale size={13} />Compare</button>
         <button className="btn" disabled={busy || !pizza.length} onClick={dof} data-testid="profile-dof-report"><Sparkles size={13} />{busy ? "Writing…" : "DOF report from the numbers"}</button>
       </div>
       {p.report && <p className="note" style={{ lineHeight: 1.6 }} data-testid="profile-report">{p.report}</p>}
+      <CompareDialog uid={p.unique_id} open={cmp} onClose={() => setCmp(false)} view={view} />
       <ProfileLab uid={p.unique_id} view={view} onCompare={toggleCompare} />
       <Replacement uid={p.unique_id} />
       <PriceExplained uid={p.unique_id} view={view} />

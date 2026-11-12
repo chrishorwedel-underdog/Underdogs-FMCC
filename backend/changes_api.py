@@ -167,6 +167,21 @@ def new_value(ch: dict, cur):
     return ch["target"] if ch.get("entity") in ("club", "shortlist") else clamp(cur + ch["delta"])
 
 
+async def auto_apply(career: dict, source: str, tag: str):
+    """Editor and Punish a Club edits go straight in unless Review changes before applying is on."""
+    if career.get("review_changes"):
+        return {"auto_applied": False}
+    ids = [d["id"] async for d in db.changes.find({"career_id": career["id"], "status": "queued", "source": source}, {"id": 1})]
+    if not ids:
+        return {"auto_applied": False}
+    try:
+        b = await start_batch(career, ids)
+        return {"auto_applied": True, "batch_id": b["id"]}
+    except HTTPException as exc:
+        await notice(career["id"], f"waiting:{source}:{tag}", "Changes waiting for the game", f"{len(ids)} change(s) from {SOURCES[source]} couldn't be applied yet: {exc.detail}")
+        return {"auto_applied": False, "waiting_reason": exc.detail}
+
+
 async def queue_changes(career: dict, source: str, award_id: str, items: list, hidden: bool = False) -> dict:
     """Queue game changes. The idempotency key stops the same award being queued or applied twice."""
     ids, skipped = [], 0

@@ -203,7 +203,7 @@ async def download(pid: str):
 async def queue_current(pid: str):
     """Current FM27 save only: money, reputation and facilities go into Game changes (backup, preview, confirm, read-back, undo)."""
     import editor_api
-    from changes_api import queue_club_edit
+    from changes_api import queue_club_edit, auto_apply
     c = await active_career()
     if c["edition"] != "FM27":
         raise HTTPException(409, "Changing a running save is FM27 only. FM26 saves stay read-only; use the new-career file.")
@@ -227,7 +227,8 @@ async def queue_current(pid: str):
                 await queue_club_edit(c, d["club"], fk, f"{f['label']} (Punish a Club)", target, source="punish", award_id=pid)
                 queued.append(f["label"])
     await db.punishments.insert_one({k: v for k, v in d.items() if k != "id"} | {"id": new_id(), "revision": d["revision"] + 1, "queued": True, "at": now_iso()})
-    return {"queued": queued, "new_career_only": sorted(set(skipped))}
+    res = await auto_apply(c, "punish", pid) if queued else {}
+    return {"queued": queued, "new_career_only": sorted(set(skipped))} | res
 
 
 @router.delete("/{pid}")

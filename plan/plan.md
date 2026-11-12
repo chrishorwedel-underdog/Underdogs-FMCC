@@ -1,125 +1,95 @@
-# FMCC Quality-of-Life Upgrade: Cleaner, Calmer, Easier
+# FMCC Polish Pass: Radar Compare and Friendlier First Use
 
-This upgrade gives FM Command Centre a less daunting look and feel without removing any features. Complex tools stay, but they sit behind simpler screens, clearer groups and sensible defaults.
+This pass adds Radar Compare and a set of changes that make FM Command Centre easier to pick up and more consistent to look at.
+Nothing is removed. Ease of use comes first, so new users get the full program with clearer guidance and calmer screens.
+
+## Status of today's earlier plan
+All three phases of today's quality-of-life plan are built. Some items are still open:
+- Player & Teams Editor and Punish a Club changes still wait in Game changes. Fixed in Phase 1.
+- In Squad and Development rules, "who it affects" counts every player the setting covers, not just the players who would actually change. Fixed in Phase 3.
+- On phones, the top bar wraps onto several lines. Fixed in Phase 1.
+- Lineups are saved in FMCC only, because the game editor can't write FM's team selection. This stays as it is.
+- Nothing has been checked against a real FM save on Windows. This needs a Windows PC with FM running.
 
 ## Who it's for
-- New FMCC users who currently face too many options at once.
-- Experienced users who want faster navigation, consistent rules screens and fewer manual steps.
-- Players who need larger text, higher contrast or screen-reader-friendly tables.
+- New FMCC users opening the program for the first time.
+- Regular users who want screens that look and behave the same everywhere.
 
 ## Core features and experience
 
-### Standing rules (apply everywhere)
-- True PA/CA is never shown and can't be revealed anywhere. This includes screens, filters, columns, exports, tooltips and any raw-data view.
-- Automatic applying is the default. When a rule or setting produces player changes (including PA/CA changes), they go to the save straight away and a notification lists what changed.
-- A "Review changes before applying" switch in the Features area turns on manual approval for anyone who wants it. It is off by default.
+### Radar Compare
+- Overlays players' radars in one chart, each player in a different colour, with a legend.
+- Three radar choices:
+  - **Role fit:** the stats that matter for a chosen role.
+  - **Phases of play:** finishing, creating, carrying and defending.
+  - **Attributes by area.**
+- Pick a role to get a plain verdict, such as "Player A fits this role better: stronger in 4 of 6 areas", with the biggest gaps named.
+- **Where it's available:**
+  - a "Compare with…" button on every player profile in Scout Players and Squad, which opens a player search
+  - the Compare tool in Scout Players
+- Works for your own players and players at other clubs. No real CA/PA is used or shown.
+- **Phase 3 additions:**
+  - compare up to four players at once
+  - a comparison card you can print or save as an image
 
-### Navigation
-- The Home menu item is removed. Clicking the FMCC logo at the top left goes back to Home.
-- The menu is grouped like this, alphabetical within each group:
-  - **My Club:** Matches, Squad
-  - **Player Development:** Breakout Player, Development, Dynamic Potential, Elite Training
-  - **Recruitment:** Scout Players, Transfer Market
-  - **Reports:** Club Analysis, World Monthly Reports
-  - **Utilities:** Player & Teams Editor, Punish a Club
-- Moneyball leaves the menu and becomes part of Scout Players.
-- Chat with your Director of Football stays as the separate button at the bottom of the menu.
+### Automatic applying for every module
+- Player & Teams Editor edits and Punish a Club penalties go into the save straight away. The bell lists what changed.
+- The "Review changes before applying" switch in Features also covers these two modules.
 
-### Home: one "Up Next in Your Save" area
-- A distinct panel at the top of Home, with its own background and border, combines "Up Next in your save" and "Needs your attention" in one list.
-- Urgent items come first and are clearly marked. Each item has one clear action button.
+### First-use guidance (regular mode, no starter mode)
+- The walkthrough tour and the "What this page does" guides stay. The tour can be restarted from Settings.
+- "What this page does" guides start collapsed after your first visit to each page.
+- Short tips appear the first time a screen is opened. Each tip can be dismissed and stays gone.
+- Where a term is jargon, the visible label uses plain words and the short stat name appears on hover.
+- A page that needs a save which hasn't been read yet says "Read a save first" and has a button to read one.
 
-### Finance strip (every screen, just under the top bar)
-- A slim strip shows FFP compliance, wage-to-turnover ratio, transfer money spent this year, transfer budget remaining and bank balance.
-- Each figure is coloured red (trouble), green (healthy) or gold (excellent), with a short reason shown on hover or focus.
-- Missing figures show "Not in save yet" instead of a misleading number.
+### Look and polish
+- **Phone top bar:** the club name and main buttons fit on one line. Less-used buttons move into a "More" menu.
+- **Contract countdowns:** grouped into one "Contracts ending (N)" chip that opens the list, instead of one chip per player.
+- **Page headers:** every page uses the same layout of title, one-line purpose and then tabs, with at most one main button.
+- **Tables:** the same row height, number alignment, hover state and pinned player column across the app.
+- **Loading:** shaped placeholders replace "Loading…" text.
+- **Ongoing cleanup:** spacing, wording, button labels and clutter are tidied across all pages as the work goes. The aim is fewer things on first view, with advanced options one click away.
 
-### Same rules screen in every module
-- Dynamic Potential's "Settings" and the "Rules" in other modules all use one layout. Each rule shows:
-  - its current value and default
-  - a plain-language explanation
-  - when it was last changed
-- Before saving a change, a preview shows how many players it would affect.
-- Any single rule can be reset to its default without resetting the whole module.
-- **Dynamic Potential's recent rebuild is kept intact.** Its rulesheet calculations, winter and season-end reviews, settings history, scope switch and Balance Preview stay exactly as they are. Only two things change:
-  - its Settings tab uses the shared rules layout, with the existing settings history supplying the "last changed" details
-  - its "Needs Review" approval queue is used only when the manual-approval switch is on; otherwise those changes apply automatically and appear in the notification
-
-### Scout Players (stage 2)
-- A much simpler first screen with a search box, a few common filters and a results table. Advanced options sit behind a "More filters" panel.
-- A Moneyball tab with bargains, value for money and undervalued per-90 performers.
-- **Find Similar Players:** pick a player or enter target numbers (basic or per-90, such as xG, xA, key tackles and progressive passes) to see the closest matches with a similarity score.
-- **Youth Intake Tracker:**
-  - a calendar of youth intake dates, with the top 5 leagues on by default and any league switchable on or off
-  - running countdowns to each intake
-  - an FMCC bell notification as soon as an intake happens
-- **Easier tables:**
-  - the player column stays pinned
-  - columns use standard short names (for example npxG and OP-KP), with full names on hover and focus
-  - common filters stay visible while scrolling
-
-### Squad (stage 2)
-- Lineups and depth charts can be edited, and changes apply to the save automatically.
-- **Loan Manager**, a clearly separate section:
-  - **Try a loan:** pick the loanee and a possible club to see that club's depth chart, where the player fits, and a letter grade (A+ to F, with pluses and minuses) with a one-line reason.
-  - **Track loanees:** for each loanee, see their league, minutes, stats, facilities and development trend. A red down arrow means in trouble, a green up arrow means going well and a gold up arrow means excellent.
-- Squad and Club Analysis use the same assessment, so they always agree on the weakest position.
-
-### Polish everywhere (stage 3)
-- **Radar charts and heatmaps:** these replace plain text and bars for player attributes and metric breakdowns, styled like the game's Data Hub.
-- **Screens remembered exactly as you left them, per career:**
-  - filters, sort order, columns, formation, comparison picks and scroll position
-  - closing a dossier returns you to the same player in the same table
-- **Helpful empty states:** each one says why it is empty (filters, too few minutes, missing data or nobody qualifies). It also offers a matching action, such as loosening a threshold or showing who is closest to qualifying.
-- **Accessibility mode:**
-  - high-contrast colour options
-  - font-size controls (building on the existing text-size setting)
-  - tables that work with screen readers
-  - visible keyboard focus
+### Exact impact counts (Phase 3)
+- "Check who it affects" in Squad and Development rules counts exactly the players whose result would change, as the other modules already do.
 
 ## User flow
-1. Open FMCC and land on Home. The "Up Next in Your Save" panel lists what needs doing, and the finance strip shows the club's money health at a glance.
-2. Use the grouped menu to reach a module, then click the FMCC logo to return Home.
-3. In any module, open Rules. Change a value, see how many players it affects, then save. Changes apply automatically and a notification confirms them.
-4. (Stage 2) Scout from one simple screen, switch to Moneyball, Similar Players or Youth Intake, and get a bell alert when an intake happens.
-5. (Stage 2) In Squad, drag players in the lineup or depth chart, grade a potential loan and keep an eye on loanee arrows.
+1. Open any player and press "Compare with…". Pick a second player and a role, then read the overlaid radar and the verdict. In Phase 3, add up to two more players and save or print the comparison card.
+2. Make an edit in Player & Teams Editor or set a penalty in Punish a Club. It applies straight away and the bell lists it.
+3. A new user takes the tour and sees a one-time tip on each new screen. Every page has the same layout, and a "Read a save first" message appears where it's needed.
 
 ## UI/UX feel
-- Calm and uncluttered: fewer buttons on first view, and advanced options one click away.
-- Consistent patterns: the same rules screen, the same empty-state style and the same colour meaning everywhere (red trouble, green healthy, gold excellent).
-- The current themes, kit accent and club colours stay as they are.
+- Calm and consistent: the same header, table, loading and empty-state patterns on every page.
+- Radars use Data Hub styling, with each player in a distinct colour that stays readable in high contrast.
+- Current themes, kit accent, text sizes and accessibility settings are unchanged.
 
 ## Implementation phases
-- **Phase 1 (MVP, built now):**
-  - new grouped and alphabetised menu, with the Home item removed and the logo linking Home
-  - combined "Up Next in Your Save" panel on Home
-  - finance strip
-  - automatic applying by default with notifications, plus the manual-approval switch in Features
-  - all PA/CA viewing removed
-  - one consistent rules screen across all modules, with preview counts and per-rule reset
+All three phases are built now, as one project, in order:
+- **Phase 1:**
+  - Radar Compare for two players, from profiles and from the Compare tool
+  - automatic applying for Player & Teams Editor and Punish a Club
+  - the phone top bar fix
+  - "What this page does" guides collapsed by default after the first visit
+  - grouped contract countdowns
 - **Phase 2:**
-  - Scout Players simplification with Moneyball folded in, and the Moneyball menu item removed
-  - Find Similar Players
-  - Youth Intake Tracker
-  - easier tables
-  - editable lineups and depth charts
-  - Loan Manager
-  - Squad and Club Analysis agreeing on the weakest position
+  - one-time screen tips
+  - "Read a save first" messages
+  - the plain-label pass
+  - consistent page headers and table styling
+  - loading placeholders
+  - the cleanup pass across all pages
 - **Phase 3:**
-  - radar charts and heatmaps
-  - screens remembered per career
-  - explanatory empty states
-  - high-contrast and accessibility mode
+  - exact "who it affects" counts in Squad and Development rules
+  - Radar Compare for up to four players
+  - the printable comparison card, also saved as an image
 
 ## Assumptions
-- Until phase 2, Moneyball stays reachable from its current menu item. It is removed when it moves into Scout Players.
-- Automatic applying needs FMCC for Windows with the save or game connected. In browser or sample mode, changes still show notifications but only affect sample data.
-- Finance colour thresholds:
-  - wage-to-turnover: gold below 50%, green 50–70%, red above 70%
-  - FFP: gold if comfortably compliant, green if compliant, red if at risk or breaching
-  - spent, budget and bank: judged against the club's own budget and turnover
-- The finance strip reads whatever the save provides. Figures the save doesn't contain are labelled as missing, never estimated.
-- Youth intake alerts use the FMCC bell only, with no Windows pop-up.
-- Loan grades run A+ to F with pluses and minuses. They are based on expected minutes, league level, facilities and fit with the player's development.
-- Disabling a module in the per-career feature picker still never deletes its data.
-- Real FM save behaviour (finance figures, automatic applying, lineup writes, loan data, intake dates) can only be confirmed on a Windows PC with FM running.
+- The role verdict counts the radar areas where each player scores higher and names the biggest differences. It is guidance, not a guarantee.
+- Comparisons follow the current scouting view (Full, Fair play or Moneyball). In Fair play, a range of attribute values is plotted at its middle.
+- If a player doesn't have enough minutes, the stat-based radars show the matching empty message instead of a misleading shape.
+- With four players, only the first two are compared in the verdict. The others are shown on the chart and in a table of the gaps.
+- The comparison card is saved as an image on this computer. No sharing service is used.
+- Editor and Punish a Club changes need FMCC for Windows with the game connected. In browser or sample mode they only change sample data, but they still send a notification.
+- Tips and collapsed guides are remembered on this computer and apply to every career.
+- The cleanup pass changes layout, wording and spacing only. Features and data stay as they are.

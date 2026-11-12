@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { ArrowRight, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct, TabBar } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { Pitch } from "@/components/squad/Pitch";
 
 const strengthOf = (slots, depth) => {
@@ -74,7 +75,7 @@ export const LineupView = ({ formation, setFormation }) => {
     setSlots(m === "custom" && custom ? plan.saved.slots : plan[m === "custom" ? "dev" : m].slots);
     setRev(plan.saved?.revision || 0);
   }, [plan, formation]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!plan || !mode) return <p className="note">Working out lineups…</p>;
+  if (!plan || !mode) return <Loading id="lineup-loading" label="Working out lineups" />;
   const switchMode = (m) => { setMode(m); if (m !== "custom") setSlots(plan[m].slots); };
   const pick = (key, uid) => {
     const other = Object.keys(slots).find((k) => slots[k] === uid);

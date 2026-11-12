@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Bell, AlertTriangle } from "lucide-react";
+import { Bell, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
@@ -43,6 +43,18 @@ export const UpNext = () => {
   );
 };
 
+const ContractsChip = ({ items }) => {
+  const [open, setOpen] = useState(false);
+  const nav = useNavigate();
+  return (
+    <div style={{ position: "relative" }}>
+      <button className="hchip" onClick={() => setOpen(!open)} aria-expanded={open} data-testid="countdown-contracts"><span>Contracts ending ({items.length})</span>{open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}</button>
+      {open && <div className="card" style={{ position: "absolute", zIndex: 20, top: 42, left: 0, minWidth: 320, padding: 8 }} data-testid="countdown-contracts-list">
+        {items.map((c) => <div key={c.key} className="row" style={{ cursor: "pointer" }} onClick={() => nav(c.link)} data-testid={`countdown-${c.key}`}><div style={{ flex: 1 }}>{c.text}<small>{c.date}</small></div></div>)}</div>}
+    </div>
+  );
+};
+
 export const PageCountdown = () => {
   const { pathname } = useLocation();
   const keys = PAGE_OF[pathname];
@@ -52,9 +64,11 @@ export const PageCountdown = () => {
   const items = data.items.filter((c) => keys.includes(c.page));
   const miss = pathname === "/reports" ? data.missed : [];
   if (!items.length && !miss.length) return null;
+  const contracts = items.filter((c) => c.key.startsWith("contract"));
+  const other = items.filter((c) => !c.key.startsWith("contract"));
   return (
     <div style={{ display: "grid", gap: 8, marginBottom: 16 }} data-testid="page-countdown">
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{items.slice(0, 8).map((c) => <Chip key={c.key} c={c} />)}</div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{other.slice(0, 6).map((c) => <Chip key={c.key} c={c} />)}{contracts.length > 0 && <ContractsChip items={contracts} />}</div>
       {miss.map((m) => <Missed key={m.key} m={m} act={act} />)}
     </div>
   );

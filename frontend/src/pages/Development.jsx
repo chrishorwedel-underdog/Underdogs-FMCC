@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { api, ago } from "@/lib/api";
 import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { RulesTab } from "@/components/rules/RulesTab";
 
 const PlanDialog = ({ row, loans, close }) => {
@@ -35,7 +36,7 @@ const Gain = ({ v }) => (v == null ? <span style={{ color: "var(--dim)" }}>—</
 const Plans = () => {
   const { data } = useGet("development", "/development");
   const [edit, setEdit] = useState(null);
-  if (!data) return <p className="note">Loading plans…</p>;
+  if (!data) return <Loading id="dev-loading" label="Loading plans" />;
   return (
     <div className="card" style={{ padding: 8, overflowX: "auto" }}>
       <table className="tbl" data-testid="plans-table">

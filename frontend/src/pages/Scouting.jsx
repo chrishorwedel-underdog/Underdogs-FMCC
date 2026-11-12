@@ -19,6 +19,7 @@ import { StatsTable } from "@/components/analysis/StatsTable";
 import { MoneyballTab } from "@/components/scout/MoneyballTab";
 import { SimilarTab } from "@/components/scout/SimilarTab";
 import { YouthIntake } from "@/components/scout/YouthIntake";
+import { RadarCompare } from "@/components/charts/RadarCompare";
 
 const MAIN = [["players", "Find players"], ["moneyball", "Moneyball"], ["similar", "Similar players"], ["youth", "Youth intake"], ["shortlist", "Shortlist"], ["more", "More tools"]];
 const MAIN_KEYS = MAIN.map(([k]) => k);
@@ -113,7 +114,7 @@ export default function Scouting({ initialTab = "players" }) {
         {more && tab === "scatter" && <ExploreTab open={setOpen} />}
         {more && tab === "board" && <BoardTab open={setOpen} />}
         {more && tab === "picks" && <PicksTab open={setOpen} onCompare={(id, many) => (many ? setCompare(id) : toggleCompare(id))} />}
-        {more && tab === "compare" && (compare.length ? <><Compare4 ids={compare} clear={() => setCompare([])} /><Breakdown ids={compare} /></>
+        {more && tab === "compare" && (compare.length ? <><RadarCompare ids={compare} view={view} /><Compare4 ids={compare} clear={() => setCompare([])} /><Breakdown ids={compare} /></>
           : <div className="soon">Pick up to 4 players with the scales button in Players or in a profile to compare them here.</div>)}
         {more && tab === "computed" && <ComputedTab />}
         {more && tab === "roles" && <RoleScoresTab />}

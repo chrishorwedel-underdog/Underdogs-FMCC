@@ -1,4 +1,5 @@
 import { useGet } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { useScout, fmtMoney } from "./ctx";
 import { Empty } from "@/components/Empty";
 
@@ -21,7 +22,7 @@ const List = ({ id, title, help, rows, open, prefs }) => (
 export const MoneyballTab = () => {
   const { data } = useGet("moneyball", "/scout/moneyball");
   const { prefs, openPlayer } = useScout();
-  if (!data) return <p className="note">Finding value…</p>;
+  if (!data) return <Loading id="moneyball-loading" label="Finding value" />;
   return (
     <div style={{ display: "grid", gap: 16 }} data-testid="moneyball-tab">
       {data.sample && <p className="note">Match stats are SAMPLE numbers in this preview.</p>}

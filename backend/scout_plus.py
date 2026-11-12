@@ -78,6 +78,34 @@ def intake_day(year: int, mmdd: str) -> date:
     return date(year, m, min(d, calendar.monthrange(year, m)[1]))
 
 
+class RadarIn(BaseModel):
+    ids: list[int] = Field(min_length=2, max_length=4)
+    role: str | None = None
+    view: str = Field("full", pattern="^(full|fair|moneyball)$")
+
+
+@router.post("/scout/radar-compare")
+async def radar_compare(body: RadarIn):
+    """Overlay radars for 2-4 players: role fit, phases and attributes by area. No CA/PA is used."""
+    import scout_api
+    profs = [await scout_api.profile(u, view=body.view) for u in body.ids]
+    role = body.role if body.role in sm.WEIGHTS else profs[0].get("cohort") or next(iter(sm.WEIGHTS))
+    keys = [sm.LABEL2KEY[m["metric"]] for m in sorted(sm.WEIGHTS[role], key=lambda m: -m["weight"]) if m["metric"] in sm.LABEL2KEY][:6]
+    players = [{"unique_id": p["unique_id"], "name": p["name"], "club": p.get("club"), "minutes": p.get("minutes"),
+                "role": {k: (p.get("pct") or {}).get(k) for k in keys}, "phases": p.get("phases") or {}, "attributes": p.get("attributes")} for p in profs]
+    a, b = players[0], players[1]
+    both = [k for k in keys if a["role"][k] is not None and b["role"][k] is not None]
+    verdict = None
+    if both:
+        wa = sum(a["role"][k] > b["role"][k] for k in both)
+        wb = sum(b["role"][k] > a["role"][k] for k in both)
+        lead, n = (a, wa) if wa >= wb else (b, wb)
+        gaps = sorted(both, key=lambda k: -abs(a["role"][k] - b["role"][k]))[:2]
+        verdict = {"leader": lead["unique_id"], "text": f"{lead['name']} fits this role better: stronger in {n} of {len(both)} areas" if wa != wb else f"Level for this role: {wa} areas each",
+                   "gaps": [{"key": k, "label": sm.METRICS[k][0], "a": a["role"][k], "b": b["role"][k]} for k in gaps]}
+    return {"role": role, "roles": list(sm.WEIGHTS), "keys": keys, "labels": {k: sm.METRICS[k][0] for k in keys}, "players": players, "verdict": verdict}
+
+
 def _next(gd: date, mmdd: str) -> date:
     t = intake_day(gd.year, mmdd)
     return t if t >= gd else intake_day(gd.year + 1, mmdd)

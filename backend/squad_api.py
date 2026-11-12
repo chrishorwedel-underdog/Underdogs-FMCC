@@ -128,6 +128,19 @@ async def weakest(c: dict) -> dict | None:
     return {"label": roles.LABELS_FULL(slot["label"]), "pos": slot["pos"], "group": pos_group(slot["pos"]), "rating": r, "unique_id": u, "name": info.get(u, {}).get("name")}
 
 
+async def squad_outcome(c: dict, params: dict) -> dict:
+    """Per player: (in the Development XI, registered, short of minutes) under these squad settings. Used for exact impact counts."""
+    yours = await team_tactics(c)
+    formation = next(iter(yours or {k: v[0] for k, v in roles.FORMATIONS.items()}))
+    latest, form, depth, info, _ = await _plan_inputs(c, formation)
+    rules = {k: int(v) for k, v in params.items()}
+    best = roles.best_xi(latest["players"], form, depth)
+    dev = set(roles.development_xi(best, form, depth, info, rules)[0].values())
+    seniors = sorted([x for x in latest["players"] if x["age"] >= 21], key=lambda x: -roles.best_role(x)["rating"])
+    reg = {x["unique_id"] for x in seniors[:rules["max_senior"]]}
+    return {u: (u in dev, u in reg or i["u21"], i["u21"] and i["month_minutes"] < rules["target_minutes"]) for u, i in info.items()}
+
+
 class DepthIn(BaseModel):
     formation: Formation
     slot: str = Field(min_length=1, max_length=8)

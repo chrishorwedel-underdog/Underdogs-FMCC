@@ -160,6 +160,20 @@ async def rules_impact(module: Module, body: ImpactIn):
         diffs = [p["ca"] - before[p["unique_id"]] for p in snaps[0]["players"] if p["unique_id"] in before] if snaps else []
         return {"affected": sum(label(d, cur["params"]) != label(d, draft["params"]) for d in diffs), "population": len(diffs), "note": "Squad players whose rising or falling label would change in the latest report."}
     youth = [x for x in own if x["age"] <= 21]
+    if module == "squad":
+        import squad_api as SQ
+        a, b = await SQ.squad_outcome(c, cur["params"]), await SQ.squad_outcome(c, draft["params"])
+        return {"affected": sum(a[u] != b.get(u) for u in a), "population": len(a), "note": "Squad players whose Development XI place, registration or minutes flag would change."}
+    if module == "development":
+        import plans_api as PL
+        snaps = await latest_two(c["id"])
+        mins = PL.month_minutes(snaps[0], snaps[1] if len(snaps) > 1 else None) if snaps else {}
+        plans = await PL.latest_plans(c["id"])
+        def needs(p, x):
+            t = plans[x["unique_id"]]["minutes_target"] if x["unique_id"] in plans else (int(p["default_target"]) if x["age"] < 21 else None)
+            return bool(t) and mins.get(x["unique_id"], 0) < t * p["needs_pct"] / 100
+        players = snaps[0]["players"] if snaps else []
+        return {"affected": sum(needs(cur["params"], x) != needs(draft["params"], x) for x in players), "population": len(players), "note": "Squad players whose 'needs minutes' flag would change."}
     if not changed:
         n = 0
     elif module == "development" or changed <= {"target_minutes", "max_youth"}:

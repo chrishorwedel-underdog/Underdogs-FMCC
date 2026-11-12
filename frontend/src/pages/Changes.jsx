@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle } from "lucide-react";
 import { api, ago } from "@/lib/api";
 import { useGet, useAct, PageHead } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { AuditCard } from "@/components/AuditCard";
 import { BatchDialog } from "@/components/BatchDialog";
 
@@ -93,7 +94,7 @@ const Batches = ({ d, act }) => {
 export default function Changes() {
   const act = useAct();
   const { data: d } = useGet("changes", "/changes", undefined, { refetchInterval: (q) => (q.state.data?.batches?.some((b) => b.status === "running") ? 800 : 5000) });
-  if (!d) return <p className="note">Loading game changes…</p>;
+  if (!d) return <Loading id="changes-loading" label="Loading game changes" />;
   const last = d.batches[0];
   return (
     <div data-testid="changes-page">

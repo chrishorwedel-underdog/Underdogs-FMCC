@@ -645,7 +645,7 @@ class AttrIn(BaseModel):
 @router.post("/clubs/{uid}/attributes")
 async def queue_attributes(uid: int, body: AttrIn):
     """Club edits go into Game changes, so they get the same preview, checks, backup, read-back and undo as player changes."""
-    from changes_api import queue_club_edit
+    from changes_api import queue_club_edit, auto_apply
     c = await active_career()
     cl = await club(c, uid)
     fields = {f["key"]: f for f in await club_values(c, uid)}
@@ -660,4 +660,4 @@ async def queue_attributes(uid: int, body: AttrIn):
         if v != fields[k]["value"]:
             await queue_club_edit(c, cl, k, fields[k]["label"], v)
             n += 1
-    return {"queued": n}
+    return {"queued": n} | (await auto_apply(c, "editor", f"club:{uid}:{n}") if n else {})

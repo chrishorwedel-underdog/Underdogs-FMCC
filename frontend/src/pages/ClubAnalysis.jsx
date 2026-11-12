@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useGet, PageHead } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { money, openDossier } from "@/components/analysis/StatsTable";
 import { RadarCard, MetricHeatmap } from "@/components/charts/DataHub";
 
@@ -15,7 +16,7 @@ const Idea = ({ title, rows, id }) => (
 export default function ClubAnalysis() {
   const { data } = useGet("analysis-club", "/analysis/club");
   const nav = useNavigate();
-  if (!data) return <p className="note">Looking at your squad…</p>;
+  if (!data) return <Loading id="ca-loading" label="Looking at your squad" />;
   return (
     <div data-testid="club-analysis-page" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16 }}>
       <PageHead eyebrow={data.club} title="Club Analysis" />

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGet, PageHead, TabBar } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { money, openDossier } from "@/components/analysis/StatsTable";
 
 const LISTS = [["expiring", "Contracts ending within a year"], ["free", "Free agents"], ["clauses", "Lowest release clauses"], ["u21", "Best under-21s"], ["loans", "Loan-listed"]];
@@ -33,7 +34,7 @@ export default function TransferMarket() {
   const [tab, setTab] = useState("lists");
   const [list, setList] = useState("expiring");
   const [scope, setScope] = useState("world");
-  if (!data) return <p className="note">Loading the market…</p>;
+  if (!data) return <Loading id="market-loading" label="Loading the market" />;
   const changes = data.changes.filter((c) => scope === "world" || c.league === data.my_league);
   return (
     <div data-testid="transfer-market-page">

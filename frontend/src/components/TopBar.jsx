@@ -1,5 +1,6 @@
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { startTour } from "@/components/Tour";
 import { NotifyBell } from "@/components/Notify";
 import { useRaw, setRaw } from "@/components/scout/ctx";
@@ -60,14 +61,24 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
         <button className="ib" onClick={readSave} disabled={busy} title="Read latest save" data-testid="read-save-button">
           <RefreshCw size={16} className={busy ? "animate-spin" : ""} />
         </button>
-        <button className="ib" style={{ position: "relative", width: "auto", padding: "0 10px", gap: 6, display: "flex" }} onClick={() => nav("/changes")} title="Game changes" data-testid="top-changes-button">
+        <button className="ib top-extra" style={{ position: "relative", width: "auto", padding: "0 10px", gap: 6, display: "flex" }} onClick={() => nav("/changes")} title="Game changes" data-testid="top-changes-button">
           <Wand2 size={16} /><span style={{ fontSize: 12.5 }}>Game changes</span>{pending > 0 && <span className="st a mono" style={{ margin: 0 }} data-testid="top-changes-count">{pending}</span>}
         </button>
-        <button className="ib" onClick={() => nav("/connections")} title="Connections" data-testid="top-connections-button"><Plug size={16} /></button>
-        <label className="rawsw" title="Show raw numbers instead of percentiles in tables and charts" data-testid="raw-switch"><input type="checkbox" checked={raw} onChange={(e) => setRaw(e.target.checked)} />Raw</label>
+        <button className="ib top-extra" onClick={() => nav("/connections")} title="Connections" data-testid="top-connections-button"><Plug size={16} /></button>
+        <label className="rawsw top-extra" title="Show raw numbers instead of percentiles in tables and charts" data-testid="raw-switch"><input type="checkbox" checked={raw} onChange={(e) => setRaw(e.target.checked)} />Raw</label>
         <NotifyBell />
-        <button className="ib" onClick={startTour} title="Take the tour" data-testid="top-tour-button"><HelpCircle size={16} /></button>
-        <button className="ib" onClick={() => nav("/settings")} title="Settings" data-testid="top-settings-button"><Settings size={16} /></button>
+        <button className="ib top-extra" onClick={startTour} title="Take the tour" data-testid="top-tour-button"><HelpCircle size={16} /></button>
+        <button className="ib top-extra" onClick={() => nav("/settings")} title="Settings" data-testid="top-settings-button"><Settings size={16} /></button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><button className="ib top-more" title="More" aria-label="More" data-testid="top-more-button"><MoreHorizontal size={16} /></button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" data-testid="top-more-menu">
+            <DropdownMenuItem onClick={() => nav("/changes")} data-testid="top-more-changes">Game changes{pending ? ` (${pending})` : ""}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/connections")} data-testid="top-more-connections">Connections</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setRaw(!raw)} data-testid="top-more-raw">{raw ? "Show percentiles" : "Show raw numbers"}</DropdownMenuItem>
+            <DropdownMenuItem onClick={startTour} data-testid="top-more-tour">Take the tour</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav("/settings")} data-testid="top-more-settings">Settings</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

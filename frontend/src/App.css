@@ -392,3 +392,31 @@ select.blank{cursor:pointer}
 .hc .btn-p{color:#000!important;font-weight:700}
 .hc .content a:not(.btn):not(.nav-item){text-decoration:underline}
 
+/* Polish pass: tips, skeletons, top bar on phones, consistent tables and headers, printing */
+.tip{display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:14px;border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);background:color-mix(in srgb,var(--acc) 7%,transparent);border-radius:12px;font-size:13px;color:var(--text)}
+.skel-wrap{display:grid;gap:10px;padding:6px 0}
+.skel{height:14px;border-radius:8px;background:linear-gradient(90deg,var(--s2) 0%,var(--s3) 50%,var(--s2) 100%);background-size:200% 100%;animation:skel 1.3s ease-in-out infinite}
+@keyframes skel{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.no-motion .skel{animation:none}
+.top-more{display:none}
+@media (max-width:760px){
+  .top{flex-wrap:nowrap;gap:8px;padding:8px 10px}
+  .top .club{min-width:0;flex:1}
+  .top .club>div:last-child{min-width:0}
+  .top .club b,.top .club span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top .srch,.top .top-extra,.top .link .lt{display:none!important}
+  .top .tr{flex-shrink:0;gap:6px}
+  .top-more{display:grid}
+}
+.tbl td,.tbl th{height:40px;vertical-align:middle}
+.tbl td.mono,.tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tbody tr{transition:background-color .15s}
+.tbl tbody tr:hover{background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.ph{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+@media print{
+  .printing-radar body *{visibility:hidden}
+  .printing-radar .print-card,.printing-radar .print-card *{visibility:visible}
+  .printing-radar .print-card{position:fixed;left:0;top:0;width:100%;background:#fff;color:#000;border:0}
+  .no-print{display:none!important}
+}
+

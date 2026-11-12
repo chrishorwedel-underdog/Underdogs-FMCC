@@ -21,7 +21,7 @@ import ClubAnalysis from "@/pages/ClubAnalysis";
 import { DossierHost } from "@/components/analysis/Dossier";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ComingSoon } from "@/components/ComingSoon";
-import { ModuleGuide } from "@/components/ModuleGuide";
+import { ModuleGuide, NeedSave } from "@/components/ModuleGuide";
 import { PageCountdown } from "@/components/Notify";
 import { Tour } from "@/components/Tour";
 import Setup from "@/pages/Setup";
@@ -67,6 +67,7 @@ const Shell = ({ state }) => {
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
         <FinanceStrip />
         <div className="content" id="main-content" tabIndex={-1} role="main">
+          <NeedSave state={state} />
           <ModuleGuide />
           <PageCountdown />
           <Routes>

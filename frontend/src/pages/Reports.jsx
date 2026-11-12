@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { gameDate } from "@/lib/api";
 import { useGet, TabBar, PageHead } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { useAddress } from "@/lib/address";
 import { RulesTab } from "@/components/rules/RulesTab";
 import { WorldReport } from "@/components/world/WorldReport";
@@ -47,7 +48,7 @@ const World = () => {
   const { data, error } = useGet("world-report", "/world/report", { continent, country, league, month });
   const go = (set) => { const n = new URLSearchParams(params); Object.entries(set).forEach(([k, v]) => (v ? n.set(k, v) : n.delete(k))); setParams(n); window.scrollTo(0, 0); };
   if (error) return <div className="soon">{error.response?.data?.detail || "Couldn't load the report."} <button className="btn" onClick={() => go({ continent: null, country: null, league: null })} data-testid="world-error-back">Back to the World report</button></div>;
-  if (!data) return <p className="note">Loading the world report…</p>;
+  if (!data) return <Loading id="reports-loading" label="Loading the world report" />;
   const nations = data.countries.filter((c) => !continent || c.continent === continent);
   const leagues = (data.countries.find((c) => c.country === country) || {}).leagues || [];
   const crumbs = [["The World", { continent: null, country: null, league: null }], continent && [continent, { country: null, league: null }], country && [country, { league: null }], league && [league, {}]].filter(Boolean);

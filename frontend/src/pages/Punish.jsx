@@ -67,7 +67,7 @@ const Saved = ({ act }) => {
         <div key={d.pid} className="row" data-testid={`punishment-${d.pid}`}>
           <div style={{ flex: 1 }}><b>{d.name}</b><small>{d.summary}</small><small className="mono">{d.file_name}{d.queued ? " · queued on current save" : ""}</small></div>
           <a className="btn" href={`${process.env.REACT_APP_BACKEND_URL}/api/punish/${d.pid}/file`} data-testid={`punishment-download-${d.pid}`}><Download size={12} />File</a>
-          <button className="btn" onClick={() => act(() => api.post(`/punish/${d.pid}/queue`), (r) => `${r.queued.length} change(s) queued in Game changes${r.new_career_only.length ? ` · new career only: ${r.new_career_only.join(", ")}` : ""}`, KEYS)} data-testid={`punishment-queue-${d.pid}`}><ListChecks size={12} />Queue on current save</button>
+          <button className="btn" onClick={() => act(() => api.post(`/punish/${d.pid}/queue`), (r) => `${r.queued.length} change(s) ${r.auto_applied ? "applied to your save" : "waiting in Game changes"}${r.new_career_only.length ? ` · new career only: ${r.new_career_only.join(", ")}` : ""}`, KEYS)} data-testid={`punishment-queue-${d.pid}`}><ListChecks size={12} />Queue on current save</button>
           <button className="btn btn-d" onClick={() => act(() => api.delete(`/punish/${d.pid}`), "Punishment removed and its file deleted", KEYS)} data-testid={`punishment-remove-${d.pid}`}><Trash2 size={12} /></button>
         </div>))}
     </div>
@@ -93,7 +93,7 @@ export default function Punish() {
       setPens({});
       autoDownload(`/punish/${r.pid}/file`, r.file_name);
       if (meta?.edition === "FM27" && r.rows.some((x) => x.current_save)) {
-        act(() => api.post(`/punish/${r.pid}/queue`), (q) => `${q.queued.length} change(s) for your current save queued in Game changes`, KEYS);
+        act(() => api.post(`/punish/${r.pid}/queue`), (q) => `${q.queued.length} change(s) for your current save ${q.auto_applied ? "applied" : "waiting in Game changes"}`, KEYS);
       }
     });
   const groups = [...new Set((meta?.penalties || []).map((p) => p.group))];

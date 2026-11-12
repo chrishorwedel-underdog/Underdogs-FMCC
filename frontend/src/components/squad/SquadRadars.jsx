@@ -1,4 +1,5 @@
 import { useGet } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { RadarCard, AttrHeatmap, MetricHeatmap, attributeRadar } from "@/components/charts/DataHub";
 import { Empty } from "@/components/Empty";
 
@@ -6,7 +7,7 @@ import { Empty } from "@/components/Empty";
 export const SquadRadars = ({ uid }) => {
   const { data: p, isError } = useGet("scout-player", `/scout/player/${uid}`, { view: "full", uid }, { enabled: !!uid });
   if (isError) return <Empty id="player-sheet-radar-missing" reason="missing" text="This player isn't in the scouting data yet. Read a newer save to add him." />;
-  if (!p) return <p className="note">Loading charts…</p>;
+  if (!p) return <Loading id="player-sheet-charts-loading" rows={3} label="Loading charts" />;
   const pct = (p.profile_keys || []).filter((k) => p.pct?.[k] != null);
   const phases = Object.entries(p.phases || {});
   return (

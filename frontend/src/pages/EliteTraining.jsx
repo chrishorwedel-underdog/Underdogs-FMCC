@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Zap } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
+import { Loading } from "@/components/Loading";
 import { RulesTab } from "@/components/rules/RulesTab";
 
 const Spark = ({ pts }) => {
@@ -16,7 +17,7 @@ const Nominees = () => {
   const { data } = useGet("elite", "/elite");
   const act = useAct();
   const [pick, setPick] = useState("");
-  if (!data) return <p className="note">Loading nominations…</p>;
+  if (!data) return <Loading id="elite-loading" label="Loading nominations" />;
   const nominate = (uid) => act(() => api.post("/elite/nominations", { unique_id: Number(uid), note: "" }), "Nominated for Elite Training", ["elite"]);
   const queue = () => act(() => api.post("/elite/queue"), (d) => `${d.queued} potential boost(s) ${d.auto_applied ? "applied to your save" : "waiting in Game changes"}${d.skipped_duplicates ? `, ${d.skipped_duplicates} already given this month` : ""}${d.not_qualified ? `, ${d.not_qualified} didn't qualify` : ""}`, ["elite", "changes", "home"]);
   return (
