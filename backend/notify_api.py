@@ -10,8 +10,8 @@ import features_api
 
 router = APIRouter(prefix="/api/notify")
 TYPES = {"youth": "Youth intake happened", "report": "New monthly report", "missed": "Missed dates", "countdown": "Countdown reaching 7 days", "changes": "Game changes waiting",
-         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed", "breakout": "Breakout Player of the season", "elite": "Elite Training session finished"}
-PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist", "breakout": "/breakout", "elite": "/"}
+         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed", "breakout": "Breakout Player of the season", "elite": "Elite Training session finished", "record": "Club record broken"}
+PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist", "breakout": "/breakout", "elite": "/", "record": "/club-history?tab=records"}
 
 
 def _d(s: str) -> date:
@@ -75,9 +75,9 @@ async def prefs() -> dict:
     return {k: True for k in TYPES} | (s.get("notify_prefs") or {})
 
 
-async def _add(cid: str, typ: str, key: str, title: str, text: str, game_date: str):
+async def _add(cid: str, typ: str, key: str, title: str, text: str, game_date: str, link: str | None = None):
     await db.notices.update_one({"career_id": cid, "key": key}, {"$setOnInsert": {"id": new_id(), "career_id": cid, "key": key, "type": typ, "title": title, "text": text,
-                                                                                 "link": PAGE[typ], "game_date": game_date, "at": now_iso(), "read": False, "hidden": False}}, upsert=True)
+                                                                                 "link": link or PAGE[typ], "nav": PAGE[typ], "game_date": game_date, "at": now_iso(), "read": False, "hidden": False}}, upsert=True)
 
 
 async def sync(c: dict) -> None:
@@ -134,6 +134,11 @@ async def sync(c: dict) -> None:
         await awards_api.auto_elite(c)
     except HTTPException:
         pass
+    import history_api
+    try:
+        await history_api.check_records(c)
+    except HTTPException:
+        pass
     sl = await scouting_api.shortlisted(c["id"])
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players.unique_id": 1, "players.name": 1, "players.contract_end": 1}) or {"players": []}
     for p in pool["players"]:
@@ -184,9 +189,10 @@ async def notices():
     offs = features_api.off(c)
     rows = await db.notices.find({"career_id": c["id"], "hidden": False, "type": {"$in": [k for k, v in p.items() if v]}}, {"_id": 0, "career_id": 0}).sort("at", -1).to_list(100)
     rows = [r for r in rows if not features_api.path_off(r["link"], offs) and not (r["type"] == "countdown" and _cd_off(r["key"], offs))]
-    badges = sorted({r["link"].split("?")[0] for r in rows if not r["read"]})
+    nav = lambda r: (r.get("nav") or r["link"]).split("?")[0]  # noqa: E731
+    badges = sorted({nav(r) for r in rows if not r["read"]})
     return {"items": rows, "unread": sum(not r["read"] for r in rows), "badges": badges,
-            "badge_items": {b: [r["title"] for r in rows if not r["read"] and r["link"].split("?")[0] == b][:5] for b in badges}}
+            "badge_items": {b: [r["title"] for r in rows if not r["read"] and nav(r) == b][:5] for b in badges}}
 
 
 def _cd_off(key: str, offs: set) -> bool:
@@ -202,7 +208,7 @@ async def read_page(body: PageIn):
     """Opening a page marks its notices read, so its menu dot clears."""
     c = await active_career()
     links = [v for v in PAGE.values() if v.split("?")[0] == body.path]
-    r = await db.notices.update_many({"career_id": c["id"], "read": False, "link": {"$in": links}}, {"$set": {"read": True}})
+    r = await db.notices.update_many({"career_id": c["id"], "read": False, "$or": [{"link": {"$in": links}}, {"nav": {"$in": links}}]}, {"$set": {"read": True}})
     return {"ok": True, "marked": r.modified_count}
 
 

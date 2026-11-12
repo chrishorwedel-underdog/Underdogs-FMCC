@@ -411,3 +411,43 @@ async def club_players():
                 t["apps"] += r["appearances"] or 0
                 t["goals"] += r["goals"] or 0
     return {"players": sorted(seen.values(), key=lambda p: -p["apps"])}
+
+
+
+def _fmt(v, unit: str) -> str:
+    if unit == " £":
+        return f"£{v:,.0f}"
+    return f"{v}{unit}"
+
+
+def _who(h: dict) -> str:
+    return h.get("name") or h["season"]
+
+
+async def check_records(c: dict) -> None:
+    """Bell notice when a club record changes hands. The first check only remembers today's holders."""
+    from notify_api import _add
+    found = {}
+    for scope in ("league", "all"):
+        r = await records(scope)
+        cats = ["team", "players", "matches", "transfers"] if scope == "league" else ["team", "matches"]
+        for cat in cats:
+            for rec in r[cat]:
+                if rec["holder"]:
+                    found[f"{scope}:{rec['key']}"] = (rec, scope)
+    state = await db.record_state.find_one({"career_id": c["id"]}, {"_id": 0}) or {}
+    seen = state.get("holders")
+    sig = lambda h: f"{h.get('unique_id', '')}|{h['season']}|{h.get('date', '')}"  # noqa: E731
+    now = {k: sig(rec["holder"]) for k, (rec, _) in found.items()}
+    if seen is not None:
+        snap = await db.snapshots.find_one({"career_id": c["id"]}, {"_id": 0, "game_date": 1}, sort=[("save_no", -1)]) or {}
+        for k, (rec, scope) in found.items():
+            if k not in seen or seen[k] == now[k]:
+                continue
+            h = rec["holder"]
+            label = rec["label"] + (" (all competitions)" if scope == "all" else "")
+            prev = rec["previous"][0] if rec["previous"] else None
+            text = f"{_fmt(h['value'], rec['unit'])} in {h['season']}." + (f" Previous record: {_who(prev)}, {_fmt(prev['value'], rec['unit'])}." if prev else " First time this record has been set.")
+            link = f"/squad?player={h['unique_id']}" if h.get("unique_id") else h.get("link") or "/club-history?tab=records"
+            await _add(c["id"], "record", f"record:{k}:{now[k]}", f"New club record: {label}" + (f" by {h['name']}" if h.get("name") else ""), text, snap.get("game_date") or "", link)
+    await db.record_state.update_one({"career_id": c["id"]}, {"$set": {"career_id": c["id"], "holders": now}}, upsert=True)
