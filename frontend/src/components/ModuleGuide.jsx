@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Info, ChevronUp, Lightbulb, X, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { GUIDES } from "@/constants/guides";
+import { GUIDES, SIMPLE } from "@/constants/guides";
 import { api, errMsg } from "@/lib/api";
 import { usePersist, useCareerId, readPersist } from "@/lib/remember";
 import { Switch } from "@/components/ui/switch";
@@ -102,6 +102,7 @@ export const ModuleGuide = () => {
         <button className="ib guide-x" onClick={() => prefs.close(pathname)} aria-label="Close this box on this screen" title="Close this box on this screen. Bring it back in Settings." data-testid="module-guide-close"><X size={14} /></button>
         </div>
         <div className="guide-body" data-testid="module-guide-body">
+          <div className="guide-simple" data-testid="module-guide-simple"><div className="eyebrow">What this feature does</div><p>{SIMPLE[pathname] || g.what}</p></div>
           <div><div className="eyebrow">On this page</div><ul>{g.features.map((f) => <li key={f}>{f}</li>)}</ul></div>
           <div><div className="eyebrow">How it works</div><ol>{g.how.map((h) => <li key={h}>{h}</li>)}</ol></div>
         </div>

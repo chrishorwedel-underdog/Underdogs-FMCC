@@ -93,6 +93,8 @@ button.ver-tag{background:none;border:0;cursor:pointer}
 .guide-head span{flex:1}
 .guide-head svg{color:var(--acc);flex-shrink:0}
 .guide-body{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;padding:0 16px 14px 41px;font-size:13px;color:#C9CED4;line-height:1.6}
+.guide-simple{grid-column:1/-1;background:var(--s2);border:1px solid var(--line2);border-left:3px solid var(--acc);border-radius:10px;padding:12px 14px}
+.guide-simple p{margin:4px 0 0;font-size:15px;line-height:1.5;color:var(--text)}
 .guide-body ul,.guide-body ol{margin:6px 0 0;padding-left:18px}
 .guide-body ul{list-style:disc}.guide-body ol{list-style:decimal}
 @media (max-width:900px){.guide-body{grid-template-columns:1fr;padding-left:16px}.guide-head b{white-space:normal}}

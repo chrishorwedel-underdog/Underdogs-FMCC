@@ -325,6 +325,8 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - 2026-11-12 Finance strip: labels "Wages/Turnover", "Incoming Transfers" (spent on players bought this season), new "Outgoing Transfers" (made selling players this season; reader key transfer_received/transfer_income), "Budget Left"; strip now 6 equal boxes.
 - 2026-11-12 Up next panel shows the first 3 items (or all Urgent ones if more) with a "Show N more / Show fewer" button (up-next-expand); no 10-item cap. Finance strip adds "Net Spend" (sales minus purchases, + when positive) before Budget Left (7 boxes); hovering Incoming/Outgoing Transfers also shows the net spend.
 - 2026-11-12 Transfer breakdown: clicking (or Enter on) Incoming Transfers, Outgoing Transfers or Net Spend opens a dialog with this season's Buys and Sales (player, other club, date, fee; rows open the player panel). Backend GET /api/finance/transfers: season from 1 July, moves from pool last_move (fee/date) plus squad differences across this season's saves (fee shown as "Fee not in save", never estimated).
+- 2026-11-12 Explainer boxes: every "How this page works" box now starts with a highlighted "What this feature does" panel (SIMPLE map in constants/guides.js, one or two very simple sentences per page, falls back to the page's purpose line), above "On this page" and "How it works".
+
 
 
 

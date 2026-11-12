@@ -1,4 +1,23 @@
 // Plain-language guide shown at the top of every sidebar page: what it does, what's on it, how to use it.
+// One or two very simple sentences per page: what the feature does, in everyday words.
+export const SIMPLE = {
+  "/": "Shows you the most important things about your club right now, so you know what to do next.",
+  "/punish": "Lets you punish any club, for example by taking points off them or fining them, and puts it into your FM save for you.",
+  "/dynamic-potential": "Players who play well can become better in the future, and players who play badly can lose some of their future. FMCC checks this twice a season.",
+  "/breakout": "Picks the one player who surprised everyone most this season and gives him a small boost in FM as a reward.",
+  "/scouting": "Helps you find good players to sign, using their real match numbers and price, and tells you which ones are worth it.",
+  "/reports": "A monthly news page for the whole football world in your save: who won, who scored and who moved clubs.",
+  "/moneyball": "Shows which players give you the most for your money.",
+  "/squad": "Helps you pick your best team and see who should play in each position.",
+  "/development": "Helps your young players grow by checking they get enough games, the right loans and clear goals.",
+  "/elite-training": "Gives your best young players an extra boost when they train really well.",
+  "/matches": "Shows what happened in your matches with easy charts and numbers.",
+  "/editor": "Lets you change names, looks and details of players and clubs in your FM save.",
+  "/safety": "Keeps a backup of your saves and FMCC's data so nothing gets lost.",
+  "/dof": "A helper you can chat with about your team. Ask it anything about your squad and plans.",
+};
+
+
 export const GUIDES = {
   "/punish": {
     what: "Punishes any club in your database, inspired by sortitoutsi's Punish Manchester City tool.",
