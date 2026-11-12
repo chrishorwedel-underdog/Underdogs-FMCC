@@ -377,8 +377,6 @@ async def price_explained(uid: int, view: str = "full"):
         out.append({"factor": f, "effect": "raises" if up else "lowers", "detail": detail})
     if med("age") is not None:
         add("Age", x["age"] < med("age"), f"{x['age']} vs {med('age')} typical for his position")
-    if view == "full" and x.get("pa") and x.get("ca"):
-        add("Potential", x["pa"] - x["ca"] >= 20, f"{x['pa'] - x['ca']} points of room to grow")
     add("Position", (med("value") or 0) > sorted(o["value"] for o in data["players"] if o["value"])[len(data["players"]) // 2], f"{x['cohort']}s are valued at {med('value'):,} in the middle" if med("value") else x["cohort"])
     add("Club and league", x["league_mult"] >= .85, f"league multiplier {x['league_mult']}")
     if x["months_left"] is not None:

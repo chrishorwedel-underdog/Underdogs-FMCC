@@ -11,6 +11,7 @@ import { WhatsNew } from "@/components/WhatsNew";
 import { UpdateCard } from "@/components/VersionTag";
 import { ClubColours } from "@/components/ClubColours";
 import { FeatureGate } from "@/components/FeatureGate";
+import { FinanceStrip } from "@/components/FinanceStrip";
 import { useFeatures } from "@/lib/features";
 import Features from "@/pages/Features";
 import TransferMarket from "@/pages/TransferMarket";
@@ -59,6 +60,7 @@ const Shell = ({ state }) => {
       <Tour ready={!!state.career && feats?.ask === false} />
       <section className="main">
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
+        <FinanceStrip />
         <div className="content">
           <ModuleGuide />
           <PageCountdown />

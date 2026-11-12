@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Pause, Play, Undo2, Check, X, ShieldCheck, ChevronDown } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle } from "lucide-react";
 import { api, ago } from "@/lib/api";
@@ -8,18 +8,18 @@ import { useGet, useAct, PageHead } from "@/lib/ui";
 import { AuditCard } from "@/components/AuditCard";
 import { BatchDialog } from "@/components/BatchDialog";
 
-const Modes = ({ d, act }) => (
+const Modes = ({ d }) => (
   <div className="card" data-testid="change-modes">
     <div className="ttl">How changes are applied</div>
-    {Object.entries(d.sources).filter(([k]) => k !== "editor" && k !== "shortlist").map(([k, l]) => (
-      <div className="row" key={k}><div style={{ flex: 1 }}>{l}<small>{d.modes[k] === "auto" && d.auto_allowed ? "Apply automatically" : "Ask me first"}</small></div>
-        <Switch disabled={!d.auto_allowed} checked={d.modes[k] === "auto" && d.auto_allowed} onCheckedChange={(v) => act(() => api.put("/changes/modes", { source: k, mode: v ? "auto" : "ask" }), null, ["changes"])} data-testid={`mode-${k}`} /></div>
-    ))}
-    <div className="row"><div style={{ flex: 1 }}>Show Dynamic Potential details<small>Off: DP values stay hidden everywhere</small></div>
-      <Switch checked={d.reveal_dp} onCheckedChange={(v) => act(() => api.put("/changes/reveal", { reveal: v }), null, ["changes", "audit"])} data-testid="reveal-dp-switch" /></div>
-    {!d.auto_allowed && <p className="note" style={{ marginTop: 8 }}>Live game changes always wait for your approval, one batch at a time.</p>}
+    <p className="note" style={{ marginTop: 6 }} data-testid="change-mode-text">{d.review_changes
+      ? "Review changes before applying is on: changes wait here until you apply them."
+      : "Automatic: changes go into your save straight away and a notification lists them. Anything the game can't take yet waits here."}</p>
+    <Link to="/features" className="btn" style={{ marginTop: 10, width: "fit-content" }} data-testid="change-mode-features-link">Change this in Features</Link>
   </div>
 );
+
+const WORD = { pa: "Potential", ca: "Current ability" };
+const what = (q) => (q.entity === "shortlist" ? "Add to FM shortlist" : q.entity === "club" ? `${q.label} → ${q.target}` : `${WORD[q.field] || q.field} ${q.delta > 0 ? "+" : ""}${q.delta}`);
 
 const Queue = ({ d, act }) => {
   const [sel, setSel] = useState([]);
@@ -40,7 +40,7 @@ const Queue = ({ d, act }) => {
           <tr key={q.id} style={{ cursor: "default" }} data-testid={`queue-row-${q.id}`}>
             <td><Checkbox checked={chosen.includes(q.id)} onCheckedChange={(v) => setSel(v ? [...chosen, q.id] : chosen.filter((x) => x !== q.id))} /></td>
             <td>{q.player_name}{q.club && <small style={{ display: "block", color: "var(--dim)" }}>{q.club}</small>}</td><td>{d.sources[q.source]}</td>
-            <td className="mono" data-testid={`queue-delta-${q.id}`}>{q.entity === "shortlist" ? "Add to FM shortlist" : q.delta == null && q.entity !== "club" ? <span style={{ color: "var(--dim)" }}>Hidden</span> : q.entity === "club" ? `${q.label} → ${q.target}` : `${q.field.toUpperCase()} ${q.delta > 0 ? "+" : ""}${q.delta}`}</td><td><small>{ago(q.created_at)}</small></td>
+            <td className="mono" data-testid={`queue-delta-${q.id}`}>{what(q)}</td><td><small>{ago(q.created_at)}</small></td>
           </tr>))}</tbody>
       </table>
       {!d.queued.length && <p className="note" style={{ padding: 10 }}>Nothing waiting.</p>}
@@ -59,7 +59,7 @@ const BatchDetail = ({ id }) => {
       <small style={{ display: "block", marginBottom: 6 }}>Approved by {data.approved_by || "Manager"} · {data.save_backup ? `save copied to ${data.save_backup.file}` : "FMCC backup saved"}</small>
       {data.changes.map((c) => <div key={c.id} style={{ padding: "6px 8px 6px 0", borderTop: "1px solid var(--line)", fontSize: 12.5 }} data-testid={`batch-change-${c.id}`}>
         <b style={{ display: "block" }}>{c.player_name}</b>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}><span className="mono">{c.entity === "shortlist" ? "Add to FM shortlist" : <>{c.field.toUpperCase()} {c.old_value == null && c.hidden ? "Hidden" : `${c.old_value ?? "—"} → ${c.new_value ?? "—"}`}</>}</span>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}><span className="mono">{c.entity === "club" && c.old_value != null ? `${c.label} ${c.old_value} → ${c.new_value ?? "—"}` : what(c)}</span>
           <span className={`st ${c.status === "applied" ? "ok" : c.status === "failed" ? "r" : "n"}`} style={{ marginLeft: "auto" }} title={c.error || ""}>{c.status}</span></div></div>)}
     </div>
   );
@@ -105,7 +105,7 @@ export default function Changes() {
         <span><b>Keep the changes:</b> press Continue in FM, then save your game. FMCC reads that save and shows the new values.</span></div>}
       <div className="homegrid">
         <div style={{ display: "grid", gap: 16, alignContent: "start" }}><Queue d={d} act={act} /><AuditCard /></div>
-        <div style={{ display: "grid", gap: 16, alignContent: "start" }}><Modes d={d} act={act} /><Batches d={d} act={act} /></div>
+        <div style={{ display: "grid", gap: 16, alignContent: "start" }}><Modes d={d} /><Batches d={d} act={act} /></div>
       </div>
     </div>
   );

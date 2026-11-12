@@ -1,256 +1,125 @@
-# Dynamic Potential rebuilt to the rulesheet, plus four new themes
+# FMCC Quality-of-Life Upgrade: Cleaner, Calmer, Easier
 
-Dynamic Potential is rebuilt around the Underdog FM Dynamic Potential Rulesheet (11 November 2026). Each player's hidden PA moves with how they actually play: a winter review and a season-end review, with every value in the rulesheet editable.
-Appearance also gets four new colour themes: Light, FM24, FM26 and FM27.
+This upgrade gives FM Command Centre a less daunting look and feel without removing any features. Complex tools stay, but they sit behind simpler screens, clearer groups and sensible defaults.
 
 ## Who it's for
-Football Manager players running Underdog FM careers who want potential to rise and fall fairly with real on-pitch performance. The system must be explainable to anyone, without showing real CA or PA.
+- New FMCC users who currently face too many options at once.
+- Experienced users who want faster navigation, consistent rules screens and fewer manual steps.
+- Players who need larger text, higher contrast or screen-reader-friendly tables.
 
 ## Core features and experience
 
-### A. Dynamic Potential, rebuilt
+### Standing rules (apply everywhere)
+- True PA/CA is never shown and can't be revealed anywhere. This includes screens, filters, columns, exports, tooltips and any raw-data view.
+- Automatic applying is the default. When a rule or setting produces player changes (including PA/CA changes), they go to the save straight away and a notification lists what changed.
+- A "Review changes before applying" switch in the Features area turns on manual approval for anyone who wants it. It is off by default.
 
-**Two reviews a season**
-- **Winter review**, at the opening of the winter transfer window: a possible early growth advance.
-- **Season-end review**, after the final competitive match: the full-season entitlement, settled against any winter award.
-- Before the first review, the season's two halves are set and saved, with the winter review date as the dividing point. FMCC suggests the date from the save's calendar, and it can be changed.
-- Each player's age is recorded at the start of the season and used for that whole season.
+### Navigation
+- The Home menu item is removed. Clicking the FMCC logo at the top left goes back to Home.
+- The menu is grouped like this, alphabetical within each group:
+  - **My Club:** Matches, Squad
+  - **Player Development:** Breakout Player, Development, Dynamic Potential, Elite Training
+  - **Recruitment:** Scout Players, Transfer Market
+  - **Reports:** Club Analysis, World Monthly Reports
+  - **Utilities:** Player & Teams Editor, Punish a Club
+- Moneyball leaves the menu and becomes part of Scout Players.
+- Chat with your Director of Football stays as the separate button at the bottom of the menu.
 
-**What counts as evidence**
-- **Counted:** league, cup, continental, playoff, and competitive youth or reserve matches.
-- **Loans:** senior loan matches count fully, in the competition and role actually played.
-- **Substitute appearances:** they count with their real minutes.
-- **Unrated appearances:** they add minutes but no rating.
-- **Not counted:** friendlies, internationals and training.
-- **Several clubs in one period:** matches across clubs and loans are combined, and each appearance is counted once.
-- **Weighting:**
-  - Senior performances count fully.
-  - Youth and reserve performances count at 75%.
-  - B teams playing in senior competitions count as senior.
-- **Injuries:** the minimum-minutes rules give the injury protection. There are no injury-day deductions.
+### Home: one "Up Next in Your Save" area
+- A distinct panel at the top of Home, with its own background and border, combines "Up Next in your save" and "Needs your attention" in one list.
+- Urgent items come first and are clearly marked. Each item has one clear action button.
 
-**Performance Score (0–100)**
-- **55% match-rating percentile and 45% role-output percentile.**
-- **Who a player is compared with:** players of the same position and role, in a similar-strength competition, at a similar starting or preseason expected level. This expectation is fixed for the season.
-- **Comparison group size:** at least 25 comparison players are needed. With fewer, the assessment is marked "needs your review".
-- **Role output** uses three metric groups per position (A 40%, B 35%, C 25%), as listed in the rulesheet:
+### Finance strip (every screen, just under the top bar)
+- A slim strip shows FFP compliance, wage-to-turnover ratio, transfer money spent this year, transfer budget remaining and bank balance.
+- Each figure is coloured red (trouble), green (healthy) or gold (excellent), with a short reason shown on hover or focus.
+- Missing figures show "Not in save yet" instead of a misleading number.
 
-| Position | A (40%) | B (35%) | C (25%) |
-|---|---|---|---|
-| Goalkeeper | save percentage or goals prevented | cross claims and sweeping, when available | pass completion and distribution |
-| Centre-back | aerial win rate and tackle success | interceptions and tackles won | progressive passing |
-| Full-back / wing-back | tackle success and defensive actions | progressive passing | chances created |
-| Defensive midfielder | possession won and interceptions | pass completion and ball retention | progressive passing |
-| Central midfielder | progressive passing | chances created or key passes | possession won and interceptions |
-| Attacking midfielder | expected assists or chances created | progressive passing and carrying, where available | non-penalty expected goals |
-| Winger / wide forward | non-penalty expected goals | expected assists or chances created | dribbling and carrying, where available |
-| Striker | non-penalty expected goals | non-penalty goals against expected goals | expected assists or chances created |
+### Same rules screen in every module
+- Dynamic Potential's "Settings" and the "Rules" in other modules all use one layout. Each rule shows:
+  - its current value and default
+  - a plain-language explanation
+  - when it was last changed
+- Before saving a change, a preview shows how many players it would affect.
+- Any single rule can be reset to its default without resetting the whole module.
+- **Dynamic Potential's recent rebuild is kept intact.** Its rulesheet calculations, winter and season-end reviews, settings history, scope switch and Balance Preview stay exactly as they are. Only two things change:
+  - its Settings tab uses the shared rules layout, with the existing settings history supplying the "last changed" details
+  - its "Needs Review" approval queue is used only when the manual-approval switch is on; otherwise those changes apply automatically and appear in the notification
 
-- **How metrics are combined:**
-  - Each metric becomes a percentile first.
-  - Counting stats are per 90.
-  - Success rates are used only where attempts exist.
-  - Several metrics in one group are averaged equally.
-  - Bad-outcome stats, such as possession lost, are scored in reverse.
-- **Splits:** where verified role or competition splits exist, each is scored separately and combined by playing time.
+### Scout Players (stage 2)
+- A much simpler first screen with a search box, a few common filters and a results table. Advanced options sit behind a "More filters" panel.
+- A Moneyball tab with bargains, value for money and undervalued per-90 performers.
+- **Find Similar Players:** pick a player or enter target numbers (basic or per-90, such as xG, xA, key tackles and progressive passes) to see the closest matches with a similarity score.
+- **Youth Intake Tracker:**
+  - a calendar of youth intake dates, with the top 5 leagues on by default and any league switchable on or off
+  - running countdowns to each intake
+  - an FMCC bell notification as soon as an intake happens
+- **Easier tables:**
+  - the player column stays pinned
+  - columns use standard short names (for example npxG and OP-KP), with full names on hover and focus
+  - common filters stay visible while scrolling
 
-**Missing statistics (never scored as zero)**
-- **Substitutes:** predefined stand-ins are used, for example progressive passing for carrying. The same stand-in is used for the comparison group.
-- **A whole group missing from the data:** its weight is shared proportionally between the remaining groups. The 55/45 split stays while at least two role groups are usable, so a goalkeeper rated on shot-stopping and distribution stays eligible.
-- **A gap for one player only:** the assessment is shown as provisional, and any automatic decline is held until the gap is resolved.
-- **Ratings-only growth:** allowed up to +4. Anything larger needs your review and supporting evidence.
-- **Ratings-only decline:** never applied automatically. It can only flag a concern.
-- **Unknown half-seasons:** if either half's minutes or ratings can't be established, downward changes are held.
-- **Zeros:** a verified zero is valid evidence. A percentage with no recorded attempts is treated as unavailable.
+### Squad (stage 2)
+- Lineups and depth charts can be edited, and changes apply to the save automatically.
+- **Loan Manager**, a clearly separate section:
+  - **Try a loan:** pick the loanee and a possible club to see that club's depth chart, where the player fits, and a letter grade (A+ to F, with pluses and minuses) with a one-line reason.
+  - **Track loanees:** for each loanee, see their league, minutes, stats, facilities and development trend. A red down arrow means in trouble, a green up arrow means going well and a gold up arrow means excellent.
+- Squad and Club Analysis use the same assessment, so they always agree on the weakest position.
 
-**From score to PA change**
-- **Base change** (from the unrounded score):
-
-| Performance Score | Base change |
-|---|---|
-| 97–100 | +12 |
-| 95 to below 97 | +11 |
-| 93 to below 95 | +10 |
-| 90 to below 93 | +9 |
-| 88 to below 90 | +8 |
-| 86 to below 88 | +7 |
-| 83 to below 86 | +6 |
-| 80 to below 83 | +5 |
-| 75 to below 80 | +4 |
-| 70 to below 75 | +3 |
-| 65 to below 70 | +2 |
-| 30 to below 65 | 0 |
-| 25 to below 30 | −1 |
-| 20 to below 25 | −2 |
-| 15 to below 20 | −3 |
-| 10 to below 15 | −4 |
-| Below 10 | −5 |
-
-- **Growth tiers:**
-
-| Tier | Base award | Season-end requirement |
-|---|---|---|
-| Above expectations | +2 to +4 | 1,100 competitive minutes |
-| Excellent | +5 to +8 | 1,400 competitive minutes |
-| Exceptional | +9 to +12 | 1,800 senior minutes, including 400 senior minutes in each half; senior-only evidence; rating and role percentiles both 85 or higher |
-
-  - A player who misses a tier's requirements is capped at the highest tier they meet. For example, a score of 91 with 1,500 minutes gives +8.
-  - Youth evidence can reach Excellent at most.
-  - Ordinary growth can come from a strong sample concentrated in one half.
-- **Decline** (every requirement must be met):
-
-| Requirement | Ordinary decline (−1 to −3) | Severe decline (−4 to −5) |
-|---|---|---|
-| Season minutes | 1,300 | 1,800 |
-| Minutes in each half | 300 | 600 |
-| Season score | below 30 | below 15 |
-| Match-rating percentile in each half | below 35 | below 25 |
-| Season rating and role percentiles | both below 35 | both below 35 |
-| Evidence | reliable minutes and ratings, at least two usable role groups | same |
-
-  - A player who misses the severe requirements but meets the ordinary ones is capped at −3.
-  - Players with under 60% senior minutes are capped at −2.
-  - Meeting the minutes only opens the assessment. The performance requirements must also be met.
-- **Age deduction from growth only:**
-
-| Age at season start | Deduction |
-|---|---|
-| 25 or younger | 0 |
-| 26 | 1 |
-| 27 | 2 |
-| 28 | 3 |
-| 29 | 4 |
-| 30 | 5 |
-| 31 | 6 |
-| 32 | 7 |
-| 33 or older | 8 |
-
-  Growth never goes below 0 after the deduction, and age alone never causes a loss.
-- **Growth taper**, applied point by point after the age deduction:
-
-| PA while applying | Share of earned growth |
-|---|---|
-| 165 or below | 100% |
-| 166–174 | 75% |
-| 175–184 | 50% |
-| 185–199 | 25% |
-| 200 | 0% |
-
-  - The band is checked again after each whole point, and leftover fractions are dropped.
-  - Example: 174 PA with +12 earned gives +6, ending at 180.
-- **Decline taper**, applied point by point and rounded toward zero:
-
-| PA while applying | Share of earned loss |
-|---|---|
-| 135 or higher | 100% |
-| 125–134 | 80% |
-| 115–124 | 60% |
-| 105–114 | 40% |
-| 96–104 | 20% |
-| 95 or lower | 0% |
-
-  - For a −5 base loss: 140 PA gives −5, 130 gives −4, 120 gives −3, 110 gives −2, 100 gives −1, and 95 or lower gives 0.
-- **Limits:**
-  - The loss floor is 95 PA, or the player's current CA if higher.
-  - PA never exceeds 200.
-  - The seasonal maximum is +12 or −5 before tapering.
-  - Players already below 95 can still grow, and are protected from a net seasonal loss.
-
-**Winter advance and season settlement**
-- **Winter review steps:**
-  1. It needs 550 competitive minutes and enough evidence.
-  2. A provisional annual growth amount is worked out from the current score. The season's growth-minute requirements are checked at season-end.
-  3. The age deduction and growth taper are applied.
-  4. Half of the result is awarded, rounded down, up to a maximum of +4.
-  5. The amount actually applied is recorded.
-- **Youth and Exceptional limits at winter:** youth evidence has a provisional ceiling of +8. Exceptional needs senior evidence and its thresholds.
-- **Poor winter form** only creates a monitoring flag. Losses are only decided at season-end.
-- **Avoiding a double taper:** the season-end taper starts from current PA minus this season's Dynamic Potential points. Changes from other systems, such as Elite Training, still count.
-- **Settlement:** season-end applies the final entitlement minus the winter award. For example, +6 entitlement with +2 at winter gives +4 more, and −2 entitlement with +2 at winter gives −4.
-  - Returning winter points needs 1,300 season minutes, 300 in each half, and a reliable final assessment. Otherwise the winter award is kept.
-  - Any entitlement below zero must separately pass the decline requirements and the decline taper.
-
-**Applying changes (automatic, as chosen)**
-- **Straight into your save:** review results go in as soon as the review runs, through FMCC's usual game-change process (backup first, read back after).
-- **These wait for your approval instead:**
-  - ratings-only growth above +4
-  - assessments marked "needs your review"
-  - declines held for missing evidence
-- **Safety and repeat runs:**
-  - Running a review again, or re-reading a save, never applies the same change twice.
-  - Corrections keep the earlier decision on record.
-  - Reviews run in batches of up to 500 players, and the rest carry over.
-
-**Review record for every player**
-- **What it shows:**
-  - the period and qualifying minutes
-  - first-half and second-half minutes
-  - match-rating and role percentiles
-  - metrics used, stand-ins and missing evidence
-  - base result and age deduction
-  - the effect of tapering
-  - winter points already applied
-  - the change, with a plain-words reason
-- **What it never shows:** real CA or PA. Only the change, and whether a taper or cap reduced it.
-
-**All values editable**
-- **Settings panel:** every number in the rulesheet can be changed in one Dynamic Potential settings panel. This covers weights, percentiles, minutes, score bands, tiers, age table, both tapers, winter rules, caps, floors and the batch size. The metric list for each position can also be changed.
-- **One set for all careers**, as chosen. It starts from the rulesheet values, with "Reset to rulesheet" for one section or for everything.
-- **Validation:** changes are checked before saving, for example that bands don't overlap and that percentages add up to 100.
-- **History:** each saved change is kept, so an earlier set can be restored.
-- **Reviews keep their settings:** each review records the settings it used. Changing a value later doesn't change past results.
-
-### B. Four new themes
-- **Where:** Light, FM24, FM26 and FM27 appear in Appearance next to the existing themes, each with a colour preview. Colours only: fonts, shapes and layouts stay FMCC's.
-- **Light:** white background, light grey panels, dark text and FMCC blue.
-- **FM24:** navy and slate with FM24's green.
-- **FM26:** deep purple with a bright pink-purple accent.
-- **FM27:** charcoal with a softer purple. The top bar uses your club's colours from the loaded save, and FM27's own colours when no club is loaded.
-- **Readability:** status colours and text stay readable on every theme, and the choice is remembered.
+### Polish everywhere (stage 3)
+- **Radar charts and heatmaps:** these replace plain text and bars for player attributes and metric breakdowns, styled like the game's Data Hub.
+- **Screens remembered exactly as you left them, per career:**
+  - filters, sort order, columns, formation, comparison picks and scroll position
+  - closing a dossier returns you to the same player in the same table
+- **Helpful empty states:** each one says why it is empty (filters, too few minutes, missing data or nobody qualifies). It also offers a matching action, such as loosening a threshold or showing who is closest to qualifying.
+- **Accessibility mode:**
+  - high-contrast colour options
+  - font-size controls (building on the existing text-size setting)
+  - tables that work with screen readers
+  - visible keyboard focus
 
 ## User flow
-1. Open **Dynamic Potential**.
-2. The overview shows:
-   - where the season is: before winter, winter done, or season done
-   - the next review date
-   - counts of players rising, steady, falling, held and needing review
-3. Press **Run winter review** or **Run season-end review**. Results appear as player cards, and automatic changes go into the save straight away.
-4. Open any player for a plain-words breakdown of score, minutes, evidence, age, taper and final change.
-5. Look at **Needs your review** and approve or reject each one.
-6. Open **Settings** to change any rule value. A short summary shows what each change means before saving.
-7. In Appearance, pick a new theme.
+1. Open FMCC and land on Home. The "Up Next in Your Save" panel lists what needs doing, and the finance strip shows the club's money health at a glance.
+2. Use the grouped menu to reach a module, then click the FMCC logo to return Home.
+3. In any module, open Rules. Change a value, see how many players it affects, then save. Changes apply automatically and a notification confirms them.
+4. (Stage 2) Scout from one simple screen, switch to Moneyball, Similar Players or Youth Intake, and get a bell alert when an intake happens.
+5. (Stage 2) In Squad, drag players in the lineup or depth chart, grade a potential loan and keep an eye on loanee arrows.
 
 ## UI/UX feel
-- **Simple on top, full detail below.** The overview is clean and calm, with one main action at a time.
-- **Player cards:** each shows a clear up, steady or down signal with the change amount, and a short reason such as "Strong season, 1,620 minutes, age 27 (−2), taper applied".
-- **Detail view:** a step-by-step breakdown from score, to base, to age, to taper, to final, with progress bars for percentiles and minutes against each requirement.
-- **Settings panel:** grouped into sections with plain labels, short help text beside each value, and clear marks on values that differ from the rulesheet.
-- **No real CA or PA anywhere on screen.**
+- Calm and uncluttered: fewer buttons on first view, and advanced options one click away.
+- Consistent patterns: the same rules screen, the same empty-state style and the same colour meaning everywhere (red trouble, green healthy, gold excellent).
+- The current themes, kit accent and club colours stay as they are.
 
 ## Implementation phases
-**Phase 1 – MVP (built now)**
-- The full rulesheet engine: evidence, scoring, missing-statistic handling, tiers, decline, age, both tapers, winter advance and settlement, limits, review records, repeat-run safety and batches.
-- Automatic apply, with the "needs your review" exceptions waiting for approval.
-- The new Dynamic Potential page: overview, player cards, player detail, review list and full settings panel.
-- The four new themes.
-
-**Phase 2**
-- Balance preview: run the rules over a save without applying anything, to see how often players rise and fall by position, age and competition (rulesheet section 14).
-- Compare two settings sets side by side on the same save.
-- Export a season's review records.
-
-**Phase 3**
-- Club-wide trends across seasons: who keeps rising, and which leagues produce growth.
-- Optional reminders on the review dates.
-- Settings presets to share or import.
+- **Phase 1 (MVP, built now):**
+  - new grouped and alphabetised menu, with the Home item removed and the logo linking Home
+  - combined "Up Next in Your Save" panel on Home
+  - finance strip
+  - automatic applying by default with notifications, plus the manual-approval switch in Features
+  - all PA/CA viewing removed
+  - one consistent rules screen across all modules, with preview counts and per-rule reset
+- **Phase 2:**
+  - Scout Players simplification with Moneyball folded in, and the Moneyball menu item removed
+  - Find Similar Players
+  - Youth Intake Tracker
+  - easier tables
+  - editable lineups and depth charts
+  - Loan Manager
+  - Squad and Club Analysis agreeing on the weakest position
+- **Phase 3:**
+  - radar charts and heatmaps
+  - screens remembered per career
+  - explanatory empty states
+  - high-contrast and accessibility mode
 
 ## Assumptions
-- **The rulesheet is the source of truth.** Every default comes from it as written.
-- **The old system is replaced.** Past awards are kept unchanged, and the new rules apply from the next review.
-- **The "all loaded players" switch stays.** It decides who is reviewed.
-- **Winter review date:** FMCC suggests it from the save's winter transfer-window opening, and you can change it.
-- **Missing statistics in real saves:** where FM doesn't provide a statistic for a player, such as goals prevented, the missing-statistic rules decide what happens. Which statistics FM27 saves actually provide is only known after reading real saves on a PC.
-- **Comparison groups** use players from the same save, matched by position group, role, competition strength and expected level.
-- **The browser preview** runs on the sample save. Real-save behaviour still needs your PC.
-- **Elite Training** awards stay separate and count toward the current PA reference, as the rulesheet says.
-- **Theme colours** are matched from public screenshots, with no game artwork or fonts. FM27 club colours are brightened or darkened when needed to stay readable.
+- Until phase 2, Moneyball stays reachable from its current menu item. It is removed when it moves into Scout Players.
+- Automatic applying needs FMCC for Windows with the save or game connected. In browser or sample mode, changes still show notifications but only affect sample data.
+- Finance colour thresholds:
+  - wage-to-turnover: gold below 50%, green 50–70%, red above 70%
+  - FFP: gold if comfortably compliant, green if compliant, red if at risk or breaching
+  - spent, budget and bank: judged against the club's own budget and turnover
+- The finance strip reads whatever the save provides. Figures the save doesn't contain are labelled as missing, never estimated.
+- Youth intake alerts use the FMCC bell only, with no Windows pop-up.
+- Loan grades run A+ to F with pluses and minuses. They are based on expected minutes, league level, facilities and fit with the player's development.
+- Disabling a module in the per-career feature picker still never deletes its data.
+- Real FM save behaviour (finance figures, automatic applying, lineup writes, loan data, intake dates) can only be confirmed on a Windows PC with FM running.

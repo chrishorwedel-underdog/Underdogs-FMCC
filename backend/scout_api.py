@@ -71,7 +71,7 @@ def _filter(data: dict, f: dict, view: str) -> list:
         if not (f.get("min_age", 15) <= (x["age"] or 0) <= f.get("max_age", 45)) or x["minutes"] < f.get("min_minutes", 0):
             continue
         p = f.get("preset")
-        if p == "wonderkids" and not (x["age"] <= 21 and ((x["pa"] or 0) >= 150 if view == "full" else (x["grade_global"] or 0) >= 52)):
+        if p == "wonderkids" and not (x["age"] <= 21 and (x["grade_global"] or 0) >= 52):
             continue
         if p == "expiring" and not (x["months_left"] is not None and x["months_left"] <= 12):
             continue

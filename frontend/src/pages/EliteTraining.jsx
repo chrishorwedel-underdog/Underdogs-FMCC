@@ -18,7 +18,7 @@ const Nominees = () => {
   const [pick, setPick] = useState("");
   if (!data) return <p className="note">Loading nominations…</p>;
   const nominate = (uid) => act(() => api.post("/elite/nominations", { unique_id: Number(uid), note: "" }), "Nominated for Elite Training", ["elite"]);
-  const queue = () => act(() => api.post("/elite/queue"), (d) => `${d.queued} PA boost(s) queued${d.skipped_duplicates ? `, ${d.skipped_duplicates} already queued this month` : ""}${d.not_qualified ? `, ${d.not_qualified} didn't qualify` : ""}`, ["elite", "changes", "home"]);
+  const queue = () => act(() => api.post("/elite/queue"), (d) => `${d.queued} potential boost(s) ${d.auto_applied ? "applied to your save" : "waiting in Game changes"}${d.skipped_duplicates ? `, ${d.skipped_duplicates} already given this month` : ""}${d.not_qualified ? `, ${d.not_qualified} didn't qualify` : ""}`, ["elite", "changes", "home"]);
   return (
     <div className="homegrid">
       <div className="card" style={{ padding: 8, overflowX: "auto" }}>

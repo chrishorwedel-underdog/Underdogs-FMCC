@@ -1,6 +1,7 @@
 """Change queue, batches, audit trail and undo. Browser preview: the SAMPLE editor. Windows program: FMLibreEditor writes into the running FM27."""
 import asyncio
 import os
+import re
 from datetime import datetime, timezone, timedelta
 from typing import Literal
 
@@ -10,25 +11,46 @@ from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 import sample_reader
-from core import db, active_career, create_backup, audit, now_iso, new_id, get_settings, logger, latest_two
+from core import db, active_career, create_backup, audit, now_iso, new_id, logger, latest_two
 
 router = APIRouter(prefix="/api")
 SOURCES = {"elite": "Elite Training", "breakout": "Breakout Player", "dp": "Dynamic Potential", "editor": "Player & Teams Editor", "punish": "Punish a Club", "shortlist": "Shortlist to FM"}
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
-HIDE = ("delta", "current", "new", "old_value", "new_value")
+HIDE = ("current", "new", "old_value", "new_value")
+TRUE_ABILITY = ("pa", "ca")
+TRUE_VALUES = re.compile(r"\b(PA|CA)\b(?: put back to \d+|[^;,]*?\d+\s*→\s*\d+)", re.I)
+FIELD_WORD = {"pa": "potential", "ca": "current ability"}
 STEP_DELAY = 0.12
 _tasks: dict[str, asyncio.Task] = {}
 
 
-async def reveal_dp() -> bool:
-    return bool((await get_settings()).get("reveal_dp", False))
-
-
-def public(ch: dict, reveal: bool) -> dict:
+def public(ch: dict) -> dict:
+    """True PA/CA values never leave the backend; only the size of a change does."""
     out = {k: v for k, v in ch.items() if k not in ("key",)}
-    if ch.get("hidden") and not reveal:
+    if ch.get("entity", "player") == "player" and ch.get("field") in TRUE_ABILITY:
         out |= {k: None for k in HIDE if k in out}
     return out
+
+
+def describe(ch: dict) -> str:
+    if ch.get("entity") == "shortlist":
+        return "added to your FM shortlist"
+    if ch.get("entity") == "club":
+        return f"{ch.get('label')} → {ch.get('target')}"
+    return f"{FIELD_WORD.get(ch['field'], ch.get('label') or ch['field'])} {'+' if ch['delta'] > 0 else ''}{ch['delta']}"
+
+
+async def notice(cid: str, key: str, title: str, text: str):
+    snap = await db.snapshots.find_one({"career_id": cid}, {"_id": 0, "game_date": 1}, sort=[("save_no", -1)]) or {}
+    await db.notices.update_one({"career_id": cid, "key": key}, {"$setOnInsert": {"id": new_id(), "career_id": cid, "key": key, "type": "changes", "title": title, "text": text[:600],
+                                                                                 "link": "/changes", "game_date": snap.get("game_date"), "at": now_iso(), "read": False, "hidden": False}}, upsert=True)
+
+
+async def notify_batch(b: dict):
+    rows = await db.changes.find({"batch_id": b["id"], "status": "applied"}, {"_id": 0}).to_list(None)
+    if rows:
+        more = f"; and {len(rows) - 8} more" if len(rows) > 8 else ""
+        await notice(b["career_id"], f"batch:{b['id']}", f"{len(rows)} change(s) applied to your save", "; ".join(f"{r['player_name']}: {describe(r)}" for r in rows[:8]) + more)
 
 
 def clamp(v: int) -> int:
@@ -162,9 +184,14 @@ async def queue_changes(career: dict, source: str, award_id: str, items: list, h
             skipped += 1
     if ids:
         await audit(career["id"], "queued", source, f"{len(ids)} change(s) queued", hidden=hidden)
-    mode = (career.get("change_modes") or {}).get(source, "ask")
-    batch = await start_batch(career, ids) if ids and mode == "auto" and not LIVE else None
-    return {"queued": len(ids), "skipped_duplicates": skipped, "auto_applied": bool(batch), "batch_id": batch["id"] if batch else None}
+    batch, why = None, None
+    if ids and not career.get("review_changes"):
+        try:
+            batch = await start_batch(career, ids)
+        except HTTPException as exc:
+            why = exc.detail
+            await notice(career["id"], f"waiting:{source}:{award_id}", "Changes waiting for the game", f"{len(ids)} change(s) from {SOURCES[source]} couldn't be applied yet: {why}")
+    return {"queued": len(ids), "skipped_duplicates": skipped, "auto_applied": bool(batch), "batch_id": batch["id"] if batch else None, "waiting_reason": why}
 
 
 async def start_batch(career: dict, ids: list, expected: dict | None = None) -> dict:
@@ -212,6 +239,7 @@ async def run_batch(batch_id: str):
             if not ch:
                 await db.batches.update_one({"id": batch_id, "status": "running"}, {"$set": {"status": "done", "finished_at": now_iso()}})
                 await audit(b["career_id"], "batch finished", "editor", f"{b['done']} change(s) applied", batch_id=batch_id)
+                await notify_batch(b)
                 return
             try:
                 old, new = await apply_one(ch, b)
@@ -220,7 +248,7 @@ async def run_batch(batch_id: str):
                 return
             await db.changes.update_one({"id": ch["id"]}, {"$set": {"status": "applied", "applied_at": now_iso(), "old_value": old, "new_value": new, "result": "read back OK" if LIVE else "sample save"}})
             await db.batches.update_one({"id": batch_id}, {"$inc": {"done": 1}})
-            detail = f"{(ch.get('label') or ch['field']).upper() if ch.get('entity') not in ('club', 'shortlist') else ch['label']} {old} → {new}" if old is not None else f"{ch['field'].upper()} {'+' if ch['delta'] > 0 else ''}{ch['delta']}"
+            detail = describe(ch) if old is None or ch.get("entity", "player") == "player" and ch["field"] in TRUE_ABILITY else f"{(ch.get('label') or ch['field']).upper() if ch.get('entity') not in ('club', 'shortlist') else ch['label']} {old} → {new}"
             await audit(ch["career_id"], "applied", ch["source"], detail, ch["unique_id"], ch["player_name"], batch_id, ch["hidden"])
             await asyncio.sleep(STEP_DELAY)
     except Exception as exc:
@@ -294,20 +322,14 @@ class ModeIn(BaseModel):
     mode: Literal["auto", "ask"]
 
 
-class RevealIn(BaseModel):
-    reveal: bool
-
-
 @router.get("/changes")
 async def list_changes():
     c = await active_career()
-    reveal = await reveal_dp()
     queued = await db.changes.find({"career_id": c["id"], "status": "queued"}, {"_id": 0}).sort("created_at", 1).to_list(5000)
     batches = await db.batches.find({"career_id": c["id"]}, {"_id": 0, "change_ids": 0, "expected": 0}).sort("created_at", -1).limit(20).to_list(20)
-    return {"modes": {k: (c.get("change_modes") or {}).get(k, "ask") for k in SOURCES}, "sources": SOURCES, "reveal_dp": reveal,
+    return {"sources": SOURCES, "review_changes": bool(c.get("review_changes")),
             "edition": c["edition"], "editor_ok": c["edition"] == "FM27" if LIVE else sample_reader.editor_supports(c["edition"]),
-            "live": LIVE, "auto_allowed": not LIVE,
-            "queued": [public(x, reveal) for x in queued], "batches": batches}
+            "live": LIVE, "queued": [public(x) for x in queued], "batches": batches}
 
 
 @router.put("/changes/modes")
@@ -315,12 +337,6 @@ async def set_mode(body: ModeIn):
     c = await active_career()
     await db.careers.update_one({"id": c["id"]}, {"$set": {f"change_modes.{body.source}": body.mode}})
     await audit(c["id"], "setting", body.source, f"{SOURCES[body.source]}: {'apply automatically' if body.mode == 'auto' else 'ask me first'}")
-    return {"ok": True}
-
-
-@router.put("/changes/reveal")
-async def set_reveal(body: RevealIn):
-    await db.settings.update_one({"_id": "app"}, {"$set": {"reveal_dp": body.reveal}}, upsert=True)
     return {"ok": True}
 
 
@@ -348,8 +364,7 @@ async def preview_changes(body: PreviewIn):
     ready = all(x["ok"] for x in checks)
     pid = new_id()
     await db.previews.insert_one({"id": pid, "career_id": c["id"], "ids": ids, "expected": cur, "at": now_iso(), "used": False, "ready": ready})
-    reveal = await reveal_dp()
-    rows = [public(ch | {"current": cur.get(ch["id"]), "new": new_value(ch, cur.get(ch["id"]))}, reveal) for ch in chs]
+    rows = [public(ch | {"current": cur.get(ch["id"]), "new": new_value(ch, cur.get(ch["id"]))}) for ch in chs]
     return {"preview_id": pid, "rows": rows, "checks": checks, "ready": ready, "live": LIVE}
 
 
@@ -433,7 +448,7 @@ async def undo_batch(batch_id: str):
                     await db.club_edits.update_one({"career_id": c["id"], "uid": ch["unique_id"]}, {"$set": {ch["field"]: ch["old_value"]}}, upsert=True)
                 else:
                     await db.game_edits.update_one({"career_id": c["id"], "unique_id": ch["unique_id"]}, {"$inc": {ch["field"]: -ch["delta"]}})
-            await audit(c["id"], "undone", ch["source"], f"{ch.get('label') or ch['field'].upper()} put back" + (f" to {ch['old_value']}" if ch.get("old_value") is not None else ""),
+            await audit(c["id"], "undone", ch["source"], f"{FIELD_WORD.get(ch['field']) or ch.get('label') or ch['field'].upper()} put back" + (f" to {ch['old_value']}" if ch.get("old_value") is not None and ch["field"] not in TRUE_ABILITY else ""),
                         ch["unique_id"], ch["player_name"], batch_id, ch["hidden"])
             undone += 1
     await db.changes.update_many({"batch_id": batch_id, "status": "approved"}, {"$set": {"status": "queued", "batch_id": None}})
@@ -446,14 +461,12 @@ async def undo_batch(batch_id: str):
 async def batch_detail(batch_id: str):
     c = await active_career()
     b = await _batch(c, batch_id)
-    reveal = await reveal_dp()
     rows = await db.changes.find({"batch_id": batch_id}, {"_id": 0, "key": 0}).sort("created_at", 1).to_list(None)
-    return {k: v for k, v in b.items() if k not in ("change_ids", "expected")} | {"changes": [public(r, reveal) for r in rows]}
+    return {k: v for k, v in b.items() if k not in ("change_ids", "expected")} | {"changes": [public(r) for r in rows]}
 
 
 @router.get("/audit")
 async def get_audit(limit: int = 200):
     c = await active_career()
-    reveal = await reveal_dp()
     rows = await db.audit.find({"career_id": c["id"]}, {"_id": 0}).sort("at", -1).limit(min(limit, 500)).to_list(500)
-    return [r | ({"detail": "included"} if r.get("hidden") and not reveal else {}) for r in rows]
+    return [r | {"detail": TRUE_VALUES.sub(lambda m: f"{FIELD_WORD[m.group(1).lower()]} changed", r.get("detail") or "")} for r in rows]

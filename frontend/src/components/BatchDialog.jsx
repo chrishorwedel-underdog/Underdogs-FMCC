@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { api, errMsg } from "@/lib/api";
 import { useAct } from "@/lib/ui";
 
-const val = (v) => (v == null ? <span style={{ color: "var(--dim)" }}>Hidden</span> : v);
+const val = (v) => (v == null ? <span style={{ color: "var(--dim)" }} title="Real ability values are never shown">Not shown</span> : v);
 
 const Checks = ({ checks }) => (
   <div style={{ marginTop: 4 }} data-testid="batch-checks">
@@ -46,7 +46,7 @@ export const BatchDialog = ({ ids, onClose, sources }) => {
               <thead><tr><th>Player / club</th><th>From</th><th>Field</th><th>Current</th><th>New</th></tr></thead>
               <tbody>{p.rows.map((r) => (
                 <tr key={r.id} style={{ cursor: "default" }} data-testid={`batch-preview-row-${r.id}`}>
-                  <td>{r.player_name}</td><td>{sources[r.source]}</td><td className="mono">{r.label || r.field.toUpperCase()}</td>
+                  <td>{r.player_name}</td><td>{sources[r.source]}</td><td className="mono">{r.label || { pa: "Potential", ca: "Current ability" }[r.field] || r.field}{r.delta != null && r.entity !== "club" && r.entity !== "shortlist" && ` ${r.delta > 0 ? "+" : ""}${r.delta}`}</td>
                   <td className="mono">{!p.ready ? "—" : r.entity === "shortlist" ? (r.current ? "On shortlist" : "Not on shortlist") : val(r.current)}</td><td className="mono"><b>{!p.ready ? "—" : r.entity === "shortlist" ? "On shortlist" : val(r.new)}</b></td>
                 </tr>))}</tbody>
             </table>

@@ -50,7 +50,7 @@ async def elite():
     for n in noms:
         x = ctxs[n["unique_id"]]
         r = RE.first_match(rules["data"]["rules"], x)
-        out.append(n | {"age": x["age"], "ca": x["ca"], "pa": x["pa"], "training_rating": x["training_rating"], "ca_growth": x["ca_growth"],
+        out.append(n | {"age": x["age"], "training_rating": x["training_rating"], "ca_growth": x["ca_growth"],
                         "evidence": evidence.get(n["unique_id"], [])[-8:], "rule": r["name"] if r else None, "preview": _rule_text(r) if r else None})
     nominated = {n["unique_id"] for n in noms}
     suggestions = sorted([x for x in ctxs.values() if x["unique_id"] not in nominated and x["age"] <= 21], key=lambda x: -(x["training_rating"] or 0))[:5]
@@ -93,6 +93,7 @@ async def elite_queue():
         await _award(c, f"elite:{month}:{x['unique_id']}", "elite", x, r, rules["version"], "awarded", delta)
         res = await queue_changes(c, "elite", award_id, [{"unique_id": x["unique_id"], "name": x["name"], "field": r["action"]["target"], "delta": delta}])
         items_total["queued"] += res["queued"]
+        items_total["auto_applied"] = items_total.get("auto_applied") or res["auto_applied"]
         items_total["skipped_duplicates"] += res["skipped_duplicates"]
     return items_total
 

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { RotateCcw, Save, History } from "lucide-react";
+import { RotateCcw, History } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { RuleItem, ImpactSave } from "@/components/rules/RuleItem";
 
 const SECTIONS = {
   score: ["Performance Score", "Weights of match rating and role output, role groups A/B/C, comparison group size, youth weighting and the expected-level band used to pick comparison players."],
@@ -12,10 +13,10 @@ const SECTIONS = {
   tiers: ["Growth tiers", "Award ranges and the minutes or percentiles each tier needs."],
   decline: ["Decline", "Every requirement must be met for an ordinary or severe decline."],
   age: ["Age deduction", "Age at season start (left) and the points taken off growth (right)."],
-  growth_taper: ["Growth taper", "Up to this PA (left), the share of earned growth in % (right)."],
-  decline_taper: ["Decline taper", "From this PA upwards (left), the share of earned loss in % (right)."],
+  growth_taper: ["Growth taper", "Players nearer the top of the potential scale keep a smaller share of earned growth. Left: the potential level; right: the share kept in %."],
+  decline_taper: ["Decline taper", "Players higher up the potential scale take a larger share of earned loss. Left: the potential level; right: the share taken in %."],
   winter: ["Winter review", "Minutes needed, share of the provisional growth awarded, its maximum and the youth ceiling."],
-  limits: ["Limits", "Loss floor, PA ceiling, seasonal maximums and what's needed to take winter points back."],
+  limits: ["Limits", "Loss floor, the highest potential allowed, seasonal maximums and what's needed to take winter points back."],
   batch_size: ["Batch size", "Players reviewed per run; the rest carry over to the next run."],
 };
 const words = (k) => k.replace(/_/g, " ").replace(/90$/, " / 90").replace(/^./, (c) => c.toUpperCase());
@@ -44,6 +45,8 @@ const Field = ({ v, set, id, labels }) => {
     </div>);
 };
 
+const fmt = (v, def) => (typeof v === "number" || typeof v === "string" ? String(v) : JSON.stringify(v) === JSON.stringify(def) ? "Rulesheet values" : "Your own values");
+
 export const DPSettings = () => {
   const { data } = useGet("dp-settings", "/dp/settings");
   const act = useAct();
@@ -56,21 +59,27 @@ export const DPSettings = () => {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 280px", gap: 16 }} className="fit-grid" data-testid="dp-settings">
       <div style={{ display: "grid", gap: 12 }}>
-        {Object.entries(SECTIONS).map(([k, [title, help]]) => (
-          <div key={k} className="card" data-testid={`dp-set-${k}`}>
-            <div className="ttl">{title}{JSON.stringify(d[k]) !== JSON.stringify(data.defaults[k]) && <span className="st a" data-testid={`dp-set-changed-${k}`}>Differs from the rulesheet</span>}
-              <span style={{ marginLeft: "auto" }} /><button className="btn" onClick={() => act(() => api.post("/dp/settings/reset", null, { params: { section: k } }), `${title} reset to the rulesheet`, keys)} data-testid={`dp-set-reset-${k}`}><RotateCcw size={12} />Reset</button></div>
-            <p className="note" style={{ margin: "4px 0 10px" }}>{help}</p>
-            <Field v={d[k]} set={(n) => setD({ ...d, [k]: n })} id={`dp-f-${k}`} labels={data.labels} />
-          </div>))}
+        {Object.entries(SECTIONS).map(([k, [title, help]]) => {
+          const differs = JSON.stringify(d[k]) !== JSON.stringify(data.defaults[k]);
+          return (
+          <div key={k} data-testid={`dp-set-${k}`}>
+            <RuleItem id={`dp-${k}`} title={title} help={help} now={fmt(d[k], data.defaults[k])} def={fmt(data.defaults[k], data.defaults[k])} changedAt={data.changed_at?.[k]}
+              differs={differs} onReset={() => setD({ ...d, [k]: structuredClone(data.defaults[k]) })}>
+              {differs && <span className="st a" style={{ display: "none" }} data-testid={`dp-set-changed-${k}`}>Differs from the rulesheet</span>}
+              <Field v={d[k]} set={(n) => setD({ ...d, [k]: n })} id={`dp-f-${k}`} labels={data.labels} />
+            </RuleItem>
+          </div>);
+        })}
       </div>
       <div style={{ display: "grid", gap: 12, alignContent: "start", position: "sticky", top: 70 }}>
-        <div className="card" data-testid="dp-set-save-card"><div className="ttl">Save changes</div>
-          <p className="note" data-testid="dp-set-summary">{edited.length ? `You've changed: ${edited.map((k) => SECTIONS[k][0]).join(", ")}. Past reviews keep the settings they used; the next review uses these.` : "No unsaved changes."}</p>
-          <input className="inp" placeholder="What changed (optional)" value={note} maxLength={120} onChange={(e) => setNote(e.target.value)} data-testid="dp-set-note" />
-          <button className="btn btn-p" style={{ marginTop: 8 }} disabled={!edited.length} onClick={() => act(() => api.put("/dp/settings", { data: d, note: note || "Edited settings" }), "Settings saved", keys).then((r) => r && setNote(""))} data-testid="dp-set-save"><Save size={13} />Save settings</button>
+        <div data-testid="dp-set-save-card">
+        <ImpactSave dirty={edited.length > 0} draftKey={JSON.stringify(d)} check={() => api.post("/dp/settings/impact", { data: d })}
+          save={() => act(() => api.put("/dp/settings", { data: d, note: note || "Edited settings" }), "Settings saved", keys).then((r) => { if (r) { setNote(""); } return r; })}
+          summary={`You've changed: ${edited.map((k) => SECTIONS[k][0]).join(", ")}. Past reviews keep the settings they used; the next review uses these.`}>
+          <input className="inp" style={{ marginTop: 10 }} placeholder="What changed (optional)" value={note} maxLength={120} onChange={(e) => setNote(e.target.value)} data-testid="dp-set-note" />
           <button className="btn" style={{ marginTop: 8 }} onClick={() => window.confirm("Reset every Dynamic Potential setting to the rulesheet?") && act(() => api.post("/dp/settings/reset"), "Everything reset to the rulesheet", keys)} data-testid="dp-set-reset-all"><RotateCcw size={13} />Reset everything</button>
-          <small style={{ display: "block", marginTop: 6, color: "var(--dim)" }}>One set for all careers · version {data.version}</small></div>
+          <small style={{ display: "block", marginTop: 6, color: "var(--dim)" }}>One set for all careers · version {data.version}</small>
+        </ImpactSave></div>
         <div className="card" data-testid="dp-set-history"><div className="ttl"><History size={13} />History</div>
           {data.history.map((h) => <div key={h.version} className="row"><div style={{ flex: 1 }}>v{h.version}<small>{h.note} · {h.at?.slice(0, 16).replace("T", " ")}</small></div>
             <button className="btn" style={{ height: 26, fontSize: 12 }} onClick={() => act(() => api.post(`/dp/settings/restore/${h.version}`), `Version ${h.version} restored`, keys)} data-testid={`dp-set-restore-${h.version}`}>Restore</button></div>)}

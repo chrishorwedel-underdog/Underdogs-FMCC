@@ -2,8 +2,8 @@ import { useGet } from "@/lib/ui";
 
 export const FEATURE_TEXT = {
   home: ["Your club at a glance: squad summary, your next match, what needs your attention and what's coming up in your save. Always on.", "See at a glance that two contracts end this summer and the transfer window opens in 3 weeks."],
-  dp: ["Lets player potential rise or fall based on how players actually perform and develop, using rules you control. You review every suggested change before it goes into your game.", "A 19-year-old who keeps starting and scoring gets a potential boost suggested for you to approve."],
-  breakout: ["Once a season, FMCC picks the player who broke out the most and gives them a current-ability bonus in your save.", "Your fringe winger has a huge season and is named Breakout Player, earning a CA bonus."],
+  dp: ["Lets player potential rise or fall based on how players actually perform and develop, using rules you control. Changes go into your game automatically unless you switch on Review changes before applying.", "A 19-year-old who keeps starting and scoring gets a potential boost, and a notification tells you."],
+  breakout: ["Once a season, FMCC picks the player who broke out the most and gives them an ability bonus in your save.", "Your fringe winger has a huge season and is named Breakout Player, earning a bonus."],
   scouting: ["Ranks every player in your save by how well they fit each role, their age and value, with a full Stats Table: per-90 stats, percentile shading, advanced filters, saved views and CSV export.", "Find the best young ball-playing centre-backs in the top 20% for progressive passes."],
   reports: ["Each in-game month, the news across the world, a continent, a nation or a league. Top stories, tables, the biggest transfers, stat leaders and Players of the Month.", "Read who won Attacker of the Month in Europe and which club went top in Italy."],
   market: ["Ready-made transfer lists (contracts ending, free agents, best under-21s), what changed since your last save, and value rankings for any league, club, country, position or age.", "See which players' contracts end this year and who moved since your last save."],

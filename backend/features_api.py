@@ -38,7 +38,20 @@ def need(key: str):
 @router.get("")
 async def get_features():
     c = await active_career()
-    return {"features": state(c), "seen": bool(c.get("features_seen")), "ask": not c.get("features_seen") and (c.get("next_save_no") or 0) > 0}
+    return {"features": state(c), "seen": bool(c.get("features_seen")), "ask": not c.get("features_seen") and (c.get("next_save_no") or 0) > 0,
+            "review_changes": bool(c.get("review_changes"))}
+
+
+class ReviewIn(BaseModel):
+    on: bool
+
+
+@router.put("/review")
+async def put_review(body: ReviewIn):
+    c = await active_career()
+    await db.careers.update_one({"id": c["id"]}, {"$set": {"review_changes": body.on}})
+    await audit(c["id"], "setting", "features", "Review changes before applying: " + ("on" if body.on else "off (changes apply automatically)"))
+    return {"review_changes": body.on}
 
 
 class FeaturesIn(BaseModel):

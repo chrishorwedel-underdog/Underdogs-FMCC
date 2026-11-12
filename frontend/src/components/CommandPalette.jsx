@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { NAV, TOP_LINKS } from "@/constants/nav";
+import { NAV, TOP_LINKS, HOME } from "@/constants/nav";
 
-const SCREENS = [...NAV.map((n) => ({ group: "Screens", label: n.label, sub: n.sub, to: n.to })),
+const SCREENS = [...[HOME, ...NAV].map((n) => ({ group: "Screens", label: n.label, sub: n.sub, to: n.to })),
   ...TOP_LINKS.map((n) => ({ group: "Screens", label: n.label, sub: n.key === "safety" ? "Backups, save checks and change record" : n.key === "extras" ? "NG_Regens, Real Name Fix and other packs" : n.key === "appearance" ? "Text size, theme and colours" : "Coming soon", to: n.to })),
   { group: "Screens", label: "Connections", sub: "Match add-on and live game editor", to: "/connections" },
   { group: "Screens", label: "Settings", sub: "Careers, updates and backups", to: "/settings" },

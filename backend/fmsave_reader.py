@@ -203,6 +203,17 @@ def _colours(club) -> dict | None:
     return {"primary": primary, "secondary": secondary} if primary else None
 
 
+def _finance(club) -> dict:
+    """Club money figures, if this fmsave version exposes them. Anything missing stays None. UNVERIFIED."""
+    def num(*keys):
+        v = _first(club, *keys)
+        return int(v) if isinstance(v, (int, float)) else None
+    ffp = _first(club, "ffp_status", "finances.ffp_status")
+    return {"bank_balance": num("balance", "bank_balance", "finances.balance"), "transfer_budget": num("transfer_budget", "finances.transfer_budget"),
+            "transfer_spent": num("transfer_spent", "finances.transfer_spent"), "wage_bill": num("wage_bill", "finances.wage_bill"),
+            "turnover": num("turnover", "revenue", "finances.turnover"), "ffp_status": ffp if ffp in ("comfortable", "compliant", "at_risk", "breach") else None}
+
+
 def read_save(path: Path, club_name_hint: str) -> dict:
     import fmsave  # only installed in the Windows build
 
@@ -251,4 +262,4 @@ def read_save(path: Path, club_name_hint: str) -> dict:
     gd = game_date if isinstance(game_date, date) else date.fromisoformat(str(game_date)[:10])
     season_year = gd.year if gd.month >= 7 else gd.year - 1
     return {"file_name": path.name, "club_name": club_name, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
-            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "file_mtime": path.stat().st_mtime}
+            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "finance": _finance(club), "file_mtime": path.stat().st_mtime}

@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 import dp_engine as E
-from changes_api import queue_changes, start_batch
+from changes_api import queue_changes
 from core import db, active_career, latest_snapshot, now_iso, new_id, audit
 from features_api import need
 from population import contexts
@@ -30,7 +30,11 @@ def _diff(data: dict) -> list:
 async def get_settings():
     d = await settings_doc()
     hist = await db.dp_settings.find({}, {"_id": 0, "data": 0}).sort("version", -1).to_list(30)
-    return d | {"defaults": E.DEFAULTS, "changed": _diff(d["data"]), "history": hist, "labels": {"positions": E.POS_LABEL, "metrics": E.METRIC_LABEL}}
+    changed_at, prev = {}, E.DEFAULTS
+    async for v in db.dp_settings.find({}, {"_id": 0}).sort("version", 1):
+        changed_at |= {k: v["at"] for k in E.SECTIONS if v["data"].get(k) != prev.get(k)}
+        prev = v["data"]
+    return d | {"defaults": E.DEFAULTS, "changed": _diff(d["data"]), "history": hist, "changed_at": changed_at, "labels": {"positions": E.POS_LABEL, "metrics": E.METRIC_LABEL}}
 
 
 async def _save(data: dict, note: str) -> dict:
@@ -208,6 +212,29 @@ async def balance_preview():
             "note": "A dry run of the season-end review with your current settings and the save as it is now. Nothing is applied or saved. Players waiting would need your review or more evidence."}
 
 
+class ImpactIn(BaseModel):
+    data: dict
+
+
+@router.post("/settings/impact")
+async def settings_impact(body: ImpactIn):
+    """How many players the next review would treat differently with these draft settings. Nothing is saved."""
+    errs = E.validate(body.data)
+    if errs:
+        raise HTTPException(422, "; ".join(errs))
+    c = await active_career()
+    s = await _season(c)
+    kind = "winter" if s["game_date"] <= s["winter_date"] else "season_end"
+    targets = await contexts(c, (await current_rules(c["id"], "dp"))["data"]["scope"])
+    everyone = await contexts(c, {"all_players": True})
+    first, ages = await _evidence(c, s, kind)
+    winter = {r["unique_id"]: r for r in await _latest_records(c["id"], s["season"], "winter")}
+    out = lambda S: {x["unique_id"]: (r["status"], r["change"]) for x, _, _, r in _assess_all(targets, everyone, first, ages, winter, S, kind)}  # noqa: E731
+    now, draft = out((await settings_doc())["data"]), out(body.data)
+    return {"affected": sum(now[u] != draft[u] for u in now), "population": len(now),
+            "note": f"Players whose {'winter' if kind == 'winter' else 'season-end'} review result would change, using the save as it is now."}
+
+
 class ReviewIn(BaseModel):
     again: bool = False
 
@@ -229,8 +256,11 @@ async def run_review(kind: Literal["winter", "season_end"], body: ReviewIn):
     winter = {r["unique_id"]: r for r in await _latest_records(c["id"], s["season"], "winter")}
     todo = [x for x in targets if body.again or x["unique_id"] not in prev][:S["batch_size"]]
     recs, items = [], []
+    manual = bool(c.get("review_changes"))
     for x, sc, ev, rec in _assess_all(todo, everyone, first, ages, winter, S, kind):
         old = prev.get(x["unique_id"])
+        if not manual and rec["status"] in ("needs_review", "held", "flag") and rec["change"]:
+            rec = rec | {"status": "auto", "auto_note": "Applied automatically: Review changes before applying is off"}
         if old and old["status"] in ("auto", "approved") and old["change"]:
             rec = rec | {"status": old["status"], "change": old["change"], "correction": f"Earlier decision kept: {old['change']:+d} already applied",
                          "recomputed_change": rec["change"]}
@@ -260,15 +290,7 @@ async def _apply(c: dict, season: str, kind: str, items: list, tag: str = "") ->
         return {"queued": 0, "started": False}
     award = f"{season}-{kind}{tag}"
     res = await queue_changes(c, "dp", award, items, hidden=True)
-    ids = [d["id"] async for d in db.changes.find({"career_id": c["id"], "source": "dp", "award_id": award, "status": "queued"}, {"id": 1})]
-    started, why = False, None
-    if ids:
-        try:
-            await start_batch(c, ids)
-            started = True
-        except HTTPException as exc:
-            why = exc.detail
-    return {"queued": res["queued"], "started": started, "waiting_reason": why}
+    return {"queued": res["queued"], "started": res["auto_applied"], "waiting_reason": res["waiting_reason"]}
 
 
 @router.get("/records")

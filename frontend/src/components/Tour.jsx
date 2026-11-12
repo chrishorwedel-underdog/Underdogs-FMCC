@@ -4,7 +4,7 @@ import { NAV } from "@/constants/nav";
 import { GUIDES } from "@/constants/guides";
 
 const STEPS = [...NAV.map((n) => ({ to: n.to, key: n.key, label: n.label })), { to: "/safety", key: "safety", label: "Project Safety" },
-  { to: "/changes", key: "top-changes-button", label: "Game changes", what: "Every change FMCC wants to make in FM waits here. You check it, approve it, and can undo it later." },
+  { to: "/changes", key: "top-changes-button", label: "Game changes", what: "Every change FMCC makes in FM is recorded here, and you can undo it. Changes apply automatically unless you switch on Review changes before applying in Features." },
   { to: "/dof", key: "ask-dof", label: "Director of Football" }];
 
 export const startTour = () => window.dispatchEvent(new Event("fmcc-tour"));

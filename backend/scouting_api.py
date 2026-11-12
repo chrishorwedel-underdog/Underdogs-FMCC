@@ -41,7 +41,7 @@ def score_players(players: list, params: dict, role: str | None) -> list:
         vfm_raw = (fit * 0.7 + perf * 0.3) / (max(p["value"], 100_000) / 1_000_000) ** 0.35
         diff = (p["avg_rating"] - (6.0 + (p["ca"] - 100) / 100)) if p["avg_rating"] else 0
         flag = "over" if diff >= params["over_threshold"] else "under" if diff <= -params["over_threshold"] else None
-        out.append({k: p[k] for k in ("unique_id", "name", "age", "nationality", "club", "league", "positions", "ca", "pa", "value", "wage",
+        out.append({k: p[k] for k in ("unique_id", "name", "age", "nationality", "club", "league", "positions", "value", "wage",
                                       "minutes", "avg_rating", "goals")} |
                    {"fit": fit, "best_role": f"{best['name']} ({best['duty']})", "score": round(score), "vfm_raw": vfm_raw, "flag": flag})
     top = max([x["vfm_raw"] for x in out] or [1])
@@ -60,7 +60,7 @@ async def meta():
 
 @router.get("/rankings")
 async def rankings(role: str | None = None, league: str | None = None, max_age: int = Query(40, ge=15, le=45), q: str = Query("", max_length=60),
-                   sort: Literal["score", "vfm", "fit", "pa", "value"] = "score", shortlist_only: bool = False):
+                   sort: Literal["score", "vfm", "fit", "value"] = "score", shortlist_only: bool = False):
     c = await active_career()
     if role and role not in roles.ROLES:
         raise HTTPException(422, "Unknown role")

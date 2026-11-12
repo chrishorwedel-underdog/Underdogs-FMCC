@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
 import rules_engine as RE
-from core import db, active_career, now_iso, new_id
+from core import db, active_career, now_iso, new_id, latest_two
 from population import contexts
 
 router = APIRouter(prefix="/api/rules")
@@ -112,8 +112,61 @@ async def get_rules(module: Module):
     c = await active_career()
     cur = await current(c["id"], module)
     hist = await db.rules.find({"career_id": c["id"], "module": module}, {"_id": 0, "version": 1, "created_at": 1, "note": 1}).sort("version", -1).to_list(50)
-    return {"module": module, "version": cur["version"], "data": cur["data"], "history": hist, "fields": RE.FIELDS,
+    changed_at, prev = {}, _items(RE.PRESETS[module])
+    async for v in db.rules.find({"career_id": c["id"], "module": module}, {"_id": 0, "data": 1, "created_at": 1}).sort("version", 1):
+        now = _items(v["data"])
+        changed_at |= {k: v["created_at"] for k in now if now[k] != prev.get(k)}
+        prev = now
+    return {"module": module, "version": cur["version"], "data": cur["data"], "history": hist, "defaults": RE.PRESETS[module], "changed_at": changed_at,
+            "fields": {k: v for k, v in RE.FIELDS.items() if k not in ("ca", "pa")},
             "kind": "params" if module in RE.PARAM_MODULES else "rules"}
+
+
+def _items(data: dict) -> dict:
+    if data.get("params") is not None:
+        return dict(data["params"])
+    out = {r["id"]: r for r in data.get("rules") or []}
+    return out | {k: data[k] for k in ("scope", "caps") if k in data}
+
+
+class ImpactIn(BaseModel):
+    data: RulesData
+
+
+@router.post("/{module}/impact")
+async def rules_impact(module: Module, body: ImpactIn):
+    """How many players a draft would affect, before it is saved. Never shows amounts or ability."""
+    c = await active_career()
+    draft = validate(module, body.data)
+    cur = (await current(c["id"], module))["data"]
+    if module in RE.REWARD_MODULES:
+        scope = cur.get("scope") if module == "dp" else {"my_club": True, "nations": [], "leagues": []}
+        ctxs = await contexts(c, scope)
+        pick = lambda rules, x: (RE.first_match(rules, x) or {}).get("id")  # noqa: E731
+        hit = sum(pick(cur["rules"], x) != pick(draft["rules"], x) for x in ctxs)
+        return {"affected": hit, "population": len(ctxs), "note": "Players who would qualify for a different rule (or stop or start qualifying) with this draft."}
+    changed = {k for k in draft["params"] if draft["params"][k] != cur["params"].get(k)}
+    if module == "scouting":
+        import scouting_api
+        pool = (await scouting_api._pool(c))["players"]
+        top = lambda p: [x["unique_id"] for x in sorted(scouting_api.score_players(pool, p, None), key=lambda x: -x["score"])[:100]]  # noqa: E731
+        a, b = top(cur["params"]), top(draft["params"])
+        return {"affected": sum(1 for i, u in enumerate(b) if i >= len(a) or a[i] != u), "population": len(pool), "note": "Players whose place in the top 100 of your rankings would move."}
+    own = await contexts(c, {"my_club": True, "nations": [], "leagues": []})
+    if module == "reports":
+        snaps = await latest_two(c["id"])
+        before = {p["unique_id"]: p["ca"] for p in snaps[1]["players"]} if len(snaps) > 1 else {}
+        label = lambda d, p: "up" if d >= p["rising"] else "down" if d <= p["falling"] else ""  # noqa: E731
+        diffs = [p["ca"] - before[p["unique_id"]] for p in snaps[0]["players"] if p["unique_id"] in before] if snaps else []
+        return {"affected": sum(label(d, cur["params"]) != label(d, draft["params"]) for d in diffs), "population": len(diffs), "note": "Squad players whose rising or falling label would change in the latest report."}
+    youth = [x for x in own if x["age"] <= 21]
+    if not changed:
+        n = 0
+    elif module == "development" or changed <= {"target_minutes", "max_youth"}:
+        n = len(youth)
+    else:
+        n = len(own)
+    return {"affected": n, "population": len(own), "note": "Squad players these settings cover." if module == "squad" else "Under-21 squad players these targets cover."}
 
 
 @router.put("/{module}")
