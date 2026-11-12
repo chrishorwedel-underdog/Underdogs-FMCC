@@ -338,7 +338,7 @@ select.blank{cursor:pointer}
 .side .logo{height:clamp(62px,9.5vh,170px)}
 @media (max-height:900px){.side .nav-item .tx small{display:none}.side .nav-item{min-height:30px}}
 .nav-item:focus-visible,.btn:focus-visible,.ib:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-.fin-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:center;padding:0;margin:0 0 18px;font-size:12.5px}
+.fin-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:center;padding:0;margin:0 0 18px;font-size:12.5px}
 .fin-strip .fin-i{justify-content:center;min-width:0;white-space:nowrap}
 .fin-i{display:inline-flex;align-items:center;gap:7px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:help;transition:border-color .2s,background-color .2s}
 .fin-i:hover,.fin-i:focus-visible{border-color:var(--line2);background:var(--s2);outline:none}

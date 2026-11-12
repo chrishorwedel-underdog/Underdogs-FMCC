@@ -202,7 +202,7 @@ def read_save(save_no: int, club_name: str, edits: dict | None = None) -> dict:
         "season": f"{season_year}/{str(season_year + 1)[2:]}",
         "players": players, "next_fixture": fixture,
         "club_colours": {"primary": "#1F4E9C", "secondary": "#F2C94C"},
-        "finance": {"bank_balance": 18_400_000 - save_no * 350_000, "transfer_budget": 12_500_000 - min(save_no, 8) * 900_000, "transfer_spent": min(save_no, 8) * 900_000,
+        "finance": {"bank_balance": 18_400_000 - save_no * 350_000, "transfer_budget": 12_500_000 - min(save_no, 8) * 900_000, "transfer_spent": min(save_no, 8) * 900_000, "transfer_received": min(save_no, 6) * 650_000,
                     "wage_bill": 41_000_000, "turnover": 68_000_000, "ffp_status": "compliant"},
         "tactics": [{"name": "4-2-3-1 Gegenpress", "positions": ["GK", "DR", "DCR", "DCL", "DL", "DMCR", "DMCL", "AMR", "AMC", "AML", "STC"]},
                     {"name": "Counter-attack", "positions": ["GK", "DCR", "DC", "DCL", "WBR", "WBL", "DMC", "MCR", "MCL", "STCR", "STCL"]},

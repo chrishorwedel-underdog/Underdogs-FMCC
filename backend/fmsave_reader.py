@@ -210,7 +210,7 @@ def _finance(club) -> dict:
         return int(v) if isinstance(v, (int, float)) else None
     ffp = _first(club, "ffp_status", "finances.ffp_status")
     return {"bank_balance": num("balance", "bank_balance", "finances.balance"), "transfer_budget": num("transfer_budget", "finances.transfer_budget"),
-            "transfer_spent": num("transfer_spent", "finances.transfer_spent"), "wage_bill": num("wage_bill", "finances.wage_bill"),
+            "transfer_spent": num("transfer_spent", "finances.transfer_spent"), "transfer_received": num("transfer_received", "transfer_income", "finances.transfer_received", "finances.transfer_income"), "wage_bill": num("wage_bill", "finances.wage_bill"),
             "turnover": num("turnover", "revenue", "finances.turnover"), "ffp_status": ffp if ffp in ("comfortable", "compliant", "at_risk", "breach") else None}
 
 

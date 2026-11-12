@@ -29,23 +29,25 @@ def assess(f: dict) -> list:
     if wages is not None and turnover:
         r = round(100 * wages / turnover)
         tone = "gold" if r < 50 else "green" if r <= 70 else "red"
-        out.append(_item("wages", "Wages / turnover", f"{r}%", tone, f"Wages are {r}% of turnover. Under 50% is excellent, 50–70% healthy, over 70% trouble."))
+        out.append(_item("wages", "Wages/Turnover", f"{r}%", tone, f"Wages are {r}% of turnover. Under 50% is excellent, 50–70% healthy, over 70% trouble."))
     else:
-        out.append(_item("wages", "Wages / turnover", None))
+        out.append(_item("wages", "Wages/Turnover", None))
     spent, left = f.get("transfer_spent"), f.get("transfer_budget")
     total = (spent or 0) + (left or 0) if spent is not None and left is not None else None
     if spent is None:
-        out.append(_item("spent", "Spent this year", None))
+        out.append(_item("spent", "Incoming Transfers", None))
     else:
         share = round(100 * spent / total) if total and total > 0 else None
         tone = "red" if left is not None and left < 0 else "gold" if share is not None and share <= 50 else "green"
-        out.append(_item("spent", "Spent this year", spent, tone, f"{share}% of this year's transfer budget used" if share is not None else "Spent on transfers this year"))
+        out.append(_item("spent", "Incoming Transfers", spent, tone, f"Spent on players bought this season · {share}% of this year's transfer budget used" if share is not None else "Spent on players bought this season"))
+    sold = f.get("transfer_received")
+    out.append(_item("sold", "Outgoing Transfers", None) if sold is None else _item("sold", "Outgoing Transfers", sold, "green" if sold > 0 else None, "Made selling players this season" if sold > 0 else "No players sold this season yet"))
     if left is None:
-        out.append(_item("budget", "Budget left", None))
+        out.append(_item("budget", "Budget Left", None))
     else:
         share = round(100 * left / total) if total and total > 0 else None
         tone = "red" if left <= 0 else "gold" if share is not None and share >= 50 else "green"
-        out.append(_item("budget", "Budget left", left, tone, "No transfer money left" if left <= 0 else f"{share}% of this year's transfer budget still to spend" if share is not None else "Transfer budget remaining"))
+        out.append(_item("budget", "Budget Left", left, tone, "No transfer money left" if left <= 0 else f"{share}% of this year's transfer budget still to spend" if share is not None else "Transfer budget remaining"))
     bank = f.get("bank_balance")
     if bank is None:
         out.append(_item("bank", "Bank", None))
