@@ -10,8 +10,8 @@ import features_api
 
 router = APIRouter(prefix="/api/notify")
 TYPES = {"youth": "Youth intake happened", "report": "New monthly report", "missed": "Missed dates", "countdown": "Countdown reaching 7 days", "changes": "Game changes waiting",
-         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed", "breakout": "Breakout Player of the season", "elite": "Elite Training session finished", "record": "Club record broken"}
-PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist", "breakout": "/breakout", "elite": "/", "record": "/club-history?tab=records"}
+         "save": "New save read", "updates": "Add-on updates", "dof": "DOF suggestions waiting", "contract": "Shortlisted player enters his final year", "watch": "Watched player changed", "breakout": "Breakout Player of the season", "elite": "Elite Training session finished", "record": "Club record broken", "goal": "Development goal reached"}
+PAGE = {"report": "/reports", "missed": "/reports", "countdown": "/", "changes": "/changes", "save": "/", "updates": "/settings", "dof": "/dof", "contract": "/scouting?tab=shortlist", "youth": "/scouting?tab=youth", "watch": "/scouting?tab=watchlist", "breakout": "/breakout", "elite": "/", "record": "/club-history?tab=records", "goal": "/development"}
 
 
 def _d(s: str) -> date:
@@ -137,6 +137,14 @@ async def sync(c: dict) -> None:
     import history_api
     try:
         await history_api.check_records(c)
+    except HTTPException:
+        pass
+    import plans_api
+    try:
+        for r in (await plans_api.development())["rows"]:
+            if (r.get("goal_status") or {}).get("tone") == "done":
+                await _add(c["id"], "goal", f"goal:{r['unique_id']}:{r['plan']['revision']}", f"{r['name']} reached his development goal",
+                           f"{r['plan'].get('goal_label') or 'His goal'} done. Open Youth Development to set his next goal.", last["game_date"])
     except HTTPException:
         pass
     sl = await scouting_api.shortlisted(c["id"])

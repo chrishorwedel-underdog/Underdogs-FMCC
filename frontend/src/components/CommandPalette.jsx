@@ -20,11 +20,20 @@ export const CommandPalette = ({ open, onClose }) => {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
   const { data: players = [] } = useQuery({ queryKey: ["search", q], queryFn: () => api.get("/players/search", { params: { q } }).then((r) => r.data), enabled: open });
+  const { data: hist } = useQuery({ queryKey: ["search-history"], enabled: open, staleTime: 60000, retry: false,
+    queryFn: () => Promise.all(["/history/seasons", "/history/hall-of-fame", "/history/records"].map((u) => api.get(u).then((r) => r.data).catch(() => null))) });
   useEffect(() => { if (open) { setQ(""); setSel(0); } }, [open]);
   if (!open) return null;
   const ql = q.toLowerCase();
+  const [hs, hof, recs] = hist || [];
+  const historyItems = q.length < 2 ? [] : [
+    ...(hs?.seasons || []).map((s) => ({ group: "Club History", label: `Season ${s.season}`, sub: s.status, to: `/club-history?season=${s.season}` })),
+    ...(hof?.members || []).map((m) => ({ group: "Club History", label: m.name, sub: "Hall of Fame", to: "/club-history?tab=hall" })),
+    ...["team", "players", "matches", "transfers"].flatMap((k) => recs?.[k] || []).map((r) => ({ group: "Club History", label: r.label, sub: r.holder ? `Record: ${r.holder.name || r.holder.season}` : "Record (unavailable)", to: "/club-history?tab=records" })),
+  ].filter((x) => `${x.label} ${x.sub} season record hall of fame history`.toLowerCase().includes(ql)).slice(0, 6);
   const items = [...players.map((p) => ({ group: "Players", label: p.name, sub: `${p.age} · ${p.positions.join(", ")}`, to: `/squad?player=${p.unique_id}` })),
     ...searchTerms(q).map((g) => ({ group: "Stats", label: g.term, sub: `${g.names[0] !== g.term ? `${g.names[0]} · ` : ""}${g.plain}`, to: `#stat-${g.term}`, act: () => openGlossary(g.term) })),
+    ...historyItems,
     ...SCREENS.filter((s) => `${s.label} ${s.words || ""}`.toLowerCase().includes(ql))];
   const run = (i) => { const it = items[i]; if (it) { onClose(); it.act ? it.act() : nav(it.to); } };
   const onKey = (e) => {

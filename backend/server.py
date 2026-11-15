@@ -393,6 +393,23 @@ async def list_saves():
     return await db.snapshots.find({"career_id": c["id"]}, {"_id": 0, "players": 0}).sort("save_no", -1).limit(50).to_list(50)
 
 
+@api.get("/home/extras")
+async def home_extras():
+    """Everything Home shows besides the main summary, in one request."""
+    import awards_api
+    import watch_api
+    import notify_api
+    import history_api
+    out = {}
+    for key, fn in (("celebrations", awards_api.celebrations), ("record_watch", history_api.get_record_watch), ("digest", watch_api.digest), ("countdowns", notify_api.get_countdowns)):
+        try:
+            out[key] = await fn()
+        except HTTPException:
+            out[key] = None
+    return out
+
+
+
 # ---------- home / squad ----------
 @api.get("/home")
 async def home():
@@ -429,7 +446,7 @@ async def squad():
     players = []
     for p in latest["players"]:
         prior = before.get(p["unique_id"])
-        players.append({k: v for k, v in p.items() if k not in ("ca", "pa")} | {"ca_change": p["ca"] - prior["ca"] if prior else None,
+        players.append({k: v for k, v in p.items() if k not in ("ca", "pa")} | {"progress": ability_words.progress(p["ca"] - prior["ca"]) if prior else None,
                             "is_new": idents.get(p["unique_id"], {}).get("first_seen_save") == latest["save_no"] and latest["save_no"] > 0,
                             "shared_name": names[p["name"]] > 1, "in_best_xi": p["unique_id"] in xi_ids, "best_role": roles.best_role(p)})
     current = {p["unique_id"] for p in latest["players"]}
@@ -580,6 +597,8 @@ import watch_api  # noqa: E402
 import history_api  # noqa: E402
 
 app.include_router(api)
+import ability_words  # noqa: E402
+app.add_middleware(ability_words.AbilityGuard)
 for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router, world_api.router, creator_single.router, self_update.router, seed_api.router, features_api.router, analysis_api.router, dp_api.router, finance_api.router, scout_plus.router, loans_api.router, watch_api.router, history_api.router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):

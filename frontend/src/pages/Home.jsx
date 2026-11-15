@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Check } from "lucide-react";
 import { api, ago, gameDate } from "@/lib/api";
 import { Loading } from "@/components/Loading";
@@ -7,6 +8,22 @@ import { UpNextPanel } from "@/components/UpNextPanel";
 import { WhatChanged } from "@/components/WhatChanged";
 import { Celebrations } from "@/components/Celebrations";
 import { RecordWatch } from "@/components/RecordWatch";
+import { HomeSection } from "@/components/HomeSection";
+
+// One request fills every Home panel's cache, so the panels don't each fetch on their own.
+const useHomeExtras = () => {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["home-extras"], queryFn: () => api.get("/home/extras").then((r) => r.data) });
+  useEffect(() => {
+    const x = q.data;
+    if (!x) { return; }
+    if (x.celebrations) qc.setQueryData(["celebrations", undefined], x.celebrations);
+    if (x.record_watch) qc.setQueryData(["record-watch", undefined], x.record_watch);
+    if (x.digest) qc.setQueryData(["home-digest"], x.digest);
+    if (x.countdowns) qc.setQueryData(["countdowns", undefined], x.countdowns);
+  }, [q.data, qc]);
+  return q.data;
+};
 
 const WORDS = ["Nothing", "One thing", "Two things", "Three things", "Four things", "Five things"];
 const greet = () => { const h = new Date().getHours(); return h < 12 ? "Good morning," : h < 18 ? "Good afternoon," : "Good evening,"; };
@@ -25,8 +42,10 @@ const NextMatch = ({ f, club }) => (
 
 export default function Home() {
   const { data: d, isLoading } = useQuery({ queryKey: ["home"], queryFn: () => api.get("/home").then((r) => r.data) });
-  if (isLoading || !d) return <Loading id="home-loading" rows={6} label="Loading your club" />;
+  const x = useHomeExtras();
+  if (isLoading || !d || !x) return <Loading id="home-loading" rows={6} label="Loading your club" />;
   const n = d.attention.length;
+  const highlights = (x.celebrations?.cards?.length || 0) + (x.record_watch?.items?.length || 0);
   return (
     <div className="home-v2" data-testid="home-page">
       <div className="hero">
@@ -40,11 +59,12 @@ export default function Home() {
           <div className="hchip" data-testid="home-backup-chip"><Check size={15} /><b>Backup</b> saved {ago(d.last_backup)}</div>
         </div>
       </div>
-      <Celebrations />
-      <RecordWatch />
       <UpNextPanel attention={d.attention} />
+      {highlights > 0 && <HomeSection id="highlights" title="Highlights" sub="Celebrations and records in the making">
+        <div className="hl-strip" data-testid="home-highlights"><Celebrations /><RecordWatch /></div>
+      </HomeSection>}
       <WhatChanged />
-      <ModuleCards d={d} />
+      <HomeSection id="modules" title="Your modules" sub="Shortcuts into every part of FMCC"><ModuleCards d={d} /></HomeSection>
       {d.next_fixture && <div className="home-bottom" style={{ gridTemplateColumns: "1fr" }} data-testid="home-bottom">
         <NextMatch f={d.next_fixture} club={d.club_name} />
       </div>}

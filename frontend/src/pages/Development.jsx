@@ -4,11 +4,11 @@ import { api, ago } from "@/lib/api";
 import { useGet, useAct, TabBar, PageHead } from "@/lib/ui";
 import { Loading } from "@/components/Loading";
 import { RulesTab } from "@/components/rules/RulesTab";
-import { useColWidths, ColGroup, ResizeTh } from "@/components/ResizableCols";
+import { useColWidths, ColGroup, ResizeTh, useCardLabels } from "@/components/ResizableCols";
 import { usePersist } from "@/lib/remember";
 
 const COLS = { player: 230, age: 70, games: 80, mpg: 135, goals: 80, assists: 90, rating: 135, month: 190, plan: 150, goal: 130, progress: 280, act: 120 };
-const HEAD = [["player", "Player"], ["age", "Age", "n"], ["games", "Games", "n"], ["mpg", "Mins / game", "n"], ["goals", "Goals", "n"], ["assists", "Assists", "n"], ["rating", "Avg rating", "n"],
+const HEAD = [["player", "Player"], ["age", "Age", "n"], ["games", "Games", "n"], ["mpg", "Minutes per game", "n"], ["goals", "Goals", "n"], ["assists", "Assists", "n"], ["rating", "Avg rating", "n"],
   ["month", "Minutes this month"], ["plan", "Plan"], ["goal", "Goal"], ["progress", "Progress", "", "How he's coming along since last month's save and since the season started"], ["act", ""]];
 
 const GOAL_OPTS = [["small", "Small improvement"], ["steady", "Steady improvement"], ["big", "Big improvement"], [null, "No goal"]];
@@ -76,15 +76,16 @@ const Plans = () => {
   const { data } = useGet("development", "/development");
   const [edit, setEdit] = useState(null);
   const cw = useColWidths("development", COLS);
+  const cardRef = useCardLabels();
   const [sort, setSort] = usePersist("dev-sort", null);
   const sortBy = (col) => setSort((s) => (s?.col === col ? { col, dir: s.dir === "desc" ? "asc" : "desc" } : { col, dir: col === "player" ? "asc" : "desc" }));
   if (!data) return <Loading id="dev-loading" label="Loading plans" />;
   return (
-    <div className="card" style={{ padding: 8, overflowX: "auto" }}>
+    <div className="card tbl-scroll" style={{ padding: 8, overflowX: "auto" }}>
       <div className="rz-bar"><small className="note">Click a heading to sort; click again to flip. Drag the edge of any heading to resize a column. Both are remembered.</small>
         <span style={{ display: "flex", gap: 8 }}>{sort && <button className="btn" onClick={() => setSort(null)} data-testid="plans-clear-sort">Default order</button>}
         {cw.changed && <button className="btn" onClick={cw.reset} data-testid="plans-reset-widths">Reset column widths</button>}</span></div>
-      <table className="tbl dev-tbl rz-tbl" style={{ width: cw.total }} data-testid="plans-table">
+      <table className="tbl dev-tbl rz-tbl" ref={cardRef} style={{ width: cw.total }} data-testid="plans-table">
         <ColGroup cols={Object.keys(COLS)} c={cw} />
         <thead><tr>{HEAD.map(([k, l, cls, t]) => <ResizeTh key={k} col={k} c={cw} label={l} className={cls} title={t} id="plans" sort={k === "act" ? null : { onClick: () => sortBy(k), dir: sort?.col === k ? sort.dir : null }} />)}</tr></thead>
         <tbody>{sortRows(data.rows, sort).map((r) => (
@@ -93,7 +94,7 @@ const Plans = () => {
             <td className="mono n">{r.age}</td><Games r={r} /><td className="mono n">{r.minutes_per_game ?? "—"}</td>
             <td className="mono n">{r.goals}</td><td className="mono n">{r.assists}</td><td className="mono n">{r.avg_rating ?? "—"}</td>
             <td style={{ minWidth: 180 }}>{r.target ? <div className="mb" style={{ gridTemplateColumns: "1fr 70px" }}><div className="track"><i style={{ width: `${Math.min(100, (r.month_minutes / r.target) * 100)}%`, background: r.needs_minutes ? "var(--amb)" : "var(--acc)" }} /></div><span className="mono">{r.month_minutes}/{r.target}</span></div> : <span className="mono">{r.month_minutes}</span>}</td>
-            <td>{r.plan ? <>{data.loans[r.plan.loan]}<small style={{ display: "block", color: "var(--dim)" }}>version {r.plan.revision}</small></> : <span style={{ color: "var(--dim)" }}>No plan</span>}</td>
+            <td>{r.plan ? <>{data.loans[r.plan.loan]}<small style={{ display: "block", color: "var(--dim)" }}>revision {r.plan.revision}</small></> : <span style={{ color: "var(--dim)" }}>No plan</span>}</td>
             <td>{r.plan?.goal_label ? <><span style={{ color: "var(--text)" }}>{r.plan.goal_label}</span>{r.goal_status && <small style={{ display: "block", color: GOAL_TONE[r.goal_status.tone] }} data-testid={`dev-goal-status-${r.unique_id}`}>{r.goal_status.text}</small>}</> : "—"}</td>
             <td data-testid={`dev-progress-${r.unique_id}`}><div className="dev-prog"><div><Progress n={r.progress_month} /><Progress n={r.progress_season} small /></div><Trend steps={r.trend} id={r.unique_id} /></div></td>
             <td><button className="btn" onClick={() => setEdit(r)} data-testid={`plan-edit-${r.unique_id}`}>{r.plan ? "Revise" : "Add plan"}</button></td>

@@ -8,7 +8,7 @@ import { api, errMsg } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { useScout, usePost, fmtMoney, fmtWage, toGBP, ContractTag, Pct, num, pctColor } from "./ctx";
 import { AdvFilter } from "./Lab";
-import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
+import { useResizableTable, ResetWidths, usePaged, ShowMore } from "@/components/ResizableCols";
 import { WatchButton } from "@/components/WatchButton";
 import { Loading } from "@/components/Loading";
 
@@ -87,6 +87,7 @@ export const PlayersTab = () => {
   const { data: meta } = useGet("scout-meta", "/scout/meta");
   const body = { ...f, view, limit: 100 };
   const { data, isLoading } = usePost("scout-players", "/scout/players", body, { enabled: !!meta });
+  const [pageRows, moreRows] = usePaged(data?.rows);
   const act = useAct();
   const statKeys = cols === "all" ? meta?.metrics.map((m) => m.key) || [] : cols === "key" ? KEY_STATS : [];
   const label = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.label]));
@@ -111,16 +112,16 @@ export const PlayersTab = () => {
       </div>}
       </div>
       {more && adv && <AdvFilter value={f.adv} meta={meta} onChange={(v) => setF({ ...f, adv: v })} />}
-      <div className="card" style={{ padding: 8, overflowX: "auto" }}>
+      <div className="card tbl-scroll" style={{ padding: 8, overflowX: "auto" }}>
         <ResetWidths rz={rz} id="sp" />
         <table className="tbl pin2" ref={rz.ref} data-testid="sp-table">
           <thead><tr><th></th><Th k="name">Player</Th><Th k="age">Age</Th><Th k="grade" title="Global grade: 20 + (local grade − 20) × league multiplier">Grade</Th>
-            <Th k="value">Value</Th><Th k="fair_price">Fair price</Th><Th k="wage">Wage</Th><Th k="minutes">Mins</Th>
+            <Th k="value">Value</Th><Th k="fair_price">Fair price</Th><Th k="wage">Wage</Th><Th k="minutes">Minutes</Th>
             {statKeys.map((k) => <Th key={k} k={k} title={`${label[k]} (${short(k, label[k])})`}>{cols === "key" ? <span className="th-full">{label[k]?.replace(" / 90", "")}</span> : short(k, label[k])}</Th>)}
             {cols === "computed" && meta?.archetypes.map((a) => <Th key={a.key} k={`c:${a.key}`}>{a.name}</Th>)}
             {cols === "formulas" && meta?.formulas.map((x) => <Th key={x.key} k={`f:${x.key}`}>{x.name}</Th>)}
             {cols === "actions" && ["Defensive actions", "Progressive actions", "Box involvement"].map((a) => <th key={a}>{a}</th>)}<th></th></tr></thead>
-          <tbody>{data?.rows.map((r) => {
+          <tbody>{pageRows.map((r) => {
             const marker = f.mode === "adjusted" && (r.poss_mult !== 1 || r.league_mult !== 1) ? `Possession ×${r.poss_mult} · league ×${r.league_mult}` : null;
             return (
               <tr key={r.unique_id} onClick={() => openPlayer(r.unique_id)} onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) { e.preventDefault(); openPlayer(r.unique_id); } }} tabIndex={0} data-row-uid={r.unique_id} data-testid={`sp-row-${r.unique_id}`}>
@@ -141,6 +142,7 @@ export const PlayersTab = () => {
               </tr>);
           })}</tbody>
         </table>
+        <ShowMore more={moreRows} id="sp" />
         {isLoading && <div style={{ padding: 10 }}><Loading id="players-loading" rows={6} label="Loading players" /></div>}
         {data && !data.rows.length && <SpEmpty f={f} setF={setF} meta={meta} />}
         {data && <p className="note" style={{ padding: 10 }} data-testid="sp-total">{data.total} players match. Showing {Math.min(100, data.total)}. Percentiles and grades need {meta?.min_minutes.percentiles} minutes; a fair price needs {meta?.min_minutes.fair_price}.{meta?.sample ? " Match stats are SAMPLE numbers in this preview." : ""}</p>}

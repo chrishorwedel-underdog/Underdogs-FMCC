@@ -23,16 +23,16 @@ const Compare = () => {
       {data && (
         <>
           <div className="bento" style={{ marginBottom: 16 }}>
-            <div className="card"><div className="ch">Squad CA gained</div><div className="num" data-testid="report-total">{data.summary.total_change > 0 ? "+" : ""}{data.summary.total_change}</div></div>
+            <div className="card"><div className="ch">Biggest movers</div><div className="num" data-testid="report-total">{data.rows[0]?.name || "—"}<small>{data.rows[0]?.progress?.text || ""}</small></div></div>
             <div className="card"><div className="ch">Rising / falling</div><div className="num" data-testid="report-rising">{data.summary.rising}<small>rising · {data.summary.falling} falling</small></div></div>
             <div className="card"><div className="ch">Squad changes</div><p className="sent">Joined: <b>{data.summary.joined.join(", ") || "nobody"}</b></p><p className="sent">Left: <b>{data.summary.left.join(", ") || "nobody"}</b></p></div>
           </div>
           <div className="card" style={{ padding: 8, overflowX: "auto" }}>
             <table className="tbl" data-testid="report-table">
-              <thead><tr><th>Player</th><th>Age</th><th>CA gained</th><th>Minutes</th><th>Goals</th><th>Assists</th><th>Rating</th><th>Trend</th></tr></thead>
+              <thead><tr><th>Player</th><th>Age</th><th>Progress</th><th>Minutes</th><th>Goals</th><th>Assists</th><th>Rating</th><th>Trend</th></tr></thead>
               <tbody>{data.rows.map((r) => (
                 <tr key={r.unique_id} style={{ cursor: "default" }}><td>{r.name}</td><td>{r.age}</td>
-                  <td className={`mono ${r.ca_change > 0 ? "up" : r.ca_change < 0 ? "down" : ""}`}>{r.ca_change > 0 ? "+" : ""}{r.ca_change}</td><td className="mono">{r.minutes}</td><td className="mono">{r.goals}</td><td className="mono">{r.assists}</td>
+                  <td style={{ color: { big: "var(--grn)", up: "var(--grn)", flat: "var(--mut)", down: "var(--amb)" }[r.progress?.tone] }}>{r.progress?.text || "—"}</td><td className="mono">{r.minutes}</td><td className="mono">{r.goals}</td><td className="mono">{r.assists}</td>
                   <td className="mono">{r.avg_rating ?? "—"}</td><td><span className={`st ${r.trend === "rising" ? "ok" : r.trend === "falling" ? "r" : "n"}`}>{r.trend}</span></td></tr>))}</tbody>
             </table>
           </div>

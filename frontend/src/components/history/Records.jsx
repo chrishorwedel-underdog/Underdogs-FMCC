@@ -92,22 +92,34 @@ export const Compare = ({ seasons }) => {
   </div>;
 };
 
+const Tribute = ({ m, go }) => {
+  const [edit, setEdit] = useState(null);
+  if (edit !== null) return <div style={{ display: "flex", gap: 8, margin: "8px 0" }}><input className="inp" maxLength={300} value={edit} onChange={(e) => setEdit(e.target.value)} data-testid={`hof-note-edit-${m.unique_id}`} />
+    <button className="btn btn-p" onClick={() => go(() => api.put(`/history/hall-of-fame/${m.unique_id}`, { unique_id: m.unique_id, note: edit }), "Tribute saved").then(() => setEdit(null))} data-testid={`hof-note-save-${m.unique_id}`}>Save</button>
+    <button className="btn" onClick={() => setEdit(null)} data-testid={`hof-note-cancel-${m.unique_id}`}>Cancel</button></div>;
+  return <p className="hof-note" data-testid={`hof-note-${m.unique_id}`}>{m.note ? <q>{m.note}</q> : <span className="note">No tribute yet.</span>}
+    <button className="linkish" style={{ marginLeft: 10 }} onClick={() => setEdit(m.note || "")} data-testid={`hof-note-edit-btn-${m.unique_id}`}>{m.note ? "Edit tribute" : "Write a tribute"}</button></p>;
+};
+
 export const HallOfFame = () => {
   const qc = useQueryClient();
   const { data } = useGet("history-hof", "/history/hall-of-fame");
   const { data: pl } = useGet("history-players", "/history/players");
   const [uid, setUid] = useState("");
+  const [note, setNote] = useState("");
   const go = async (fn, msg) => { try { await fn(); toast.success(msg); qc.invalidateQueries({ queryKey: ["history-hof"] }); } catch (e) { toast.error(errMsg(e)); } };
   if (!data) return <Loading id="hof-loading" rows={4} label="Loading Hall of Fame" />;
   return <div style={{ display: "grid", gap: 12 }}>
     <div className="card" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }} data-testid="hof-induct">
       <b>Induct a club legend</b>
       <select className="inp" style={{ width: "auto" }} value={uid} onChange={(e) => setUid(e.target.value)} data-testid="hof-player"><option value="">Pick a player…</option>{(pl?.players || []).map((p) => <option key={p.unique_id} value={p.unique_id}>{p.name} ({p.apps} apps, {p.goals} goals)</option>)}</select>
-      <button className="btn btn-p" disabled={!uid} onClick={() => go(() => api.post("/history/hall-of-fame", { unique_id: Number(uid) }), "Inducted into the Hall of Fame")} data-testid="hof-induct-button">Induct</button></div>
+      <input className="inp" style={{ flex: "1 1 260px" }} maxLength={300} placeholder="A short tribute (optional)" value={note} onChange={(e) => setNote(e.target.value)} data-testid="hof-note-input" />
+      <button className="btn btn-p" disabled={!uid} onClick={() => go(() => api.post("/history/hall-of-fame", { unique_id: Number(uid), note }), "Inducted into the Hall of Fame").then(() => { setUid(""); setNote(""); })} data-testid="hof-induct-button">Induct</button></div>
     {!data.members.length && <p className="note" data-testid="hof-empty">No legends yet.</p>}
     {data.members.map((m) => <div key={m.unique_id} className="card" data-testid={`hof-${m.unique_id}`}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}><button className="linkish" onClick={() => openPlayer(m.unique_id)}><b style={{ fontSize: 16 }}>{m.name}</b></button>
         <button className="btn" style={{ marginLeft: "auto", padding: "3px 8px", fontSize: 12 }} onClick={() => go(() => api.delete(`/history/hall-of-fame/${m.unique_id}`), "Removed from the Hall of Fame")} data-testid={`hof-remove-${m.unique_id}`}>Remove</button></div>
+      <Tribute m={m} go={go} />
       <div className="facts" style={{ margin: "8px 0" }}>{[["Appearances", m.totals.appearances], ["Goals", m.totals.goals], ["Assists", m.totals.assists], ["Minutes", m.totals.minutes]].map(([l, v]) => <div key={l}><small>{l}</small><b className="mono">{v}</b></div>)}</div>
       <p className="note" style={{ margin: 0 }}>Honours: {m.honours.join(", ") || "None yet"} · Seasons: {m.seasons.map((s) => s.season).join(", ")}</p>
       <p className="note" style={{ margin: 0 }}>Defining matches: {m.defining_matches.length ? m.defining_matches.map((d) => <Link key={d.id} className="linkish" to={`/matches?match=${d.id}`} style={{ marginRight: 8 }}>vs {d.opponent} ({d.rating})</Link>) : <U v={null} />}</p>

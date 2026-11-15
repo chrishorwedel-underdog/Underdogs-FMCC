@@ -42,6 +42,28 @@ export const ResizeTh = ({ col, c, label, className = "", title, id, sort }) => 
 );
 
 const heads = (t) => [...(t?.tHead?.rows[0]?.cells || [])];
+
+// Each body cell carries its heading, so on phones a row can be shown as a labelled card.
+export const labelCells = (t) => {
+  const ls = heads(t).map((th) => th.textContent.replace(/[\u2191\u2193\u25b2\u25bc]/g, "").trim());
+  [...(t?.tBodies?.[0]?.rows || [])].forEach((tr) => [...tr.cells].forEach((td, i) => { if (td.getAttribute("data-label") !== (ls[i] || "")) td.setAttribute("data-label", ls[i] || ""); }));
+};
+
+export const useCardLabels = () => {
+  const [el, setEl] = useState(null);
+  useLayoutEffect(() => { if (el) { el.classList.add("tbl-std"); labelCells(el); } });
+  return setEl;
+};
+
+// Show long lists 50 rows at a time.
+export const usePaged = (rows, size = 50) => {
+  const [n, setN] = useState(size);
+  const list = rows || [];
+  const more = list.length > n ? { left: list.length - n, next: Math.min(size, list.length - n), show: () => setN(n + size) } : null;
+  return [list.slice(0, n), more];
+};
+
+export const ShowMore = ({ more, id }) => (more ? <button className="btn show-more" onClick={more.show} data-testid={`${id}-show-more`}>Show {more.next} more ({more.left} left)</button> : null);
 const names = (ths) => ths.map((th, i) => `${i}:${th.textContent.replace(/[↑↓▲▼]/g, "").trim()}`);
 
 // Drop-in resizable columns for any existing <table>: attach `ref`, widths remembered per career by heading.
@@ -73,6 +95,8 @@ export const useResizableTable = (key) => {
       th.style.width = on ? `${saved[ns[i]]}px` : "";
     });
     t.classList.toggle("rz-on", on);
+    t.classList.add("tbl-std");
+    labelCells(t);
     t.style.width = on ? `${ns.reduce((a, n) => a + saved[n], 0)}px` : "";
   });
 

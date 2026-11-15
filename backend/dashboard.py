@@ -51,7 +51,6 @@ def compute(latest: dict, prev: dict | None, last_backup: str | None) -> dict:
     needy = sorted([y for y in youth if y["minutes"] < MONTHLY_TARGET], key=lambda y: y["minutes"])
 
     deltas = [(p, p["ca"] - before[p["unique_id"]]["ca"]) for p in players if p["unique_id"] in before]
-    total = sum(d for _, d in deltas)
     riser = max(deltas, key=lambda x: x[1], default=None)
 
     expiring = [p for p in players if (date.fromisoformat(p["contract_end"]) - gd).days <= 183]
@@ -78,7 +77,7 @@ def compute(latest: dict, prev: dict | None, last_backup: str | None) -> dict:
         "has_previous": prev is not None,
         "squad": {"xi_average": xi_avg, "weak_spot": weak["label"] if weak else None},
         "development": {"count": len(needy), "target": MONTHLY_TARGET, "players": needy[:3]},
-        "report": {"total_change": total, "riser": {"name": riser[0]["name"], "change": riser[1]} if riser else None},
+        "report": {"rising": sum(d > 0 for _, d in deltas), "falling": sum(d < 0 for _, d in deltas), "riser": {"name": riser[0]["name"]} if riser and riser[1] > 0 else None},
         "awards": {"weeks_left": weeks_left, "season_end": season_end.isoformat()},
         "attention": attention,
     }

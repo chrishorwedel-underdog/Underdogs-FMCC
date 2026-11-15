@@ -6,6 +6,7 @@ from pymongo.errors import DuplicateKeyError
 
 from core import db, active_career, latest_two, month_minutes, now_iso, new_id, next_revision, season_start_ca
 from rules_api import current as current_rules
+import ability_words
 
 router = APIRouter(prefix="/api")
 LOANS = {"none": "Stay at the club", "loan_lower": "Loan to a lower league", "loan_same": "Loan to a club at our level", "loan_abroad": "Loan abroad"}
@@ -159,13 +160,15 @@ async def report_compare(a: int = Query(ge=0), b: int = Query(ge=0)):
             continue
         d = p["ca"] - o["ca"]
         mins = p["minutes"] - o["minutes"] if sa["season"] == sb["season"] else p["minutes"]
-        rows.append({"unique_id": p["unique_id"], "name": p["name"], "age": p["age"], "ca_change": d, "assists": p.get("assists", 0) - (o.get("assists", 0) if sa["season"] == sb["season"] else 0),
+        rows.append({"unique_id": p["unique_id"], "name": p["name"], "age": p["age"], "_d": d, "progress": ability_words.progress(d), "assists": p.get("assists", 0) - (o.get("assists", 0) if sa["season"] == sb["season"] else 0),
                      "minutes": mins, "avg_rating": p.get("avg_rating"), "goals": p.get("goals", 0) - (o.get("goals", 0) if sa["season"] == sb["season"] else 0),
                      "trend": "rising" if d >= params["rising"] else "falling" if d <= params["falling"] else "steady"})
-    rows.sort(key=lambda r: -r["ca_change"])
+    rows.sort(key=lambda r: -r["_d"])
+    for r in rows:
+        del r["_d"]
     ids_b = {p["unique_id"] for p in sb["players"]}
     return {"from": sa["game_date"], "to": sb["game_date"], "rows": rows, "params": params,
-            "summary": {"total_change": sum(r["ca_change"] for r in rows), "rising": sum(r["trend"] == "rising" for r in rows),
+            "summary": {"rising": sum(r["trend"] == "rising" for r in rows),
                         "falling": sum(r["trend"] == "falling" for r in rows),
                         "joined": [p["name"] for p in sb["players"] if p["unique_id"] not in pa_],
                         "left": [p["name"] for p in sa["players"] if p["unique_id"] not in ids_b]}}

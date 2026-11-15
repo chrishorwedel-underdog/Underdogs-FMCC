@@ -28,7 +28,7 @@ def public(ch: dict) -> dict:
     """True PA/CA values never leave the backend; only the size of a change does."""
     out = {k: v for k, v in ch.items() if k not in ("key",)}
     if ch.get("entity", "player") == "player" and ch.get("field") in TRUE_ABILITY:
-        out |= {k: None for k in HIDE if k in out}
+        out |= {k: None for k in HIDE if k in out} | {"delta": None, "words": describe(ch) if ch.get("delta") is not None else None}
     return out
 
 
@@ -37,6 +37,9 @@ def describe(ch: dict) -> str:
         return "added to your FM shortlist"
     if ch.get("entity") == "club":
         return f"{ch.get('label')} → {ch.get('target')}"
+    if ch.get("field") in TRUE_ABILITY and ch.get("entity", "player") == "player":
+        import ability_words
+        return ability_words.potential_words(ch["delta"]) if ch["field"] == "pa" else ("current ability improved" if ch["delta"] > 0 else "current ability lowered")
     return f"{FIELD_WORD.get(ch['field'], ch.get('label') or ch['field'])} {'+' if ch['delta'] > 0 else ''}{ch['delta']}"
 
 

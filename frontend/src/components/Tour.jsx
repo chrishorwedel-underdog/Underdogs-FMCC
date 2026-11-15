@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { NAV } from "@/constants/nav";
 import { GUIDES } from "@/constants/guides";
 
-const STEPS = [...NAV.map((n) => ({ to: n.to, key: n.key, label: n.label })), { to: "/settings?section=safety", key: "safety", label: "Project Safety" },
+const STEPS = [{ to: "/", key: "home", label: "Welcome to FMCC", what: "This is Home: your club at a glance. Press Next for a quick look round every screen, or Skip tour to start straight away." },
+  ...NAV.map((n) => ({ to: n.to, key: n.key, label: n.label })), { to: "/settings?section=safety", key: "safety", label: "Project Safety" },
   { to: "/changes", key: "top-more-button", label: "Game changes", what: "Every change FMCC makes in FM is recorded in Game changes (in the More menu), and you can undo it. Changes apply automatically unless you switch on Review changes before applying in Settings, Features." },
   { to: "/dof", key: "ask-dof", label: "Director of Football" }];
 

@@ -20,7 +20,7 @@ const Modes = ({ d }) => (
 );
 
 const WORD = { pa: "Potential", ca: "Current ability" };
-const what = (q) => (q.entity === "shortlist" ? "Add to FM shortlist" : q.entity === "club" ? `${q.label} → ${q.target}` : `${WORD[q.field] || q.field} ${q.delta > 0 ? "+" : ""}${q.delta}`);
+const what = (q) => (q.entity === "shortlist" ? "Add to FM shortlist" : q.entity === "club" ? `${q.label} → ${q.target}` : q.words ? `${WORD[q.field] || q.field}: ${q.words}` : `${WORD[q.field] || q.field} ${q.delta > 0 ? "+" : ""}${q.delta}`);
 
 const Queue = ({ d, act }) => {
   const [sel, setSel] = useState([]);

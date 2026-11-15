@@ -99,7 +99,27 @@ def _fill(old: dict, new: dict) -> dict:
     return out
 
 
+_CACHE: dict = {}
+
+
+async def _sig(cid: str) -> tuple:
+    last = await db.snapshots.find_one({"career_id": cid}, {"_id": 0, "save_no": 1, "read_at": 1}, sort=[("save_no", -1)]) or {}
+    return (last.get("save_no"), last.get("read_at"), await db.snapshots.count_documents({"career_id": cid}), await db.matches.count_documents({"career_id": cid}),
+            await db.awards.count_documents({"career_id": cid}))
+
+
 async def archive(c: dict) -> list:
+    """Rebuilt only when something it depends on changed (a new save read, match import or award)."""
+    sig = await _sig(c["id"])
+    hit = _CACHE.get(c["id"])
+    if hit and hit[0] == sig:
+        return hit[1]
+    out = await _build_archive(c)
+    _CACHE[c["id"]] = (sig, out)
+    return out
+
+
+async def _build_archive(c: dict) -> list:
     snaps = await db.snapshots.find({"career_id": c["id"]}, {"_id": 0, "save_no": 1, "season": 1, "game_date": 1, "club_name": 1, "players": 1, "finance": 1, "history": 1, "file_name": 1, "reader": 1}).sort("save_no", 1).to_list(500)
     seasons: dict = {}
     for s in snaps:
@@ -442,6 +462,15 @@ async def induct(body: HofIn):
     return {"ok": True, "name": r["name"]}
 
 
+@router.put("/hall-of-fame/{uid}")
+async def edit_tribute(uid: int, body: HofIn):
+    c = await active_career()
+    r = await db.hall_of_fame.update_one({"career_id": c["id"], "unique_id": uid}, {"$set": {"note": body.note}})
+    if not r.matched_count:
+        raise HTTPException(404, "That player isn't in the Hall of Fame")
+    return {"ok": True}
+
+
 @router.delete("/hall-of-fame/{uid}")
 async def remove_hof(uid: int):
     c = await active_career()
@@ -479,6 +508,10 @@ def _who(h: dict) -> str:
 async def check_records(c: dict) -> None:
     """Bell notice when a club record changes hands. The first check only remembers today's holders."""
     from notify_api import _add
+    save_sig = list(await _sig(c["id"]))
+    state = await db.record_state.find_one({"career_id": c["id"]}, {"_id": 0}) or {}
+    if state.get("sig") == save_sig:
+        return
     found = {}
     for scope in ("league", "all"):
         r = await records(scope)
@@ -502,4 +535,4 @@ async def check_records(c: dict) -> None:
             text = f"{_fmt(h['value'], rec['unit'])} in {h['season']}." + (f" Previous record: {_who(prev)}, {_fmt(prev['value'], rec['unit'])}." if prev else " First time this record has been set.")
             link = f"/squad?player={h['unique_id']}" if h.get("unique_id") else h.get("link") or "/club-history?tab=records"
             await _add(c["id"], "record", f"record:{k}:{now[k]}", f"New club record: {label}" + (f" by {h['name']}" if h.get("name") else ""), text, snap.get("game_date") or "", link)
-    await db.record_state.update_one({"career_id": c["id"]}, {"$set": {"career_id": c["id"], "holders": now}}, upsert=True)
+    await db.record_state.update_one({"career_id": c["id"]}, {"$set": {"career_id": c["id"], "holders": now, "sig": save_sig}}, upsert=True)

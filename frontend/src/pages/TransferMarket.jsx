@@ -2,14 +2,19 @@ import { useState } from "react";
 import { useGet, PageHead, TabBar } from "@/lib/ui";
 import { Loading } from "@/components/Loading";
 import { money, openDossier } from "@/components/analysis/StatsTable";
+import { useResizableTable, ResetWidths, usePaged, ShowMore } from "@/components/ResizableCols";
 
 const LISTS = [["expiring", "Contracts ending within a year"], ["free", "Free agents"], ["clauses", "Lowest release clauses"], ["u21", "Best under-21s"], ["loans", "Loan-listed"]];
 
-const Rows = ({ rows, extra }) => (
-  <div style={{ overflowX: "auto" }}><table className="tbl"><thead><tr><th>#</th><th>Player</th><th>Club</th><th>Age</th><th>Best role</th><th>Est. value</th><th>Contract ends</th>{extra && <th>{extra[0]}</th>}</tr></thead>
+const Rows = ({ rows: all, extra }) => {
+  const rz = useResizableTable("transfer-market");
+  const [rows, more] = usePaged(all);
+  return (
+  <div className="tbl-scroll" style={{ overflowX: "auto" }}><ResetWidths rz={rz} id="tm" /><table className="tbl" ref={rz.ref}><thead><tr><th className="n">#</th><th>Player</th><th>Club</th><th className="n">Age</th><th>Best role</th><th className="n">Estimated value</th><th>Contract ends</th>{extra && <th>{extra[0]}</th>}</tr></thead>
     <tbody>{rows.map((r, i) => <tr key={r.unique_id} onClick={() => openDossier(r.unique_id)} data-testid={`tm-row-${r.unique_id}`}><td className="mono">{i + 1}</td><td><b>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{(r.positions || []).join(", ")}</small></td>
-      <td>{r.club || "Free agent"}<small style={{ display: "block", color: "var(--dim)" }}>{r.league}</small></td><td>{r.age}</td><td>{r.top_roles?.[0]?.name} {r.role_fit}%</td><td className="mono">{money(r.est_value)}</td><td>{r.contract_end || "—"}</td>{extra && <td className="mono">{extra[1](r)}</td>}</tr>)}</tbody></table></div>
-);
+      <td>{r.club || "Free agent"}<small style={{ display: "block", color: "var(--dim)" }}>{r.league}</small></td><td className="mono n">{r.age}</td><td>{r.top_roles?.[0]?.name} {r.role_fit}%</td><td className="mono">{money(r.est_value)}</td><td>{r.contract_end || "—"}</td>{extra && <td className="mono">{extra[1](r)}</td>}</tr>)}</tbody></table><ShowMore more={more} id="tm" /></div>
+  );
+};
 
 const Rankings = ({ rows }) => {
   const [by, setBy] = useState({ league: "", club: "", nationality: "", group: "", age: "", gender: "M" });

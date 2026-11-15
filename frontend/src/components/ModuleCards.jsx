@@ -38,8 +38,8 @@ export const ModuleCards = ({ d }) => (
     <Card id="report" icon={BarChart3} title="Since last save" to="/reports" delay="d5" open="Open reports">
       {d.has_previous ? (
         <>
-          <div className="num" data-testid="home-ca-change">{d.report.total_change > 0 ? "+" : ""}{d.report.total_change}<small>squad ability change</small></div>
-          {d.report.riser && <p className="sent">Biggest riser: <b>{d.report.riser.name}</b> ({d.report.riser.change > 0 ? "+" : ""}{d.report.riser.change})</p>}
+          <div className="num" data-testid="home-ca-change">{d.report.rising}<small>improving · {d.report.falling} slipped back</small></div>
+          {d.report.riser && <p className="sent">Biggest riser: <b>{d.report.riser.name}</b></p>}
         </>
       ) : <div className="soon" data-testid="home-report-empty">Read one more save to compare players between saves.</div>}
     </Card>

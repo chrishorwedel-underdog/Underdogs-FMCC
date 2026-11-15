@@ -548,7 +548,30 @@ select.blank{cursor:pointer}
 th.sortable{cursor:pointer;user-select:none;transition:color .15s}
 th.sortable:hover,th.sortable[aria-sort]{color:var(--acc)}
 .sort-ar{font-size:9px}
+.tbl-std th,.tbl-std td{padding:11px 14px}
+.tbl-std td.mono,.tbl-std th.n,.tbl-std td.n{text-align:right}
+.tbl-std thead th{position:sticky;top:0;z-index:2;background:var(--s1,var(--bg))}
+.tbl-scroll{max-height:72vh;overflow:auto}
+.show-more{display:block;margin:12px auto 4px}
+.hof-note{margin:8px 0;color:var(--mut)}
+.hof-note q{color:var(--text);font-style:italic}
+@media (max-width:640px){
+  .tbl-std,.tbl-std tbody{display:block;width:100%!important}
+  .tbl-std colgroup,.tbl-std thead{display:none}
+  .tbl-std tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;padding:12px;margin:0 0 10px;border:1px solid var(--line);border-radius:12px}
+  .tbl-std td{display:block;padding:0!important;border:0!important;text-align:left!important;width:auto!important;min-width:0!important}
+  .tbl-std td:first-child{grid-column:1/-1;font-size:15px}
+  .tbl-std td[data-label]:not(:first-child)::before{content:attr(data-label);display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:2px}
+  .tbl-std td[data-label=""]::before{display:none}
+  .tbl-scroll{max-height:none}
+}
 .rw{display:grid;gap:10px;margin-bottom:18px;border-left:3px solid #E5B53A}
+.home-sec{margin-bottom:18px}
+.home-sec-head{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;color:var(--text);padding:4px 2px 10px;cursor:pointer;text-align:left;font-size:15px}
+.home-sec-head span{color:var(--dim);font-size:13px}
+.home-sec-head svg{margin-left:auto;color:var(--mut)}
+.hl-strip{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+.hl-strip>*{flex:0 0 min(560px,88vw);scroll-snap-align:start;margin-bottom:0!important}
 .rw-row{display:grid;gap:3px;text-align:left;background:none;border:0;border-radius:10px;padding:8px 10px;color:var(--mut);cursor:pointer;transition:background-color .15s}
 .rw-row:hover{background:var(--s2)}
 .rw-row:focus-visible{outline:2px solid var(--acc)}
