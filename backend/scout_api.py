@@ -87,7 +87,11 @@ def _filter(data: dict, f: dict, view: str) -> list:
     key, desc = f.get("sort", "grade"), f.get("dir", "desc") == "desc"
     if key in ("ca", "pa"):
         key = "grade"
-    out.sort(key=lambda x: (_value_of(x, key, f.get("mode", "p90")) is None, -(_value_of(x, key, f.get("mode", "p90")) or 0) if desc else (_value_of(x, key, f.get("mode", "p90")) or 0)))
+    val = lambda x: _value_of(x, key, f.get("mode", "p90"))  # noqa: E731
+    if any(isinstance(val(x), str) for x in out):
+        out.sort(key=lambda x: str(val(x) or "").lower(), reverse=desc)
+    else:
+        out.sort(key=lambda x: (val(x) is None, -(val(x) or 0) if desc else (val(x) or 0)))
     return out
 
 

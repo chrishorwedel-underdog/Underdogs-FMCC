@@ -35,7 +35,7 @@ class TestFinance:
     def test_finance_items(self):
         d = j(S.get(f"{BASE}/finance"))
         it = {x["key"]: x for x in d["items"]}
-        assert list(it) == ["ffp", "wages", "spent", "budget", "bank"]
+        assert list(it) == ["ffp", "wages", "spent", "sold", "net", "budget", "bank"]
         assert it["ffp"]["text"] == "Compliant" and it["ffp"]["tone"] == "green"
         assert it["wages"]["text"] == "60%" and it["wages"]["tone"] == "green"
         assert it["spent"]["text"] == "£6.3m"

@@ -74,7 +74,7 @@ class TestReads:
         r = s.get(f"{H}/leaders")
         assert r.status_code == 200
         d = r.json()
-        assert {l["key"] for l in d["leaders"]} == {"npxg", "xa", "xgxa", "progp", "prgc", "xgp"}
+        assert {"goals", "assists", "appearances", "npxg", "xa", "xgxa", "progp", "prgc", "xgp"} <= {l["key"] for l in d["leaders"]}
         r2 = s.get(f"{H}/leaders", params={"season": "2027/28"})
         assert r2.status_code == 200 and r2.json()["season"] == "2027/28"
         _no_ca_pa(d)

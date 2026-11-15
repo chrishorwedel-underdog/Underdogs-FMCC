@@ -93,7 +93,7 @@ export const PlayersTab = () => {
   const label = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.label]));
   const isPct = Object.fromEntries((meta?.metrics || []).map((m) => [m.key, m.kind === "pct"]));
   const sortBy = (k) => setF({ ...f, sort: k, dir: f.sort === k && f.dir === "desc" ? "asc" : "desc" });
-  const Th = ({ k, children, title }) => <th onClick={() => sortBy(k)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && sortBy(k)} aria-label={title || undefined} aria-sort={f.sort === k ? (f.dir === "desc" ? "descending" : "ascending") : "none"} style={{ cursor: "pointer", whiteSpace: "nowrap", color: f.sort === k ? "var(--acc)" : undefined }} title={title}>{children}{f.sort === k ? (f.dir === "desc" ? " ↓" : " ↑") : ""}</th>;
+  const Th = ({ k, children, title }) => <th className={k === "name" ? "" : "n"} onClick={() => sortBy(k)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && sortBy(k)} aria-label={title || undefined} aria-sort={f.sort === k ? (f.dir === "desc" ? "descending" : "ascending") : "none"} style={{ cursor: "pointer", whiteSpace: "nowrap", color: f.sort === k ? "var(--acc)" : undefined }} title={title}>{children}{f.sort === k ? (f.dir === "desc" ? " ↓" : " ↑") : ""}</th>;
   const star = (r) => act(() => api.post("/scouting/shortlist", { unique_id: r.unique_id, action: "add" }), `${r.name} added to the shortlist`, ["rankings"]);
   return (
     <div>
@@ -128,7 +128,7 @@ export const PlayersTab = () => {
                 <td onClick={(e) => e.stopPropagation()}><span style={{ display: "inline-flex", gap: 4 }}>{!r.own && r.source === "save" && <button className="ib" style={{ width: 26, height: 26 }} onClick={() => star(r)} title="Add to shortlist" data-testid={`sp-star-${r.unique_id}`}><Star size={13} /></button>}{r.source === "save" && <WatchButton compact uid={r.unique_id} name={r.name} id={`sp-watch-${r.unique_id}`} />}</span></td>
                 <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.own && <span className="tag st g">Your club</span>}<ContractTag m={r.months_left} />{r.league_scored === false && <span className="tag st a" title={r.league_note} data-testid={`sp-noscore-${r.unique_id}`}>No strength score</span>}{r.source === "html" && !r.linked && <span className="tag st n">Not linked</span>}
                   <small style={{ display: "block", color: "var(--dim)" }}>{r.club} · {r.positions?.join(", ")}</small></td>
-                <td>{r.age}</td>
+                <td className="mono">{r.age}</td>
                 <td className="mono" style={{ color: "var(--acc)" }} title={r.minutes < 400 ? "Not enough minutes" : `Local ${r.grade_local} · league ×${r.league_mult}`}>{r.minutes < 400 ? "—" : r.grade_global ?? "—"}</td>
                 <td className="mono">{r.value ? fmtMoney(r.value, prefs) : "—"}</td>
                 <td className="mono" title={r.fair_price ? `Confidence: ${r.confidence}` : "Not enough minutes"}>{r.fair_price ? fmtMoney(r.fair_price, prefs) : "—"}</td>

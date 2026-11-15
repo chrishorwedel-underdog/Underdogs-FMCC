@@ -141,10 +141,14 @@ async def sync(c: dict) -> None:
         pass
     import plans_api
     try:
-        for r in (await plans_api.development())["rows"]:
-            if (r.get("goal_status") or {}).get("tone") == "done":
-                await _add(c["id"], "goal", f"goal:{r['unique_id']}:{r['plan']['revision']}", f"{r['name']} reached his development goal",
-                           f"{r['plan'].get('goal_label') or 'His goal'} done. Open Youth Development to set his next goal.", last["game_date"])
+        gsig = list(await history_api._sig(c["id"])) + [await db.plans.count_documents({"career_id": c["id"]})]
+        gs = await db.record_state.find_one({"career_id": c["id"]}, {"_id": 0, "goal_sig": 1}) or {}
+        if gs.get("goal_sig") != gsig:
+            for r in (await plans_api.development())["rows"]:
+                if (r.get("goal_status") or {}).get("tone") == "done":
+                    await _add(c["id"], "goal", f"goal:{r['unique_id']}:{r['plan']['revision']}", f"{r['name']} reached his development goal",
+                               f"{r['plan'].get('goal_label') or 'His goal'} done. Open Youth Development to set his next goal.", last["game_date"])
+            await db.record_state.update_one({"career_id": c["id"]}, {"$set": {"goal_sig": gsig}}, upsert=True)
     except HTTPException:
         pass
     sl = await scouting_api.shortlisted(c["id"])

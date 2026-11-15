@@ -473,7 +473,9 @@ async def player_detail(unique_id: int):
         raise HTTPException(404, "Player not found in this career")
     snaps = await db.snapshots.find({"career_id": c["id"], "players.unique_id": unique_id},
                                     {"_id": 0, "save_no": 1, "game_date": 1, "players.$": 1}).sort("save_no", 1).to_list(None)
-    history = [{"save_no": s["save_no"], "game_date": s["game_date"], "ca": s["players"][0]["ca"], "minutes": s["players"][0]["minutes"]} for s in snaps]
+    cas = [s["players"][0]["ca"] for s in snaps]
+    history = [{"save_no": s["save_no"], "game_date": s["game_date"], "minutes": s["players"][0]["minutes"],
+                "step": None if i == 0 else "up" if cas[i] > cas[i - 1] else "down" if cas[i] < cas[i - 1] else "flat"} for i, s in enumerate(snaps)]
     latest = snaps[-1]["players"][0] if snaps else None
     return {"identity": ident, "latest": latest, "history": history, "role_ratings": roles.role_ratings(latest)[:6] if latest else []}
 

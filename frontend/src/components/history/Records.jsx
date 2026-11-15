@@ -95,7 +95,7 @@ export const Compare = ({ seasons }) => {
 const Tribute = ({ m, go }) => {
   const [edit, setEdit] = useState(null);
   if (edit !== null) return <div style={{ display: "flex", gap: 8, margin: "8px 0" }}><input className="inp" maxLength={300} value={edit} onChange={(e) => setEdit(e.target.value)} data-testid={`hof-note-edit-${m.unique_id}`} />
-    <button className="btn btn-p" onClick={() => go(() => api.put(`/history/hall-of-fame/${m.unique_id}`, { unique_id: m.unique_id, note: edit }), "Tribute saved").then(() => setEdit(null))} data-testid={`hof-note-save-${m.unique_id}`}>Save</button>
+    <button className="btn btn-p" onClick={() => go(() => api.put(`/history/hall-of-fame/${m.unique_id}`, { unique_id: m.unique_id, note: edit }), "Tribute saved").then((ok) => ok && setEdit(null))} data-testid={`hof-note-save-${m.unique_id}`}>Save</button>
     <button className="btn" onClick={() => setEdit(null)} data-testid={`hof-note-cancel-${m.unique_id}`}>Cancel</button></div>;
   return <p className="hof-note" data-testid={`hof-note-${m.unique_id}`}>{m.note ? <q>{m.note}</q> : <span className="note">No tribute yet.</span>}
     <button className="linkish" style={{ marginLeft: 10 }} onClick={() => setEdit(m.note || "")} data-testid={`hof-note-edit-btn-${m.unique_id}`}>{m.note ? "Edit tribute" : "Write a tribute"}</button></p>;
@@ -107,14 +107,14 @@ export const HallOfFame = () => {
   const { data: pl } = useGet("history-players", "/history/players");
   const [uid, setUid] = useState("");
   const [note, setNote] = useState("");
-  const go = async (fn, msg) => { try { await fn(); toast.success(msg); qc.invalidateQueries({ queryKey: ["history-hof"] }); } catch (e) { toast.error(errMsg(e)); } };
+  const go = async (fn, msg) => { try { await fn(); toast.success(msg); qc.invalidateQueries({ queryKey: ["history-hof"] }); return true; } catch (e) { toast.error(errMsg(e)); return false; } };
   if (!data) return <Loading id="hof-loading" rows={4} label="Loading Hall of Fame" />;
   return <div style={{ display: "grid", gap: 12 }}>
     <div className="card" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }} data-testid="hof-induct">
       <b>Induct a club legend</b>
       <select className="inp" style={{ width: "auto" }} value={uid} onChange={(e) => setUid(e.target.value)} data-testid="hof-player"><option value="">Pick a player…</option>{(pl?.players || []).map((p) => <option key={p.unique_id} value={p.unique_id}>{p.name} ({p.apps} apps, {p.goals} goals)</option>)}</select>
       <input className="inp" style={{ flex: "1 1 260px" }} maxLength={300} placeholder="A short tribute (optional)" value={note} onChange={(e) => setNote(e.target.value)} data-testid="hof-note-input" />
-      <button className="btn btn-p" disabled={!uid} onClick={() => go(() => api.post("/history/hall-of-fame", { unique_id: Number(uid), note }), "Inducted into the Hall of Fame").then(() => { setUid(""); setNote(""); })} data-testid="hof-induct-button">Induct</button></div>
+      <button className="btn btn-p" disabled={!uid} onClick={() => go(() => api.post("/history/hall-of-fame", { unique_id: Number(uid), note }), "Inducted into the Hall of Fame").then((ok) => { if (ok) { setUid(""); setNote(""); } })} data-testid="hof-induct-button">Induct</button></div>
     {!data.members.length && <p className="note" data-testid="hof-empty">No legends yet.</p>}
     {data.members.map((m) => <div key={m.unique_id} className="card" data-testid={`hof-${m.unique_id}`}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}><button className="linkish" onClick={() => openPlayer(m.unique_id)}><b style={{ fontSize: 16 }}>{m.name}</b></button>

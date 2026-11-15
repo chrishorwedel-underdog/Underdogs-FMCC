@@ -1,0 +1,54 @@
+{
+  "summary": "Tested FMCC Site Audit Phase 1 (backend + frontend). Backend: AbilityGuard verified across all 124 parameterless GET routes (no ca/pa/ca_change/start_ca/goal_* keys), no 'potential +N'/'CA +N' text in notify/audit/changes/home/development/squad; squad progress {tone,text}; reports/compare rows have progress, no total_change; /api/home/extras returns 4 keys; HoF POST/PUT/GET/DELETE note works (cleaned up). Frontend: Home order correct (greeting, Up next, Highlights, What changed, Your modules, next match), modules collapse remembered after reload, home-ca-change shows '13 improving · 2 slipped back', tour starts with Home welcome step. Squad progress words, header sorting asc/desc, Default order reset, sort remembered, resize, row-click panel all work. Reports compare shows Progress words, no 'CA gained'. Scout Players shows 50 + sp-show-more reveals rest. Ctrl+K season/records search + navigation work. HoF induct/tribute/edit/remove work in UI. Game changes page shows potential in words. Found: Scout Players sort-by-Player 500 (HIGH), Player panel History chart now empty (stripped ca), Home still makes 4 duplicate extra requests, mobile scout card overlap, header/number misalignment.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/scout/players {sort:'name', dir:'desc'}", "issue": "500 TypeError: bad operand type for unary -: 'str' (scout_api.py _filter line ~90 negates string sort value). Clicking the 'Player' heading in Scout Players (first click = desc) empties the table with no error shown. All other sort keys and name/asc return 200.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/players/{uid}", "issue": "history[] items lost 'ca' via AbilityGuard, but PlayerPanel History tab still plots h.ca - history[0].ca -> 'Ability gained across saves' chart renders empty (NaN). Replace with progress words per save (server-side) or remove chart."},
+      {"endpoint": "GET /api/notify (sync)", "issue": "Every bell poll runs plans_api.development() for the goal notice plus breakout/elite checks; consider gating goal check by save signature like check_records."},
+      {"endpoint": "history_api.archive _CACHE", "issue": "In-process cache returns the same list object to callers; any caller mutating it corrupts the cache. Signature also ignores club name/branding edits."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PlayerPanel > History tab", "issue": "'Ability gained across saves' chart is empty (axis only) because history items no longer have ca", "selector": "[data-testid='player-sheet-chart']", "priority": "MEDIUM"},
+      {"component": "Scout Players table (mobile <=640px)", "issue": "Stacked cards overlap: Player cell keeps desktop sticky position (position:sticky; left:42px; z-index:2; width 150px) and covers the Age cell (only 'e' of AGE visible); first cell (star/eye) also sticky. Sticky filter bar takes ~216px of 844px viewport and covers card tops.", "selector": "table.tbl-std tbody td[data-label='Player']", "priority": "MEDIUM"},
+      {"component": "Scout Players", "issue": "When /scout/players errors the table silently shows 0 rows with no error message", "selector": "table.tbl-std", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Home extras single request", "issue": "Home calls /api/home/extras but still fires /notify/countdowns, /celebrations, /history/record-watch, /watch/digest separately. RCA: useHomeExtras seeds cache in a parent useEffect, which runs after child useQuery mounts have already started fetching. Fix: seed cache inside the extras queryFn before returning (or pass data as props / initialData), and verify keys match the children's useGet keys.", "affected_selectors": ["[data-testid='home-highlights']", "[data-testid='whatchanged-panel']"]},
+      {"flow": "Hall of Fame tribute edit", "issue": "go() swallows errors so .then(() => setEdit(null)) always runs; on a failed save the edit box closes and typed text is lost.", "affected_selectors": ["[data-testid^='hof-note-save-']"]}
+    ],
+    "design_issues": [
+      {"screen": "Scout Players / Club History Records / Monthly Reports 'My squad' table", "issues": ["Numeric column headers are left-aligned while numeric values are right-aligned (Scout: all stat headers 'l'; Records: VALUE; Reports: Minutes/Goals/Assists/Rating). Scout Age values not right-aligned. Transfer Market/Development/Squad are correct."]},
+      {"screen": "Squad mobile cards", "issues": ["'Progress since last save' label wraps to 2 lines and the value sits directly against the next row label (MINUTES) - tight spacing"]},
+      {"screen": "Transfer Market", "issues": ["Lists are capped at 50 by the backend so tm-show-more can never appear in the sample save (could not verify)", "Empty lists show the note plus an empty table header"]},
+      {"screen": "Ctrl+K", "issues": ["Filter appends 'season record hall of fame history' to every item, so typing 'season' or 'record' matches every history item (relevance noise); selecting a Players record lands on Records > Team sub-tab, not the record's sub-tab"]},
+      {"screen": "Hall of Fame", "issues": ["Induct dropdown still lists already-inducted players; Remove has no confirm"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_audit_round_phase1.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Fix scout_api._filter sort for string keys (name) in desc order - currently 500",
+    "Replace/remove PlayerPanel 'Ability gained across saves' chart that depends on stripped h.ca",
+    "Make Home truly single-request: seed celebrations/record-watch/digest/countdowns caches inside the /home/extras queryFn (before children mount)",
+    "Mobile card layout: reset position:sticky/left/z-index/width for sticky columns inside the <=640px tbl-std card CSS; consider non-sticky filter bar on phones",
+    "Right-align numeric headers in Scout Players, Records and Reports compare tables (and Scout Age cells)",
+    "HoF Tribute: only close edit on success (rethrow in go or return a boolean)",
+    "Update stale tests: test_club_history.py::TestReads::test_leaders (leaders now include goals/assists/etc.) and test_qol_phase1.py::TestFinance::test_finance_items (new incoming/outgoing items)"
+  ],
+  "critical_code_review_comments": [
+    "AbilityGuard (BaseHTTPMiddleware) buffers and re-serialises every JSON response - works and is fast here (~130ms), but any frontend code still reading stripped keys silently breaks (found PlayerPanel h.ca). Grep frontend for remaining usages after each change.",
+    "NUM_TEXT only rewrites 'potential N'/'current ability N'; strings like 'CA +3' or 'PA 150' would pass through the guard - none found today.",
+    "induct uses $setOnInsert so re-inducting with a new note does not update it (PUT is the only path) - acceptable but undocumented.",
+    "Goal-reached notice could not be triggered end-to-end without altering ability data; only code-reviewed (notify_api.sync lines 142-148)."
+  ],
+  "updated_files": ["/app/backend/tests/test_audit_round_phase1.py"],
+  "success_rate": {"backend": "95% (8/8 new tests pass; 1 HIGH bug found outside test list in scout sort)", "frontend": "80%"},
+  "seed_data_creation": "None kept. Created HoF entries (TEST_ notes) for unique_ids from history players via API and UI (Kieran Doyle 20481107) and removed them. Audit log (append-only) now contains their induction entries.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run pytest with plain 'python -m pytest' (pytest.ini already adds -n). openapi only at http://localhost:8001/openapi.json (used just for route list). No queued game changes exist in sample save, so BatchDialog with potential words was not exercised (Changes page record/batches verified). Retest: scout sort by Player desc, PlayerPanel History chart, Home network requests (should be only /home + /home/extras for extras), mobile 390px scout cards.",
+  "rca of the issue": "Scout 500: _filter sort key lambda does -(value or 0) for desc; value is a str for 'name'. Fix by using reverse=True for strings. Home duplicate requests: parent useEffect setQueryData runs after child queries mount and fetch. Empty History chart: server.py player_detail still puts 'ca' in history which AbilityGuard strips; frontend chart computes NaN."
+}

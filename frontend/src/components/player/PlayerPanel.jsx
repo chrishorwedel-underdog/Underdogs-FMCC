@@ -144,14 +144,17 @@ const Contract = ({ p, d, view }) => {
   </>;
 };
 
+const WORD = { up: "Improving", down: "Slipped back a little", flat: "Holding steady" };
+const steps = (hist) => { let y = 0; return hist.map((h) => ({ y: (y += h.step === "up" ? 1 : h.step === "down" ? -1 : 0), word: h.step ? WORD[h.step] : "First save", label: gameDate(h.game_date, { month: "short" }) })); };
+
 const History = ({ p, s, open }) => <>
   {s?.identity && <p className="note" style={{ margin: 0 }} data-testid="player-sheet-uid">Game ID <span className="mono">{p.unique_id}</span> · first seen {gameDate(s.identity.first_seen_date)} · matched across saves by this ID</p>}
-  {s?.history?.length > 0 && <div className="card" style={{ padding: 14 }}><div className="ttl" style={{ marginBottom: 10 }}>Ability gained across saves</div>
+  {s?.history?.length > 0 && <div className="card" style={{ padding: 14 }}><div className="ttl" style={{ marginBottom: 10 }}>Progress across saves<small className="note" style={{ marginLeft: 8 }}>direction only, never his real ability</small></div>
     <div style={{ height: 180 }} data-testid="player-sheet-chart"><ResponsiveContainer>
-      <LineChart data={s.history.map((h) => ({ gain: h.ca - s.history[0].ca, label: gameDate(h.game_date, { month: "short" }) }))}>
-        <XAxis dataKey="label" stroke="#5C626C" fontSize={11} tickLine={false} /><YAxis stroke="#5C626C" fontSize={11} domain={["dataMin - 3", "dataMax + 3"]} width={32} tickLine={false} />
-        <Tooltip contentStyle={{ background: "#121519", border: "1px solid rgba(255,255,255,.13)", borderRadius: 10, fontSize: 12 }} />
-        <Line type="monotone" dataKey="gain" name="Ability gained" stroke="#4C8DFF" strokeWidth={2} dot={{ r: 3 }} /></LineChart></ResponsiveContainer></div></div>}
+      <LineChart data={steps(s.history)}>
+        <XAxis dataKey="label" stroke="#5C626C" fontSize={11} tickLine={false} /><YAxis hide domain={["dataMin - 1", "dataMax + 1"]} />
+        <Tooltip formatter={(v, n, it) => [it.payload.word, "Since the save before"]} contentStyle={{ background: "#121519", border: "1px solid rgba(255,255,255,.13)", borderRadius: 10, fontSize: 12 }} />
+        <Line type="monotone" dataKey="y" name="Progress" stroke="#4C8DFF" strokeWidth={2} dot={{ r: 3 }} /></LineChart></ResponsiveContainer></div></div>}
   {p.seasons?.length > 0 && <div className="card" style={{ padding: 12 }} data-testid="profile-seasons"><div className="ttl">Seasons in this career</div><HistoryChart seasons={p.seasons} />
     <div style={{ overflowX: "auto" }}><table className="tbl"><thead><tr><th>Season</th><th>Club</th><th>Mins</th><th>Grade</th><th>npxG/90</th><th>xA/90</th></tr></thead>
       <tbody>{p.seasons.map((x) => <tr key={x.season}><td>{x.season}</td><td>{x.club}</td><td className="mono">{x.minutes}</td><td className="mono">{x.grade ?? "—"}</td><td className="mono">{x.p90?.npxg ?? "—"}</td><td className="mono">{x.p90?.xa ?? "—"}</td></tr>)}</tbody></table></div></div>}

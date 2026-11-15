@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Check } from "lucide-react";
 import { api, ago, gameDate } from "@/lib/api";
@@ -13,15 +12,14 @@ import { HomeSection } from "@/components/HomeSection";
 // One request fills every Home panel's cache, so the panels don't each fetch on their own.
 const useHomeExtras = () => {
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["home-extras"], queryFn: () => api.get("/home/extras").then((r) => r.data) });
-  useEffect(() => {
-    const x = q.data;
-    if (!x) { return; }
+  const q = useQuery({ queryKey: ["home-extras"], queryFn: () => api.get("/home/extras").then((r) => {
+    const x = r.data;
     if (x.celebrations) qc.setQueryData(["celebrations", undefined], x.celebrations);
     if (x.record_watch) qc.setQueryData(["record-watch", undefined], x.record_watch);
     if (x.digest) qc.setQueryData(["home-digest"], x.digest);
     if (x.countdowns) qc.setQueryData(["countdowns", undefined], x.countdowns);
-  }, [q.data, qc]);
+    return x;
+  }) });
   return q.data;
 };
 
