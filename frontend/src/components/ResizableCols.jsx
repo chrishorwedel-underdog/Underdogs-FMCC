@@ -63,6 +63,19 @@ export const usePaged = (rows, size = 50) => {
   return [list.slice(0, n), more];
 };
 
+// Click-to-sort headings, remembered per career: getters map a column key to a value.
+export const useSort = (key, getters, textCols = []) => {
+  const [sort, setSort] = usePersist(`sort:${key}`, null);
+  const by = (k) => setSort((s) => (s?.k === k ? { k, dir: s.dir === "desc" ? "asc" : "desc" } : { k, dir: textCols.includes(k) ? "asc" : "desc" }));
+  const apply = (rows) => {
+    if (!sort || !getters[sort.k]) return rows;
+    const f = getters[sort.k], m = sort.dir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => { const x = f(a) ?? -Infinity, y = f(b) ?? -Infinity; return (typeof x === "string" ? String(x).localeCompare(String(y)) : x - y) * m; });
+  };
+  const Th = ({ k, n, children, id }) => <th className={`sortable${n ? " n" : ""}`} onClick={() => by(k)} aria-sort={sort?.k === k ? (sort.dir === "asc" ? "ascending" : "descending") : undefined} data-testid={`${id}-head-${k}`}>{children}{sort?.k === k && <span className="sort-ar">{sort.dir === "asc" ? " \u25b2" : " \u25bc"}</span>}</th>;
+  return { sort, apply, Th, clear: () => setSort(null) };
+};
+
 export const ShowMore = ({ more, id }) => (more ? <button className="btn show-more" onClick={more.show} data-testid={`${id}-show-more`}>Show {more.next} more ({more.left} left)</button> : null);
 const names = (ths) => ths.map((th, i) => `${i}:${th.textContent.replace(/[↑↓▲▼]/g, "").trim()}`);
 
@@ -105,7 +118,7 @@ export const useResizableTable = (key) => {
     t.classList.add("tbl-std");
     labelCells(t);
     t.style.width = on ? `${ns.reduce((a, n, i) => a + (off[i] ? 0 : saved[n]), 0)}px` : "";
-  });
+  }); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const t = el;

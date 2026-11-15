@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { api, errMsg, gameDate } from "@/lib/api";
+import { markNewCareer, startTour } from "@/components/Tour";
 
 const NewCareer = ({ open, setOpen }) => {
   const qc = useQueryClient();
@@ -11,7 +12,7 @@ const NewCareer = ({ open, setOpen }) => {
   const [busy, setBusy] = useState(false);
   const save = async () => {
     setBusy(true);
-    try { await api.post("/careers", f); toast.success("Career created and first save read"); setOpen(false); setF({ name: "", club_name: "", edition: "FM27" }); qc.invalidateQueries(); } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
+    try { await api.post("/careers", f); markNewCareer(); toast.success("Career created and first save read"); setOpen(false); setF({ name: "", club_name: "", edition: "FM27" }); qc.invalidateQueries(); startTour("first"); } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>

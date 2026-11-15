@@ -3,9 +3,16 @@ import { toast } from "sonner";
 import { UserPlus, Download, Trash2, Eye, Plus, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
 import { autoDownload } from "@/lib/autoDownload";
 import { MyPresets, NameUpdates } from "./CreatorExtras";
 import { SingleCreator } from "./SingleCreator";
+
+const PreviewTable = ({ prev }) => {
+  const rz = useResizableTable("creator-preview");
+  return <><ResetWidths rz={rz} id="pc" /><table className="tbl" ref={rz.ref} style={{ marginTop: 8 }}><thead><tr><th>Name</th><th>Nation</th><th>Ethnicity · skin</th><th className="n">Age</th><th>Position</th><th>Foot</th><th className="n">Height</th></tr></thead>
+    <tbody>{prev.players.map((p) => <tr key={p.id} data-testid={`pc-row-${p.id}`}><td><b>{p.name}</b>{p.name_source === "update" && <small className="st g" style={{ marginLeft: 6 }} data-testid={`pc-row-update-${p.id}`}>update</small>}</td><td>{p.nationality}</td><td>{p.ethnicity} · {p.skin_tone}</td><td className="mono">{p.age}</td><td>{p.position}</td><td>{p.foot}</td><td className="mono">{p.height}</td></tr>)}</tbody></table></>;
+};
 
 const KEYS = ["creator-batches", "editor-state"];
 const DEFAULT = { name: "", count: 20, nations: [{ nation: "England", weight: 1 }], ethnicities: [], skin_lo: 1, skin_hi: 20, age_lo: 16, age_hi: 21,
@@ -123,8 +130,7 @@ const BatchCreator = () => {
       {prev && <div className="card" data-testid="pc-preview-card">
         <div className="ttl">Preview: {prev.count} players<span className="st n">{Object.entries(prev.by_nation).map(([k, v]) => `${k} ${v}`).join(" · ")}</span></div>
         {!!prev.borrowed_names.length && <p className="note">FMCC has no name list for {prev.borrowed_names.join(", ")}, so their names come from the closest list.</p>}
-        <div style={{ overflowX: "auto" }}><table className="tbl" style={{ marginTop: 8 }}><thead><tr><th>Name</th><th>Nation</th><th>Ethnicity · skin</th><th>Age</th><th>Pos</th><th>Foot</th><th>Height</th></tr></thead>
-          <tbody>{prev.players.map((p) => <tr key={p.id} data-testid={`pc-row-${p.id}`}><td><b>{p.name}</b>{p.name_source === "update" && <small className="st g" style={{ marginLeft: 6 }} data-testid={`pc-row-update-${p.id}`}>update</small>}</td><td>{p.nationality}</td><td>{p.ethnicity} · {p.skin_tone}</td><td>{p.age}</td><td>{p.position}</td><td>{p.foot}</td><td>{p.height}</td></tr>)}</tbody></table></div>
+        <div className="tbl-scroll" style={{ overflowX: "auto" }}><PreviewTable prev={prev} /></div>
         {prev.count > prev.players.length && <p className="note">Showing the first {prev.players.length}.</p>}
       </div>}
       <NameUpdates onChange={() => setPrev(null)} />

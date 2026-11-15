@@ -94,7 +94,7 @@ export default function Settings({ state }) {
       {sec === "features" && <Features />}
       {sec === "alerts" && <div className="sgrid"><div style={col}><NotifySettings /></div>
         <div style={col}><GuidesCard />
-          <div className="card rise d5" data-testid="tour-settings-card"><div className="ttl">Guided tour</div><p className="note" style={{ marginTop: 4 }}>A click-through of every page. Replaying it never changes any data.</p><button className="btn btn-p" style={{ marginTop: 8 }} onClick={startTour} data-testid="settings-take-tour">Take the tour</button></div></div></div>}
+          <div className="card rise d5" data-testid="tour-settings-card"><div className="ttl">Guided tour</div><p className="note" style={{ marginTop: 4 }}>A click-through of every page, or a short tour of the screens a new career needs first. Replaying either never changes any data.</p><div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}><button className="btn btn-p" onClick={() => startTour("first")} data-testid="settings-take-first-tour">New career tour</button><button className="btn" onClick={() => startTour("full")} data-testid="settings-take-tour">Full tour of every page</button></div></div></div></div>}
       {sec === "safety" && <Safety />}
       {sec === "connections" && <><Connections /><div className="sgrid" style={{ marginTop: 20 }}>
         <div style={col}><UpdatesCard autoInstall={state.auto_install_updates} />{!state.sample_mode && <KeyCard />}</div>

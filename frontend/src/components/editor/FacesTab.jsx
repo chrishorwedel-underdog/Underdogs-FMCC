@@ -3,6 +3,7 @@ import { Upload, Shuffle, Trash2, Wand2, FolderOpen, Images } from "lucide-react
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { FacePicker } from "@/components/editor/FacePicker";
+import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
 
 const BASE = `${process.env.REACT_APP_BACKEND_URL}/api/editor/image`;
 
@@ -56,6 +57,7 @@ const Row = ({ p, act, canPick, onPick, hasPack }) => {
 export const FacesTab = ({ s }) => {
   const act = useAct();
   const [q, setQ] = useState("");
+  const rz = useResizableTable("editor-faces");
   const [missing, setMissing] = useState(false);
   const [picking, setPicking] = useState(null);
   const { data } = useGet("editor-players", "/editor/players", { q, missing });
@@ -69,8 +71,9 @@ export const FacesTab = ({ s }) => {
           <label className="chipx"><input type="checkbox" checked={missing} onChange={(e) => setMissing(e.target.checked)} data-testid="faces-missing-only" />Only players without a face</label>
           <span className="note" style={{ marginLeft: "auto", alignSelf: "center" }} data-testid="faces-total">{data?.total ?? "…"} players</span>
         </div>
-        <table className="tbl"><thead><tr><th /><th>Player</th><th>Face</th><th>Change</th></tr></thead>
-          <tbody>{(data?.players || []).map((p) => <Row key={p.unique_id} p={p} act={act} onPick={setPicking} hasPack={s.ngregens.installed && s.ngregens.folders.length > 0} canPick={!!folderFor(p)} />)}</tbody></table>
+        <ResetWidths rz={rz} id="faces" />
+        <div className="tbl-scroll" style={{ overflowX: "auto" }}><table className="tbl" ref={rz.ref}><thead><tr><th /><th>Player</th><th>Face</th><th>Change</th></tr></thead>
+          <tbody>{(data?.players || []).map((p) => <Row key={p.unique_id} p={p} act={act} onPick={setPicking} hasPack={s.ngregens.installed && s.ngregens.folders.length > 0} canPick={!!folderFor(p)} />)}</tbody></table></div>
         {picking && <FacePicker player={picking} folders={s.ngregens.folders} defaultFolder={folderFor(picking)} onClose={() => setPicking(null)} />}
       </div>
       <div className="card" style={{ alignSelf: "start" }} data-testid="ngregens-card">

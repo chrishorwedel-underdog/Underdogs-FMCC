@@ -2,15 +2,19 @@ import { useState } from "react";
 import { useGet, PageHead, TabBar } from "@/lib/ui";
 import { Loading } from "@/components/Loading";
 import { money, openDossier } from "@/components/analysis/StatsTable";
-import { useResizableTable, ResetWidths, usePaged, ShowMore } from "@/components/ResizableCols";
+import { useResizableTable, ResetWidths, usePaged, ShowMore, useSort } from "@/components/ResizableCols";
 
 const LISTS = [["expiring", "Contracts ending within a year"], ["free", "Free agents"], ["clauses", "Lowest release clauses"], ["u21", "Best under-21s"], ["loans", "Loan-listed"]];
 
+const TM_GET = { name: (r) => r.name, club: (r) => r.club || "", age: (r) => r.age, role: (r) => r.role_fit, value: (r) => r.est_value, contract: (r) => r.contract_end || "" };
+
 const Rows = ({ rows: all, extra }) => {
   const rz = useResizableTable("transfer-market");
-  const [rows, more] = usePaged(all);
+  const st = useSort("transfer-market", TM_GET, ["name", "club", "contract"]);
+  const [rows, more] = usePaged(st.apply(all));
+  const { Th } = st;
   return (
-  <div className="tbl-scroll" style={{ overflowX: "auto" }}><ResetWidths rz={rz} id="tm" /><table className="tbl" ref={rz.ref}><thead><tr><th className="n">#</th><th>Player</th><th>Club</th><th className="n">Age</th><th>Best role</th><th className="n">Estimated value</th><th>Contract ends</th>{extra && <th>{extra[0]}</th>}</tr></thead>
+  <div className="tbl-scroll" style={{ overflowX: "auto" }}>{st.sort && <button className="btn rz-reset" onClick={st.clear} data-testid="tm-clear-sort">Default order</button>}<ResetWidths rz={rz} id="tm" /><table className="tbl" ref={rz.ref}><thead><tr><th className="n">#</th><Th k="name" id="tm">Player</Th><Th k="club" id="tm">Club</Th><Th k="age" n id="tm">Age</Th><Th k="role" id="tm">Best role</Th><Th k="value" n id="tm">Estimated value</Th><Th k="contract" id="tm">Contract ends</Th>{extra && <th>{extra[0]}</th>}</tr></thead>
     <tbody>{rows.map((r, i) => <tr key={r.unique_id} onClick={() => openDossier(r.unique_id)} data-testid={`tm-row-${r.unique_id}`}><td className="mono">{i + 1}</td><td><b>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{(r.positions || []).join(", ")}</small></td>
       <td>{r.club || "Free agent"}<small style={{ display: "block", color: "var(--dim)" }}>{r.league}</small></td><td className="mono n">{r.age}</td><td>{r.top_roles?.[0]?.name} {r.role_fit}%</td><td className="mono">{money(r.est_value)}</td><td>{r.contract_end || "—"}</td>{extra && <td className="mono">{extra[1](r)}</td>}</tr>)}</tbody></table><ShowMore more={more} id="tm" /></div>
   );
@@ -43,7 +47,7 @@ export default function TransferMarket() {
   const changes = data.changes.filter((c) => scope === "world" || c.league === data.my_league);
   return (
     <div data-testid="transfer-market-page">
-      <PageHead eyebrow="Who's available and what's moving" title="Transfer Market" />
+      <PageHead eyebrow="Who's available and what's moving" title="Transfer Market" purpose="Best players, bargains, free agents and expiring contracts across the game. Click a heading to sort." />
       {data.sample && <p className="note">SAMPLE save in this preview. Values are FMCC's own estimates.</p>}
       <div style={{ marginBottom: 14 }}><TabBar id="tm" value={tab} onChange={setTab} tabs={[["lists", "Ready-made lists"], ["changes", "Since your last save"], ["rankings", "Rankings"]]} /></div>
       {tab === "lists" && <div style={{ display: "grid", gap: 10 }}>

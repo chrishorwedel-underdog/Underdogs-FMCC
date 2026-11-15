@@ -131,7 +131,7 @@ export default function Setup() {
   const set = (p) => setForm((f) => ({ ...f, ...p }));
   const finish = async () => {
     setBusy(true);
-    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, club_name: form.club_name, name: form.name, address: form.address.trim() }); setStep(3); }
+    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, club_name: form.club_name, name: form.name, address: form.address.trim() }); markNewCareer(); setStep(3); }
     catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
   return (

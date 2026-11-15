@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
 
 const KEYS = ["licensing", "editor-clubs", "editor-status", "changes"];
 const n = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`;
@@ -37,11 +38,13 @@ const Clubs = ({ d, act }) => {
   const open = d.clubs.filter((c) => c.unlicensed && !c.applied && !c.active_in_fm);
   const toggle = (u) => setSel(sel.includes(u) ? sel.filter((x) => x !== u) : [...sel, u]);
   const target = sel.length ? sel : open.map((c) => c.uid);
+  const rz = useResizableTable("editor-licensing");
   return (
     <div className="card" style={{ padding: 8 }} data-testid="fix-clubs-card">
       <div className="ttl" style={{ padding: 10 }}>Unlicensed clubs to fix<span className="st a mono" data-testid="fix-to-fix-count">{d.to_fix}</span><span style={{ marginLeft: "auto" }} />
         <button className="btn btn-p" disabled={!target.length} onClick={() => act(() => api.post("/editor/licensing/apply", { clubs: target, comps: [] }), (r) => `${r.applied} real name(s) applied`, KEYS).then(() => setSel([]))} data-testid="fix-apply-clubs"><Check size={13} />Apply real names ({target.length})</button></div>
-      <table className="tbl"><thead><tr><th /><th>Name in your save</th><th>Real name</th><th>Logo</th><th>Status</th></tr></thead>
+      <ResetWidths rz={rz} id="fix" />
+      <div className="tbl-scroll" style={{ overflowX: "auto" }}><table className="tbl" ref={rz.ref}><thead><tr><th /><th>Name in your save</th><th>Real name</th><th>Logo</th><th>Status</th></tr></thead>
         <tbody>{d.clubs.map((c) => (
           <tr key={c.uid} style={{ cursor: "default" }} data-testid={`fix-club-${c.uid}`}>
             <td>{c.unlicensed && !c.applied && !c.active_in_fm && <Checkbox checked={sel.includes(c.uid)} onCheckedChange={() => toggle(c.uid)} data-testid={`fix-club-check-${c.uid}`} />}</td>
@@ -51,7 +54,7 @@ const Clubs = ({ d, act }) => {
             <td>{c.applied ? <><span className="st ok">Applied</span> <button className="btn" title="Undo" onClick={() => act(() => api.delete(`/editor/licensing/name/${c.uid}`), "Fix removed", KEYS)} data-testid={`fix-club-undo-${c.uid}`}><Undo2 size={13} /></button></>
               : c.conflict ? <span className="st r" title={`Your rename "${c.conflict}" differs from this fix; FM may show either`} data-testid={`fix-club-conflict-${c.uid}`}>Your rename differs</span>
               : c.active_in_fm ? <span className="st ok">Active in FM</span> : !c.in_save ? <span className="st n">Not in this save</span> : c.unlicensed ? <span className="st a">Unlicensed</span> : <span className="st n">Already real</span>}</td>
-          </tr>))}</tbody></table>
+          </tr>))}</tbody></table></div>
       {!d.clubs.length && <p className="note" style={{ padding: 10 }}>No clubs in your fix files.</p>}
     </div>
   );

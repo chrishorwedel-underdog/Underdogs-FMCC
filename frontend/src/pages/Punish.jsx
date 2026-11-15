@@ -99,7 +99,7 @@ export default function Punish() {
   const groups = [...new Set((meta?.penalties || []).map((p) => p.group))];
   return (
     <div data-testid="punish-page">
-      <PageHead eyebrow="Inspired by sortitoutsi's Punish Manchester City, for any club" title="Punish a Club" />
+      <PageHead eyebrow="Inspired by sortitoutsi's Punish Manchester City, for any club" title="Punish a Club" purpose="Hand any club points deductions, transfer embargoes, money and reputation hits, player releases or relegation, for one season or several." />
       <div className="sq" style={{ gridTemplateColumns: "360px minmax(0,1fr)" }}>
         <div style={{ display: "grid", gap: 16, alignContent: "start" }}><ClubSearch club={club} setClub={setClub} /></div>
         <div style={{ display: "grid", gap: 16, alignContent: "start" }}>

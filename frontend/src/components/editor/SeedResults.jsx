@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet } from "@/lib/ui";
+import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
 
 const Cell = ({ v, onSave, id, type = "text", w = 110, min, max }) => {
   const [x, setX] = useState(v ?? "");
@@ -54,13 +55,15 @@ export const SeedResults = ({ d, meta, act, onChange }) => {
   const save = (p, patch) => act(() => api.patch(`/seed/draft/${p.pid}`, patch), null, ["seed-draft"]);
   const drop = (p) => act(() => api.delete(`/seed/draft/${p.pid}`), null, ["seed-draft"]).then(onChange);
   const cur = d.mode === "current";
+  const rz = useResizableTable(`seed-results-${d.mode}`);
   return (
     <div className="card" data-testid="seed-results">
       <div className="ttl">Results: {d.people.length} {cur ? "people to rename" : "new people"} called {d.surname}
         <span className="st n">{d.people.filter((p) => p.kind === "player").length} players · {d.people.filter((p) => p.kind === "staff").length} staff</span></div>
       {d.note && <p className="note" data-testid="seed-results-note">{d.note}</p>}
       <p className="note">{cur ? "Only the names change; everyone keeps their club, job, age and ability. Edit any name, or leave someone out." : "Change anything before you seed. Ability can't go above the caps."} Every seeded player gets "Keep History After Retirement" ticked.</p>
-      <div style={{ overflowX: "auto" }}><table className="tbl" style={{ marginTop: 8 }}>
+      <ResetWidths rz={rz} id="seed" />
+      <div className="tbl-scroll" style={{ overflowX: "auto" }}><table className="tbl" ref={rz.ref} style={{ marginTop: 8 }}>
         <thead><tr>{(cur ? ["Now called", "First name", "Surname", "Position / job", "Nation", "Age", "Club", ""] : ["First name", "Surname", "Position / role", "Nation", "Age", "Height", "Ethnicity", "Skin", "CA", "PA", ""]).map((h) => <th key={h}>{h}</th>)}</tr></thead>
         <tbody>{d.people.map((p) => (cur ? <CurRow key={p.pid} p={p} save={save} drop={drop} /> : <NewRow key={p.pid} p={p} meta={meta} save={save} drop={drop} />))}</tbody></table></div>
     </div>

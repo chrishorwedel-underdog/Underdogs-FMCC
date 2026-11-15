@@ -69,7 +69,7 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
             <DropdownMenuItem onClick={() => nav("/changes")} data-testid="top-more-changes"><Wand2 size={14} />Game changes{pending ? ` (${pending} waiting)` : ""}</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setRaw(!raw)} data-testid="top-more-raw">{raw ? "Show percentiles instead of raw numbers" : "Show raw numbers instead of percentiles"}</DropdownMenuItem>
             <DropdownMenuItem onClick={() => nav("/settings?section=connections")} data-testid="top-more-connections"><Plug size={14} />Connections</DropdownMenuItem>
-            <DropdownMenuItem onClick={startTour} data-testid="top-more-tour"><HelpCircle size={14} />Help: take the tour</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => startTour("full")} data-testid="top-more-tour"><HelpCircle size={14} />Help: take the tour</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
