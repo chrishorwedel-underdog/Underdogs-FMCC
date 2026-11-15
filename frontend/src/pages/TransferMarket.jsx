@@ -33,7 +33,7 @@ const Rankings = ({ rows }) => {
         <select className="inp" style={{ width: 110, height: 32 }} value={by.gender} onChange={(e) => setBy({ ...by, gender: e.target.value })} data-testid="tm-rank-gender"><option value="M">Men</option><option value="F">Women</option><option value="">Both</option></select>
       </div>
       <p className="note" data-testid="tm-rank-summary">{shown.length} players · total {money(sum)} · average age {shown.length ? (shown.reduce((a, r) => a + r.age, 0) / shown.length).toFixed(1) : "—"}{by.club ? ` · ${shown.filter((r) => r.nationality !== shown[0]?.nationality).length} not from the main nation` : ""}</p>
-      <Rows rows={shown.slice(0, 100)} />
+      <Rows rows={shown} />
     </div>
   );
 };

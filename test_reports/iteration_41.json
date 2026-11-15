@@ -1,0 +1,35 @@
+{
+  "summary": "Frontend-only test of Phase 3. Covered Transfer Market standard table, the Editor tables (Faces, Licensing, Player Creator preview, Seed a Surname results), Punish a Club page header, the guided first-run tour (8-step new-career tour and the 17-step full tour, started from Settings and from the More menu) and mobile at 390px. Everything requested works. I found one bug (the Project Safety step of the full tour had no text) and fixed it in Tour.jsx. The other findings are minor UX or code notes.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Tour (full mode) step 15 'Project Safety'", "issue": "tour-text was empty. The step goes to '/settings?section=safety', but the GUIDES key is '/safety', so GUIDES[s.to] was undefined. FIXED by adding an explicit `what` to that step. Retested: the text now shows.", "selector": "[data-testid=tour-text]", "priority": "MEDIUM (fixed)"}
+    ],
+    "integration_issues": [
+      {"flow": "Transfer Market > Rankings sorting", "issue": "Rows gets shown.slice(0,100), so clicking a heading only re-sorts the top 100 by value, while the summary says 204 players. For example, Age ascending won't show the youngest of all 204. Sort before slicing, or drop the slice now that Show more exists.", "affected_selectors": ["[data-testid=tm-head-age]", "[data-testid=tm-rank-summary]"]}
+    ],
+    "design_issues": [
+      {"screen": "Settings", "issues": ["The Guided tour card (settings-take-first-tour / settings-take-tour) is under 'Alerts & notices' (section=alerts), not 'You & your career'. That is hard to find; consider moving it to the career section."]},
+      {"screen": "Tour", "issues": ["Step 1 (Home) has no spotlight because there is no nav-home testid.", "On mobile the sidebar items that get the spotlight are hidden, so no highlight shows. The card itself is readable: 366px wide, at the bottom, buttons reachable."]},
+      {"screen": "Editor / Punish on first visit", "issues": ["The expanded 'How this page works' panel appears above the eyebrow and title, which pushes the page head down. This is an existing pattern, not new."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Transfer Market Rankings: apply the sort to the full filtered list before slicing to 100, or remove the slice and rely on Show more.",
+    "Think about moving the Guided tour card to Settings > You & your career.",
+    "Tour auto-start rule: `fresh = new-career flag || !fmcc-tour-done`. Any existing user who never finished a tour is sent from a deep link (e.g. /transfer-market) to Home and shown 'Welcome to your new career'. Consider starting the tour only when the new-career flag is set, or using wording that fits existing careers."
+  ],
+  "critical_code_review_comments": [
+    "Tour.jsx: the steps' `to` keys must match GUIDES keys when `what` is missing. Project Safety did not match (fixed).",
+    "Tour.jsx: the auto-start effect calls nav('/') on first load for anyone without fmcc-tour-done, so deep links stop working until the tour is skipped.",
+    "TransferMarket.jsx: one sort key 'sort:transfer-market' is shared by all 5 lists and Rankings, so a sort chosen in one list carries to the others. This is probably intended but worth knowing.",
+    "TransferMarket.jsx: the Estimated value <td> has no 'n' class (only mono). It is still right-aligned through the mono style, so there is no visible problem."
+  ],
+  "updated_files": ["/app/frontend/src/components/Tour.jsx"],
+  "success_rate": {"backend": "N/A", "frontend": "97%"},
+  "seed_data_creation": "Created a temporary Seed a Surname draft (surname TESTSeedx, 13 people) to reach the seed results table, then deleted all 13 draft entries by pid. GET /api/seed/draft now returns null. Nothing was applied or seeded. No careers were created.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Verified: tm-head-* sorting (text columns sort A-Z first, number columns high to low first, the second click reverses, an arrow shows), tm-clear-sort, sort remembered after reload, tm-columns hide/show, tm-show-more on Rankings (gender Both = 204 players), sticky headers, right-aligned numbers, mobile stacked cards with data-labels. faces-columns, fix-columns, pc-columns and seed-columns all show with resize handles, and hiding a column works. Punish shows its purpose line and club search and penalty toggles work. In the tour, the new-career flag redirects /squad to / and shows '1 of 8'. The 8 steps run in the expected order with the expected routes, Back works, and Finish/Skip set tour-done and remove the new-career flag. After a reload no tour shows. The tour buttons are in Settings section=alerts. Full tour is 17 steps. top-more-tour works. localStorage prefs are per browser context, so nothing persisted server-side."
+}

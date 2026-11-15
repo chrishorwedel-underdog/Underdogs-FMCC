@@ -18,6 +18,11 @@ import Features from "@/pages/Features";
 import Safety from "@/pages/Safety";
 import Connections from "@/pages/Connections";
 
+const TourCard = () => (
+  <div className="card rise d5" data-testid="tour-settings-card"><div className="ttl">Guided tour</div><p className="note" style={{ marginTop: 4 }}>A short tour of the screens a new career needs first, or a click-through of every page. Replaying either never changes any data.</p>
+    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}><button className="btn btn-p" onClick={() => startTour("first")} data-testid="settings-take-first-tour">New career tour</button><button className="btn" onClick={() => startTour("full")} data-testid="settings-take-tour">Full tour of every page</button></div></div>
+);
+
 const SECTIONS = [["career", "You & your career"], ["appearance", "Appearance"], ["features", "Features"], ["alerts", "Alerts & notices"], ["safety", "Project Safety"], ["connections", "Connections & updates"]];
 
 const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
@@ -88,13 +93,12 @@ export default function Settings({ state }) {
       <EmbedCtx.Provider value>
       {sec === "career" && <><div className="sgrid">
         <div style={col}><AddressCard current={state.address} key={state.address} /><CareersCard career={state.career} key={state.career.id} /></div>
-        <div style={col}><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /></div>
+        <div style={col}><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /><TourCard /></div>
       </div><div style={{ marginTop: 20 }}><TestingCard /></div></>}
       {sec === "appearance" && <Appearance />}
       {sec === "features" && <Features />}
       {sec === "alerts" && <div className="sgrid"><div style={col}><NotifySettings /></div>
-        <div style={col}><GuidesCard />
-          <div className="card rise d5" data-testid="tour-settings-card"><div className="ttl">Guided tour</div><p className="note" style={{ marginTop: 4 }}>A click-through of every page, or a short tour of the screens a new career needs first. Replaying either never changes any data.</p><div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}><button className="btn btn-p" onClick={() => startTour("first")} data-testid="settings-take-first-tour">New career tour</button><button className="btn" onClick={() => startTour("full")} data-testid="settings-take-tour">Full tour of every page</button></div></div></div></div>}
+        <div style={col}><GuidesCard /></div></div>}
       {sec === "safety" && <Safety />}
       {sec === "connections" && <><Connections /><div className="sgrid" style={{ marginTop: 20 }}>
         <div style={col}><UpdatesCard autoInstall={state.auto_install_updates} />{!state.sample_mode && <KeyCard />}</div>
