@@ -1,0 +1,35 @@
+{
+  "summary": "Frontend-only test of Season Report Card + Phase 2 (print pages, column chooser, squad cards/filters). Almost everything works. Season report /club-history?report=2027/28: the league box says Unavailable, honours say None (both expected for the sample save) and transfers say '1 in · 1 out'. There are 4 star cards (Top scorer Erling Saetre 14 goals, Most assists, Best average rating, Ever-present); clicking a star opens the player panel. Best moments shows 2 items. Copy as text shows the toast 'Report copied, ready to paste anywhere' and the copied text is correct. Print calls window.print and adds body.printing-page, which is removed on afterprint. report-back goes to ?season=2027/28. The season page has 'Report card so far' (season-report-open) and season-print. Club History has 'Print this page' (history-print). In print media the sidebar, top bar, no-print buttons and the guide are all hidden. A missing season shows report-missing. Column chooser was tested on Squad, Scout Players (sp), Transfer Market (tm) and Records (records-team). In all four the first column is disabled, unticking hides the header and the cells, the button says 'Columns (N hidden)', the choice survives a reload and 'Show all columns' restores everything. Squad header resize (+80px) and age sort asc/desc both still work with a column hidden. Scout sort by Age also works with 2 hidden columns. Squad filters all work: position (GK 2, DEF 7, MID 12, FWD 4; multi-position players count in more than one group), age (u21 5, 21-29 11, 30+ 7), search, and combining with Best XI / Under-21. The count text updates. Card layout works, cards open the player panel and Esc closes it. Filters and layout survive a reload. At 390px mobile the report card, squad cards and column menu have no horizontal overflow, and the hidden column also disappears from the labelled mobile row cards. No CA/PA appears on the report, cards or tables. One real issue: the print CSS does not turn the page background white, so header text prints black on a dark background.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "App.css print rules (.printing-page)", "issue": "The selector '.printing-page body' never matches because the printing-page class is on <body> itself. In print media the body background stays rgb(8,9,11). Other print rules force all text to black, so the PageHead (eyebrow/title/purpose), the season-page header (All seasons button, 'TEST FC · 2027/28' h2, status pill) and the season Facts tiles (.facts > div bg rgb(18,21,25)) print black on near-black. This is unreadable when 'Background graphics' is on or a PDF keeps backgrounds. The report card itself is fine because .card is forced white.", "selector": "body.printing-page, .printing-page .facts > div", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Squad Players filters", "issues": ["Filters with no matches (e.g. search 'zzzz') leave only table headers. There is no 'No players match' message and no 'Clear filters' button. Filters are remembered, so a user who comes back to a stale filter sees an empty list with no explanation.", "Squad cards drop the 'Same name' tag that the table rows show. The two Luca Romano cards can only be told apart by age."]},
+      {"screen": "Tables with hidden columns + saved widths", "issues": ["Once column widths are saved (rz-on), hiding a column makes the table narrower than its card and leaves an empty gap on the right (seen on Squad)."]},
+      {"screen": "Mobile 390 report toolbar", "issues": ["'Print / save as PDF' wraps onto its own row on the left while 'Copy as text' stays on the right. The actions look misaligned; consider full-width or stacked buttons."]},
+      {"screen": "Print media", "issues": ["The Sonner toast ('Report copied...') is still visible in print preview if it is on screen. Add [data-sonner-toaster] to the printing-page hide list."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "App.css: replace '.printing-page body' with 'body.printing-page{background:#fff!important}' and also force white backgrounds on '.printing-page .facts > div', '.printing-page .rc-box', '.printing-page .rc-star', '.printing-page .st' and thead cells, so text forced to #000 is readable",
+    "Hide the sonner toaster during printing-page print",
+    "Squad Players: add an empty state with a 'Clear filters' button when filters match 0 players",
+    "Squad cards: show the 'Same name' tag like the table rows do"
+  ],
+  "critical_code_review_comments": [
+    "ResizableCols useResizableTable stores hidden columns by heading text. Renaming a heading or changing its sort arrow characters would silently un-hide it. The arrows ↑↓▲▼ are stripped, which is fine for now.",
+    "ColumnPicker's checkbox index i comes from labels.filter(Boolean), not the real column index. This is fine for the testids, but be aware that col-<i> skips blank headers (Scout Players' first star/compare column).",
+    "SeasonReport printPage only removes the class on afterprint. Some mobile browsers don't fire afterprint reliably; add a fallback timeout like RadarCompare printCard does.",
+    "Squad filters (squad-card-filters) also apply in table layout. The key name suggests cards only. This works, but say so in the UI or rename the key."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend only)", "frontend": "96%"},
+  "seed_data_creation": "None. Column, filter and layout choices are kept in localStorage in the throwaway test browser context. All were reset to show all, table and no filters. Scout Players sort was changed to Age during testing and set back to Grade ↓.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Note on the print stub: the automation harness itself calls window.print once, so a counter stub shows 2 calls per click; the app calls it only once (checked with a stack trace). Scout Players needs about 4-6s before its table rows and stat headers fill in, so wait before reading the headers. Column testids: squad-columns/-columns-menu/-col-<i>/-columns-all, plus sp-, tm- and records-team-. Retest print background on /club-history?season=2027/28 using emulate_media print with body.printing-page."
+}

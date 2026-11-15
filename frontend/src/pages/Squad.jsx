@@ -37,7 +37,7 @@ const matches = (sf) => (p) => (!sf.q || p.name.toLowerCase().includes(sf.q.toLo
 
 const Card = ({ p, onOpen }) => (
   <button className="sq-card" onClick={() => onOpen(p.unique_id)} data-row-uid={p.unique_id} data-testid={`squad-card-${p.unique_id}`}>
-    <b>{p.name}{p.age < 21 && <span className="tag st g">U21</span>}{p.is_new && <span className="tag st ok">New</span>}</b>
+    <b>{p.name}{p.age < 21 && <span className="tag st g">U21</span>}{p.is_new && <span className="tag st ok">New</span>}{p.shared_name && <span className="tag st a" title="Another player in your squad has the same name. They are kept apart by game ID.">Same name</span>}</b>
     <small>{p.age} · {p.positions.join(", ")}</small>
     <span>{p.best_role?.name} <span className="mono" style={{ color: "var(--acc)" }}>{p.best_role?.rating}</span></span>
     <Change v={p.progress} />
@@ -87,6 +87,7 @@ export default function Squad() {
         <span className="note">{rows.length} player{rows.length === 1 ? "" : "s"}</span>
         <div className="seg" style={{ marginLeft: "auto" }}>{[["table", "Table"], ["cards", "Cards"]].map(([k, l]) => <button key={k} className={layout === k ? "on" : ""} onClick={() => setLayout(k)} data-testid={`squad-layout-${k}`}>{l}</button>)}</div>
       </div>
+      {!rows.length && (sf.q || sf.pos || sf.age) && <div className="card" style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }} data-testid="squad-no-match"><span className="note">No players match these filters.</span><button className="btn" onClick={() => setSf({ q: "", pos: "", age: "" })} data-testid="squad-clear-filters">Clear filters</button></div>}
       {layout === "cards" ? <div className="sq-cards rise d1" data-testid="squad-cards">{rows.map((p) => <Card key={p.unique_id} p={p} onOpen={(id) => setParam("player", id)} />)}</div> :
       <div className="card rise d1 tbl-scroll" style={{ padding: 8, overflowX: "auto" }}>
         {sort && <button className="btn rz-reset" onClick={() => setSort(null)} data-testid="squad-clear-sort">Default order</button>}

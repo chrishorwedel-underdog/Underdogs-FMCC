@@ -438,7 +438,8 @@ select.blank{cursor:pointer}
   .printing-page .side,.printing-page .top,.printing-page .no-print,.printing-page .guide,.printing-page [data-testid="finance-strip"],.printing-page footer.app-foot,.printing-page .tour-card{display:none!important}
   .printing-page .app{display:block!important}
   .printing-page .content{overflow:visible!important;padding:0!important}
-  .printing-page body,.printing-page .card{background:#fff!important;color:#000!important;border-color:#ccc!important;box-shadow:none!important}
+  body.printing-page,.printing-page .card,.printing-page .facts>div,.printing-page .rc-box,.printing-page .rc-star,.printing-page .st,.printing-page thead th,.printing-page .content{background:#fff!important;color:#000!important;border-color:#ccc!important;box-shadow:none!important}
+  .printing-page [data-sonner-toaster]{display:none!important}
   .printing-page *{color:#000!important}
   .printing-page .tbl-scroll{max-height:none!important;overflow:visible!important}
 }
