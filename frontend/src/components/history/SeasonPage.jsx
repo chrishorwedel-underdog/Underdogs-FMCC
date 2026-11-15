@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useGet } from "@/lib/ui";
+import { PrintButton } from "@/components/history/SeasonReport";
 import { Loading } from "@/components/Loading";
 import { openPlayer } from "@/components/player/PlayerPanel";
 import { U, money, Status } from "@/components/history/Cabinet";
@@ -24,6 +25,9 @@ export const SeasonPage = ({ season }) => {
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Link to="/club-history?tab=seasons" className="btn" data-testid="season-back"><ArrowLeft size={13} />All seasons</Link>
         <h2 style={{ margin: 0, fontSize: 22 }}>{s.club} · {s.season}</h2><Status s={s.status} />
+        <span style={{ marginLeft: "auto" }} />
+        <Link to={`/club-history?report=${s.season}`} className="btn btn-p no-print" data-testid="season-report-open">{s.status === "Completed" ? "Season report card" : "Report card so far"}</Link>
+        <PrintButton id="season" />
       </div>
       <div className="sgrid">
         <Facts id="league" title={<>League · <U v={lg.division} /></>} rows={[["Position", <U v={lg.pos} />], ["Played", <U v={lg.played} />], ["Won", <U v={lg.w} />], ["Drawn", <U v={lg.d} />], ["Lost", <U v={lg.l} />],

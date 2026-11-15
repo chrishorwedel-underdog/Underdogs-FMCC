@@ -72,12 +72,17 @@ export const useResizableTable = (key) => {
   const [saved, setSaved] = usePersist(`colw:${key}`, {});
   const savedRef = useRef(saved);
   savedRef.current = saved;
+  const [hidden, setHidden] = usePersist(`colhide:${key}`, []);
+  const [labels, setLabels] = useState([]);
 
   useLayoutEffect(() => {
     const t = el;
     if (!t) return;
     const ths = heads(t);
     const ns = names(ths);
+    const labs = ns.map((n) => n.split(":").slice(1).join(":"));
+    if (labs.join("|") !== labels.join("|")) setLabels(labs); // eslint-disable-line react-hooks/exhaustive-deps
+    const off = labs.map((l) => !!l && hidden.includes(l));
     const on = ns.length > 0 && ns.every((n) => saved[n]);
     ths.forEach((th, i) => {
       th.classList.add("rz-th");
@@ -93,11 +98,13 @@ export const useResizableTable = (key) => {
       h.setAttribute("data-testid", `${key}-resize-${i}`);
       h.dataset.i = String(i);
       th.style.width = on ? `${saved[ns[i]]}px` : "";
+      th.style.display = off[i] ? "none" : "";
     });
+    [...(t.tBodies?.[0]?.rows || [])].forEach((tr) => [...tr.cells].forEach((td, i) => { const d = off[i] ? "none" : ""; if (td.style.display !== d) td.style.display = d; }));
     t.classList.toggle("rz-on", on);
     t.classList.add("tbl-std");
     labelCells(t);
-    t.style.width = on ? `${ns.reduce((a, n) => a + saved[n], 0)}px` : "";
+    t.style.width = on ? `${ns.reduce((a, n, i) => a + (off[i] ? 0 : saved[n]), 0)}px` : "";
   });
 
   useEffect(() => {
@@ -141,7 +148,21 @@ export const useResizableTable = (key) => {
     return () => { t.removeEventListener("pointerdown", down, true); t.removeEventListener("click", click, true); t.removeEventListener("keydown", key, true); };
   }, [el]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { ref: setEl, reset: () => setSaved({}), changed: Object.keys(saved).length > 0 };
+  return { ref: setEl, reset: () => setSaved({}), changed: Object.keys(saved).length > 0,
+    labels: labels.filter(Boolean), hidden, toggle: (l) => setHidden((h) => (h.includes(l) ? h.filter((x) => x !== l) : [...h, l])), showAll: () => setHidden([]) };
 };
 
-export const ResetWidths = ({ rz, id }) => (rz.changed ? <button className="btn rz-reset" onClick={rz.reset} data-testid={`${id}-reset-widths`}>Reset column widths</button> : null);
+const ColumnPicker = ({ rz, id }) => {
+  const [open, setOpen] = useState(false);
+  if (!rz.labels?.length) return null;
+  return <>
+    <button className="btn" onClick={() => setOpen(!open)} aria-expanded={open} data-testid={`${id}-columns`}>Columns{rz.hidden.length ? ` (${rz.hidden.length} hidden)` : ""}</button>
+    {open && <div className="card col-pick" data-testid={`${id}-columns-menu`}>
+      {rz.labels.map((l, i) => <label key={l}><input type="checkbox" checked={!rz.hidden.includes(l)} disabled={i === 0} onChange={() => rz.toggle(l)} data-testid={`${id}-col-${i}`} />{l}</label>)}
+      {rz.hidden.length > 0 && <button className="btn" onClick={rz.showAll} data-testid={`${id}-columns-all`}>Show all columns</button>}</div>}
+  </>;
+};
+
+export const ResetWidths = ({ rz, id }) => (
+  <div className="tbl-tools no-print"><ColumnPicker rz={rz} id={id} />{rz.changed && <button className="btn" onClick={rz.reset} data-testid={`${id}-reset-widths`}>Reset column widths</button>}</div>
+);

@@ -30,6 +30,21 @@ const Row = ({ p, onOpen }) => (
   </tr>
 );
 
+const POS = { Goalkeepers: ["GK"], Defenders: ["D (", "WB"], Midfielders: ["DM", "M (", "AM"], Forwards: ["ST"] };
+const matches = (sf) => (p) => (!sf.q || p.name.toLowerCase().includes(sf.q.toLowerCase()))
+  && (!sf.pos || p.positions.some((x) => POS[sf.pos].some((k) => x.startsWith(k))))
+  && (!sf.age || (sf.age === "u21" ? p.age < 21 : sf.age === "30" ? p.age >= 30 : p.age >= 21 && p.age < 30));
+
+const Card = ({ p, onOpen }) => (
+  <button className="sq-card" onClick={() => onOpen(p.unique_id)} data-row-uid={p.unique_id} data-testid={`squad-card-${p.unique_id}`}>
+    <b>{p.name}{p.age < 21 && <span className="tag st g">U21</span>}{p.is_new && <span className="tag st ok">New</span>}</b>
+    <small>{p.age} · {p.positions.join(", ")}</small>
+    <span>{p.best_role?.name} <span className="mono" style={{ color: "var(--acc)" }}>{p.best_role?.rating}</span></span>
+    <Change v={p.progress} />
+    <small>{p.minutes} minutes · contract to {gameDate(p.contract_end, { month: "short", year: "numeric" })}</small>
+  </button>
+);
+
 const VIEWS = [["lineup", "Lineup"], ["depth", "Depth chart"], ["fit", "Tactic fit"], ["players", "Players"], ["loans", "Loan Manager"], ["registration", "Registration"], ["rules", "Rules"]];
 
 export default function Squad() {
@@ -42,11 +57,13 @@ export default function Squad() {
   const { data } = useQuery({ queryKey: ["squad"], queryFn: () => api.get("/squad").then((r) => r.data) });
   const setParam = (k, v) => { if (k === "view" && v) { setLastView(v); } if (k === "player" && !v && openId) { returnToRow(openId); } const n = new URLSearchParams(params); v ? n.set(k, v) : n.delete(k); setParams(n); };
   const rz = useResizableTable("squad");
+  const [sf, setSf] = usePersist("squad-card-filters", { q: "", pos: "", age: "" });
+  const [layout, setLayout] = usePersist("squad-layout", "table");
   const [sort, setSort] = usePersist("squad-sort", null);
   const SQ = { Player: (p) => p.name, Age: (p) => p.age, Positions: (p) => p.positions.join(","), "Progress since last save": (p) => ({ big: 3, up: 2, flat: 1, down: 0 }[p.progress?.tone] ?? -1), "Best role": (p) => p.best_role?.rating || 0, Minutes: (p) => p.minutes, Contract: (p) => p.contract_end || "" };
   const sortBy = (k) => setSort((s) => (s?.k === k ? { k, dir: s.dir === "desc" ? "asc" : "desc" } : { k, dir: ["Player", "Positions", "Contract"].includes(k) ? "asc" : "desc" }));
   const H = ({ k, n }) => <th className={`sortable${n ? " n" : ""}`} onClick={() => sortBy(k)} aria-sort={sort?.k === k ? (sort.dir === "asc" ? "ascending" : "descending") : undefined} data-testid={`squad-head-${k.split(" ")[0].toLowerCase()}`}>{k}{sort?.k === k && <span className="sort-ar">{sort.dir === "asc" ? " ▲" : " ▼"}</span>}</th>;
-  const base = (data?.players || []).filter((p) => filter === "all" || (filter === "u21" ? p.age < 21 : p.in_best_xi)).sort((a, b) => (b.best_role?.rating || 0) - (a.best_role?.rating || 0));
+  const base = (data?.players || []).filter((p) => filter === "all" || (filter === "u21" ? p.age < 21 : p.in_best_xi)).filter(matches(sf)).sort((a, b) => (b.best_role?.rating || 0) - (a.best_role?.rating || 0));
   const rows = !sort ? base : [...base].sort((a, b) => { const x = SQ[sort.k](a), y = SQ[sort.k](b); return (typeof x === "string" ? x.localeCompare(y) : x - y) * (sort.dir === "asc" ? 1 : -1); });
   return (
     <div data-testid="squad-page">
@@ -63,6 +80,14 @@ export default function Squad() {
       {view === "registration" && <RegistrationView />}
       {view === "rules" && <RulesTab module="squad" title="Development XI and registration rules" />}
       {view === "players" && <>
+      <div className="sq-filters" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }} data-testid="squad-filters">
+        <input className="inp" style={{ width: 200 }} placeholder="Search by name" value={sf.q} onChange={(e) => setSf({ ...sf, q: e.target.value })} data-testid="squad-search" />
+        <select className="inp" style={{ width: "auto" }} value={sf.pos} onChange={(e) => setSf({ ...sf, pos: e.target.value })} data-testid="squad-pos"><option value="">Any position</option>{Object.keys(POS).map((k) => <option key={k}>{k}</option>)}</select>
+        <select className="inp" style={{ width: "auto" }} value={sf.age} onChange={(e) => setSf({ ...sf, age: e.target.value })} data-testid="squad-age"><option value="">Any age</option><option value="u21">Under 21</option><option value="21-29">21 to 29</option><option value="30">30 and over</option></select>
+        <span className="note">{rows.length} player{rows.length === 1 ? "" : "s"}</span>
+        <div className="seg" style={{ marginLeft: "auto" }}>{[["table", "Table"], ["cards", "Cards"]].map(([k, l]) => <button key={k} className={layout === k ? "on" : ""} onClick={() => setLayout(k)} data-testid={`squad-layout-${k}`}>{l}</button>)}</div>
+      </div>
+      {layout === "cards" ? <div className="sq-cards rise d1" data-testid="squad-cards">{rows.map((p) => <Card key={p.unique_id} p={p} onOpen={(id) => setParam("player", id)} />)}</div> :
       <div className="card rise d1 tbl-scroll" style={{ padding: 8, overflowX: "auto" }}>
         {sort && <button className="btn rz-reset" onClick={() => setSort(null)} data-testid="squad-clear-sort">Default order</button>}
         <ResetWidths rz={rz} id="squad" />
@@ -70,7 +95,7 @@ export default function Squad() {
           <thead><tr><H k="Player" /><H k="Age" n /><H k="Positions" /><H k="Progress since last save" /><H k="Best role" /><H k="Minutes" n /><H k="Contract" /></tr></thead>
           <tbody>{rows.map((p) => <Row key={p.unique_id} p={p} onOpen={(id) => setParam("player", id)} />)}</tbody>
         </table>
-      </div>
+      </div>}
       {data?.departed?.length > 0 && (
         <div className="card rise d2" style={{ marginTop: 16 }} data-testid="squad-departed">
           <div className="ttl">No longer in your squad</div>

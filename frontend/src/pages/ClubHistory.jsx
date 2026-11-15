@@ -7,6 +7,7 @@ import { useGet, PageHead, TabBar } from "@/lib/ui";
 import { Loading } from "@/components/Loading";
 import { Cabinet, SeasonTable, Timeline } from "@/components/history/Cabinet";
 import { SeasonPage } from "@/components/history/SeasonPage";
+import { SeasonReport, PrintButton } from "@/components/history/SeasonReport";
 import { Records, Leaders, Compare, HallOfFame } from "@/components/history/Records";
 
 const TABS = [["cabinet", "Trophy Cabinet"], ["seasons", "Seasons"], ["records", "Records"], ["leaders", "Statistical Leaders"], ["compare", "Compare Seasons"], ["hall", "Hall of Fame"], ["timeline", "Timeline"]];
@@ -26,6 +27,7 @@ const PinForm = ({ seasons }) => {
 export default function ClubHistory() {
   const [params, setParams] = useSearchParams();
   const season = params.get("season");
+  const report = params.get("report");
   const tab = TABS.some(([k]) => k === params.get("tab")) ? params.get("tab") : "cabinet";
   const { data: list } = useGet("history-seasons", "/history/seasons");
   const { data: ms } = useGet("history-milestones", "/history/milestones", undefined, { enabled: tab === "timeline" });
@@ -34,8 +36,8 @@ export default function ClubHistory() {
   return (
     <div data-testid="club-history-page">
       <PageHead eyebrow="Your club, season by season" title="Club History" purpose="Trophies, every season as it happened, club records and the moments that made them." />
-      {season ? <SeasonPage season={season} /> : <>
-        <div style={{ overflowX: "auto", marginBottom: 16 }}><TabBar id="history" value={tab} onChange={go} tabs={TABS} /></div>
+      {report ? <SeasonReport season={report} /> : season ? <SeasonPage season={season} /> : <>
+        <div className="no-print" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}><div style={{ overflowX: "auto" }}><TabBar id="history" value={tab} onChange={go} tabs={TABS} /></div><span style={{ marginLeft: "auto" }} /><PrintButton id="history" label="Print this page" /></div>
         {tab === "cabinet" && <Cabinet />}
         {tab === "seasons" && (list ? <div className="card" style={{ padding: 8 }}><SeasonTable rows={list.seasons} /></div> : <Loading id="seasons-loading" rows={4} label="Loading seasons" />)}
         {tab === "records" && <Records />}
