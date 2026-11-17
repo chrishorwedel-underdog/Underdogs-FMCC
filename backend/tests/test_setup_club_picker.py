@@ -8,7 +8,7 @@ import requests
 from pymongo import MongoClient
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-import fmsave_reader as fr  # noqa: E402
+import fmsave_reader as fr
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL")
 if not BASE_URL:
@@ -21,7 +21,7 @@ SAMPLE = "C:\\Users\\[You]\\Documents\\Sports Interactive\\Football Manager 2027
 KEEP_ID = "72f82391-d58c-41f7-bc47-6a46cfd10a55"
 
 
-class O:
+class Obj:
     def __init__(self, **kw):
         self.__dict__.update(kw)
 
@@ -55,12 +55,12 @@ class TestReaderUnit:
         assert "your club" in sk
 
     def test_picked_uid_first(self):
-        assert fr._find_club(FakeSave(managed=[O(club_uid=1)]), NAMES, "x", "", 6, []) == (6, None)
+        assert fr._find_club(FakeSave(managed=[Obj(club_uid=1)]), NAMES, "x", "", 6, []) == (6, None)
 
     def test_managed_then_human(self):
-        m = O(club_uid=2)
+        m = Obj(club_uid=2)
         assert fr._find_club(FakeSave(managed=[m]), NAMES, "x", "", None, []) == (2, m)
-        st = [O(is_human_manager=False, club_uid=4), O(is_human_manager=True, club_uid=6)]
+        st = [Obj(is_human_manager=False, club_uid=4), Obj(is_human_manager=True, club_uid=6)]
         assert fr._find_club(FakeSave(staff=st), NAMES, "x", "", None, []) == (6, None)
 
     def test_unique_substring_and_hint(self):
