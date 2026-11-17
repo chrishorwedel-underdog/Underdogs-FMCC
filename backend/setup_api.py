@@ -210,3 +210,24 @@ async def put_progress(body: ProgressIn):
     allowed = {k: v for k, v in body.form.items() if k in ("edition", "save_folder", "save_file", "club_name", "name", "analytics", "found") and isinstance(v, (str, bool))}
     await db.settings.update_one({"_id": "app"}, {"$set": {"setup_progress": {"step": body.step, "form": allowed}}}, upsert=True)
     return {"ok": True}
+
+
+
+@router.post("/restart")
+async def restart_setup():
+    """Reopen the wizard to set up a different save or club. Existing careers and their data stay as they are."""
+    s = await db.settings.find_one({"_id": "app"}, {"_id": 0, "setup_complete": 1}) or {}
+    if not s.get("setup_complete"):
+        return {"ok": True}
+    await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": False, "setup_restart": True, "setup_progress": {"step": 0, "form": {}}}})
+    return {"ok": True}
+
+
+@router.post("/cancel")
+async def cancel_setup():
+    """Leave a restarted wizard and go back to the career you had."""
+    s = await db.settings.find_one({"_id": "app"}, {"_id": 0, "setup_restart": 1, "active_career_id": 1}) or {}
+    if not s.get("setup_restart") or not s.get("active_career_id"):
+        raise HTTPException(409, "There's no earlier career to go back to")
+    await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True}, "$unset": {"setup_restart": "", "setup_progress": ""}})
+    return {"ok": True}

@@ -250,7 +250,7 @@ async def state():
         career = await db.careers.find_one({"id": s["active_career_id"]}, {"_id": 0})
     return {"setup_complete": s.get("setup_complete", False), "career": career, "sample_mode": READER == "sample",
             "auto_install_updates": s.get("auto_install_updates", False), "last_update_check": s.get("last_update_check"),
-            "auto_read_saves": s.get("auto_read_saves", True), "address": s.get("address") or "Boss"}
+            "auto_read_saves": s.get("auto_read_saves", True), "address": s.get("address") or "Boss", "setup_restart": bool(s.get("setup_restart"))}
 
 
 @api.put("/settings/address")
@@ -275,7 +275,7 @@ async def setup_complete(body: SetupIn):
         if s.get("setup_complete"):
             raise HTTPException(409, "Setup is already finished")
         career = await new_career(body, body.save_folder.strip())
-        await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True, "auto_install_updates": False, "address": body.address.strip() or "Boss"}, "$unset": {"setup_progress": ""}}, upsert=True)
+        await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True, "auto_install_updates": False, "address": body.address.strip() or "Boss"}, "$unset": {"setup_progress": "", "setup_restart": ""}}, upsert=True)
     latest = (await latest_two(career["id"]))[0]
     return {"career": career, "health": [
         {"key": "link", "label": "Game link ready", "ok": True, "detail": f"Read {len(latest['players'])} players from {latest['file_name']}" + (" (sample save)" if READER == "sample" else "")},

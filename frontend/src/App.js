@@ -130,7 +130,7 @@ function App() {
     <BrowserRouter>
       {isLoading && <div className="setup"><p className="note">Starting FMCC…</p></div>}
       {isError && <div className="setup"><p className="note" data-testid="app-error">FMCC couldn't start. Please reload.</p></div>}
-      {state && (state.setup_complete && state.career ? <Shell state={state} /> : <Setup />)}
+      {state && (state.setup_complete && state.career ? <Shell state={state} /> : <Setup restart={state.setup_restart && !!state.career} />)}
       <Toaster theme="dark" position="bottom-right" />
     </BrowserRouter>
   );

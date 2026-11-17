@@ -162,7 +162,9 @@ const HealthStep = ({ analytics }) => {
   );
 };
 
-export default function Setup() {
+export default function Setup({ restart }) {
+  const qc = useQueryClient();
+  const cancel = async () => { try { await api.post("/setup/cancel"); qc.invalidateQueries(); } catch (e) { toast.error(errMsg(e)); } };
   const [step, setStep] = useState(null);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ edition: "FM27", save_folder: "", save_file: "", club_name: "Sample Club FC", name: "My first career", address: "Boss", analytics: false, found: false });
@@ -180,7 +182,8 @@ export default function Setup() {
       <div className="wiz">
         <img src="/fmcc-logo.png" alt="FMCC" className="wiz-logo rise" data-testid="setup-logo" />
         <h1 className="h rise wiz-h">Welcome to <span className="serif">FMCC.</span></h1>
-        <p className="lede wiz-lede">Four quick steps and your club is ready.</p>
+        <p className="lede wiz-lede">{restart ? "Set up a different save or club. Your other careers and their history stay as they are." : "Four quick steps and your club is ready."}</p>
+        {restart && step !== 3 && <button className="btn" style={{ margin: "0 auto 16px", display: "flex" }} onClick={cancel} data-testid="setup-cancel-restart">Cancel and go back to FMCC</button>}
         <div className="setup-dl"><DownloadLink /></div>
         {step !== null && <><StepBar step={step} go={(i) => { setFail(null); setStep(i); }} />
           <div className="card rise d1 wiz-card" data-testid="setup-card">

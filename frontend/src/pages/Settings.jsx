@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { api, ago, gameDate, errMsg } from "@/lib/api";
 import { CareersCard } from "@/components/CareersCard";
+import { RestartSetupCard } from "@/components/RestartSetupCard";
 import { AddressCard } from "@/components/AddressPick";
 import { UpdatesCard } from "@/components/UpdatesCard";
 import { startTour } from "@/components/Tour";
@@ -93,7 +94,7 @@ export default function Settings({ state }) {
       <EmbedCtx.Provider value>
       {sec === "career" && <><div className="sgrid">
         <div style={col}><AddressCard current={state.address} key={state.address} /><CareersCard career={state.career} key={state.career.id} /></div>
-        <div style={col}><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /><TourCard /></div>
+        <div style={col}><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /><TourCard /><RestartSetupCard /></div>
       </div><div style={{ marginTop: 20 }}><TestingCard /></div></>}
       {sec === "appearance" && <Appearance />}
       {sec === "features" && <Features />}
