@@ -75,7 +75,7 @@ export const GUIDES = {
   },
   "/squad": {
     what: "Plans your team: who plays where, who's next in line and the best lineup.",
-    features: ["Role ratings for every player", "Depth charts for each position", "Best XI: the highest-scoring lineup for your formation and roles", "Development XI: a lineup that gives your young players minutes", "Domestic, Cup and UEFA XI: league-registered, rotated and UEFA-registered lineups", "Up to 3 extra formations of your choice to experiment with", "Tactic fit: every player rated for every slot of a tactic (import an .fmf or pick a formation), squad gaps and a shape advisor", "Registration checks"],
+    features: ["Star ratings for every player, compared within your squad like FM's coach stars", "Depth charts for each position: natural players first, with out-of-position cover only where a position is short", "Best XI: your strongest lineup of players in positions they play naturally", "Development XI: a lineup that gives your young players minutes", "Domestic, Cup and UEFA XI: league-registered, rotated and UEFA-registered lineups", "Up to 3 extra formations of your choice to experiment with", "Tactic fit: the natural options for every slot of a tactic (import an .fmf or pick a formation), squad gaps and a shape advisor", "Registration checks"],
     how: ["Pick a formation", "Look at Best XI and Development XI on the pitch", "Save a lineup to keep it in your history"],
   },
   "/development": {

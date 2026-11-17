@@ -17,7 +17,7 @@ const Ranked = ({ s }) => {
           title={r.natural ? (r.positions || []).join(", ") : `Out of position (${(r.positions || []).join(", ")})`} data-testid={`fit-rank-${s.slot}-${r.unique_id}`}>
           <small className="mono" style={{ color: "var(--dim)" }}>{i + 1}</small>
           <div style={{ minWidth: 0 }}>
-            <small style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}{!r.natural && <OopTag id={`fit-oop-${s.slot}-${r.unique_id}`} />}</small>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}><small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{r.name}</small>{!r.natural && <OopTag id={`fit-oop-${s.slot}-${r.unique_id}`} />}</div>
           </div>
           <Stars value={r.stars} size={10} id={`fit-stars-${s.slot}-${r.unique_id}`} />
         </div>))}
@@ -80,7 +80,7 @@ export const TacticFit = () => {
         {edited && data && <div style={{ display: "flex", gap: 8, margin: "8px 0" }}>
           <input className="inp" style={{ width: 220 }} placeholder={`Name (default ${data.formation})`} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} data-testid="tactic-name" />
           <button className="btn btn-p" onClick={save} data-testid="tactic-save">Save as tactic</button></div>}
-        <p className="note" style={{ marginTop: 4 }} data-testid="fit-note">{data?.note} Each slot ranks your whole squad from best to worst fit.</p>
+        <p className="note" style={{ marginTop: 4 }} data-testid="fit-note">{data?.note}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 10, marginTop: 10 }}>
           {data?.slots.map((s) => <Slot key={s.slot} s={s} gap={data.gaps.some((g) => g.slot === s.slot)} onRole={setRole} />)}</div>
       </div>

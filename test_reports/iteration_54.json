@@ -1,0 +1,47 @@
+{
+  "summary": "Phase 1 test of natural-position squad picks and stars. Backend: 17 of 18 pytest checks pass. The failing check is a legacy saved lineup whose strength is still 67. /api/squad/plan: every depth row has exactly the keys {unique_id, stars, oop}. Naturals come first with stars non-increasing. Out-of-position cover appears only where a slot has fewer than 2 naturals, below the naturals, with at most 3 rows; GK has no cover. Weak entries have unique labels, use the best natural option's stars and count only naturals. Best, Dev, Domestic, Cup and UEFA strengths are stars, and the 'why' texts use stars. Eligibility matches roles.natural_positions for the live snapshot. The live snapshot (save 9) has NO 'natural' field because it was read before this change, so only first-listed positions count. I checked the uid%3 sample rule in-process with sample_reader.read_save on 4 formations, and it passes. PUT /api/squad/depth keeps a custom order, a bad order gets 422, and I restored the original. Also passing: tactic-fit (stars and natural, no rating), shapes (stars), Home (weak item says 'Noah Whitfield is the best option there (3 stars).' and xi_average is 4.0), analysis/club (evidence in stars), registration (no role rating) and try-xi (stars). No ca or pa found in any tested response. No 500s. UI: Depth chart, Weakest positions, Lineup (pitch stars, best and lineup strength, natural swap DMCL<->DMCR saves), Tactic Fit and the Home stars card all render. 390px has no horizontal overflow. Defects: (1) stale Tactic Fit note texts; (2) the legacy saved custom lineup has players who are now ineligible and shows them with no stars; (3) the legacy 0-100 strength value; (4) the Players tab still shows 0-100 role numbers.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/squad/plan .saved and GET /api/lineups", "issue": "Lineups saved before this change still have strength 67 (a 0-100 number). New saves store stars (4.0). The UI doesn't render saved.strength, but the API still exposes the legacy number. Convert it to stars on read, or recompute roles.strength(saved.slots, depth)."},
+      {"endpoint": "GET /api/squad/tactic-fit (lab_api.py:516)", "issue": "For tactics from the save, the note says 'Change a role to see the fit move.' Roles no longer change who's picked: scores are identical with picks=DL:wb,ST:tf,DMCL:dm. The text is now false."},
+      {"endpoint": "dashboard.py:35-44,79 (GET /api/home squad.xi_average / squad.weak_spot)", "issue": "These are always computed for '433'. The attention weak item (server.py:524) and the Squad page use the save's first tactic (4231 here). They agree today (Left Back, 4 stars), but they can disagree when the shapes differ. Use SQ.weakest and the same formation for both."},
+      {"endpoint": "analysis_api.py:334", "issue": "The fallback evidence 'Your best two there average a N% role fit' still shows a 0-100 role number when the weakest group isn't the Best XI's weakest slot."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "TacticFit.jsx:83 fit-note", "issue": "The hard-coded suffix 'Each slot ranks your whole squad from best to worst fit.' is now wrong, because only naturals plus short-slot cover are listed. It also shows right after the backend's 'Change a role to see the fit move.'", "selector": "[data-testid=fit-note]", "priority": "MEDIUM"},
+      {"component": "LineupView / Pitch (saved custom lineup)", "issue": "The saved custom lineup v2 (made before this change) has Yusuf Demir at AMR and Callum Reid at ST. Neither is natural there now, because the snapshot has no 'natural' field, so only the first-listed position counts. On load the custom mode shows them with no stars (pitch-stars-AMR and pitch-stars-ST are missing). 'Use this lineup' would get a 422 'can't play'. Mark or replace ineligible players in saved lineups, or fall back to the Dev XI.", "selector": "[data-testid=pitch-stars-AMR],[data-testid=pitch-stars-ST]", "priority": "MEDIUM"},
+      {"component": "Squad.jsx:28,42,63,66 Players tab", "issue": "It still shows best_role.rating, a 0-100 role number (from server.py:550 roles.best_role), next to the role name, and sorts by it. This goes against 'stars instead of 0-100 role numbers' on the Squad page.", "selector": "[data-testid^=squad-row-]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Tactic Fit desktop (1920)", "issues": ["The OopTag inside a ranked row's <small> (nowrap and ellipsis) gets cut off. 'Marco Silvestri…' hides the 'Out of position' tag in the Right Back card. It shows fine at 390px."]},
+      {"screen": "Lineup pitch 390px", "issues": ["Names on neighbouring tokens nearly touch: 'Samuel Adeyemi Ivan Petrović' and 'Luca Romano Marco Silvestri' read as one line."]},
+      {"screen": "Lineup swap toast", "issue_note": "minor", "issues": ["The toast says 'Kieran Doyle can't play DCL.' It uses the slot key instead of the label (Centre Back)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter54_natural_stars.py", "/app/test_reports/pytest/iter54.xml"],
+  "action_items": [
+    "Update the Tactic Fit note texts (TacticFit.jsx:83 suffix, lab_api.py:516 'Change a role to see the fit move') to match the natural-position rule.",
+    "Handle saved lineups that are now ineligible: show an 'Out of position / not eligible' state, or fall back to the Dev XI. Convert legacy saved strength (67) to stars.",
+    "Make Home squad.xi_average and squad.weak_spot use the same formation and weakest() as the attention item and the Squad page.",
+    "Optional: remove the 0-100 best_role rating from the Squad Players tab and the '% role fit' from the Club Analysis fallback evidence.",
+    "Optional: stop the OopTag being truncated in desktop Tactic Fit rows."
+  ],
+  "critical_code_review_comments": [
+    "roles.depth_chart, public_depth, best_xi (OOP_COST 500) and weak are correct. The internal 'rating' is stripped by public_depth; plan.players has ca removed.",
+    "The live snapshot has no 'natural' key because the sample reader only adds it on new reads. Existing careers fall back to first-listed only until the next save read, which is why legacy lineups break.",
+    "squad_api.weakest uses the lowest Best XI slot (it could be an OOP starter's stars), while plan.weak uses the best natural option. They agree in the sample but are defined differently.",
+    "weak.stars is 0 when a position has no natural option, which is outside the 0.5-5 star range. Stars renders it as empty, which is acceptable but worth documenting.",
+    "A user's custom depth order changes the display order only. best_xi still ranks by internal score, so a reordered depth chart doesn't change the Best XI. Confirm that this is what 'saved depth order still wins' intends."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter54_natural_stars.py"],
+  "success_rate": {"backend": "94% (17/18)", "frontend": "85% (all requested components render and work; text and legacy-lineup defects)"},
+  "seed_data_creation": "None kept. One lineup revision was created by the swap test (id 700254d0..., 4231 rev 3) and deleted by id. I created a depth_orders doc for 4231 slot GK during the PUT test and deleted it (none existed before). I did not trigger /api/saves/read.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Active career TEST_Shot (id 72f82391...), latest save_no 9, formation from save 4231. The snapshot players have no 'natural' field. Run the pytest with backend/.env exported (MONGO_URL, DB_NAME) and REACT_APP_BACKEND_URL. The legacy saved custom lineups for 4231 (rev 1 and 2, strength 67) are user data; I left them untouched.",
+  "rca of the issue": "Tactic Fit text: copy left over from the old role-rating model. Legacy lineup: lineups saved under the old all-listed-positions eligibility, plus a snapshot with no 'natural' field, so Demir (AM(L) first) and Reid (AM(L) first) are no longer natural at AMR and ST. Pitch.jsx only renders stars when the uid is in depth[slot]."
+}

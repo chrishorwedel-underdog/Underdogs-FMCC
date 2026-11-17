@@ -70,7 +70,7 @@ export const LineupView = ({ formation, setFormation }) => {
   const [rev, setRev] = useState(null);
   useEffect(() => {
     if (!plan) { return; }
-    const custom = plan.saved?.kind === "custom" && plan.saved.formation === plan.formation.key;
+    const custom = plan.saved?.kind === "custom" && plan.saved.formation === plan.formation.key && !plan.saved.stale;
     const m = mode || (custom ? "custom" : "dev");
     if (!mode) { setMode(m); }
     setSlots(m === "custom" && custom ? plan.saved.slots : plan[m === "custom" ? "dev" : m].slots);
@@ -97,7 +97,7 @@ export const LineupView = ({ formation, setFormation }) => {
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18, alignItems: "center" }}>
         <TabBar id="lineup-mode" value={mode} onChange={switchMode} tabs={[...MODES, ...(mode === "custom" ? [["custom", "My changes"]] : [])]} />
         <Formations plan={plan} formation={formation} setFormation={setFormation} />
-        {plan.saved && <span className="note" data-testid="lineup-saved-label">Saved: {plan.saved.name} · version {plan.saved.revision}</span>}
+        {plan.saved && <span className="note" data-testid="lineup-saved-label">Saved: {plan.saved.name} · version {plan.saved.revision}{plan.saved.stale ? " · has players outside their natural positions, so the Development XI is shown" : ""}</span>}
         <button className="btn btn-p btn-l" style={{ marginLeft: "auto" }} onClick={use} data-testid="use-lineup-button">Use this lineup <ArrowRight size={15} /></button>
       </div>
       <div className="sq"><Pitch plan={plan} slots={slots} onPick={pick} /><Side plan={plan} mode={mode} slots={slots} /></div>

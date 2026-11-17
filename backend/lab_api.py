@@ -513,7 +513,7 @@ async def tactic_fit(formation: Optional[str] = None, tactic: Optional[str] = No
     formation = chosen["formation"] if chosen else formation or "433"
     asked = dict(x.split(":", 1) for x in picks.split(",") if ":" in x)
     slots = fit((await latest_snapshot(c["id"]))["players"], formation, asked or (chosen or {}).get("roles"))
-    note = ("FMCC reads the shape of your save's tactics but not their roles yet, so each slot starts on FMCC's default role. Change a role to see the fit move."
+    note = ("FMCC reads the shape of your save's tactics but not their roles yet, so each slot shows FMCC's default role. Roles label each slot; who's listed and their order come from natural positions and in-FM ability."
             if chosen and chosen.get("from_save") else "Each slot lists the players who play there naturally, ranked by their in-FM ability, as stars within your squad. Roles label each slot but don't change who's picked.")
     return {"formation": roles.ALL_FORMATIONS[formation][0], "formation_key": formation, "tactic": chosen, "slots": slots,
             "gaps": sorted(slots, key=lambda s: s["score"])[:3], "note": note, "formations": [[k, v[0]] for k, v in roles.ALL_FORMATIONS.items()]}

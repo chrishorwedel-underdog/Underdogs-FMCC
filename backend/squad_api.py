@@ -101,6 +101,9 @@ async def squad_plan(formation: Optional[Formation] = None):
         nat = [r for r in depth[s["key"]] if not r["oop"]]
         weak.append({"slot": s["key"], "label": s["label"], "stars": nat[0]["stars"] if nat else 0, "options": len(nat)})
     saved = await db.lineups.find_one({"career_id": c["id"], "formation": formation}, {"_id": 0}, sort=[("revision", -1)])
+    if saved:
+        saved["strength"] = roles.strength({k: u for k, u in (saved.get("slots") or {}).items() if k in depth}, depth)
+        saved["stale"] = any(u and u not in {r["unique_id"] for r in depth.get(k, [])} for k, u in (saved.get("slots") or {}).items())
     for i in info.values():
         i.pop("ca", None)
     youth = sorted([{"unique_id": u, **i} for u, i in info.items() if i["u21"]], key=lambda y: y["month_minutes"])
@@ -130,7 +133,7 @@ async def weakest(c: dict) -> dict | None:
         return None
     r, k, u = min(filled)
     slot = next(s for s in form["slots"] if s["key"] == k)
-    return {"label": roles.LABELS_FULL(slot["label"]), "pos": slot["pos"], "group": pos_group(slot["pos"]), "stars": roles.stars(r), "unique_id": u, "name": info.get(u, {}).get("name")}
+    return {"label": roles.LABELS_FULL(slot["label"]), "pos": slot["pos"], "group": pos_group(slot["pos"]), "stars": roles.stars(r), "strength": roles.strength(best, depth), "unique_id": u, "name": info.get(u, {}).get("name")}
 
 
 async def squad_outcome(c: dict, params: dict) -> dict:

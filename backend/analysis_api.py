@@ -331,7 +331,7 @@ async def club():
     if w and w["group"] in pos:
         weak = [pos[w["group"]]] + [p for p in weak if p["group"] != w["group"]][:2]
     for p in weak:
-        todo.append({"score": 60 - weak.index(p) * 5, "title": f"Weakest area: {p['label']}", "evidence": (f"{w['label']} is your weakest Best XI position (the same as Squad shows): {w['name']}, {w['stars']:g} stars." if w and p is weak[0] and w["group"] == p["group"] else f"Your best two there average a {p['avg_top2']}% role fit, among the lowest in your squad."), "link": f"/scouting?tab=stats&group={p['group']}"})
+        todo.append({"score": 60 - weak.index(p) * 5, "title": f"Weakest area: {p['label']}", "evidence": (f"{w['label']} is your weakest Best XI position (the same as Squad shows): {w['name']}, {w['stars']:g} stars." if w and p is weak[0] and w["group"] == p["group"] else f"Few strong options there compared with the rest of your squad."), "link": f"/scouting?tab=stats&group={p['group']}"})
     todo.sort(key=lambda t: -t["score"])
     target = weak[0] if weak else None
     ideas = {}

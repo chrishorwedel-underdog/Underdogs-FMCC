@@ -424,3 +424,17 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Own-squad rows now keep season totals from the save (fmsave field names NOT VERIFIED).
 - Testing: iteration_53 found the wrong position group and the grade note on the card; both were fixed and checked by curl and a screenshot.
 
+
+## 2026-11-17: Squad picks by natural position and star ratings (Phase 1)
+- roles.py: a player is eligible at his first-listed position plus any position in the 'natural' list. The readers fill 'natural': fmsave position ratings >= 20 and backup ratings >= 20 are NOT VERIFIED on a real save, and the sample marks secondary positions natural unless uid % 3 == 0.
+- Depth is ranked by in-FM CA (internal only). Each row gets squad-relative stars (half steps; 15 CA = 1 star below the squad's best). When a slot has fewer than 2 naturals, nearby-position cover (COVER map) fills it to 3, tagged oop and listed below the naturals. GK gets no cover.
+- best_xi strongly penalises oop players. strength() returns stars, and score() is the internal value used by the dev rules.
+- The API returns only public_depth {unique_id, stars, oop}; no rating or CA leaves it.
+- Weakest positions: one entry per label, using the best natural's stars and the natural count.
+- The same rules now apply to Tactic fit (lab_api fit/_layer/shapes), the Home weak item and xi_average (now from SQ.weakest), Club Analysis evidence and registration (sorted by CA, suggestion in stars).
+- Saved custom lineups get their strength recomputed in stars. If a saved lineup has players outside their natural positions it is marked stale, and the Development XI is shown with a note.
+- Frontend: Stars.jsx (Stars, OopTag) is used in DepthView, Pitch, LineupView, TryXI, TacticFit and the Home ModuleCards.
+- Testing: iteration_54 found text, legacy-lineup and Home-formation issues. All were fixed and checked by curl and a screenshot.
+- Players tab best_role.rating is left as it is (Phase 2).
+- Loan Manager uses other clubs' grades, so it is unchanged.
+
