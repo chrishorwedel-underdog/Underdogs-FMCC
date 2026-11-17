@@ -26,7 +26,7 @@ const TourCard = () => (
 
 const SECTIONS = [["career", "You & your career"], ["appearance", "Appearance"], ["features", "Features"], ["alerts", "Alerts & notices"], ["safety", "Project Safety"], ["connections", "Connections & updates"]];
 
-const CREDITS = [["fmsave", "MIT", "Save reader"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
+const CREDITS = [["fmsave", "MIT", "Save reader"], ["fm-open-scout", "MIT", "Backup save reader · its save parser is built into FMCC · source: github.com/YanivGabay/fm-open-scout"], ["FMLibreEditor", "GPL-3.0", "Game editor · its command-line tool is built into FMCC · source: github.com/tozmoz/FMLibreEditor"], ["FMMatchLens", "MIT", "Match analytics"],
   ["BepInEx", "LGPL-2.1", "Add-on loader"], ["FM Player Analyzer", "GPL-3.0", "Ideas for role ratings and registration checks"],
   ["ScoutSheet", "MIT", "Scouting views, fair price, Deal Finder and Offers, rebuilt inside Scout Players"], ["FMDataLab", "No code used", "Its analytics ideas and published possession method, rebuilt"],
   ["Global League Strength and Player Model", "Your workbook", "League strength (408 rated competitions, Opta snapshot 6 Nov 2026), position weights, grades and similarity"],

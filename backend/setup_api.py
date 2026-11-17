@@ -76,13 +76,14 @@ async def check_save(body: CheckSaveIn):
             return _need_club(fmsave_reader.club_choices(names, Path(body.path.replace("\\", "/")).stem, body.club_name))
         first = sample_reader.read_save(0, names.get(body.club_uid, "Sample Club FC"), {})
         return {"ok": True, "club_name": first["club_name"], "club_uid": body.club_uid if body.club_uid in names else None,
-                "game_date": first["game_date"], "players": len(first["players"]), "skipped": []}
+                "game_date": first["game_date"], "players": len(first["players"]), "skipped": [], "note": None,
+                "readers": {"fm_version": None, "main": "ok", "backup": "sample"}}
     from server import read_error
     p = Path(body.path)
     if not p.is_file() or p.suffix.lower() != ".fm":
         raise HTTPException(404, "That save file isn't there any more. Press Find again.")
     try:
-        d = await asyncio.wait_for(asyncio.to_thread(fmsave_reader.read_save, p, body.club_name, body.club_uid), 240)
+        d = await asyncio.wait_for(asyncio.to_thread(fmsave_reader.read_save, p, body.club_name, body.club_uid), 600)
     except fmsave_reader.ClubNotFound as exc:
         return _need_club(exc.choices)
     except asyncio.TimeoutError:
@@ -90,7 +91,8 @@ async def check_save(body: CheckSaveIn):
     except Exception as exc:  # noqa: BLE001
         logger.error("check-save failed: %s", exc)
         return {"ok": False, "error": read_error(p.name, exc)}
-    return {"ok": True, "club_name": d["club_name"], "club_uid": d.get("club_uid"), "game_date": d["game_date"], "players": len(d["players"]), "skipped": d.get("skipped", [])}
+    return {"ok": True, "club_name": d["club_name"], "club_uid": d.get("club_uid"), "game_date": d["game_date"], "players": len(d["players"]), "skipped": d.get("skipped", []),
+            "note": fmsave_reader.reader_note(d), "readers": d.get("readers")}
 
 
 @router.post("/inspect")

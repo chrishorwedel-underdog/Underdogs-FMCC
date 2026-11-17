@@ -175,6 +175,13 @@ async def read_next_save(career: dict) -> dict:
     snap = {"id": str(uuid.uuid4()), "career_id": career["id"], "save_no": save_no, "read_at": now_iso(),
             "reader": sample_reader.READER_NAME, **save}
     await db.snapshots.insert_one(dict(snap))
+    if READER == "fmsave":
+        import fmsave_reader
+        note = fmsave_reader.reader_note(save)
+        if note:
+            await db.notices.update_one({"career_id": career["id"], "key": f"save-reader-{save_no}"}, {"$setOnInsert": {
+                "id": str(uuid.uuid4()), "career_id": career["id"], "key": f"save-reader-{save_no}", "type": "changes", "title": "Part of this save couldn't be read",
+                "text": note[:600], "link": "/settings?section=career", "game_date": save["game_date"], "at": now_iso(), "read": False, "hidden": False}}, upsert=True)
     old_pool = await db.pools.find_one({"career_id": career["id"]}, {"_id": 0, "season": 1, "season_start_ca": 1}) or {}
     start = old_pool.get("season_start_ca", {}) if old_pool.get("season") == save["season"] else {}
     for p in pool:

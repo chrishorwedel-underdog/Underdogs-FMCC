@@ -317,10 +317,10 @@ def _find_club(save, names: dict, stem: str, hint: str, club_uid, skipped: list)
     """Your club: the one you picked, the one you manage, your manager's employer, the save file's name, then the typed name."""
     if club_uid is not None and club_uid in names:
         return club_uid, None
-    mine = _safe(save.managed_clubs, [], "your club", skipped) if hasattr(save, "managed_clubs") else []
+    mine = _safe(save.managed_clubs, [], "your club", skipped) if save is not None and hasattr(save, "managed_clubs") else []
     if mine:
         return _first(mine[0], "club_uid", "uid"), mine[0]
-    human = _safe(lambda: _human_club(save), None, "your manager", skipped)
+    human = _safe(lambda: _human_club(save), None, "your manager", skipped) if save is not None else None
     if human is not None and (not names or human in names):
         return human, None
     for want in (club_from_file(stem), hint):
@@ -343,18 +343,101 @@ def _open(fmsave, path: Path):
         return fmsave.open(str(path))
 
 
+MAIN_ONLY = ["season stats", "league tables", "transfers", "tactics", "staff", "finances", "club history"]
+
+
+def failure_message(name: str, exc: Exception, backup: dict | None, backup_err: str | None) -> str:
+    ver = (backup or {}).get("fm_version")
+    why = "isn't installed" if backup_err == "it isn't installed" else f"also had trouble ({backup_err})" if backup_err else "found no players"
+    return (f"FMCC couldn't read {name}{f' (saved with FM {ver})' if ver else ''}. The main save reader (fmsave) stopped: {str(exc)[:140]}. "
+            f"The backup reader (fm-open-scout) {why}. Make sure FM and FMCC are both up to date, save again in FM, or pick a different save.")
+
+
+def combine(main: dict | None, backup: dict | None, backup_err: str | None, path: Path, hint: str, club_uid) -> dict:
+    """One result from both readers: the main reader wins every conflict, the backup only fills gaps."""
+    if main is None:
+        skipped = list(MAIN_ONLY)
+        my_uid, _ = _find_club(None, backup["clubs"], path.stem, hint, club_uid, skipped)
+        main = {"file_name": path.name, "club_name": backup["clubs"].get(my_uid) or hint, "club_uid": my_uid,
+                "game_date": backup["game_date"] or date.fromtimestamp(path.stat().st_mtime).isoformat(), "players": [], "next_fixture": None,
+                "tactics": [], "pool": [], "tables": [], "clubs": [], "staff": [], "club_colours": None, "finance": {}, "history": {},
+                "file_mtime": path.stat().st_mtime, "skipped": skipped}
+        gd = date.fromisoformat(main["game_date"])
+        sy = gd.year if gd.month >= 7 else gd.year - 1
+        main["season"] = f"{sy}/{str(sy + 1)[2:]}"
+        status = "failed"
+    else:
+        status = "partial" if main["skipped"] else "ok"
+    added = filled = 0
+    if backup:
+        bp = backup["players"]
+        have = set()
+        for row in main["players"]:
+            have.add(row["unique_id"])
+            b = bp.get(row["unique_id"])
+            if not b:
+                continue
+            gaps = {k: b[k] for k, empty in (("positions", POS_FALLBACK), ("contract_end", "2099-06-30"), ("wage", None), ("nationality", ""), ("birth_date", ""))
+                    if row.get(k) in (empty, None, "") and b.get(k) not in (empty, None, "", [])}
+            filled += bool(gaps)
+            row.update(gaps)
+        for uid, b in bp.items():
+            if uid not in have and b["club_uid"] == main["club_uid"]:
+                main["players"].append({k: v for k, v in b.items() if k != "club_uid"} | {"club": main["club_name"]})
+                added += 1
+        known = {c["uid"] for c in main["clubs"]}
+        main["clubs"] += [{"uid": int(u), "name": n, "league": None} for u, n in backup["clubs"].items() if u not in known]
+    main["readers"] = {"fm_version": (backup or {}).get("fm_version"), "main": status, "backup": "ok" if backup else "missing" if backup_err == "it isn't installed" else "failed",
+                       "backup_error": backup_err, "backup_added": added, "backup_filled": filled}
+    return main
+
+
+def reader_note(d: dict) -> str | None:
+    """Plain words when a read had trouble; None when it simply worked."""
+    r, skipped = d.get("readers") or {}, d.get("skipped") or []
+    if r.get("main") == "ok" and not skipped:
+        return None
+    ver = f"Saved with FM {r['fm_version']}. " if r.get("fm_version") else ""
+    if r.get("main") == "failed":
+        text = ("The main save reader (fmsave) couldn't read this save, so FMCC used the backup reader (fm-open-scout) for your club and squad. "
+                "Stats, league tables, finances and history stay empty until the main reader supports this FM update.")
+    else:
+        text = f"The main save reader (fmsave) skipped: {', '.join(skipped)}."
+        if r.get("backup") == "ok" and (r.get("backup_added") or r.get("backup_filled")):
+            text += f" The backup reader (fm-open-scout) filled the gaps for {r['backup_added'] + r['backup_filled']} of your players."
+        elif r.get("backup") == "failed":
+            text += f" The backup reader (fm-open-scout) couldn't help either ({r.get('backup_error')})."
+    return f"{ver}{text} If something looks missing, update FM and FMCC, or save again in FM."
+
+
 def read_save(path: Path, club_name_hint: str, club_uid: int | None = None) -> dict:
+    """Both readers on the same save, one after the other, combined."""
+    import backup_reader
+    backup, backup_err = backup_reader.read(path, ATTR_MAP.keys())
+    try:
+        main = _read_main(path, club_name_hint, club_uid, (backup or {}).get("clubs", {}))
+    except ClubNotFound:
+        raise
+    except Exception as exc:  # noqa: BLE001 - the backup reader may still have the squad
+        if not backup or not backup["players"]:
+            raise ValueError(failure_message(path.name, exc, backup, backup_err)) from exc
+        logger.warning("fmsave failed, using the backup reader: %s", exc)
+        main = None
+    return combine(main, backup, backup_err, path, club_name_hint, club_uid)
+
+
+def _read_main(path: Path, club_name_hint: str, club_uid, extra_names: dict) -> dict:
     import fmsave  # only installed in the Windows build
 
     skipped = []
     with _open(fmsave, path) as save:
         objs = _safe(lambda: list(save.clubs()) if hasattr(save, "clubs") else [], [], "club list", skipped)
         clubs = {_first(c, "club_uid", "uid"): (_first(c, "name", "club_name"), _get(c, "nation_id"), _get(c, "gender"), _get(c, "reputation")) for c in objs}
-        my_uid, club = _find_club(save, {u: v[0] for u, v in clubs.items()}, path.stem, club_name_hint, club_uid, skipped)
+        my_uid, club = _find_club(save, {**extra_names, **{u: v[0] for u, v in clubs.items()}}, path.stem, club_name_hint, club_uid, skipped)
         club = club or next((c for c in objs if _first(c, "club_uid", "uid") == my_uid), None)
         club_lookup = {u: v[0] for u, v in clubs.items()}
         club_rows = [{"uid": int(u), "name": n, "league": None} for u, n in club_lookup.items() if u is not None and n]
-        club_name = club_lookup.get(my_uid) or _get(club, "name") or club_name_hint
+        club_name = club_lookup.get(my_uid) or _get(club, "name") or extra_names.get(my_uid) or club_name_hint
         club_colours = _safe(lambda: _colours(club), None, "club colours", skipped)
         stats = _safe(lambda: _season_stats(save), {}, "season stats", skipped)
         everyone = list(save.players())

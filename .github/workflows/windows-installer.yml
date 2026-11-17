@@ -19,6 +19,7 @@ jobs:
     env:
       MONGODB_VERSION: "7.0.48"
       FMLIBRE_TAG: "v0.5.2"
+      FMOPENSCOUT_TAG: "v0.2.0"
       FMCC_VERSION: "0.2.${{ github.run_number }}"
     steps:
       - uses: actions/checkout@v4
@@ -77,6 +78,20 @@ jobs:
           "FMLibreEditor $env:FMLIBRE_TAG command-line tool (fmlibre-probe), GPL-3.0. Source: https://github.com/tozmoz/FMLibreEditor/tree/$env:FMLIBRE_TAG" | Out-File desktop/fmlibre/SOURCE.txt
           desktop/fmlibre/fmlibre-probe.exe --help
 
+      - name: Get fm-open-scout's save parser (MIT, backup save reader)
+        shell: pwsh
+        run: |
+          $base = "https://github.com/YanivGabay/fm-open-scout/releases/download/$env:FMOPENSCOUT_TAG"
+          $exe = "fm_save_parser-x86_64-pc-windows-msvc.exe"
+          New-Item -ItemType Directory -Force desktop/fmopenscout | Out-Null
+          Invoke-WebRequest "$base/$exe" -OutFile desktop/fmopenscout/fm_save_parser.exe
+          Invoke-WebRequest "$base/SHA256SUMS" -OutFile sums.txt
+          $want = ((Get-Content sums.txt | Where-Object { $_ -match [regex]::Escape($exe) }) -split '\s+')[0]
+          $got = (Get-FileHash desktop/fmopenscout/fm_save_parser.exe -Algorithm SHA256).Hash.ToLower()
+          if ($got -ne $want) { Write-Output "::error title=fm-open-scout checksum::Downloaded parser doesn't match SHA256SUMS"; exit 1 }
+          Invoke-WebRequest "https://raw.githubusercontent.com/YanivGabay/fm-open-scout/$env:FMOPENSCOUT_TAG/LICENSE" -OutFile desktop/fmopenscout/LICENSE
+          "fm-open-scout $env:FMOPENSCOUT_TAG save parser, MIT. Source: https://github.com/YanivGabay/fm-open-scout/tree/$env:FMOPENSCOUT_TAG" | Out-File desktop/fmopenscout/SOURCE.txt
+
       - name: Record the repository and version
         shell: pwsh
         run: |
@@ -90,7 +105,7 @@ jobs:
           $mods = Get-ChildItem backend -Filter *.py | Where-Object { $_.BaseName -ne 'conftest' } | ForEach-Object { "--hidden-import=$($_.BaseName)" }
           pyinstaller desktop/launcher.py --name FMCC --noconsole --noconfirm --icon desktop/fmcc.ico --paths backend --paths desktop `
             --add-data "desktop/release_repo.txt;." --add-data "desktop/version.txt;." --add-data "desktop/loading-logo.png;." `
-            --add-data "backend;backend" --add-data "backend/data;data" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb" --add-data "desktop/fmlibre;fmlibre" `
+            --add-data "backend;backend" --add-data "backend/data;data" --add-data "frontend/build;web" --add-data "desktop/mongodb;mongodb" --add-data "desktop/fmlibre;fmlibre" --add-data "desktop/fmopenscout;fmopenscout" `
             --collect-all fmsave --collect-all emergentintegrations --collect-submodules uvicorn --collect-all webview `
             --hidden-import motor --hidden-import psutil --hidden-import multipart --hidden-import python_multipart --hidden-import startup_pages @mods
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

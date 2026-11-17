@@ -98,9 +98,10 @@ const FindStep = ({ form, set, next }) => {
           <label className="lbl" style={{ marginTop: 16 }}>Choose your save ({saves.length} found, newest first)</label>
           <SaveList saves={saves} pick={form.save_file} onPick={pick} />
           <div className="wiz-row" style={{ marginTop: 10 }}>
-            <button className="btn" disabled={!form.save_file || check?.busy} onClick={() => test(form.save_file, form.club_uid ?? null)} data-testid="setup-check-save">{check?.busy ? <Loader2 size={15} className="animate-spin" /> : null}{check?.busy ? "Reading the save… this can take a minute" : "Check this save"}</button>
-            {check?.ok && <span className="st ok" data-testid="setup-check-ok">Read OK: {check.club_name}, {check.players} players, game date {check.game_date}{check.skipped?.length ? ` (skipped: ${check.skipped.join(", ")})` : ""}</span>}
+            <button className="btn" disabled={!form.save_file || check?.busy} onClick={() => test(form.save_file, form.club_uid ?? null)} data-testid="setup-check-save">{check?.busy ? <Loader2 size={15} className="animate-spin" /> : null}{check?.busy ? "Reading the save with both readers… this can take a minute or two" : "Check this save"}</button>
+            {check?.ok && <span className="st ok" data-testid="setup-check-ok">Read OK: {check.club_name}, {check.players} players, game date {check.game_date}</span>}
           </div>
+          {check?.ok && check.note && <p className="note" style={{ marginTop: 8 }} data-testid="setup-check-note">{check.note}</p>}
           {check?.ok === false && <p className="chk-fix" style={{ marginTop: 8 }} data-testid="setup-check-error">{check.error}</p>}
           {(check?.need_club || (check?.busy && check.clubs)) && <ClubPicker clubs={check.clubs || []} busy={check.busy} onPick={(c) => test(form.save_file, c.uid)} />}
         </>}
