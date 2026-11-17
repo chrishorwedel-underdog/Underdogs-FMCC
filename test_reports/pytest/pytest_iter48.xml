@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="9" skipped="0" tests="19" time="7.410" timestamp="2026-11-17T18:29:28.066637+00:00" hostname="agent-env-7563821f-67e7-4883-817b-326c24cf0bc6"><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestNormPositions" name="test_cases" time="0.000" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_get_200[/api/breakout]" time="0.220"><failure message="AssertionError: /api/breakout -&gt; 500 Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_iter48_odd_players_ng_defaults.py:65: in test_get_200
+    assert r.status_code == 200, f"{path} -&gt; {r.status_code} {r.text[:300]}"
+E   AssertionError: /api/breakout -&gt; 500 Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_get_200[/api/elite]" time="0.111"><failure message="AssertionError: /api/elite -&gt; 500 Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_iter48_odd_players_ng_defaults.py:65: in test_get_200
+    assert r.status_code == 200, f"{path} -&gt; {r.status_code} {r.text[:300]}"
+E   AssertionError: /api/elite -&gt; 500 Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_get_200[/api/dp]" time="0.102" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_get_200[/api/dp/preview]" time="0.106"><failure message="AssertionError: /api/dp/preview -&gt; 500 Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_iter48_odd_players_ng_defaults.py:65: in test_get_200
+    assert r.status_code == 200, f"{path} -&gt; {r.status_code} {r.text[:300]}"
+E   AssertionError: /api/dp/preview -&gt; 500 Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_get_200[/api/dp/scope]" time="0.091"><failure message="AssertionError: /api/dp/scope -&gt; 500 Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_iter48_odd_players_ng_defaults.py:65: in test_get_200
+    assert r.status_code == 200, f"{path} -&gt; {r.status_code} {r.text[:300]}"
+E   AssertionError: /api/dp/scope -&gt; 500 Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_get_200[/api/dp/review]" time="0.093" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_get_200[/api/dp/records]" time="0.096" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_get_200[/api/scout/meta]" time="0.095"><failure message="AssertionError: /api/scout/meta -&gt; 500 Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_iter48_odd_players_ng_defaults.py:65: in test_get_200
+    assert r.status_code == 200, f"{path} -&gt; {r.status_code} {r.text[:300]}"
+E   AssertionError: /api/scout/meta -&gt; 500 Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_breakout_check_note" time="0.116"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">/root/.venv/lib/python3.11/site-packages/requests/models.py:1116: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+tests/test_iter48_odd_players_ng_defaults.py:68: in test_breakout_check_note
+    d = api.get(f"{BASE_URL}/api/breakout").json()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/models.py:1120: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_scout_players" time="0.110"><failure message="AssertionError: Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_iter48_odd_players_ng_defaults.py:73: in test_scout_players
+    assert r.status_code == 200, r.text[:300]
+E   AssertionError: Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_scout_similar" time="0.110"><failure message="requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">/root/.venv/lib/python3.11/site-packages/requests/models.py:1116: in json
+    return complexjson.loads(self.text, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:337: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/json/decoder.py:355: in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+tests/test_iter48_odd_players_ng_defaults.py:78: in test_scout_similar
+    rows = api.post(f"{BASE_URL}/api/scout/players", json={}).json()["rows"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/models.py:1120: in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+E   requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestOddPlayers" name="test_population_all_players_scope" time="0.161"><failure message="KeyError: 'MONGO_URL'">tests/test_iter48_odd_players_ng_defaults.py:87: in test_population_all_players_scope
+    import core
+core.py:13: in &lt;module&gt;
+    client = AsyncIOMotorClient(os.environ['MONGO_URL'])
+                                ^^^^^^^^^^^^^^^^^^^^^^^
+&lt;frozen os&gt;:679: in __getitem__
+    ???
+E   KeyError: 'MONGO_URL'</failure></testcase><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestNg" name="test_find_and_choose" time="0.293" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestSeed" name="test_create_current_note" time="0.111" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestDefaults" name="test_flow" time="0.596" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestDofLogo" name="test_dof_status" time="0.089" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestDofLogo" name="test_check_key" time="4.579" /><testcase classname="tests.test_iter48_odd_players_ng_defaults.TestDofLogo" name="test_club_logo_404" time="0.092" /></testsuite></testsuites>

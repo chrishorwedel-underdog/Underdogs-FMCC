@@ -19,6 +19,7 @@ export const Breakout = () => {
   const w = data.winner;
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      {data.check_note && <p className="note" data-testid="breakout-check-note">{data.check_note}</p>}
       <div className="card" data-testid="breakout-status">
         {w ? <div style={{ display: "flex", gap: 12, alignItems: "center" }}><Trophy size={22} color="#F5C542" />
           <div><div className="ttl" data-testid="breakout-winner">{w.name} is your Breakout Player of {data.season}</div><p className="note" style={{ margin: 0 }}>{w.note}. Picked and applied automatically.</p></div></div>

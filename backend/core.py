@@ -79,7 +79,7 @@ async def season_start_ca(career_id: str, season: str) -> dict:
     out = {}
     async for s in db.snapshots.find({"career_id": career_id, "season": season}, {"_id": 0, "players.unique_id": 1, "players.ca": 1}).sort("save_no", 1):
         for p in s["players"]:
-            out.setdefault(p["unique_id"], p["ca"])
+            out.setdefault(p["unique_id"], p.get("ca") or 0)
     return out
 
 

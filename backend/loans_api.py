@@ -23,10 +23,11 @@ def assess(x: dict, club_players: list) -> dict:
     minutes = 90 if rank <= n else 55 if rank == n + 1 else 25 if rank == n + 2 else 8
     league = club_players[0].get("league_mult") or 0.8 if club_players else 0.8
     lvl = max(0, min(100, 100 * (league - 0.55) / 0.45))
-    dev = 100 if x["age"] <= 21 else 75 if x["age"] <= 23 else 50
+    age = x["age"] or 99
+    dev = 100 if age <= 21 else 75 if age <= 23 else 50
     score = 0.55 * minutes + 0.25 * lvl + 0.20 * dev
     role = "a regular starter" if rank <= n else "rotation" if rank == n + 1 else "a bench option" if rank == n + 2 else "rarely used"
-    reason = f"Would likely be {role} (#{rank} at {x.get('cohort', g)}) in a league rated ×{round(league, 2)}" + (", a good step for his age" if x["age"] <= 21 and rank <= n else "")
+    reason = f"Would likely be {role} (#{rank} at {x.get('cohort', g)}) in a league rated ×{round(league, 2)}" + (", a good step for his age" if age <= 21 and rank <= n else "")
     depth = [{"unique_id": p["unique_id"], "name": p["name"], "age": p["age"], "grade": p.get("grade_global")} for p in mates[:6]]
     return {"grade": _letter(score), "score": round(score), "reason": reason, "rank": rank, "expected_minutes_pct": minutes, "depth": depth,
             "league": club_players[0].get("league") if club_players else None, "facilities": None, "facilities_note": "Facilities aren't in the save yet"}

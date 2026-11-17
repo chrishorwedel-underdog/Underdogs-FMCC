@@ -1,0 +1,52 @@
+{
+  "summary": "Iteration 48. I inserted odd player rows into the latest TEST_Shot snapshot (save_no 7) and into db.pools, tested the endpoints, then removed the rows. The CRITICAL fix is NOT complete: odd values in the exact spec still return 500 on /api/elite, /api/dp/preview and /api/dp/scope. A null league in the pool returns 500 on /api/breakout, /api/scout/players, /api/scout/similar and /api/scout/meta. A pool row with a missing key (league/pa/nationality) returns 500 on the same endpoints. The root cause in each case is code that reads the raw pool, or compares the None age that clean_player now produces. These work: norm_positions, the Loading failed/retry fallback (Breakout and Elite show it within about 8 s, retry works), DP Overview with odd rows, dark theme soft white rgb(232,236,242) on .note/small, Light theme dark text, NG find/choose (200 found, 404 and 422 messages), NgFind shown when ng_regens is not found (tested by faking /api/extras with Playwright), Seed note ('Chose from 32 low-profile players and 135 staff'), defaults (5 areas, save/GET/DELETE, Settings card buttons, 409 toast for punish), DOF status model_label and ready true, no key box in preview, check-key ok with model_label, club-logo 404 with crest initials 'TE', breakout check_note null.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/elite", "issue": "500 TypeError at awards_api.py:56 `x['age'] <= 21`. clean_player turns age 'x' into None, and the elite suggestion filter compares None with an int. Fix: `(x['age'] or 99) <= 21`, or skip rows with no age.", "priority": "CRITICAL"},
+      {"endpoint": "GET /api/dp/preview (Balance preview)", "issue": "500 at dp_api.py:159 `int(ages.get(str(uid), x['age']))` when age is None. The pool age 'x' would also give ValueError, because population.contexts uses raw pool rows.", "priority": "CRITICAL"},
+      {"endpoint": "GET /api/dp/scope (DP Settings / Who's reviewed)", "issue": "500 at awards_api.py:295-302. `sorted(nations.items())` fails with TypeError when the pool has a None nationality or league. KeyError when the key is missing. It reads raw db.pools players.", "priority": "CRITICAL"},
+      {"endpoint": "GET /api/breakout, POST /api/scout/players, POST /api/scout/similar, GET /api/scout/meta", "issue": "500 from leagues_api.save_leagues (line 54/57). `names = {p['league']: ...}` raises KeyError when a pool row has no league. `sorted(names.items())` raises TypeError when league is None. sm.build -> _state_key -> leagues_api.multipliers -> resolve -> save_leagues runs before the per-row try/except, so one row breaks Breakout and all of Scout Players (the exact 'Something went wrong' bug).", "priority": "CRITICAL"},
+      {"endpoint": "population.contexts (DP all_players/nations/leagues scope, dp/preview, dp/review)", "issue": "It uses raw db.pools players (p['league'], p['nationality'], p['ca'], p['pa'] by index, and p['age'] raw), so it raises KeyError 'pa' or 'league' for rows with missing keys. Apply player_clean.clean_all to pool rows here too (and give clean_player league: '' and pa defaults).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "player_clean.clean_player", "issue": "It does not normalise 'league', 'pa' or 'training_rating'. 'ca'/'pa' missing becomes 0 for ca, but pa is not in the int list. age None leaks to every consumer, which then compares it numerically."},
+      {"endpoint": "core.season_start_ca", "issue": "It reads raw snapshot players p['ca'] by index, so it raises KeyError if a player row has no ca key."},
+      {"endpoint": "player_clean.norm_positions", "issue": "'M (R)'/'M (L)' map to 'AM (R)'/'AM (L)', and 'WB (C)' maps to 'WB (L)'. This may be FMCC's convention, but seed_api POS_MATCH still lists 'M (L)'/'M (R)', which can never occur after cleaning."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Scout Players > Find players (PlayersTab.jsx)", "issue": "When POST /api/scout/players fails (500 or aborted), the tab shows an empty table header with no message, no Try again and no loading. Loading is only rendered while isLoading, and there is no error branch. Add an error state with retry (reuse the load-fail style).", "selector": "[data-testid='players-loading']", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Breakout / Elite with odd save rows", "issue": "The fallback works: 'FMCC couldn't load this from your latest save' and Try again appear after about 8 s. But the pages still fail because the backend returns 500 (see backend critical issues).", "affected_selectors": ["breakout-loading-failed", "elite-loading-failed"]}
+    ],
+    "design_issues": [
+      {"screen": "All dark themes", "issues": ["appearance.js sets --text, --mut and --dim all to #E8ECF2, so secondary/muted text loses its hierarchy against primary text. Consider keeping --dim slightly dimmer (e.g. #C9D0DA) while staying high contrast."]},
+      {"screen": "Dynamic Potential Overview", "issues": ["The winter review date uses the native browser date input (01/01/2028) instead of the shadcn Calendar/Popover picker."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter48_odd_players_ng_defaults.py", "/app/test_reports/pytest/pytest_iter48.xml"],
+  "action_items": [
+    "Fix awards_api.elite age filter for None age (awards_api.py:56).",
+    "Fix dp_api._ev int(age) for None or non-numeric age (dp_api.py:159).",
+    "In awards_api /dp/scope, use p.get('nationality') or 'Unknown' and p.get('league') or 'Unknown' (or skip empty values) before sorting.",
+    "In leagues_api.save_leagues, use p.get('league') and skip None or empty leagues before building and sorting names.",
+    "In population.contexts (and any other raw db.pools reader: awards_api dp scope, leagues_api, seed), run clean_all on pool['players']. Extend clean_player to cover league, pa and training_rating.",
+    "Add an error state with Try again to Scout Players' Find players (PlayersTab) and the Similar players tab, so a failed query never shows a silent empty table.",
+    "Rerun /app/backend/tests/test_iter48_odd_players_ng_defaults.py in all three modes: default (missing keys), ODD_MODE=spec, and ODD_MODE=spec ODD_LEAGUE_NULL=1. Use -n 0 and export MONGO_URL/DB_NAME."
+  ],
+  "critical_code_review_comments": [
+    "The new cleaning only covers core.latest_two snapshots and stats_model.build raw rows. Several other paths still read db.pools players directly (population.contexts, awards_api.dp scope, leagues_api.save_leagues), so the original Windows bug still reproduces for Breakout/Scout via a bad pool row.",
+    "clean_player sets age None. Every consumer that compares age (elite, dp _ev, scout similar max_age `r['age'] <= body.max_age` in scout_plus.py, `p['age'] > body.max_age`) must handle None. A numeric default or excluding the row would be safer.",
+    "stats_model.build per-row try/except is good, but _state_key and the league resolution run before it and are not protected.",
+    "TopBar Crest always requests /api/club-logo in preview (404 each mount). This is harmless, but it could be skipped when sample_mode is true."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter48_odd_players_ng_defaults.py"],
+  "success_rate": {"backend": "60% (odd-row resilience 4/12 endpoints in the worst mode, 9/12 in the exact spec without league null; all non-odd features passed)", "frontend": "85% (all requested UI checks pass on clean data; Scout Players has no error state)"},
+  "seed_data_creation": "Temporary only. I inserted snapshot players 99990001-99990004 and pool players 99991001-99991004, then removed them by $pull on unique_id (verified 23 snapshot and 204 pool players). I unset ng_folder after the NG test (it was absent before). I restored the seed_drafts doc after /api/seed/create. I removed the defaults saved for features and seed, and deleted the db.defaults doc this run created (it did not exist before). /tmp/TEST_empty_ng was removed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use /tmp/odd.py-style insertion: push rows into the latest snapshot and db.pools, then $pull them by unique_id. The pytest file has an odd_rows fixture with modes chosen by env ODD_MODE=spec and ODD_LEAGUE_NULL=1. Run it with -n 0 (loadscope would run the fixture on 2 workers) and export MONGO_URL and DB_NAME for the population unit test. TEST_Shot stays active and setup_complete is true. In preview, NG_Regens is found at /app/backend/preview_fm/graphics/NG_Regens, so NgFind only shows if /api/extras is faked.",
+  "rca of the issue": "Repro: add a pool player with league None, or a snapshot or pool player with age 'x'. Then GET /api/breakout or POST /api/scout/players returns 500 (leagues_api.save_leagues sorting None with str), GET /api/elite returns 500 (None <= 21), and GET /api/dp/scope and /api/dp/preview return 500. Mitigation: clean pool rows wherever they are read, make sorts and comparisons None-safe, and protect the league resolution in stats_model.build."
+}

@@ -162,6 +162,8 @@ async def read_next_save(career: dict) -> dict:
     edits = {e["unique_id"]: e for e in await db.game_edits.find({"career_id": career["id"]}, {"_id": 0}).to_list(None)}
     save = await asyncio.to_thread(_read_save_file, career, save_no, edits)
     pool = save.pop("pool")
+    from player_clean import clean_all
+    pool, save["players"] = clean_all(pool), clean_all(save["players"])
     low_profile = save.pop("low_profile", None)
     club_list = save.pop("clubs", None)
     staff = save.pop("staff", None)

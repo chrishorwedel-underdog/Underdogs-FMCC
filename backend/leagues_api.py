@@ -51,7 +51,7 @@ def dedupe(rows: list) -> tuple:
 async def save_leagues(c: dict) -> list:
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players.league": 1, "players.gender": 1, "leagues": 1}) or {"players": []}
     info = {x["name"]: x for x in pool.get("leagues") or []}
-    names = {p["league"]: p.get("gender", "M") for p in pool["players"]}
+    names = {p["league"]: p.get("gender", "M") for p in pool["players"] if isinstance(p.get("league"), str) and p["league"]}
     names.setdefault(c.get("league") or "Premier Division", "M")
     out = []
     for n, g in sorted(names.items()):

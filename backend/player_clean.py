@@ -50,7 +50,7 @@ def clean_player(p: dict) -> dict:
     for k in ("minutes", "appearances", "goals", "assists", "ca", "pa", "value"):
         q[k] = _int(p.get(k))
     q["age"] = _int(p.get("age"), None)
-    for k in ("name", "nationality", "club"):
+    for k in ("name", "nationality", "club", "league"):
         q[k] = p.get(k) if isinstance(p.get(k), str) else ("Unknown" if k == "name" else "")
     q["attributes"] = {k: _int(v) for k, v in (p.get("attributes") or {}).items()} if isinstance(p.get("attributes"), dict) else {}
     return q

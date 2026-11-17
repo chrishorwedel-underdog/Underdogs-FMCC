@@ -53,7 +53,7 @@ async def elite():
         out.append(n | {"age": x["age"], "training_rating": x["training_rating"], "ca_growth": x["ca_growth"],
                         "evidence": evidence.get(n["unique_id"], [])[-8:], "rule": r["name"] if r else None, "preview": _rule_text(r) if r else None})
     nominated = {n["unique_id"] for n in noms}
-    suggestions = sorted([x for x in ctxs.values() if x["unique_id"] not in nominated and x["age"] <= 21], key=lambda x: -(x["training_rating"] or 0))[:5]
+    suggestions = sorted([x for x in ctxs.values() if x["unique_id"] not in nominated and (x.get("age") or 99) <= 21], key=lambda x: -(x["training_rating"] or 0))[:5]
     return {"nominees": out, "suggestions": [{k: s[k] for k in ("unique_id", "name", "age", "training_rating")} for s in suggestions],
             "rules_version": rules["version"]}
 
@@ -292,8 +292,10 @@ async def dp():
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players.nationality": 1, "players.league": 1}) or {"players": []}
     nations, leagues = {}, {}
     for p in pool["players"]:
-        nations[p["nationality"]] = nations.get(p["nationality"], 0) + 1
-        leagues[p["league"]] = leagues.get(p["league"], 0) + 1
+        if isinstance(p.get("nationality"), str) and p["nationality"]:
+            nations[p["nationality"]] = nations.get(p["nationality"], 0) + 1
+        if isinstance(p.get("league"), str) and p["league"]:
+            leagues[p["league"]] = leagues.get(p["league"], 0) + 1
     scope = rules["data"]["scope"]
     covered = await contexts(c, scope)
     runs = await db.audit.find({"career_id": c["id"], "source": "dp", "action": "run"}, {"_id": 0}).sort("at", -1).limit(5).to_list(5)

@@ -2,7 +2,7 @@
 from core import db, latest_snapshot, season_start_ca
 from matches_api import season_per90
 from sample_reader import GROUP
-from player_clean import first_pos
+from player_clean import first_pos, clean_all
 
 
 def _ctx(p: dict, club: str, league: str, start_ca, p90=None) -> dict:
@@ -31,7 +31,7 @@ async def contexts(career: dict, scope: dict) -> list:
     if nations or leagues or every:
         pool = await db.pools.find_one({"career_id": career["id"]}, {"_id": 0}) or {"players": [], "season_start_ca": {}}
         p90 = await season_per90(career["id"], pool.get("season"), "them")
-        for p in pool["players"]:
+        for p in clean_all(pool["players"]):
             if every or p["league"] in leagues or p["nationality"] in nations:
-                out.setdefault(p["unique_id"], _ctx(p, p["club"], p["league"], pool["season_start_ca"].get(str(p["unique_id"])), p90.get(p["unique_id"])))
+                out.setdefault(p["unique_id"], _ctx(p, p["club"], p["league"], (pool.get("season_start_ca") or {}).get(str(p["unique_id"])), p90.get(p["unique_id"])))
     return list(out.values())

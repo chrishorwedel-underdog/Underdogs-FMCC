@@ -79,7 +79,7 @@ async def development():
     for p in latest["players"]:
         uid = p["unique_id"]
         plan = plans.get(uid)
-        target = plan["minutes_target"] if plan else (int(params["default_target"]) if p["age"] < 21 else None)
+        target = plan["minutes_target"] if plan else (int(params["default_target"]) if (p["age"] or 99) < 21 else None)
         gain = (p["ca"] - plan["start_ca"]) if plan and plan.get("start_ca") is not None else None
         goal = (plan["goal_ca"] - plan["start_ca"]) if plan and plan.get("goal_ca") and plan.get("start_ca") is not None else None
         apps = p.get("appearances") or 0

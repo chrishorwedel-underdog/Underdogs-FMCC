@@ -355,7 +355,7 @@ async def replacement(uid: int, max_value: Optional[int] = None, max_wage: Optio
     rows = []
     for s in sm.similar(data, x, n=80):
         o = data["by_uid"][s["unique_id"]]
-        if o["own"] or (max_value is not None and (o["value"] or 0) > max_value) or (max_wage is not None and (o["wage"] or 0) > max_wage) or (max_age is not None and o["age"] > max_age):
+        if o["own"] or (max_value is not None and (o["value"] or 0) > max_value) or (max_wage is not None and (o["wage"] or 0) > max_wage) or (max_age is not None and (o["age"] or 99) > max_age):
             continue
         cheap = 1 - min(1, (o["value"] or 0) / max(1, x["value"] or o["value"] or 1))
         rows.append(s | {"wage": o["wage"], "saving": (x["value"] or 0) - (o["value"] or 0), "rank": round(s["similarity"] * .75 + cheap * 25, 1)})
@@ -376,7 +376,7 @@ async def price_explained(uid: int, view: str = "full"):
     def add(f, up, detail):
         out.append({"factor": f, "effect": "raises" if up else "lowers", "detail": detail})
     if med("age") is not None:
-        add("Age", x["age"] < med("age"), f"{x['age']} vs {med('age')} typical for his position")
+        add("Age", (x["age"] or 99) < med("age"), f"{x['age']} vs {med('age')} typical for his position")
     add("Position", (med("value") or 0) > sorted(o["value"] for o in data["players"] if o["value"])[len(data["players"]) // 2], f"{x['cohort']}s are valued at {med('value'):,} in the middle" if med("value") else x["cohort"])
     add("Club and league", x["league_mult"] >= .85, f"league multiplier {x['league_mult']}")
     if x["months_left"] is not None:

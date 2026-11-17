@@ -92,7 +92,7 @@ async def build_context(c: dict) -> str:
     depth = roles.depth_chart(latest["players"], form)
     best = roles.best_xi(latest["players"], form, depth)
     rules = {k: int(v) for k, v in (await current_rules(c["id"], "squad"))["data"]["params"].items()}
-    info = {p["unique_id"]: {"name": p["name"], "age": p["age"], "u21": p["age"] < 21, "month_minutes": mins[p["unique_id"]]} for p in latest["players"]}
+    info = {p["unique_id"]: {"name": p["name"], "age": p["age"], "u21": (p["age"] or 99) < 21, "month_minutes": mins[p["unique_id"]]} for p in latest["players"]}
     dev, _, _ = roles.development_xi(best, form, depth, info, rules)
     per90 = await season_per90(c["id"], latest["season"], "us")
     squad = "\n".join(
@@ -177,7 +177,7 @@ async def lab_context(c: dict) -> str:
         if b.get("transfer_budget") is not None:
             cheap = [x for x in pool if (x["value"] or 0) <= b["transfer_budget"] and x not in pool[:6]][:3]
             cands += [line(x, " (affordable)") for x in cheap]
-    young = sorted((x for x in market if x["age"] <= 20), key=lambda x: -rank(x))[:6]
+    young = sorted((x for x in market if (x["age"] or 99) <= 20), key=lambda x: -rank(x))[:6]
     cands += [line(x, " (young)") for x in young]
     return ("\nTACTIC FIT (4-3-3, starter / backup / depth, each player used once): "
             + "; ".join(f"{s['label']}: {_who(s['starter'])} / {_who(s['backup'])} / {_who(s['depth'])} (score {s['score']})" for s in fit["slots"])

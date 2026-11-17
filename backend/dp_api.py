@@ -156,7 +156,14 @@ def _ev(x: dict, first: dict, ages: dict, kind: str, h_rating) -> dict:
         r2 = round((x["avg_rating"] * mins - r1 * h1) / h2, 2) if h2 > 0 else None
     return {"minutes": mins, "senior_minutes": mins - youth, "youth_minutes": youth, "senior_share": 100 * (mins - youth) / mins if mins else 0,
             "halves_known": known and kind == "season_end" and (x["unique_id"] in first), "h1": h1 or 0, "h2": h2 or 0,
-            "h1_rating_pct": h_rating(r1), "h2_rating_pct": h_rating(r2), "age": int(ages.get(str(x["unique_id"]), x["age"]))}
+            "h1_rating_pct": h_rating(r1), "h2_rating_pct": h_rating(r2), "age": _age_or_none(ages.get(str(x["unique_id"]), x.get("age")))}
+
+
+def _age_or_none(v):
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
 
 
 def _assess_all(players: list, everyone: list, first: dict, ages: dict, winter: dict, S: dict, kind: str):

@@ -86,7 +86,7 @@ export const PlayersTab = () => {
   const [more, setMore] = usePersist("scout-more", false);
   const { data: meta } = useGet("scout-meta", "/scout/meta");
   const body = { ...f, view, limit: 100 };
-  const { data, isLoading } = usePost("scout-players", "/scout/players", body, { enabled: !!meta });
+  const { data, isLoading, isError, refetch } = usePost("scout-players", "/scout/players", body, { enabled: !!meta });
   const [pageRows, moreRows] = usePaged(data?.rows);
   const act = useAct();
   const statKeys = cols === "all" ? meta?.metrics.map((m) => m.key) || [] : cols === "key" ? KEY_STATS : [];
@@ -144,6 +144,7 @@ export const PlayersTab = () => {
         </table>
         <ShowMore more={moreRows} id="sp" />
         {isLoading && <div style={{ padding: 10 }}><Loading id="players-loading" rows={6} label="Loading players" /></div>}
+        {isError && !isLoading && <div style={{ padding: 10 }}><div className="load-fail" role="alert" data-testid="players-failed"><span>FMCC couldn't search the scouting data from your latest save. Try again, or read a newer save.</span><button className="btn" onClick={() => refetch()} data-testid="players-retry">Try again</button></div></div>}
         {data && !data.rows.length && <SpEmpty f={f} setF={setF} meta={meta} />}
         {data && <p className="note" style={{ padding: 10 }} data-testid="sp-total">{data.total} players match. Showing {Math.min(100, data.total)}.{data.left_out ? ` ${data.left_out} player${data.left_out === 1 ? "" : "s"} left out: their save data couldn't be read.` : ""} Percentiles and grades need {meta?.min_minutes.percentiles} minutes; a fair price needs {meta?.min_minutes.fair_price}.{meta?.sample ? " Match stats are SAMPLE numbers in this preview." : ""}</p>}
       </div>
