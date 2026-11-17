@@ -11,15 +11,20 @@ import { ExtrasCard } from "@/components/ExtrasCard";
 const STEPS = [["Find FM", FolderSearch], ["Match analytics", Activity], ["DOF key", KeyRound], ["Health check", HeartPulse]];
 const ICON = { ok: Check, warn: AlertTriangle, fail: X };
 
-const StepBar = ({ step }) => (
+const StepBar = ({ step, go }) => (
   <div className="steps">
-    {STEPS.map(([label, Icon], i) => (
-      <div key={label} className={`stp${i === step ? " on" : ""}${i < step ? " done" : ""}`} data-testid={`setup-step-${i + 1}`}>
+    {STEPS.map(([label, Icon], i) => {
+      const back = i < step && step < 3;
+      return (
+      <button type="button" key={label} className={`stp${i === step ? " on" : ""}${i < step ? " done" : ""}${back ? " stp-back" : ""}`} disabled={!back} onClick={() => back && go(i)} title={back ? `Go back to ${label}` : undefined} aria-current={i === step ? "step" : undefined} data-testid={`setup-step-${i + 1}`}>
         <i>{i < step ? <Check size={14} /> : i + 1}</i><Icon size={18} />{label}
-      </div>
-    ))}
+      </button>
+      );
+    })}
   </div>
 );
+
+const BackBtn = ({ back, id }) => <button className="btn btn-l" onClick={back} data-testid={`setup-back-${id}`}>Back</button>;
 
 export const CheckList = ({ items, id }) => (
   <div className="checks" data-testid={id}>
@@ -103,16 +108,16 @@ const FindStep = ({ form, set, next }) => {
   );
 };
 
-const AnalyticsStep = ({ form, set, next }) => (
+const AnalyticsStep = ({ form, set, next, back }) => (
   <div>
     <Head title="Match analytics (optional)" text="FMMatchLens records xG, shot maps and player stats from every match you play; it stays off unless you switch it on." />
     <div className="chk ok" style={{ marginTop: 24 }}><div style={{ flex: 1 }}><b>Set up match analytics after setup</b><small>You'll install it from Connections with FM closed. You can change your mind any time.</small></div>
       <Switch checked={!!form.analytics} onCheckedChange={(v) => set({ analytics: v })} data-testid="setup-analytics-switch" /></div>
-    <div style={{ marginTop: 24, textAlign: "right" }}><button className="btn btn-p btn-l" onClick={next} data-testid="setup-next-2">Continue</button></div>
+    <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between" }}><BackBtn back={back} id="2" /><button className="btn btn-p btn-l" onClick={next} data-testid="setup-next-2">Continue</button></div>
   </div>
 );
 
-const KeyStep = ({ next, busy }) => {
+const KeyStep = ({ next, busy, back }) => {
   const [key, setKey] = useState("");
   const [desktop, setDesktop] = useState(false);
   const [res, setRes] = useState(null);
@@ -130,8 +135,10 @@ const KeyStep = ({ next, busy }) => {
         <button className="btn btn-l" disabled={checking || (desktop && key.trim().length < 20)} onClick={check} data-testid="setup-key-check">{checking ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />}{desktop ? "Check key" : "Check the preview key"}</button>
       </div>
       {res && <CheckList id="setup-key-result" items={[{ key: "key", label: res.ok ? "Key works" : "Key didn't work", status: res.ok ? "ok" : "fail", detail: res.ok ? res.detail : res.error }]} />}
-      <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between" }}>
-        <button className="btn btn-l" disabled={busy} onClick={next} data-testid="setup-skip-key">Skip for now</button>
+      <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <BackBtn back={back} id="3" />
+        <span style={{ marginLeft: "auto" }} />
+        <button className="btn btn-l" disabled={busy} onClick={next} data-testid="setup-skip-key">{busy ? <Loader2 size={18} className="animate-spin" /> : null}Skip for now</button>
         <button className="btn btn-p btn-l" disabled={busy || !res?.ok} onClick={next} data-testid="setup-next-3">{busy ? <Loader2 size={18} className="animate-spin" /> : null}Continue</button>
       </div>
     </div>
@@ -161,10 +168,11 @@ export default function Setup() {
   useEffect(() => { api.get("/setup/progress").then((r) => { setForm((f) => ({ ...f, ...r.data.form })); setStep(Math.min(r.data.step, 2)); }).catch(() => setStep(0)); }, []);
   useEffect(() => { if (step !== null && step < 3) api.put("/setup/progress", { step, form }).catch(() => {}); }, [step, form]);
   const set = (p) => setForm((f) => ({ ...f, ...p }));
+  const [fail, setFail] = useState(null);
   const finish = async () => {
-    setBusy(true);
+    setBusy(true); setFail(null);
     try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, save_file: form.save_file || null, club_name: form.club_name, name: form.name, address: form.address.trim() }); markNewCareer(); setStep(3); }
-    catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
+    catch (e) { setFail(errMsg(e)); } finally { setBusy(false); }
   };
   return (
     <div className="setup grain" data-testid="setup-page">
@@ -173,11 +181,13 @@ export default function Setup() {
         <h1 className="h rise wiz-h">Welcome to <span className="serif">FMCC.</span></h1>
         <p className="lede wiz-lede">Four quick steps and your club is ready.</p>
         <div className="setup-dl"><DownloadLink /></div>
-        {step !== null && <><StepBar step={step} />
+        {step !== null && <><StepBar step={step} go={(i) => { setFail(null); setStep(i); }} />
           <div className="card rise d1 wiz-card" data-testid="setup-card">
             {step === 0 && <FindStep form={form} set={set} next={() => setStep(1)} />}
-            {step === 1 && <AnalyticsStep form={form} set={set} next={() => setStep(2)} />}
-            {step === 2 && <KeyStep busy={busy} next={finish} />}
+            {step === 1 && <AnalyticsStep form={form} set={set} next={() => setStep(2)} back={() => setStep(0)} />}
+            {step === 2 && <KeyStep busy={busy} next={finish} back={() => { setFail(null); setStep(1); }} />}
+            {step === 2 && fail && <div className="chk fail" style={{ marginTop: 18 }} data-testid="setup-finish-error"><div style={{ flex: 1 }}><b>FMCC couldn't finish setting up with this save</b><small>{fail}</small></div>
+              <button className="btn btn-p" onClick={() => { setFail(null); setStep(0); }} data-testid="setup-pick-another">Pick another save</button></div>}
             {step === 3 && <HealthStep analytics={form.analytics} />}
           </div></>}
       </div>
