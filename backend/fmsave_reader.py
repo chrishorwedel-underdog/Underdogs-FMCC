@@ -295,7 +295,8 @@ def club_from_file(stem: str) -> str:
 
 def _likely(name: str, hints: list) -> bool:
     n = (name or "").lower()
-    return any(h and len(h) >= 3 and (h in n or n in h) for h in hints)
+    word = lambda a, b: re.search(rf"\b{re.escape(a)}\b", b) is not None  # noqa: E731
+    return bool(n) and any(h and len(h) >= 3 and (word(h, n) or word(n, h)) for h in hints)
 
 
 def club_choices(names: dict, stem: str, hint: str = "") -> list:

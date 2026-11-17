@@ -1,0 +1,36 @@
+{
+  "summary": "Tested the 'pick your club' setup fix on the backend (unit + API) and frontend (desktop + 390px mobile). Backend: 14/15 pass. check-save with 'Old career' returns ok:false, need_club:true, the pick-your-club error and 18 clubs as {uid,name,likely}, likely first then A-Z. A typed club_name hint puts 'Sample Club FC' first. A valid club_uid returns ok:true with that club_name and club_uid. A bad uid still returns need_club. Both Sample Club FC saves pass automatically with club_uid null. setup/complete stores club_uid on the career (checked in /api/careers and /api/state). The _find_club unit tests pass: picked uid wins, then managed club, then the human manager's employer, then the save file name (Chris Horwedel - Wrexham 27 -> Wrexham, exact match beats 'Wrexham Women'), a unique substring, the typed hint, an ambiguous match -> ClubNotFound with choices, and an empty club list -> plain ValueError(NO_CLUB_LIST). The one failure is a minor false 'likely' match. UI: every requested check passes. One functional bug: the picked club is forgotten when the user clicks Back to step 1 or reloads the page.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "fmsave_reader._likely / club_choices", "issue": "The reverse test `n in h` marks a club as a likely match when its name is just part of a word in the hint. Example: 'Chester' is tagged 'Likely match' for a 'Me - Manchester 27' save, and short names like 'Ham' would match 'Wrexham'. Only the sort order and tag are wrong; _find_club is not affected. Fix: match whole words only (e.g. \\b regex) or require the name to be at least 4-5 characters for the reverse test."},
+      {"endpoint": "check-save / _read_save_file (live)", "issue": "NO_CLUB_LIST goes through read_error(), so the user sees 'FMCC couldn't read X.fm: FMCC couldn't read the list of clubs...' with the opening words repeated. Return NO_CLUB_LIST as-is (or catch it separately) to keep the message plain."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Setup.jsx FindStep", "issue": "The picked club is lost when the user goes back to step 1 (setup-back-2) or reloads the wizard. FindStep remounts, inspect() calls test(keep.path) with club_uid=null even though form.club_uid (saved in progress) is still set, so check-save returns need_club again. The picker comes back and Continue (setup-next-1) is disabled until the user picks again. The 'Check this save' button (setup-check-save) has the same problem because test() is called with club_uid=null. Fix: pass form.club_uid when re-checking the same save, i.e. in inspect when keep.path === form.save_file and in the Check this save button.", "selector": "[data-testid=setup-back-2], [data-testid=setup-check-save]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Setup step 1 club picker", "issues": ["Once a club is picked the picker is hidden. To change a wrong pick the user has to click another save and then 'Old career' again. A small 'Change club' link next to Read OK would help.", "While the picker is showing, the Club/Career inputs below still show the previous save's values (e.g. 'Sample Club FC'). This is harmless because Continue is disabled, but it is confusing."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_setup_club_picker.py", "/app/test_reports/pytest/pytest_iter44.xml"],
+  "action_items": [
+    "Setup.jsx: keep form.club_uid when re-checking the same save (inspect on remount/reload/Back, and the 'Check this save' button)",
+    "fmsave_reader._likely: use whole-word matching so 'Chester' isn't 'likely' for 'Manchester'",
+    "Show NO_CLUB_LIST without the read_error() 'FMCC couldn't read X:' prefix"
+  ],
+  "critical_code_review_comments": [
+    "Setup.jsx test(): when club_edited is true and the user picks a club, club_name is still overwritten with the picked club. That is probably intended (the pick is authoritative), but it is not the same as the 'unless the user typed names themselves' wording, which applies only to the career name.",
+    "Auto-detected club_uid (live check-save returns d.club_uid) is not stored on the career, so only manually picked clubs are remembered. This is fine per spec, but storing the auto-detected uid too would make later reads independent of the club name.",
+    "club_from_file uses the text after the last ' - ', so 'Wrexham 27 - Season 2' gives 'Season'. Minor edge case."
+  ],
+  "updated_files": ["/app/backend/tests/test_setup_club_picker.py"],
+  "success_rate": {"backend": "93% (14/15; the 1 failure is the minor _likely false positive)", "frontend": "92% (all requested checks pass; Back/reload drops the picked club)"},
+  "seed_data_creation": "Two TEST_ careers were created by setup/complete (TEST_PickClub 27 via pytest, TEST_PickUI 27 via UI). Both were deleted by id, along with their career_id records (identities, pools, world_months, snapshots). active_career_id was reset to 72f82391-d58c-41f7-bc47-6a46cfd10a55 (TEST_Shot) and setup_complete=true. setup_restart and setup_progress were unset. Only TEST_Shot remains.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_setup_club_picker.py covers the reader unit tests with fake saves, check-save, and setup/complete club_uid with cleanup by id (there is no DELETE /careers endpoint, so cleanup goes through Mongo by id). Do NOT run cleanup_test_careers.py: it deletes TEST_Shot. Sample 'Old career' has 18 clubs with uids 0-17 (A-Z). To retest the UI bug: pick a club, Continue, then Back; the picker should not reappear."
+}

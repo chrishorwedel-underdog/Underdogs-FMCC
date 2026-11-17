@@ -63,7 +63,7 @@ const FindStep = ({ form, set, next }) => {
       setRes(data);
       const keep = data.saves?.find((s) => s.path === form.save_file) || data.saves?.[0];
       set({ save_folder: keep?.folder || data.save_folder, save_file: keep?.path || "", found: true });
-      if (keep) test(keep.path);
+      if (keep) test(keep.path, keep.path === form.save_file ? form.club_uid ?? null : null);
     } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
   const pick = (s) => { set({ save_folder: s.folder, save_file: s.path, club_uid: null }); test(s.path); };
@@ -98,7 +98,7 @@ const FindStep = ({ form, set, next }) => {
           <label className="lbl" style={{ marginTop: 16 }}>Choose your save ({saves.length} found, newest first)</label>
           <SaveList saves={saves} pick={form.save_file} onPick={pick} />
           <div className="wiz-row" style={{ marginTop: 10 }}>
-            <button className="btn" disabled={!form.save_file || check?.busy} onClick={() => test()} data-testid="setup-check-save">{check?.busy ? <Loader2 size={15} className="animate-spin" /> : null}{check?.busy ? "Reading the save… this can take a minute" : "Check this save"}</button>
+            <button className="btn" disabled={!form.save_file || check?.busy} onClick={() => test(form.save_file, form.club_uid ?? null)} data-testid="setup-check-save">{check?.busy ? <Loader2 size={15} className="animate-spin" /> : null}{check?.busy ? "Reading the save… this can take a minute" : "Check this save"}</button>
             {check?.ok && <span className="st ok" data-testid="setup-check-ok">Read OK: {check.club_name}, {check.players} players, game date {check.game_date}{check.skipped?.length ? ` (skipped: ${check.skipped.join(", ")})` : ""}</span>}
           </div>
           {check?.ok === false && <p className="chk-fix" style={{ marginTop: 8 }} data-testid="setup-check-error">{check.error}</p>}

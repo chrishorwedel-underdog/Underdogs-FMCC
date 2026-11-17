@@ -128,6 +128,8 @@ READER = os.environ.get("FMCC_READER", "sample")
 def read_error(name: str, exc: Exception) -> str:
     """Plain-words reason a save couldn't be read, with the technical detail kept short at the end."""
     text = str(exc)
+    if text.startswith("FMCC couldn't"):
+        return text
     if "layout" in text or "framing" in text or "section" in text:
         return (f"FMCC couldn't read {name}: this save uses a layout FMCC's save reader doesn't know yet (usually a newer FM update). "
                 f"Update FMCC to the latest version, or pick a different save. Detail: {text[:160]}")
