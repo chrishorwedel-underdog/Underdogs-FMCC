@@ -1,0 +1,29 @@
+{
+  "summary": "Frontend test of the Setup wizard back-navigation fix, run with Playwright route mocks: /api/state forced to setup_complete=false, and /api/setup/progress and /api/setup/complete always intercepted, so no real career data was changed. All requested flows pass. Found and fixed one CRITICAL bug: Setup.jsx called markNewCareer() without importing it. After a successful /setup/complete this threw a ReferenceError, the catch block turned it into the inline error 'Something went wrong. Please try again.', and the user never reached the Health check, so setup could never be finished from the UI. Added the import and retested: the success path now reaches the Health step.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Setup finish()", "issue": "markNewCareer was not imported. A successful setup/complete showed the finish-error box and stayed on step 3. FIXED by tester (import from @/components/Tour).", "selector": "[data-testid=setup-finish-error]", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Setup step 3 on mobile (390px)", "issues": ["'Skip for now' wraps onto 3 lines in a 91px-wide button", "Continue button runs past the card's right padding (ends at x=379 while the card edge is ~370). Consider letting the button row wrap, or putting Back on its own row on mobile."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Keep the markNewCareer import in Setup.jsx. It looks like it was dropped by the latest edit.",
+    "Mobile: let the step-3 button row wrap, or stack it, so 'Skip for now' doesn't wrap onto 3 lines and Continue doesn't overflow the card."
+  ],
+  "critical_code_review_comments": [
+    "ESLint did not flag the undefined markNewCareer (no-undef seems to be off). Consider turning it on so undefined names show up when the code compiles.",
+    "finish() puts setup/complete and markNewCareer() in the same try block, so any client-side error after the server has succeeded looks like a save failure. If the user then retries, setup/complete may run twice. Keep the post-success side effects outside the try block that sets the error."
+  ],
+  "updated_files": ["/app/frontend/src/pages/Setup.jsx"],
+  "success_rate": {"backend": "N/A", "frontend": "100% after fix (failure path, back buttons, step tiles and mobile all passed; success path failed before the fix)"},
+  "seed_data_creation": "None. All writes were intercepted.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Force the wizard with page.route on **/api/state (setup_complete=false), **/api/setup/progress and **/api/setup/complete. Verified: tiles are disabled at step 0, done tiles are clickable at steps 1-2, future tiles (step-4) are disabled, back-2 keeps the chosen save (aria-checked=true), back-3 goes to step 2, a 422 shows setup-finish-error with the detail text, pick-another goes to step 0 and the error clears, a 200 reaches setup-health with all tiles disabled, and mobile has no horizontal scroll.",
+  "rca of the issue": "Setup.jsx line 174 called markNewCareer(), but the Tour import was missing, so it threw a ReferenceError. The catch block passed it to errMsg, which gave the generic message shown in setup-finish-error. Repro: mock setup/complete to 200 and click Skip for now. Mitigation: import { markNewCareer } from '@/components/Tour'."
+}

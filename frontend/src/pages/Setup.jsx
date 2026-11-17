@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { api, errMsg } from "@/lib/api";
 import { DownloadLink } from "@/components/DownloadButton";
 import { ExtrasCard } from "@/components/ExtrasCard";
+import { markNewCareer } from "@/components/Tour";
 
 const STEPS = [["Find FM", FolderSearch], ["Match analytics", Activity], ["DOF key", KeyRound], ["Health check", HeartPulse]];
 const ICON = { ok: Check, warn: AlertTriangle, fail: X };
@@ -135,7 +136,7 @@ const KeyStep = ({ next, busy, back }) => {
         <button className="btn btn-l" disabled={checking || (desktop && key.trim().length < 20)} onClick={check} data-testid="setup-key-check">{checking ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />}{desktop ? "Check key" : "Check the preview key"}</button>
       </div>
       {res && <CheckList id="setup-key-result" items={[{ key: "key", label: res.ok ? "Key works" : "Key didn't work", status: res.ok ? "ok" : "fail", detail: res.ok ? res.detail : res.error }]} />}
-      <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between", gap: 8 }}>
+      <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
         <BackBtn back={back} id="3" />
         <span style={{ marginLeft: "auto" }} />
         <button className="btn btn-l" disabled={busy} onClick={next} data-testid="setup-skip-key">{busy ? <Loader2 size={18} className="animate-spin" /> : null}Skip for now</button>
