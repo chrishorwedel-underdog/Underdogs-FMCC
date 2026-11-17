@@ -315,6 +315,40 @@ async def set_folder(body: FolderIn):
     return {"ok": True}
 
 
+def _newer_saves(c: dict) -> list:
+    """Saves on this PC newer than the one this career follows (only when a specific save is chosen)."""
+    import fmsave_reader
+    cur = Path(c.get("save_file") or "")
+    if not c.get("save_file") or not cur.is_file():
+        return []
+    mt = cur.stat().st_mtime
+    skip = set(c.get("dismissed_newer") or [])
+    return [s for s in fmsave_reader.find_saves(c["edition"], c["save_folder"])
+            if s["path"] != str(cur) and s["modified"] > mt + 60 and f"{s['path']}:{int(s['modified'])}" not in skip][:3]
+
+
+@api.get("/saves/newer")
+async def newer_saves():
+    c = await active_career()
+    if READER != "fmsave":
+        return {"items": [], "following": None}
+    items = await asyncio.to_thread(_newer_saves, c)
+    return {"items": items, "following": Path(c["save_file"]).stem if c.get("save_file") else None}
+
+
+class DismissIn(BaseModel):
+    path: str = Field(min_length=3, max_length=400)
+    modified: float
+
+
+@api.post("/saves/newer/dismiss")
+async def dismiss_newer(body: DismissIn):
+    c = await active_career()
+    await db.careers.update_one({"id": c["id"]}, {"$addToSet": {"dismissed_newer": f"{body.path}:{int(body.modified)}"}})
+    return {"ok": True}
+
+
+
 # ---------- saves ----------
 @api.post("/saves/read")
 async def read_save():

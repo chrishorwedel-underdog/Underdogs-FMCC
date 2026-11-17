@@ -25,6 +25,7 @@ import { Tour } from "@/components/Tour";
 import { GlossaryHost } from "@/components/Glossary";
 import Setup from "@/pages/Setup";
 import Home from "@/pages/Home";
+import { NewerSave } from "@/components/NewerSave";
 import Squad from "@/pages/Squad";
 import Settings from "@/pages/Settings";
 import Scouting from "@/pages/Scouting";
@@ -77,6 +78,7 @@ const Shell = ({ state }) => {
         <TopBar career={state.career} sample={state.sample_mode} onSearch={() => setPal(true)} />
         <div className="content" id="main-content" tabIndex={-1} role="main">
           <NeedSave state={state} />
+          {state.career && <NewerSave career={state.career} />}
           <Finance />
           <ModuleGuide />
           <Routes>
