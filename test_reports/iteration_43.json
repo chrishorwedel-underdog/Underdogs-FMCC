@@ -1,0 +1,23 @@
+{
+  "summary": "Tested Restart Setup feature end-to-end (backend + UI). All requested checks pass: Settings > You & your career shows restart-setup-card; dialog opens, 'Keep using FMCC' closes it with state unchanged; 'Open setup' shows Setup wizard with restart wording and setup-cancel-restart; /api/state shows setup_complete=false, setup_restart=true, career TEST_Shot/TEST FC kept; wizard navigation (setup-next-1, setup-back-2, setup-next-2 to step 3, setup-step-1) works in restart mode and the cancel button stays visible on steps 1-3; reload mid-restart keeps the restart wizard; setup-cancel-restart returns to Shell with same career (top bar TEST FC) and setup_complete=true, setup_restart=false. POST /api/setup/cancel when not restarted returns 409 (also a second cancel after a successful cancel). POST /api/setup/complete was intercepted/aborted - 0 calls made, no career created. Preview left with setup_complete=true.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Setup wizard (restart mode)", "issues": ["Step 1 defaults still say 'Sample Club FC' / 'My first career' in restart mode; a 'My second career'-style or blank default would read better (cosmetic)", "URL stays /settings?section=career while the wizard is shown (harmless; the user goes back to Settings after cancel)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_setup_restart_cancel.py", "/app/test_reports/pytest/pytest_iter43.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Setup.jsx cancel(): no busy/disabled guard, so a double-click sends two POST /setup/cancel calls and the second shows a 409 error toast. Minor.",
+    "setup_api.restart_setup returns ok:true without doing anything when setup_complete is already false. Harmless, but the wizard then won't show restart mode if setup_restart is missing."
+  ],
+  "updated_files": ["/app/backend/tests/test_setup_restart_cancel.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None. Restart was run several times and cancelled each time; the active career (TEST_Shot) is unchanged and no new career was created.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Restart/cancel is safe to test for real: always finish with POST /api/setup/cancel. setup-next-1 only appears after clicking setup-detect-button (Scan). Block **/api/setup/complete with page.route so no career is created."
+}
