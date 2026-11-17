@@ -419,7 +419,7 @@ def read_save(path: Path, club_name_hint: str, club_uid: int | None = None) -> d
     except ClubNotFound:
         raise
     except Exception as exc:  # noqa: BLE001 - the backup reader may still have the squad
-        if not backup or not backup["players"]:
+        if not backup or not backup["players"] or not backup["clubs"]:
             raise ValueError(failure_message(path.name, exc, backup, backup_err)) from exc
         logger.warning("fmsave failed, using the backup reader: %s", exc)
         main = None

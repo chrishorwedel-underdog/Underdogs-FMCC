@@ -1,0 +1,29 @@
+{
+  "summary": "Tested the backup save reader (fm-open-scout fm_save_parser) on the backend and frontend. Backend: 14/14 pytest checks pass in /app/backend/tests/test_backup_reader.py. They use a fake parser executable set through FMCC_BACKUP_PARSER. backup_reader.read normalises the data: clubs come back as {uid:name}, players are keyed by uid, positions >=15 are mapped (ST, AM (C), D (C), DM), best_position is used as a fallback, age comes from current_date, pa is clamped to >=0, and the contract/wage defaults are applied. A missing parser returns (None, \"it isn't installed\") and a failing parser returns (None, last stderr line); bad JSON also returns (None, reason). None of these raise. read_save on 'Chris Horwedel - Wrexham 27.fm' with fmsave missing falls back to the backup alone: club Wrexham uid 900, only the Wrexham players, readers.main='failed', skipped=MAIN_ONLY, and reader_note mentions FM 27.1.0, fmsave and fm-open-scout. combine keeps main values on conflicts and fills the gaps (positions, contract, wage, nationality, birth date). It adds missing club players, merges the club lists, gets the readers counts right (partial/ok/failed/missing), and stays quiet (note None) when the main read is ok. Ambiguous names raise ClubNotFound, and the choices include backup clubs. With no backup and a failing main reader, the ValueError names both readers and what to try, and server.read_error returns it unchanged. API: check-save (sample) returns ok, note null, readers {main ok, backup sample}, and no ca/pa keys. 'Old career' still returns need_club. POST /api/updates/check lists fmopenscout v0.2.0. Frontend: Settings > Run setup again > Scan made the newest save auto-check. With the request delayed, the button read 'Reading the save with both readers… this can take a minute or two' and was disabled. Then 'Read OK: Sample Club FC, 23 players, game date 2027-08-01' appeared with no 'skipped' text and no setup-check-note. Cancel went back to Settings. update-row-fmopenscout shows 'fm-open-scout v0.2.0 · Backup save reader (MIT) · Up to date'. Credits list 'fm-open-scout MIT'. No JS page errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "backup_reader.normalize", "issue": "players are keyed by the raw p['uid'] and normalize uses p['uid'] directly. If the parser ever emits string uids, combine's bp.get(int) will never match, so no gaps get filled. One player without a uid also raises a KeyError, and the whole backup is then thrown away. Suggest int(p['uid']) and skipping rows that have no uid."},
+      {"endpoint": "fmsave_reader.combine (main failed)", "issue": "If the backup has players but no club names, _find_club raises NO_CLUB_LIST. That message is about the main reader and drops the original fmsave error."},
+      {"endpoint": "run_update_check", "issue": "This is an old problem, not new. installed_version comes from the DB when a row exists, so raising the bundled version in COMPONENTS never reaches existing installs. In preview, fmsave shows v0.10.0 with 'Update available v0.12.5' even though v0.12.5 is bundled."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_backup_reader.py", "/app/test_reports/pytest/pytest_results_iter47.xml"],
+  "action_items": [
+    "Optional: in backup_reader.normalize, cast uid to int and skip players that have no uid",
+    "Optional: when the main reader fails and the backup has no club names, keep the fmsave error in the message",
+    "Optional: for bundled components, refresh installed_version from COMPONENTS when the bundled version is newer than the DB value"
+  ],
+  "critical_code_review_comments": [
+    "read_save always runs the backup parser first, with a timeout of up to 300s, even when fmsave alone would succeed. On big saves this can double read time on every monthly read, not just in setup. This was intended by the plan, but it is worth watching.",
+    "The workflow verifies fm-open-scout's SHA256 and the PyInstaller --add-data includes desktop/fmopenscout. launcher.py sets FMCC_BACKUP_PARSER correctly. The workflow looks right; it was reviewed only and not run."
+  ],
+  "updated_files": ["/app/backend/tests/test_backup_reader.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None. No careers were created. Pressed Check for updates, which refreshes the components cache.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_backup_reader.py uses a fake /bin/sh parser through FMCC_BACKUP_PARSER, which is monkeypatched. fmsave is not installed, so the main reader always fails in unit tests. The setup wizard is reached from Settings (default section) > restart-setup-button > restart-setup-confirm, and setup-cancel-restart leaves it. TEST_Shot (72f82391-...) is still active and setup_complete is true.",
+  "rca of the issue": ""
+}

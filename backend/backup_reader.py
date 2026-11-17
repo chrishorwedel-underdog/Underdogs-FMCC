@@ -58,6 +58,9 @@ def normalize(raw: dict, attr_keys) -> dict:
     today = _iso(v.get("current_date"))
     clubs, players = {}, {}
     for p in raw.get("players") or []:
+        if p.get("uid") is None:
+            continue
+        p["uid"] = int(p["uid"])
         c = p.get("club") or {}
         if c.get("uid") is not None and (c.get("name") or c.get("short_name")):
             clubs.setdefault(c["uid"], c.get("name") or c.get("short_name"))
