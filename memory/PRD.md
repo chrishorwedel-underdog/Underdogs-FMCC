@@ -391,3 +391,19 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 
 
 
+
+## 2026-11-17: Phase 1 work for real FM27 data, readable text, NG_Regens, Seed a Surname, club logo, new-game defaults and DOF key
+- Added player_clean.py, which tidies every save/pool row: odd or combined positions (D/WB (R), AM (RLC)), missing numbers, contract_end and text. An unreadable age is stored as 99 (age_unknown) and shown as "—", so youth rules never pick that player. Rows are cleaned when a save is read and again when data is read on the main pages.
+- Automatic Breakout and Elite checks no longer block a page. Scouting skips unreadable rows and shows a count of how many. Shared Loading has an error state with a Try again button.
+- All dark themes use soft-white text (--text, --mut and --dim). Disabled controls still look faded.
+- NG_Regens finder (NgFind.jsx) searches the FM26 and FM27 Documents, OneDrive, Program Files and AppData folders, and also lets the user pick a folder.
+- Seed a Surname now uses a separate low-profile list from every save read (both readers, capped) and stores it in db.seed_pools. Staff can come from FMLibreEditor in the running game (live_editor.list_staff, which is NOT VERIFIED on Windows). Each empty slot gives the exact reason.
+- The top-bar crest uses the installed logo pack (/api/club-logo) and falls back to initials.
+- Added defaults_api.py and DefaultsCard, which show in Settings and in Setup step 2 as "Your defaults". Areas: features, rules, appearance, punish and seed. They apply only to new careers.
+- DOF key check tries models in this order: current, then gpt-5.2, gpt-5.1 and gpt-4.1. Failures are shown as wrong key, no credit, can't reach OpenAI, or no model access. The key can be entered straight from the DOF page (DofKeyBox).
+- Tested in iterations 48–51; the latest pass is 100% for backend and frontend with odd rows.
+- Not verified on real Windows/FM: the NG_Regens folder search, the live staff list, logo pack paths, real FM27 saves and customer OpenAI keys.
+
+### Next
+- Phase 2: page-level "Data check" detail. Phase 3: plain-word grade bands.
+

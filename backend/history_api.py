@@ -419,9 +419,10 @@ async def compare(a: str, b: str):
 
     def facts(s):
         lg = s.get("league") or {}
-        mins = sum(r["minutes"] or 0 for r in s["squad"])
+        aged = [r for r in s["squad"] if r.get("age") and r["age"] != 99]
+        mins = sum(r["minutes"] or 0 for r in aged)
         return {"season": s["season"], "status": s["status"], "division": lg.get("division"), "finish": lg.get("pos"), "ppg": round(lg["pts"] / lg["played"], 2) if lg.get("played") else None,
-                "gd_pg": round(lg["gd"] / lg["played"], 2) if lg.get("played") else None, "squad_age": round(sum((r["age"] or 0) * (r["minutes"] or 0) for r in s["squad"]) / mins, 1) if mins else None,
+                "gd_pg": round(lg["gd"] / lg["played"], 2) if lg.get("played") else None, "squad_age": round(sum(r["age"] * (r["minutes"] or 0) for r in aged) / mins, 1) if mins else None,
                 "academy_minutes": s["academy"]["homegrown_minutes"], "attendance": s["growth"]["attendance"], "spend": s["recruitment"]["spent"]}
     return {"a": facts(arch[a]), "b": facts(arch[b])}
 

@@ -92,7 +92,7 @@ const Plans = () => {
           <tr key={r.unique_id} style={{ cursor: "default" }} data-testid={`plan-row-${r.unique_id}`}>
             <td><b style={{ color: "var(--text)" }}>{r.name}</b>{r.needs_minutes && <span className="tag st a" data-testid={`needs-minutes-${r.unique_id}`}>Needs minutes</span>}</td>
             <td className="mono n">{r.age === 99 || r.age == null ? "—" : r.age}</td><Games r={r} /><td className="mono n">{r.minutes_per_game ?? "—"}</td>
-            <td className="mono n">{r.goals}</td><td className="mono n">{r.assists}</td><td className="mono n">{r.avg_rating ?? "—"}</td>
+            <td className="mono n">{r.goals}</td><td className="mono n">{r.assists}</td><td className="mono n">{r.avg_rating ? r.avg_rating : "—"}</td>
             <td style={{ minWidth: 180 }}>{r.target ? <div className="mb" style={{ gridTemplateColumns: "1fr 70px" }}><div className="track"><i style={{ width: `${Math.min(100, (r.month_minutes / r.target) * 100)}%`, background: r.needs_minutes ? "var(--amb)" : "var(--acc)" }} /></div><span className="mono">{r.month_minutes}/{r.target}</span></div> : <span className="mono">{r.month_minutes}</span>}</td>
             <td>{r.plan ? <>{data.loans[r.plan.loan]}<small style={{ display: "block", color: "var(--dim)" }}>revision {r.plan.revision}</small></> : <span style={{ color: "var(--dim)" }}>No plan</span>}</td>
             <td>{r.plan?.goal_label ? <><span style={{ color: "var(--text)" }}>{r.plan.goal_label}</span>{r.goal_status && <small style={{ display: "block", color: GOAL_TONE[r.goal_status.tone] }} data-testid={`dev-goal-status-${r.unique_id}`}>{r.goal_status.text}</small>}</> : "—"}</td>

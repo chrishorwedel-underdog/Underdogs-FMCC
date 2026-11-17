@@ -1,0 +1,24 @@
+{
+  "summary": "Iteration 51: retest of the iteration_50 findings. I used the same worst-mode odd rows (7 snapshot rows 99990001-7 in the latest TEST_Shot snapshot, save_no 7, and 8 pool rows 99991001-8). None of these rows has a contract_end, avg_rating or wage key; wage was also removed from the BASE rows. Full sweep of 122 parameter-free GET routes: no regressions. Every route returns the same status with and without the odd rows. The only non-200s are the same 11 routes that return 422 on clean data because they need parameters. /api/home and /api/scouting/rankings now return 200. Pytest test_iter51_odd_rows_nokeys.py passes 33/33. Club Analysis 'What to do first' items are the same with and without the odd rows (no false 'Ageing' items). Youth Development shows '—' for the age of the 3 unknown-age rows. Home renders real content with no fallback. Squad and Scouting also render, with no page errors. I removed the inserted rows by unique_id. Counts are back to 23 snapshot players and 204 pool players.",
+  "backend_issues": {"critical": [], "minor": [
+    {"endpoint": "history_api.py:424 squad_age", "issue": "This is still a minutes-weighted (r['age'] or 0) average. It does not skip age 99 or age_unknown rows. The sweep showed no failure because history squads come from a separate source, but the same sentinel could leak here if odd rows reach it."}
+  ]},
+  "frontend_issues": {"ui_bugs": [
+    {"component": "Youth Development Avg rating column", "issue": "Rows with no avg_rating show '0' instead of '—', because clean_player sets avg_rating to 0.0. The frontend already shows '—' for null. Cosmetic only.", "selector": "plan-row-99990004", "priority": "LOW"}
+  ], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_iter51_odd_rows_nokeys.py", "/app/backend/tests/sweep_odd_iter49.py", "/app/test_reports/pytest/pytest_iter51.xml"],
+  "action_items": [
+    "Optional: keep avg_rating as None, not 0.0, when it is missing, so the tables show '—'. scouting_api already handles a falsy avg_rating, but check its `(p['avg_rating'] or 6.0)` and the diff logic after the change.",
+    "Optional: leave age_unknown and age 99 out of history_api.py:424 squad_age."
+  ],
+  "critical_code_review_comments": [
+    "analysis_api.py:314 leaves out age 99 even when it is a real age 99, and also leaves out age 0. That is acceptable.",
+    "clean_player now normalises wage, avg_rating and contract_end (an ISO check, otherwise None). The dashboard.py:57 guard is correct."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter51_odd_rows_nokeys.py (new; based on iter50, no wage/avg_rating/contract_end keys, plus clean_player default, Club Analysis ageing and Home content checks)", "/app/backend/tests/sweep_odd_iter49.py (now imports the iter51 module)"],
+  "success_rate": {"backend": "100%: sweep has 0 regressions over 122 routes; pytest 33/33", "frontend": "100%: Home, Youth Development, Club Analysis, Squad and Scouting render with odd rows"},
+  "seed_data_creation": "Temporary only. The odd rows were inserted 3 times (sweep, pytest, UI) and removed each time with $pull by unique_id. Final counts: snapshot save_no 7 has 23 players and the pool has 204, with no 9999xxxx uids. TEST_Shot is still active and setup_complete is true.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Rerun with: export MONGO_URL and DB_NAME from backend/.env and REACT_APP_BACKEND_URL from frontend/.env, then python3 backend/tests/sweep_odd_iter49.py (it must print no REGRESSION lines) and pytest backend/tests/test_iter51_odd_rows_nokeys.py -n 0."
+}
