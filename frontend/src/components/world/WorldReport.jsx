@@ -6,10 +6,23 @@ import { useAct, useGet } from "@/lib/ui";
 const money = (v) => (v >= 1e6 ? `€${(v / 1e6).toFixed(1)}m` : `€${Math.round(v / 1000)}k`);
 const Who = ({ r }) => <><b style={{ color: "var(--text)" }}>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.age} · {r.club}</small></>;
 
+const StatLine = ({ n, i }) => (
+  <span className="news-stats" data-testid={`world-news-stats-${i}`}>
+    {n.stats.map((s, j) => <span key={s.key}>{j > 0 && " · "}<span className="mono">{s.value}</span> {s.label}</span>)}
+  </span>
+);
+
+const Story = ({ n, i, showLeague }) => (
+  <li data-testid={`world-news-${i}`}>
+    <span className="st n" style={{ marginRight: 6 }}>{n.tag}</span>
+    {n.player ? <><b style={{ color: "var(--text)" }} data-testid={`world-news-player-${i}`}>{n.player}</b>, {n.club}: <StatLine n={n} i={i} /></> : n.text}
+    {showLeague && n.league && <small style={{ color: "var(--dim)" }} data-testid={`world-news-league-${i}`}> · {n.league}</small>}
+  </li>
+);
+
 const News = ({ d }) => (
   <div className="card" data-testid="world-news"><div className="ttl"><Newspaper size={14} />{d.scope ? `${d.scope}: top stories` : "The 12 biggest stories"}</div>
-    {d.news.length ? <ol style={{ margin: "8px 0 0", paddingLeft: 20, display: "grid", gap: 6 }}>{d.news.map((n, i) => (
-      <li key={i} data-testid={`world-news-${i}`}><span className="st n" style={{ marginRight: 6 }}>{n.tag}</span>{n.text}{!d.country && !d.league && <small style={{ color: "var(--dim)" }}> · {n.country}</small>}</li>))}</ol>
+    {d.news.length ? <ol style={{ margin: "8px 0 0", paddingLeft: 20, display: "grid", gap: 6 }}>{d.news.map((n, i) => <Story key={i} n={n} i={i} showLeague={!d.league} />)}</ol>
       : <p className="note">No big stories this month.</p>}
   </div>
 );

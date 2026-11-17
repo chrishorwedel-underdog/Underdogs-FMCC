@@ -95,6 +95,8 @@ P90_MAP = {"npxg": "non_penalty_expected_goals", "xa": "expected_assists", "kp":
            "progp": "progressive_passes", "drb": "dribbles", "tkw": "tackles_completed", "pwon": "possession_won", "xgp": "expected_goals_prevented"}
 SUM_KEYS = set(P90_MAP.values()) | {"minutes", "goals", "assists", "starts", "substitute_appearances", "blocks", "clearances", "pressures_attempted",
                                     "pressures_completed", "saves_held", "saves_parried", "saves_tipped", "shots_on_target_faced"}
+TOT_ALIASES = {"tkw": ("tackles_completed", "tackles_won"), "int": ("interceptions", "interceptions_made"), "cs": ("clean_sheets",),
+               "kp": ("key_passes", "open_play_key_passes"), "sv": ("saves_held", "saves_parried", "saves_tipped")}
 WORLD_CAP = 4000  # busiest players from the loaded leagues, so the world snapshot stays a sensible size
 STAFF_CAP = 8000
 
@@ -114,6 +116,11 @@ def _season_stats(save) -> dict:
             a = stats.setdefault(_get(s, "player_uid"), {"ratings": []} | {k: 0 for k in SUM_KEYS})
             for k in SUM_KEYS:
                 a[k] += _get(s, k, 0) or 0
+            tot = a.setdefault("tot", {})
+            for k, names in TOT_ALIASES.items():
+                vals = [v for v in (_get(s, n) for n in names) if v is not None] if k == "sv" else [_first(s, *names)]
+                if vals and vals[0] is not None:
+                    tot[k] = tot.get(k, 0) + sum(vals)
             r, n = _get(s, "average_rating"), _first(s, "rated_appearances", "appearances", default=0) or 0
             if r:
                 a["ratings"].append((r, max(1, n)))
@@ -495,7 +502,7 @@ def _read_main(path: Path, club_name_hint: str, club_uid, extra_names: dict) -> 
             row = _player(p, cname, club_lookup)
             _apply(row, s)
             league = club_league[cname]
-            row.update(league=league, country=next((t["country"] for t in tables if t["league"] == league), "Other"), stats=_p90(s) or None,
+            row.update(league=league, country=next((t["country"] for t in tables if t["league"] == league), "Other"), stats=_p90(s) or None, totals=s.get("tot") or None,
                        last_move=moves.get(_first(p, "uid", "unique_id")), gender="F" if str(clubs.get(cu, (0, 0, ""))[2]).lower().startswith(("f", "w")) else "M")
             pool.append(row)
         game_date = _get(save, "game_date") or date.today()

@@ -11,9 +11,10 @@ import stats_model as sm
 from core import db, active_career, now_iso, new_id, next_revision, audit
 from editor_api import LIVE
 from sample_reader import GROUP, LEAGUE_INFO, LEAGUES, WOMEN
+from player_clean import first_pos
 
 router = APIRouter(prefix="/api/world")
-KEEP = ("unique_id", "name", "age", "club", "league", "country", "positions", "value", "minutes", "appearances", "goals", "assists", "avg_rating", "last_move", "gender")
+KEEP = ("unique_id", "name", "age", "club", "league", "country", "positions", "value", "minutes", "appearances", "goals", "assists", "avg_rating", "last_move", "gender", "totals")
 MONTH_STATS = [("goals", "Goals"), ("assists", "Assists"), ("contrib", "Goal contributions"), ("rating", "Average match rating"), ("minutes", "Minutes played")]
 P90 = ["npxg", "xa", "kp", "chc", "progp", "drb", "tkw", "prr", "pwon", "padbc", "savep", "xgp"]
 AWARDS = [("attacker", "Attacker of the Month", {"ST", "AM", "W"}), ("defender", "Defender of the Month", {"CB", "FB"}),
@@ -24,8 +25,20 @@ def country_of(league: str) -> str:
     return (LEAGUE_INFO.get(league) or ("Other",))[0]
 
 
+def _sample_totals(p: dict) -> dict | None:
+    """SAMPLE season totals for the browser preview, built from the sample per-90 numbers."""
+    p90, mins, apps = sm.sample_stats(p) or {}, p.get("minutes") or 0, p.get("appearances") or 0
+    if not mins:
+        return None
+    tot = {"tkw": round(p90.get("tkw", 0) * mins / 90), "kp": round(p90.get("kp", 0) * mins / 90), "int": round(p90.get("pwon", 0) * .35 * mins / 90)}
+    if GROUP[first_pos(p)] == "GK":
+        tot |= {"sv": round(apps * 2.6), "cs": round(apps * .3)}
+    return tot
+
+
 def compact(pool: list) -> list:
-    return [{k: p.get(k) for k in KEEP} | {"p90": p.get("stats") or (sm.sample_stats(p) if not LIVE else None) or {}} for p in pool]
+    return [{k: p.get(k) for k in KEEP} | {"p90": p.get("stats") or (sm.sample_stats(p) if not LIVE else None) or {},
+                                           "totals": p.get("totals") or (_sample_totals(p) if not LIVE else None)} for p in pool]
 
 
 async def record_month(career_id: str, pool_doc: dict):
@@ -100,8 +113,10 @@ def _month_rows(cur: dict, prev: dict | None) -> list:
         rating = round((r2 * a2 - (r1 or 0) * a1) / (a2 - a1), 2) if r2 and a2 > a1 else None
         g = (p["goals"] or 0) - ((o or {}).get("goals") or 0)
         a = (p.get("assists") or 0) - ((o or {}).get("assists") or 0)
-        out.append(p | {"m_minutes": max(0, mins), "m_apps": max(0, apps), "m_rating": rating if rating and 3 <= rating <= 10 else r2 if not o else None,
-                        "m_goals": max(0, g), "m_assists": max(0, a), "country": p.get("country") or country_of(p["league"]), "group": GROUP.get((p["positions"] or ["M (C)"])[0], "CM")})
+        ct, ot = p.get("totals") or {}, (o or {}).get("totals") or {}
+        m_tot = {k: max(0, v - ot.get(k, 0)) for k, v in ct.items() if not o or k in ot}
+        out.append(p | {"m_tot": m_tot, "has_apps": p.get("appearances") is not None, "m_minutes": max(0, mins), "m_apps": max(0, apps), "m_rating": rating if rating and 3 <= rating <= 10 else r2 if not o else None,
+                        "m_goals": max(0, g), "m_assists": max(0, a), "country": p.get("country") or country_of(p["league"]), "group": GROUP[first_pos(p)]})
     return out
 
 
@@ -207,34 +222,73 @@ def _nth(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
+LINE_STATS = {"GK": ["games", "cs", "sv", "rating"], "CB": ["games", "tkw", "int", "goals+", "assists+", "rating"],
+              "DM": ["games", "goals", "assists", "kp", "rating"]}
+LINE_STATS["FB"], LINE_STATS["CM"] = LINE_STATS["CB"], LINE_STATS["DM"]
+STAT_WORDS = {"games": ("game", "games"), "goals": ("goal", "goals"), "assists": ("assist", "assists"), "cs": ("clean sheet", "clean sheets"),
+              "sv": ("save", "saves"), "tkw": ("tackle won", "tackles won"), "int": ("interception", "interceptions"), "kp": ("key pass", "key passes")}
+
+
+def _stat_line(r: dict) -> list:
+    """That month's numbers for the player's first-listed position; a stat the save doesn't give is left out."""
+    out = []
+    for k in LINE_STATS.get(r["group"], ["games", "goals", "assists", "rating"]):
+        only_if_any, k = k.endswith("+"), k.rstrip("+")
+        if k == "rating":
+            v = r.get("m_rating")
+            if v is not None:
+                out.append({"key": k, "value": f"{v:.1f}", "label": "avg rating"})
+            continue
+        v = r["m_apps"] if k == "games" and r.get("has_apps") else r[f"m_{k}"] if k in ("goals", "assists") else None if k == "games" else r["m_tot"].get(k)
+        if v is None or (only_if_any and not v):
+            continue
+        out.append({"key": k, "value": str(v), "label": STAT_WORDS[k][0 if v == 1 else 1]})
+    return out if any(s["key"] != "games" for s in out) or any(s["value"] != "0" for s in out) else []
+
+
+def _lg(league) -> str | None:
+    return league if isinstance(league, str) and league.strip() else None
+
+
+def _story(r: dict) -> dict | None:
+    line = _stat_line(r)
+    return {"player": r["name"], "club": r["club"], "stats": line, "league": _lg(r["league"])} if line else None
+
+
 def _news(rows: list, tables: list, transfers: list, awards: dict, scope: str) -> list:
     ev = []
+    idx = {r["unique_id"]: r for r in rows}
+
+    def add(score, country, tag, r):
+        s = _story(r)
+        if s:
+            ev.append((score, country, tag, s))
     for t in transfers[:4]:
-        ev.append((50 + t["fee"] / 1e6, t["country"], "Transfer", f"{t['name']} joins {t['to_club']} from {t['from_club']} for {'about ' if t['estimated'] else ''}{_money(t['fee'])}"))
+        ev.append((50 + t["fee"] / 1e6, t["country"], "Transfer", {"text": f"{t['name']} joins {t['to_club']} from {t['from_club']} for {'about ' if t['estimated'] else ''}{_money(t['fee'])}", "league": _lg(t["to_league"])}))
     for tb in tables:
         if not tb["rows"]:
             continue
         top, second = tb["rows"][0], tb["rows"][1] if len(tb["rows"]) > 1 else None
         if top["move"] > 0:
-            ev.append((42, tb["country"], "Title race", f"{top['club']} go top of the {tb['league']}"))
+            ev.append((42, tb["country"], "Title race", {"text": f"{top['club']} go top of the {tb['league']}", "league": _lg(tb["league"])}))
         elif second:
-            ev.append((26 + (top["pts"] - second["pts"]), tb["country"], "Title race", f"{top['club']} stay top of the {tb['league']}, {top['pts'] - second['pts']} point(s) clear"))
+            ev.append((26 + (top["pts"] - second["pts"]), tb["country"], "Title race", {"text": f"{top['club']} stay top of the {tb['league']}, {top['pts'] - second['pts']} point(s) clear", "league": _lg(tb["league"])}))
         for t in tb["rows"]:
             if t["move"] >= 2:
-                ev.append((15 + t["move"] * 3, tb["country"], "On the rise", f"{t['club']} climb {t['move']} places to {_nth(t['pos'])} in the {tb['league']}"))
+                ev.append((15 + t["move"] * 3, tb["country"], "On the rise", {"text": f"{t['club']} climb {t['move']} places to {_nth(t['pos'])} in the {tb['league']}", "league": _lg(tb["league"])}))
     for r in rows:
         if r["m_goals"] >= 3:
-            ev.append((18 + r["m_goals"] * 5, r["country"], "In form", f"{r['name']} scores {r['m_goals']} for {r['club']} this month"))
-        if r["age"] < 21 and (r["m_rating"] or 0) >= 7.2 and r["m_apps"] >= 2:
-            ev.append((22 + (r["m_rating"] - 7) * 20, r["country"], "Emerging talent", f"{r['age']}-year-old {r['name']} shines for {r['club']} (average {r['m_rating']})"))
+            add(18 + r["m_goals"] * 5, r["country"], "In form", r)
+        if (r["age"] or 99) < 21 and (r["m_rating"] or 0) >= 7.2 and r["m_apps"] >= 2:
+            add(22 + (r["m_rating"] - 7) * 20, r["country"], "Emerging talent", r)
     for a in awards.values():
-        if a["picks"]:
-            w = a["picks"][0]
-            ev.append((36, country_of(w["league"]), "Award", f"{w['name']} ({w['club']}) is {scope} {a['label']}"))
+        if a["picks"] and a["picks"][0]["unique_id"] in idx:
+            w = idx[a["picks"][0]["unique_id"]]
+            add(36, w["country"], a["label"].replace(" of the Month", " award"), w)
     for r in sorted([r for r in rows if r["m_apps"] >= 2 and r["m_rating"]], key=lambda r: -r["m_rating"])[:12]:
-        ev.append((8 + r["m_rating"], r["country"], "Top performer", f"{r['name']} averages {r['m_rating']} for {r['club']} this month"))
+        add(8 + r["m_rating"], r["country"], "Top performer", r)
     ev.sort(key=lambda e: -e[0])
-    return [{"tag": t, "country": c, "text": s} for _, c, t, s in ev]
+    return [{"tag": t, "country": c} | s for _, c, t, s in ev]
 
 
 CONTINENT = {"UEFA": "Europe", "CONMEBOL": "South America", "CONCACAF": "North & Central America", "CAF": "Africa", "AFC": "Asia", "OFC": "Oceania"}
