@@ -350,6 +350,8 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - 2026-11-17 Auto Follow New Saves: when a career follows a chosen save (save_file), GET /api/saves/newer scans the PC for saves modified more than a minute after it (checked every 2 minutes and on window focus); a banner at the top of every page offers "Follow this save" (switches save_file) or "Keep current" (POST /api/saves/newer/dismiss, remembered per file + time). Windows build only (preview has no real files); logic checked with temp files, banner checked with a mocked response.
 - 2026-11-17 Setup wizard: Back buttons on steps 2-3, completed step tiles clickable to go back (until setup finishes), inline "FMCC couldn't finish setting up with this save" box with "Pick another save" when /setup/complete fails. Fixed missing markNewCareer import in Setup.jsx (caused a false failure after a successful setup; restarting FMCC got past it). Tested iteration_42 (100% after fix).
 - 2026-11-17 Restart Setup: Settings > You & your career "Run setup again" card with confirm dialog → POST /api/setup/restart (setup_complete false, setup_restart true; careers kept). Wizard shows restart wording and "Cancel and go back to FMCC" (POST /api/setup/cancel). Finishing adds a new career. Tested iteration_43 (100%).
+- 2026-11-17 Smarter Setup Defaults: Club and career name start empty and fill from the save that was read (career = "<Club> <edition yy>", e.g. "Wrexham 27"). Choosing a save, or the first save after a scan, checks it automatically. Names the user typed are never overwritten (club_edited/name_edited flags saved in setup progress). Checked by screenshot in preview.
+
 
 
 
