@@ -2,7 +2,7 @@
 import os, sys, requests
 sys.path.insert(0, "/app/backend/tests")
 os.environ.setdefault("REACT_APP_BACKEND_URL", open("/app/frontend/.env").read().split("REACT_APP_BACKEND_URL=")[1].split()[0])
-import test_iter49_odd_rows_worst as t
+import test_iter50_odd_rows_retest as t
 
 U = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 SKIP = ("update", "download", "export", "backup", "restart", "stream", "logs", "zip", "open")

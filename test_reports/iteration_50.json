@@ -1,0 +1,53 @@
+{
+  "summary": "Iteration 50: retest of the iteration_49 findings. I used the same worst-mode odd rows as iteration_49 (7 snapshot rows and 8 pool rows in TEST_Shot, latest save_no 7) and ran the full sweep of 122 parameter-free GET routes with and without them. 8 of the 10 iteration_49 500s are fixed: squad/plan, try-xi, registration, development, scouting/meta, analysis/table, analysis/market and analysis/club all return 200, and breakout/elite/dp/scout still return 200. 2 routes still return 500 only when the odd rows are present: /api/home and /api/scouting/rankings. The cause is now a missing key (contract_end, avg_rating), not age. Age 99 for an unreadable age works for the youth rules: Development rows with age 99 get target None and needs_minutes False, and they are kept out of Home's under-21 list. But the 99 leaks into averages: with odd rows, Club Analysis shows 3 false 'Ageing ... group' items (average age 40.0 / 36.5 / 35.6). Clean data shows none. In the UI, Squad, Youth Development and Club Analysis render content. Home still shows the 'FMCC couldn't load this' fallback.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/home", "issue": "500 at dashboard.py:56 `date.fromisoformat(p['contract_end'])`: KeyError 'contract_end' when a snapshot row has no contract_end. A None value would also give a TypeError. clean_player does not normalise contract_end. The old age crash at line 47 is fixed. I confirmed that adding contract_end to the odd rows makes /api/home return 200.", "priority": "CRITICAL"},
+      {"endpoint": "GET /api/scouting/rankings", "issue": "500 at scouting_api.py:43 score_players `p['avg_rating']`: KeyError 'avg_rating' for pool rows with no avg_rating. Line 45 has the same read, and line 47 reads p['wage'], which is also not normalised. I confirmed that adding avg_rating and wage makes it return 200.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/analysis/club", "issue": "analysis_api.py:314 avg_age = sum(r.get('age') or 0) / len(ps) includes the UNKNOWN_AGE 99 sentinel. With odd rows, 3 false todos appear: 'Ageing full-back group, Average age 40.0', 'central midfield 36.5', 'wing 35.6'. Clean data has none. Players with age_unknown should be left out of age averages."},
+      {"endpoint": "history_api.py:424 squad_age, and stats_model / age scoring", "issue": "The same sentinel leak risk. Minutes-weighted squad_age would count 99. Grep every age average or arithmetic and skip players with age_unknown."},
+      {"endpoint": "GET /api/development (and other player lists)", "issue": "Rows with an unknown age are returned and shown as age 99. The age_unknown flag is not passed to the client, so the UI shows '99' instead of '?' or '—'."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Youth Development table", "issue": "TEST_Odd One/Six/Seven show Age 99. It should show '—' or 'Unknown'.", "selector": "Development table rows", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Home with odd save rows", "issue": "The 'FMCC couldn't load this from your latest save' fallback still shows, because /api/home returns 500 (dashboard.py:56).", "affected_selectors": ["home-loading-failed"]},
+      {"flow": "Club Analysis with odd rows", "issue": "The page renders, but 'What to do first' has false Ageing group items caused by the age 99 sentinel.", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter50_odd_rows_retest.py",
+    "/app/backend/tests/sweep_odd_iter49.py",
+    "/app/test_reports/pytest/pytest_iter50.xml"
+  ],
+  "action_items": [
+    "dashboard.py:56: make expiring None- and missing-safe, e.g. use only rows where p.get('contract_end') is a valid ISO date (try/except), or normalise contract_end in player_clean.clean_player (None if unreadable) and skip None rows.",
+    "scouting_api.py:43-47: use p.get('avg_rating') and p.get('wage') or 0, or add avg_rating (a float or None) and wage (an int) to clean_player.",
+    "analysis_api.py:314: leave out rows with age_unknown (or age == UNKNOWN_AGE) from avg_age. Check history_api.py:424 and any other age mean or arithmetic the same way.",
+    "Optional: pass age_unknown to the client in player rows, or send age None to the client, and show '—' in tables instead of 99.",
+    "Rerun: export MONGO_URL and DB_NAME, then python3 /app/backend/tests/sweep_odd_iter49.py (it must print no REGRESSION lines) and pytest /app/backend/tests/test_iter50_odd_rows_retest.py -n 0."
+  ],
+  "critical_code_review_comments": [
+    "clean_player normalises only a fixed set of keys. Code that reads p['contract_end'], p['avg_rating'], p['wage'], p['starts'] and similar keys still crashes when a key is missing. Normalise every key that any module reads with [] indexing, or switch those reads to .get().",
+    "UNKNOWN_AGE=99 is safe for comparisons (youth rules) but wrong for aggregates (averages, weighted squad age, age-based scoring). Every aggregate needs to skip age_unknown rows."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter50_odd_rows_retest.py (new; copied from iter49, clean expectation changed to age 99, more routes, unknown-age youth checks, removed the non-existent /api/players)",
+    "/app/backend/tests/sweep_odd_iter49.py (now imports the iter50 module)"
+  ],
+  "success_rate": {
+    "backend": "Full GET sweep: 109 of the 111 routes that return 200 on clean data stay 200 with odd rows (2 new 500s). Pytest iter50: 26/29 pass (3 failures, all /api/home or /api/scouting/rankings).",
+    "frontend": "Squad, Youth Development and Club Analysis render (3/4). Home shows the fallback only."
+  },
+  "seed_data_creation": "Temporary only. Snapshot uids 99990001-99990007 and pool uids 99991001-99991008 were inserted 4 times (sweep, pytest, RCA probe, UI) and removed each time with $pull by unique_id. Final counts were verified: latest snapshot 23 players, pool 204 players, the same as before. TEST_Shot is still active. setup_complete was not touched, and Home loads normally (200) on clean data.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use test_iter50_odd_rows_retest.py (-n 0, with MONGO_URL, DB_NAME and REACT_APP_BACKEND_URL exported) and sweep_odd_iter49.py. Known remaining: dashboard.py:56 contract_end, scouting_api.py:43 avg_rating (and wage at line 47), analysis_api.py:314 avg_age includes 99. On clean data, 11 routes return 422 because they need parameters. That is expected.",
+  "rca of the issue": "Repro: push SNAP_ODD/POOL_ODD (they have no contract_end or avg_rating keys), then GET /api/home -> KeyError 'contract_end' at dashboard.py:56, and GET /api/scouting/rankings -> KeyError 'avg_rating' at scouting_api.py:43. Adding contract_end='2027-06-30' to the snapshot rows and avg_rating=None and wage=0 to the pool rows makes both return 200, so these keys are the only remaining causes. Ageing false positives: analysis_api.py:314 averages age including 99. The fix is to normalise those keys in clean_player and skip age_unknown rows in aggregates."
+}

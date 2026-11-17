@@ -46,16 +46,31 @@ def _int(v, default=0):
         return default
 
 
+def _iso(s: str) -> bool:
+    from datetime import date
+    try:
+        date.fromisoformat(s)
+        return True
+    except ValueError:
+        return False
+
+
 def clean_player(p: dict) -> dict:
     """Same row with odd fields made safe: numbers that can't be read become 0/None, text becomes ''."""
     q = dict(p)
     q["positions"] = norm_positions(p.get("positions"))
-    for k in ("minutes", "appearances", "goals", "assists", "ca", "pa", "value"):
+    for k in ("minutes", "appearances", "goals", "assists", "ca", "pa", "value", "wage"):
         q[k] = _int(p.get(k))
     q["age"] = _int(p.get("age"), UNKNOWN_AGE)
     q["age_unknown"] = q["age"] == UNKNOWN_AGE and p.get("age") != UNKNOWN_AGE
     for k in ("name", "nationality", "club", "league"):
         q[k] = p.get(k) if isinstance(p.get(k), str) else ("Unknown" if k == "name" else "")
+    try:
+        q["avg_rating"] = float(p.get("avg_rating") or 0)
+    except (TypeError, ValueError):
+        q["avg_rating"] = 0.0
+    ce = p.get("contract_end")
+    q["contract_end"] = ce[:10] if isinstance(ce, str) and _iso(ce[:10]) else None
     q["attributes"] = {k: _int(v) for k, v in (p.get("attributes") or {}).items()} if isinstance(p.get("attributes"), dict) else {}
     return q
 

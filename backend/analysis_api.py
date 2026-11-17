@@ -311,7 +311,7 @@ async def club():
     for g in order:
         ps = sorted([r for r in own if r["group"] == g], key=lambda r: -r["role_fit"])
         pos[g] = {"group": g, "label": names[g], "count": len(ps), "best": ps[0]["role_fit"] if ps else 0, "avg_top2": round(sum(r["role_fit"] for r in ps[:2]) / 2) if ps else 0,
-                  "avg_age": round(sum(r.get("age") or 0 for r in ps) / len(ps), 1) if ps else None, "players": [r["name"] for r in ps]}
+                  "avg_age": (lambda ages: round(sum(ages) / len(ages), 1) if ages else None)([r["age"] for r in ps if r.get("age") and r["age"] != 99]), "players": [r["name"] for r in ps]}
     todo = []
     for g in order:
         p = pos[g]

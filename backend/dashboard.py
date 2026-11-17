@@ -1,6 +1,7 @@
 from datetime import date
 
 import roles
+from player_clean import clean_all
 
 SLOTS = [  # 4-3-3: slot key, label, accepted positions
     ("GK", "Goalkeeper", ["GK"]), ("DL", "Left Back", ["D (L)", "WB (L)"]),
@@ -28,7 +29,7 @@ def _by_id(snap):
 
 
 def compute(latest: dict, prev: dict | None, last_backup: str | None) -> dict:
-    players = latest["players"]
+    players = clean_all(latest["players"])
     gd = date.fromisoformat(latest["game_date"])
     before = _by_id(prev)
     form = roles.formation_meta("433")
@@ -53,7 +54,7 @@ def compute(latest: dict, prev: dict | None, last_backup: str | None) -> dict:
     deltas = [(p, p["ca"] - before[p["unique_id"]]["ca"]) for p in players if p["unique_id"] in before]
     riser = max(deltas, key=lambda x: x[1], default=None)
 
-    expiring = [p for p in players if (date.fromisoformat(p["contract_end"]) - gd).days <= 183]
+    expiring = [p for p in players if p.get("contract_end") and (date.fromisoformat(p["contract_end"][:10]) - gd).days <= 183]
     season_end = date(gd.year if gd.month < 7 else gd.year + 1, 5, 31)
     weeks_left = max(0, (season_end - gd).days // 7)
 
