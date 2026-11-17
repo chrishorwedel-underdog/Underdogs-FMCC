@@ -438,3 +438,11 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Players tab best_role.rating is left as it is (Phase 2).
 - Loan Manager uses other clubs' grades, so it is unchanged.
 
+
+## 2026-11-17: Elite Training U21/U18 dropdowns and Tactic fit "Show role fit"
+- /api/elite now returns teams {U21, U18} (players not yet nominated) and teams_from_save. _youth_team reads the save's team name (fmsave fields squad_name/team_name/team.name, NOT VERIFIED). Without one it groups by age: U18 = under 18, U21 = 18 to 20.
+- EliteTraining.jsx: the U21 and U18 selects sit under the nominees table, and picking a player nominates him. The suggestions list and game-ID box are kept.
+- roles.fit_words gives a word (Excellent/Good/Fair/Poor fit) plus a reason built from the role's key attributes. It is added to lab_api fit ranked rows as role_fit.
+- TacticFit.jsx: each slot card has a "Show role fit" switch. Its state lives in TacticFit, so it survives role changes.
+- Testing: iteration_55, backend 100%. The toggle-reset bug, the tone colours and the testids were fixed and then checked with a screenshot.
+

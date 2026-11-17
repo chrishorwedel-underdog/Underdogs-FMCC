@@ -1,0 +1,33 @@
+{
+  "summary": "Tested Elite Training U21/U18 team dropdowns and Tactic Fit 'Show role fit' (backend and UI, desktop and 390px). Backend: 6 of 6 pytest checks pass. GET /api/elite returns teams {U21, U18} with rows of exactly {unique_id, name, age}, sorted by name, and teams_from_save=false. The lists come from age: U21 has 5 players aged 18-20 and U18 is empty. A nominated player drops out of the teams and the suggestions, and comes back after withdraw. No ca/pa. GET /api/squad/tactic-fit: every ranked row has role_fit {word, tone, reason}. The word is one of the 4 allowed words, the tone matches the word and the reason has no digits. This holds on every formation. Changing a role via picks changes role_fit but keeps the ranked order. UI Elite: the elite-team-picks card is below the nominees table, with the U21 select (5 players) and the U18 select disabled with 'Nobody in the U18 team'. The age-based note shows. Picking Luca Romano shows the toast 'Nominated for Elite Training', adds elite-row, removes him from the dropdown (now 4) and from the suggestions, and resets the select. The Nominate card with suggestions and the game-ID box is still there. I withdrew the nomination, so there are 0 nominees again. 390px has no overflow. UI Tactic fit: all 11 fit-rolefit-toggle-{slot} switches are off by default. Turning one on shows 5 fit-role-{slot}-{uid} lines with a coloured word and a reason, for that slot only. Turning it off hides them, and it works at 390px. One real bug: changing the slot's role switches the role-fit toggle back off.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "TacticFit.jsx Slot (showFit state)", "issue": "Changing a slot's role switches 'Show role fit' back off, so the user can't see how the fit word changes, which is the point of the feature. Root cause: useGet (lib/ui.jsx:12) has no placeholderData. The new query key makes data undefined, the slot grid unmounts and Slot's local useState(false) is lost. Fix: pass { placeholderData: keepPreviousData } to the tactic-fit useGet, or lift the showFit state into TacticFit keyed by slot.", "selector": "[data-testid=fit-rolefit-toggle-DMCL] after changing select[data-testid=fit-role-DMCL]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Tactic fit role-fit words", "issues": ["Tone colours: 'Excellent fit' uses .st.g, which is blue (var(--acc)), while 'Good fit' uses .st.ok, which is green. So Excellent reads as less positive than Good. Consider green for Excellent and blue or teal for Good.", "The fit word can disagree with the order: Diego Alvarez (#2, 'Excellent fit') is below Ivan Petrović (#1, 'Good fit') in DMCL. This is by design (order comes from stars and ability), but a short hint like 'order is by ability, the fit word is about this role' would help."]},
+      {"screen": "Tactic fit testids", "issues": ["The select is data-testid=fit-role-{slot} and the lines are fit-role-{slot}-{uid}. A prefix selector like [data-testid^=fit-role-DMCL] matches both. Consider renaming the lines to fit-rolefit-{slot}-{uid}."]},
+      {"screen": "Sample data", "issues": ["There are two different players called 'Luca Romano' (20481105 and 20481106), so DCL/DCR lists show the name twice with nothing to tell them apart. This is in the sample save; it's existing behaviour, not caused by this change."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter55_elite_teams_rolefit.py", "/app/test_reports/pytest/iter55.xml"],
+  "action_items": [
+    "Keep the 'Show role fit' toggle on when the slot's role changes (keepPreviousData on the tactic-fit query, or lift the state).",
+    "Optional: swap the tone colours so Excellent is green; rename the role-fit line testids so they don't clash with the role select's testid."
+  ],
+  "critical_code_review_comments": [
+    "awards_api._youth_team: when the save gives a team name that isn't U18/U19-21/23/reserve/B/II (for example the senior team), the player is left out even if he is 17. That matches 'use the save's squads'. But from_save becomes true as soon as any player has a team, so the note then says 'Teams as your save lists them'. The '18' substring match could also catch names like 'Club 1918 U21'. Consider matching r'u ?18' instead.",
+    "elite(): the teams come from the latest snapshot players while nominees come from own_contexts. If the snapshot ever holds non-squad players, they would show up in the dropdowns. It's fine in the sample.",
+    "The user asked for 'five nominees', but there is no cap of 5 on nominations (neither the dropdown nor POST /elite/nominations limits it). Check whether that's intended.",
+    "fit_words: the reason uses snake_case keys with '_' replaced, which is fine. Thresholds (14 or above strong, 10 or below weak) are internal only, and no numbers leak."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter55_elite_teams_rolefit.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "90% (all flows work; the role-fit toggle resets on role change)"},
+  "seed_data_creation": "None kept. I nominated Luca Romano (20481106) twice (once in pytest, once in the UI) and withdrew both, so the nominations collection has extra revision records with status withdrawn. There are 0 active nominees, the same as at the start.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Active career TEST_Shot, formation from save 4231. /elite-training needs localStorage 'fmcc-tour-done'='1' or the tour overlay shows on Home. In the sample, U21 has 5 players and U18 is empty; teams_from_save is false. Run pytest with -n0, or plain pytest using pytest.ini.",
+  "rca of the issue": "Toggle reset: TacticFit useGet query key includes picks -> new key -> data undefined while fetching -> data?.slots.map renders nothing -> Slot components unmount -> showFit useState resets to false. Repro: Squad > Tactic fit, turn on DMCL 'Show role fit', change the DMCL role, and the lines disappear."
+}

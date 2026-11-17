@@ -19,7 +19,7 @@ const Ranked = ({ s, showFit }) => {
           <small className="mono" style={{ color: "var(--dim)" }}>{i + 1}</small>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}><small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{r.name}</small>{!r.natural && <OopTag id={`fit-oop-${s.slot}-${r.unique_id}`} />}</div>
-            {showFit && <small style={{ display: "block", color: "var(--mut)" }} data-testid={`fit-role-${s.slot}-${r.unique_id}`}>{r.role_fit ? <><span className={`st ${r.role_fit.tone}`} style={{ marginLeft: 0, marginRight: 4 }}>{r.role_fit.word}</span>{r.role_fit.reason}</> : "No attributes in the save to judge this"}</small>}
+            {showFit && <small style={{ display: "block", color: "var(--mut)" }} data-testid={`fit-rolefit-${s.slot}-${r.unique_id}`}>{r.role_fit ? <><span className={`st ${r.role_fit.tone}`} style={{ marginLeft: 0, marginRight: 4 }}>{r.role_fit.word}</span>{r.role_fit.reason}</> : "No attributes in the save to judge this"}</small>}
           </div>
           <Stars value={r.stars} size={10} id={`fit-stars-${s.slot}-${r.unique_id}`} />
         </div>))}
@@ -29,8 +29,7 @@ const Ranked = ({ s, showFit }) => {
   );
 };
 
-const Slot = ({ s, gap, onRole }) => {
-  const [showFit, setShowFit] = useState(false);
+const Slot = ({ s, gap, onRole, showFit, setShowFit }) => {
   return (
   <div className="card" style={{ padding: 10, borderColor: gap ? "var(--amb)" : undefined }} data-testid={`fit-slot-${s.slot}`}>
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}><b>{s.label}</b><small className="mono" style={{ color: "var(--dim)" }}>{s.slot}</small>
@@ -38,6 +37,7 @@ const Slot = ({ s, gap, onRole }) => {
     <select className="inp" style={{ height: 30, margin: "6px 0 8px", fontSize: 12 }} value={s.role} onChange={(e) => onRole(s.slot, e.target.value)} data-testid={`fit-role-${s.slot}`}>
       {s.role_options.map((o) => <option key={o.key} value={o.key}>{o.name}</option>)}</select>
     <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 6, cursor: "pointer" }}><Switch checked={showFit} onCheckedChange={setShowFit} data-testid={`fit-rolefit-toggle-${s.slot}`} />Show role fit</label>
+    {showFit && <small className="note" style={{ display: "block", marginBottom: 4 }}>Order is by in-FM ability; the fit word is about this role.</small>}
     <Ranked s={s} showFit={showFit} />
   </div>
   );
@@ -57,6 +57,7 @@ const TacticList = ({ tactics, current, pick, act, onDeleted }) => (
 export const TacticFit = () => {
   const [sel, setSel] = useState({ tactic: null, formation: null, picks: {} });
   const [name, setName] = useState("");
+  const [fitOn, setFitOn] = useState({});
   const picks = Object.entries(sel.picks).map(([k, v]) => `${k}:${v}`).join(",");
   const { data } = useGet(["tactic-fit", sel.tactic, sel.formation, picks], "/squad/tactic-fit", { ...(sel.tactic ? { tactic: sel.tactic } : {}), ...(sel.formation ? { formation: sel.formation } : {}), ...(picks ? { picks } : {}) });
   const { data: tactics = [] } = useGet("tactics", "/squad/tactics");
@@ -88,7 +89,7 @@ export const TacticFit = () => {
           <button className="btn btn-p" onClick={save} data-testid="tactic-save">Save as tactic</button></div>}
         <p className="note" style={{ marginTop: 4 }} data-testid="fit-note">{data?.note}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 10, marginTop: 10 }}>
-          {data?.slots.map((s) => <Slot key={s.slot} s={s} gap={data.gaps.some((g) => g.slot === s.slot)} onRole={setRole} />)}</div>
+          {data?.slots.map((s) => <Slot key={s.slot} s={s} gap={data.gaps.some((g) => g.slot === s.slot)} onRole={setRole} showFit={!!fitOn[s.slot]} setShowFit={(v) => setFitOn((f) => ({ ...f, [s.slot]: v }))} />)}</div>
       </div>
       <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
         <TacticList tactics={tactics} current={sel.tactic} pick={pick} act={act} onDeleted={onDeleted} />

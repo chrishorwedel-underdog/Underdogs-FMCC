@@ -111,7 +111,7 @@ def fit_words(player: dict, role: str) -> dict | None:
     strong = [name(k) for v, k in vals if v >= 14][:2]
     weak = [name(k) for v, k in reversed(vals) if v <= 10][:1]
     parts = ([f"strong {' and '.join(strong)}"] if strong else []) + ([f"weaker {weak[0]}"] if weak else [])
-    return {"word": word, "tone": {"Excellent fit": "g", "Good fit": "ok", "Fair fit": "a", "Poor fit": "r"}[word],
+    return {"word": word, "tone": {"Excellent fit": "ok", "Good fit": "g", "Fair fit": "a", "Poor fit": "r"}[word],
             "reason": ", ".join(parts) if parts else "no standout strengths or weaknesses for this role"}
 
 
