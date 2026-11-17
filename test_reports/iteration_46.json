@@ -1,0 +1,18 @@
+{
+  "summary": "Frontend retest of the black-screen bug where 'Check for pack updates' was pressed during setup. Restarted setup from Settings and went detect, next-1, next-2, skip-key, Health check. Pressing extras-check-updates kept setup-health visible, extras-checked-at appeared ('Checked 1 min ago'), there were no page errors and the app did not jump to Features. Pressing Open FMCC opened the app normally: the new career lands on Settings > Features, the first-run 'Choose your features' screen, with all 14 cards and no crash. Club History shows 'Always on' and its description and has no switch. The Matches switch toggled off and back on and was saved. The footer 'Features' link works. Settings > Connections & updates > Check for updates sent POST /api/updates/check (200) and showed the 'Update check finished' toast. No JS page errors in any run.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [{"screen": "Setup Health check > Packs to download", "issues": ["Right after a check, extras-checked-at says 'Checked 1 min ago' instead of 'just now'. Probably rounding in ago() or clock skew. Cosmetic."]}]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": ["useAct() still invalidates every query when no keys are passed. Other callers that don't pass keys could trigger a similar /state refetch during setup. Consider passing explicit keys in setup-step components."],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "Finishing the restarted setup created career 'Sample Club FC 27' (01e69c6d-3aa0-4dcd-8ec6-8122722cb3e5). It was deleted along with its docs (filtered by career_id). settings 'app' was set back to active_career_id 72f82391-d58c-41f7-bc47-6a46cfd10a55 with setup_complete true.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "A new career is redirected to /settings?section=features until features-done is pressed (POST /features/seen). This is by design. Updates card: section=connections. Keep TEST_Shot. Do not run cleanup scripts."
+}

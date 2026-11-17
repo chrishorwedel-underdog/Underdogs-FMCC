@@ -353,6 +353,8 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - 2026-11-17 Smarter Setup Defaults: Club and career name start empty and fill from the save that was read (career = "<Club> <edition yy>", e.g. "Wrexham 27"). Choosing a save, or the first save after a scan, checks it automatically. Names the user typed are never overwritten (club_edited/name_edited flags saved in setup progress). Checked by screenshot in preview.
 - 2026-11-17 Club detection fix ("couldn't find the club you manage"): fmsave_reader._find_club tries picked club_uid → managed club → human manager's employer → club name from save file name ("X - Wrexham 27" → Wrexham) → typed name. If none match: check-save returns need_club + club list (likely matches first, whole-word match) and setup shows ClubPicker (search, tap a club). The picked club_uid is saved on the career and used on every later read. A plain error appears if the club list can't be read. Preview: the "Old career" sample save simulates an undetectable club. Tested iteration_44/45 (100% after fixes). Real Windows fmsave reading UNVERIFIED.
 - Backlog: Phase 2 "Change club" in Settings using ClubPicker; Phase 3 Settings note on save FM version vs reader support.
+- 2026-11-17 Black screen fix: setup Health step "Check for pack updates" invalidated every query, so the app jumped to Features. That page then crashed because the club-history nav key had no FEATURE_TEXT. Fixed: ExtrasCard now refreshes only ["extras"]; club-history has text and is Always on; FeatureCard no longer crashes for keys without text. Tested iteration_46 (100%).
+
 
 
 
