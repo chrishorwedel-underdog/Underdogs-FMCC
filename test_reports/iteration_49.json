@@ -1,0 +1,54 @@
+{
+  "summary": "Iteration 49: retest of the iteration_48 odd-row fixes in a combined worst mode. I put 7 odd snapshot rows and 8 odd pool rows into the latest snapshot (save_no 7) and db.pools of TEST_Shot. They covered missing keys, age 'x' and None, league null, no league key, nationality null, club null, positions as a string, [] or null, and null minutes and attributes. Every endpoint fixed from iteration_48 now returns 200: breakout, elite, dp, dp/preview, dp/scope, dp/review, dp/records, scout/meta, scout/players (also with max_age), scout/similar (also for odd pool uids), population.contexts and /api/squad. The UI pages /breakout, /dynamic-potential, /elite-training and Scout Players render content. A sweep of all 122 parameter-free GET routes, with and without the odd rows, found 10 NEW 500s that the fix did not cover. Home, Squad (Lineups) and Youth Development show the 'couldn't load' fallback. Players-failed and retry work for both abort and 500. The other iteration_48 regressions pass. All test data was removed.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/home", "issue": "500 at dashboard.py:47 `if p['age'] >= 21` with age None (from age 'x' or None, after clean_player). The Home page shows home-loading-failed.", "priority": "CRITICAL"},
+      {"endpoint": "GET /api/squad/plan, GET /api/squad/try-xi", "issue": "500 at squad_api.py:23 `'u21': p['age'] < 21` with age None. Squad shows lineup-loading-failed. Lines 31, 35, 139 and 237-238 have the same pattern.", "priority": "CRITICAL"},
+      {"endpoint": "GET /api/squad/registration", "issue": "500 at squad_api.py:237 `x['age'] >= 21` with age None.", "priority": "HIGH"},
+      {"endpoint": "GET /api/development", "issue": "500 at plans_api.py:96 `rows.sort(key=lambda r: (r['plan'] is None, r['age']))`, which compares None with an int. Youth Development shows dev-loading-failed.", "priority": "CRITICAL"},
+      {"endpoint": "GET /api/scouting/meta", "issue": "500 KeyError 'league' at scouting_api.py:58. It reads raw pool rows that have no league key.", "priority": "HIGH"},
+      {"endpoint": "GET /api/scouting/rankings", "issue": "500 KeyError 'value' at scouting_api.py:29 score_players. It reads raw rows with no value key.", "priority": "HIGH"},
+      {"endpoint": "GET /api/analysis/table, /api/analysis/market, /api/analysis/club", "issue": "500 at stats_model.py:97 sample_stats (called from analysis_api.py:157 _world). `None - int` with age None. Club Analysis breaks.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "recruit_api.py:390, world_api.py:195/306, scout_plus.py:57, scout_api.py:82", "issue": "These are the same `age <=/</>` comparisons with no None guard. They did not 500 in my sweep, because those rows were filtered out first or the routes need params. They are still latent risks."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Home / Squad / Youth Development with odd save rows", "issue": "The fallback with Try again shows correctly, but the pages have no content because the backend returns 500 (see above).", "affected_selectors": ["home-loading-failed", "lineup-loading-failed", "dev-loading-failed"]}
+    ],
+    "design_issues": [
+      {"screen": "All dark themes", "issues": ["--text, --mut and --dim are all #E8ECF2 (carried over from iteration_48), so muted text has no hierarchy."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter49_odd_rows_worst.py",
+    "/app/backend/tests/sweep_odd_iter49.py",
+    "/app/backend/tests/test_iter48_odd_players_ng_defaults.py",
+    "/app/test_reports/pytest/pytest_iter49.xml"
+  ],
+  "action_items": [
+    "Make every age comparison None-safe. The cleanest fix is a helper such as `age = p['age'] if p['age'] is not None else 99`, or giving cleaned rows a numeric sentinel. Fix at least dashboard.py:47, squad_api.py:23/31/35/139/237/238, plans_api.py:96 (sort key `r['age'] or 99`), stats_model.py:97 sample_stats, recruit_api.py:390, world_api.py:195/306, scout_plus.py:57 and scout_api.py:82.",
+    "scouting_api.py (meta line 58, score_players line 29) reads raw pool rows. Run player_clean.clean_all on them; clean_player already fills league and value.",
+    "Rerun /app/backend/tests/sweep_odd_iter49.py (export MONGO_URL and DB_NAME). It must print no REGRESSION lines. Then rerun test_iter49_odd_rows_worst.py with -n 0."
+  ],
+  "critical_code_review_comments": [
+    "clean_player sets age None. That pushes the problem out to dozens of call sites, and only some of them were patched. Pick one approach: drop rows with no age from age-sensitive features, or use a consistent None-safe helper (e.g. player_clean.age_of(p, default)), and grep for every `['age']` comparison.",
+    "scouting_api still has its own raw pool reader. All db.pools reads should go through one cleaned accessor."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter49_odd_rows_worst.py",
+    "/app/backend/tests/sweep_odd_iter49.py"
+  ],
+  "success_rate": {
+    "backend": "iteration_48 targets: 100% (16/16 tests). Full GET sweep with odd rows: 101/111 routes that are 200 on clean data stay 200 (10 new 500s).",
+    "frontend": "Requested pages (breakout, DP, elite, scout): 100%. Players-failed and retry: pass. Home, Squad and Development with odd rows: fallback only, no content."
+  },
+  "seed_data_creation": "Temporary only. Snapshot uids 99990001-99990007 and pool uids 99991001-99991008 were inserted and then removed with $pull by unique_id; snap 23 and pool 204 players were verified after removal. The iteration_48 regression tests unset ng_folder (it was absent before) and restored seed_drafts. I deleted the defaults doc {_id:'defaults', areas:{}} that this run created (none existed before). /tmp/TEST_empty_ng was removed. TEST_Shot is still active and setup_complete is true. POST /api/elite/queue {} ran during the POST sweep and returned queued 0, so nothing changed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use /app/backend/tests/sweep_odd_iter49.py. It inserts the odd rows from test_iter49_odd_rows_worst.py, hits every parameter-free GET route (the route list comes from localhost:8001/openapi.json; the requests themselves go to the public URL), removes the rows, and prints REGRESSION lines. Run pytest with -n 0 and export MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database. Scout players-failed shows after about 8 s, because react-query retries 3 times with backoff.",
+  "rca of the issue": "Repro: push a snapshot player with age 'x' or null. GET /api/home, /api/squad/plan and /api/development then return 500 (TypeError comparing None with int). Push a pool player with no league or value key, and GET /api/scouting/meta and /api/scouting/rankings return KeyError. Root cause: clean_player maps a bad age to None, but many consumers outside the files patched in iteration_48 still compare age numerically, and scouting_api reads raw pool rows. Mitigation: None-safe age everywhere, plus one cleaned pool accessor."
+}

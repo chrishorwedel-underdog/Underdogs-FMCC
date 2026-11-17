@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 import stats_model as sm
 from core import db, active_career, latest_two
+from player_clean import clean_all
 from editor_api import LIVE
 from features_api import need
 from sample_reader import GROUP
@@ -136,7 +137,7 @@ async def _world(c: dict) -> tuple:
     if not snaps:
         raise HTTPException(404, "No save read yet")
     gd = date.fromisoformat(snaps[0]["game_date"][:10])
-    pool = (await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {}).get("players") or []
+    pool = clean_all((await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {}).get("players") or [])
     own_league = snaps[0].get("league") or c.get("league") or next((p.get("league") for p in pool if p.get("club") == c["club_name"]), None) or ("Premier Division" if not LIVE else "Your league")
     own = [p | {"club": c["club_name"], "league": p.get("league") or own_league, "own": True, "gender": p.get("gender", "M")} for p in snaps[0]["players"]]
     seen, rows = set(), []

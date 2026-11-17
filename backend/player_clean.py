@@ -36,6 +36,9 @@ def first_pos(p: dict) -> str:
     return pos[0] if pos else FALLBACK_POS
 
 
+UNKNOWN_AGE = 99  # an unreadable age never counts as young, so no youth rule or reward can pick him by mistake
+
+
 def _int(v, default=0):
     try:
         return int(v) if v is not None else default
@@ -49,7 +52,8 @@ def clean_player(p: dict) -> dict:
     q["positions"] = norm_positions(p.get("positions"))
     for k in ("minutes", "appearances", "goals", "assists", "ca", "pa", "value"):
         q[k] = _int(p.get(k))
-    q["age"] = _int(p.get("age"), None)
+    q["age"] = _int(p.get("age"), UNKNOWN_AGE)
+    q["age_unknown"] = q["age"] == UNKNOWN_AGE and p.get("age") != UNKNOWN_AGE
     for k in ("name", "nationality", "club", "league"):
         q[k] = p.get(k) if isinstance(p.get(k), str) else ("Unknown" if k == "name" else "")
     q["attributes"] = {k: _int(v) for k, v in (p.get("attributes") or {}).items()} if isinstance(p.get("attributes"), dict) else {}

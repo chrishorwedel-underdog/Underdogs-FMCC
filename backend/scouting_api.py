@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 import roles
 from core import db, active_career, latest_snapshot, now_iso, new_id
+from player_clean import clean_all
 from matches_api import season_per90
 from rules_api import current as current_rules
 
@@ -14,6 +15,8 @@ router = APIRouter(prefix="/api/scouting")
 
 async def _pool(c: dict) -> dict:
     pool = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0})
+    if pool:
+        pool["players"] = clean_all(pool.get("players"))
     if not pool:
         raise HTTPException(404, "No scouting data yet. Read a save first.")
     return pool
