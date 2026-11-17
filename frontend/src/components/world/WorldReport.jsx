@@ -2,15 +2,12 @@ import { useState } from "react";
 import { Newspaper, Trophy, ArrowLeftRight, BarChart3, Table2, ArrowUp, ArrowDown, Pencil, Globe2 } from "lucide-react";
 import { api, gameDate } from "@/lib/api";
 import { useAct, useGet } from "@/lib/ui";
+import { StatsLine } from "@/components/StatsLine";
 
 const money = (v) => (v >= 1e6 ? `€${(v / 1e6).toFixed(1)}m` : `€${Math.round(v / 1000)}k`);
 const Who = ({ r }) => <><b style={{ color: "var(--text)" }}>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.age} · {r.club}</small></>;
 
-const StatLine = ({ n, i }) => (
-  <span data-testid={`world-news-stats-${i}`}>
-    {n.stats.map((s, j) => <span key={s.key}>{j > 0 && " · "}<span className="mono">{s.value}</span> {s.label}</span>)}
-  </span>
-);
+const StatLine = ({ n, i }) => <StatsLine line={n.stats} id={`world-news-stats-${i}`} />;
 
 const Tag = ({ n, i }) => <small style={{ color: "var(--dim)" }} data-testid={`world-news-league-${i}`}> · {n.league}</small>;
 
@@ -38,7 +35,7 @@ const Awards = ({ d }) => (
           {a.picks.length ? a.picks.map((p, i) => (
             <div key={p.unique_id} className="row" style={{ alignItems: "flex-start" }} data-testid={`world-award-${k}-${i}`}>
               <span className={`st ${i === 0 ? "g" : "n"}`} style={{ minWidth: 62, textAlign: "center" }}>{i === 0 ? "Winner" : `${i + 1}${i === 1 ? "nd" : "rd"}`}</span>
-              <div style={{ flex: 1 }}><Who r={p} /><small style={{ color: "var(--mut)" }}>avg {p.rating} · {p.goals}G {p.assists}A · {p.minutes} min</small></div>
+              <div style={{ flex: 1 }}><Who r={p} /><small style={{ color: "var(--mut)" }} data-testid={`world-award-${k}-${i}-line`}>{p.line?.length ? <StatsLine line={p.line} /> : `${p.minutes} min`}</small></div>
             </div>)) : <p className="note">Nobody played enough.</p>}
         </div>))}
     </div>

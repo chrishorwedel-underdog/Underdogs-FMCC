@@ -147,7 +147,7 @@ def _apply(p: dict, s: dict | None):
         return
     w = sum(n for _, n in s["ratings"])
     p.update(minutes=s["minutes"], appearances=s["starts"] + s["substitute_appearances"], starts=s["starts"], sub_apps=s["substitute_appearances"], goals=s["goals"], assists=s["assists"],
-             avg_rating=round(sum(r * n for r, n in s["ratings"]) / w, 2) if w else None)
+             avg_rating=round(sum(r * n for r, n in s["ratings"]) / w, 2) if w else None, totals=s.get("tot") or None)
 
 
 def _tables(save, clubs: dict, nations: dict) -> tuple[list, dict]:

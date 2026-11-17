@@ -10,6 +10,19 @@ from changes_api import queue_changes
 from core import db, active_career, latest_snapshot, now_iso, new_id, next_revision, audit, logger
 from population import contexts, own_contexts
 from rules_api import current as current_rules, active_nominees, save_version, Scope
+from player_clean import first_pos
+from sample_reader import GROUP
+from world_api import stat_line
+
+
+def season_line(x: dict, snap: dict | None) -> list:
+    """His season so far, picked for his first-listed position."""
+    p = next((q for q in (snap or {}).get("players", []) if q.get("unique_id") == x.get("unique_id")), {})
+    return stat_line(GROUP[first_pos(x)], x.get("appearances"), x.get("goals"), x.get("assists"), x.get("avg_rating"), p.get("totals") or x.get("totals") or {})
+
+
+def line_text(line: list) -> str:
+    return " · ".join(f"{s['value']} {s['label']}" for s in line)
 
 router = APIRouter(prefix="/api")
 
@@ -194,8 +207,9 @@ async def auto_breakout(c: dict) -> dict | None:
     res = await queue_changes(c, "breakout", key, [{"unique_id": x["unique_id"], "name": x["name"], "field": r["action"]["target"], "delta": delta}])
     await audit(c["id"], "breakout winner", "breakout", f"{x['name']} is Breakout Player of {snap['season']} (grade {w['grade']}), applied automatically")
     from notify_api import _add
+    line = line_text(season_line(x, snap))
     await _add(c["id"], "breakout", f"breakout-win:{snap['season']}", f"{x['name']} is your Breakout Player of {snap['season']}",
-               f"Best season among your first-team players (grade {w['grade']}). His reward was {'applied to your save' if res.get('auto_applied') else 'added to Game changes for your review'}.", snap["game_date"])
+               f"Best season among your first-team players{': ' + line if line else ''}. His reward was {'applied to your save' if res.get('auto_applied') else 'added to Game changes for your review'}.", snap["game_date"])
     return {"unique_id": x["unique_id"], "name": x["name"]}
 
 
@@ -245,7 +259,7 @@ async def celebrations():
         if months_since(f"{end_year}-05") <= 4:
             x = ctxs.get(bo["unique_id"]) or {}
             cards.append({"id": f"breakout-{season}", "kind": "breakout", "title": f"{bo['name']} is your Breakout Player of {season}", "unique_id": bo["unique_id"],
-                          "stats": {k: x.get(k) for k in ("appearances", "minutes", "goals", "assists", "avg_rating")}, "note": bo.get("note"),
+                          "stats": {k: x.get(k) for k in ("appearances", "minutes", "goals", "assists", "avg_rating")}, "line": season_line(x, snap) if x else [], "note": bo.get("note"),
                           "reward": _benefit(bo.get("field") or "pa", bo.get("delta")) + ", already applied to your save."})
     last = await db.awards.find_one({"career_id": c["id"], "module": "elite", "status": "awarded"}, {"_id": 0, "award_key": 1}, sort=[("at", -1)])
     if last:

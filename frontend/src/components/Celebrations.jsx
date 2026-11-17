@@ -2,12 +2,14 @@ import { X, Trophy, Dumbbell } from "lucide-react";
 import { useGet } from "@/lib/ui";
 import { usePersist } from "@/lib/remember";
 import { openPlayer } from "@/components/player/PlayerPanel";
+import { StatsLine } from "@/components/StatsLine";
 
 const STATS = [["appearances", "Apps"], ["minutes", "Minutes"], ["goals", "Goals"], ["assists", "Assists"], ["avg_rating", "Avg rating"]];
 
 const BreakoutCard = ({ c }) => (
   <>
-    <div className="cel-stats" data-testid="celebration-breakout-stats">{STATS.map(([k, l]) => <div key={k}><b className="mono">{c.stats[k] ?? "—"}</b><small>{l}</small></div>)}</div>
+    {c.line?.length ? <p style={{ margin: 0 }}>This season: <StatsLine line={c.line} id="celebration-breakout-stats" /></p>
+      : <div className="cel-stats" data-testid="celebration-breakout-stats">{STATS.map(([k, l]) => <div key={k}><b className="mono">{c.stats[k] ?? "—"}</b><small>{l}</small></div>)}</div>}
     {c.note && <p className="note" style={{ margin: 0 }}>{c.note}, the best season among his teammates.</p>}
     <p className="cel-reward" data-testid="celebration-breakout-reward">Reward: {c.reward}</p>
     <button className="btn" style={{ justifySelf: "start" }} onClick={() => openPlayer(c.unique_id)} data-testid="celebration-breakout-open">View player</button>

@@ -210,7 +210,7 @@ def _awards(rows: list, min_mins: int) -> dict:
         pool = [r for r in rows if r["m_minutes"] >= min_mins and r["m_rating"] and (r["age"] < 21 if groups is None else r["group"] in groups)]
         top = sorted(pool, key=lambda r: -_score(r, "goalie" if key == "goalie" else "defender" if key == "defender" else "attacker"))[:3]
         out[key] = {"label": label, "picks": [{"unique_id": r["unique_id"], "name": r["name"], "age": r["age"], "club": r["club"], "league": r["league"], "country": r["country"],
-                                               "rating": r["m_rating"], "goals": r["m_goals"], "assists": r["m_assists"], "minutes": r["m_minutes"]} for r in top]}
+                                               "rating": r["m_rating"], "goals": r["m_goals"], "assists": r["m_assists"], "minutes": r["m_minutes"], "line": _stat_line(r)} for r in top]}
     return out
 
 
@@ -229,21 +229,25 @@ STAT_WORDS = {"games": ("game", "games"), "goals": ("goal", "goals"), "assists":
               "sv": ("save", "saves"), "tkw": ("tackle won", "tackles won"), "int": ("interception", "interceptions"), "kp": ("key pass", "key passes")}
 
 
-def _stat_line(r: dict) -> list:
-    """That month's numbers for the player's first-listed position; a stat the save doesn't give is left out."""
+def stat_line(group: str, games, goals, assists, rating, tot: dict) -> list:
+    """Numbers picked for the player's first-listed position; a stat the save doesn't give is left out."""
+    vals = {"games": games, "goals": goals, "assists": assists} | (tot or {})
     out = []
-    for k in LINE_STATS.get(r["group"], ["games", "goals", "assists", "rating"]):
+    for k in LINE_STATS.get(group, ["games", "goals", "assists", "rating"]):
         only_if_any, k = k.endswith("+"), k.rstrip("+")
         if k == "rating":
-            v = r.get("m_rating")
-            if v is not None:
-                out.append({"key": k, "value": f"{v:.1f}", "label": "avg rating"})
+            if rating:
+                out.append({"key": k, "value": f"{rating:.1f}", "label": "avg rating"})
             continue
-        v = r["m_apps"] if k == "games" and r.get("has_apps") else r[f"m_{k}"] if k in ("goals", "assists") else None if k == "games" else r["m_tot"].get(k)
+        v = vals.get(k)
         if v is None or (only_if_any and not v):
             continue
         out.append({"key": k, "value": str(v), "label": STAT_WORDS[k][0 if v == 1 else 1]})
-    return out if any(s["key"] != "games" for s in out) or any(s["value"] != "0" for s in out) else []
+    return out if any(s["key"] != "games" or s["value"] != "0" for s in out) else []
+
+
+def _stat_line(r: dict) -> list:
+    return stat_line(r["group"], r["m_apps"] if r.get("has_apps") else None, r["m_goals"], r["m_assists"], r.get("m_rating"), r["m_tot"])
 
 
 def _lg(league) -> str | None:
