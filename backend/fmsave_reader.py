@@ -344,6 +344,26 @@ def _open(fmsave, path: Path):
 
 
 MAIN_ONLY = ["season stats", "league tables", "transfers", "tactics", "staff", "finances", "club history"]
+LOW_CAP = 50000
+
+
+def low_row(uid, name, age, nat, positions, club, minutes, ca, gender="M") -> dict | None:
+    """Seed a Surname candidates: free agents, 18 and under, under 90 minutes this season, or low ability. Ability stays internal."""
+    if not (not club or (age or 99) <= 18 or (minutes or 0) < 90 or (ca or 999) <= 90):
+        return None
+    return {"unique_id": int(uid), "name": name or "Unknown", "age": age, "nationality": nat or "", "positions": positions or [],
+            "club": club or "Free agent", "minutes": minutes or 0, "ca": ca or 0, "gender": gender}
+
+
+def _safe_low(p, club_lookup: dict, stats: dict, low: list):
+    try:
+        s = stats.get(_first(p, "uid", "unique_id")) or {}
+        r = low_row(_first(p, "unique_id", "uid"), _get(p, "name"), _get(p, "age"), _get(p, "nationality.name"), _positions(p),
+                    club_lookup.get(_get(p, "club_uid")), s.get("minutes"), _get(p, "ability.current"))
+        if r:
+            low.append(r)
+    except Exception:  # noqa: BLE001 - one odd player is simply not a candidate
+        pass
 
 
 def failure_message(name: str, exc: Exception, backup: dict | None, backup_err: str | None) -> str:
@@ -387,6 +407,15 @@ def combine(main: dict | None, backup: dict | None, backup_err: str | None, path
                 added += 1
         known = {c["uid"] for c in main["clubs"]}
         main["clubs"] += [{"uid": int(u), "name": n, "league": None} for u, n in backup["clubs"].items() if u not in known]
+        low = main.setdefault("low_profile", [])
+        seen = {r["unique_id"] for r in low}
+        for uid, b in bp.items():
+            if len(low) >= LOW_CAP:
+                break
+            if uid not in seen and b["club_uid"] != main["club_uid"]:
+                r = low_row(uid, b["name"], b["age"] or None, b["nationality"], b["positions"], b["club"], None, b["ca"])
+                if r:
+                    low.append(r)
     main["readers"] = {"fm_version": (backup or {}).get("fm_version"), "main": status, "backup": "ok" if backup else "missing" if backup_err == "it isn't installed" else "failed",
                        "backup_error": backup_err, "backup_added": added, "backup_filled": filled}
     return main
@@ -449,9 +478,11 @@ def _read_main(path: Path, club_name_hint: str, club_uid, extra_names: dict) -> 
         tables, club_league = _safe(lambda: _tables(save, {u: (v[0], v[1], v[3], v[2]) for u, v in clubs.items()}, nations), ([], {}), "league tables", skipped)
         moves = _safe(lambda: _transfers(save), {}, "transfers", skipped)
         tactics = _safe(lambda: _tactics(save, my_uid), [], "tactics", skipped)
-        squad, pool = [], []
+        squad, pool, low = [], [], []
         for p in everyone:
             uid, cu = _first(p, "unique_id", "uid"), _get(p, "club_uid")
+            if cu != my_uid and len(low) < LOW_CAP:
+                _safe_low(p, club_lookup, stats, low)
             if cu == my_uid:
                 row = _player(p, club_name, club_lookup)
                 _apply(row, stats.get(_first(p, "uid", "unique_id")) or stats.get(uid))
@@ -475,4 +506,4 @@ def _read_main(path: Path, club_name_hint: str, club_uid, extra_names: dict) -> 
     gd = game_date if isinstance(game_date, date) else date.fromisoformat(str(game_date)[:10])
     season_year = gd.year if gd.month >= 7 else gd.year - 1
     return {"file_name": path.name, "club_name": club_name, "club_uid": my_uid, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
-            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "finance": finance, "history": history, "file_mtime": path.stat().st_mtime, "skipped": skipped}
+            "players": squad, "low_profile": low, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "finance": finance, "history": history, "file_mtime": path.stat().st_mtime, "skipped": skipped}

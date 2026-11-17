@@ -1,4 +1,5 @@
 const KEY = "fmcc-appearance";
+const SOFT_WHITE = "#E8ECF2";
 export const DEFAULTS = { theme: "dark", accent: "#4C8DFF", text: 100, motion: true, grain: true, kit_accent: false, contrast: false, focus: true };
 export const THEMES = {
   dark: { label: "Dark", vars: {} },
@@ -27,6 +28,7 @@ export const applyAppearance = (s) => {
   const root = document.documentElement;
   ALL_VARS.forEach((v) => root.style.removeProperty(v));
   Object.entries((THEMES[s.theme] || THEMES.dark).vars).forEach(([k, v]) => root.style.setProperty(k, v));
+  if (!(THEMES[s.theme] || {}).light) ["--text", "--mut", "--dim"].forEach((k) => root.style.setProperty(k, SOFT_WHITE));
   root.classList.toggle("theme-light", !!(THEMES[s.theme] || {}).light);
   root.classList.toggle("theme-fm27", s.theme === "fm27");
   root.style.setProperty("--acc", (s.kit_accent && window.__fmccKitAccent) || s.accent);

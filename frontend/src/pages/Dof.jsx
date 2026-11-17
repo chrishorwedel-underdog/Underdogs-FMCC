@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { api, ago, errMsg } from "@/lib/api";
 import { useGet, useAct, PageHead } from "@/lib/ui";
 import { useAddress } from "@/lib/address";
+import { DofKeyBox } from "@/components/DofKeyBox";
 
 const visible = (t) => { const i = t.indexOf("ACTION:"); return i >= 0 ? t.slice(0, i) : t; };
 
@@ -102,10 +103,10 @@ export default function Dof() {
   const create = async () => { const c = await act(() => api.post("/dof/conversations", {}), null, ["dof-convs"]); if (c) setConv(c.id); };
   return (
     <div data-testid="dof-page">
-      <PageHead eyebrow={status ? `${status.model} · ${status.key_source}` : ""} title="Chat with your Director of Football">
+      <PageHead eyebrow={status ? `${status.model_label || status.model} · ${status.key_source}` : ""} title="Chat with your Director of Football">
         <button className="btn btn-p" onClick={create} data-testid="dof-new-conversation"><Plus size={13} />New conversation</button>
       </PageHead>
-      {status && !status.ready && <div className="banner" style={{ marginBottom: 16 }}>Add your OpenAI key in Settings to use the DOF chat.</div>}
+      {status && !status.ready && <DofKeyBox desktop={status.desktop} />}
       <div className="homegrid" style={{ gridTemplateColumns: "260px minmax(0,1fr)" }}>
         <div className="card" style={{ padding: 8, alignSelf: "start" }} data-testid="dof-conversations">
           {convs.length === 0 && <p className="note" style={{ padding: 8 }}>No conversations yet.</p>}

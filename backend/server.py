@@ -100,6 +100,7 @@ class SetupIn(CareerIn):
     save_folder: str = Field(min_length=3, max_length=300)
     save_file: Optional[str] = Field(None, max_length=400)
     club_uid: Optional[int] = None
+    use_defaults: list[str] = Field(default_factory=list, max_length=10)
     address: str = Field("Boss", min_length=1, max_length=30)
 
 
@@ -161,6 +162,7 @@ async def read_next_save(career: dict) -> dict:
     edits = {e["unique_id"]: e for e in await db.game_edits.find({"career_id": career["id"]}, {"_id": 0}).to_list(None)}
     save = await asyncio.to_thread(_read_save_file, career, save_no, edits)
     pool = save.pop("pool")
+    low_profile = save.pop("low_profile", None)
     club_list = save.pop("clubs", None)
     staff = save.pop("staff", None)
     tables = save.pop("tables", None)
@@ -175,6 +177,8 @@ async def read_next_save(career: dict) -> dict:
     snap = {"id": str(uuid.uuid4()), "career_id": career["id"], "save_no": save_no, "read_at": now_iso(),
             "reader": sample_reader.READER_NAME, **save}
     await db.snapshots.insert_one(dict(snap))
+    if low_profile is not None:
+        await db.seed_pools.replace_one({"career_id": career["id"]}, {"career_id": career["id"], "save_no": save_no, "players": low_profile}, upsert=True)
     if READER == "fmsave":
         import fmsave_reader
         note = fmsave_reader.reader_note(save)
@@ -222,6 +226,36 @@ async def new_career(body: CareerIn, save_folder: str) -> dict:
 class ColoursIn(BaseModel):
     primary: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
     secondary: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
+
+
+def _find_logo(graphics: Path, uid: int) -> Path | None:
+    """The club's logo from an installed logo pack: a file named after the club's ID in a folder with 'logo' in its name."""
+    if not graphics.is_dir():
+        return None
+    for pack in (d for d in graphics.iterdir() if d.is_dir() and "logo" in d.name.lower()):
+        for root, _dirs, files in os.walk(pack):
+            for ext in (".png", ".jpg"):
+                if f"{uid}{ext}" in files:
+                    return Path(root) / f"{uid}{ext}"
+    return None
+
+
+@api.get("/club-logo")
+async def club_logo(career: str = Query(max_length=60)):
+    from fastapi.responses import FileResponse
+    import editor_api
+    c = await db.careers.find_one({"id": career}, {"_id": 0})
+    if not c or READER != "fmsave":
+        raise HTTPException(404, "No logo")
+    uid = c.get("club_uid")
+    if uid is None:
+        snap = await db.snapshots.find_one({"career_id": c["id"]}, {"_id": 0, "club_uid": 1}, sort=[("save_no", -1)]) or {}
+        uid = snap.get("club_uid")
+    f = await asyncio.to_thread(_find_logo, editor_api.fm_dirs(c)["graphics"], uid) if uid is not None else None
+    if not f:
+        raise HTTPException(404, "No logo")
+    return FileResponse(f)
+
 
 
 @api.get("/club-colours")
@@ -289,6 +323,12 @@ async def setup_complete(body: SetupIn):
         career = await new_career(body, body.save_folder.strip())
         await db.settings.update_one({"_id": "app"}, {"$set": {"setup_complete": True, "auto_install_updates": False, "address": body.address.strip() or "Boss"}, "$unset": {"setup_progress": "", "setup_restart": ""}}, upsert=True)
     latest = (await latest_two(career["id"]))[0]
+    if body.use_defaults:
+        import defaults_api
+        try:
+            await defaults_api.apply_defaults(career, body.use_defaults)
+        except Exception as exc:  # noqa: BLE001 - defaults must never block a new career
+            logger.warning("defaults for new games skipped: %s", exc)
     return {"career": career, "health": [
         {"key": "link", "label": "Game link ready", "ok": True, "detail": f"Read {len(latest['players'])} players from {latest['file_name']}" + (" (sample save)" if READER == "sample" else "")},
         {"key": "analytics", "label": "Match analytics", "ok": False, "detail": "Not set up yet. Install the match add-on from Connections."},
@@ -659,8 +699,9 @@ import history_api  # noqa: E402
 
 app.include_router(api)
 import ability_words  # noqa: E402
+from defaults_api import router as defaults_router  # noqa: E402
 app.add_middleware(ability_words.AbilityGuard)
-for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router, world_api.router, creator_single.router, self_update.router, seed_api.router, features_api.router, analysis_api.router, dp_api.router, finance_api.router, scout_plus.router, loans_api.router, watch_api.router, history_api.router):
+for r in (squad_router, scouting_router, plans_router, awards_router, rules_router, changes_router, matches_router, dof_router, connections_router, editor_router, licensing_router, leagues_router, scout_router, graphics_router, lab_router, setup_router, testing_router, punish_router, recruit_router, notify_router, creator_router, creator_extras_router, extras_router, world_api.router, creator_single.router, self_update.router, seed_api.router, features_api.router, analysis_api.router, dp_api.router, finance_api.router, scout_plus.router, loans_api.router, watch_api.router, history_api.router, defaults_router):
     app.include_router(r)
 if os.environ.get("FMCC_STATIC_DIR"):
     from fastapi.responses import FileResponse

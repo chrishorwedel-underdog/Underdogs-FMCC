@@ -9,6 +9,15 @@ import { DownloadLink } from "@/components/DownloadButton";
 import { ExtrasCard } from "@/components/ExtrasCard";
 import { markNewCareer } from "@/components/Tour";
 import { ClubPicker } from "@/components/ClubPicker";
+import { DefaultsPick } from "@/components/DefaultsCard";
+import { applyAppearance } from "@/lib/appearance";
+
+const chosenDefaults = async (picked) => {
+  const { data } = await api.get("/defaults").catch(() => ({ data: { areas: [] } }));
+  const keys = data.areas.filter((a) => a.saved && (picked === undefined || picked.includes(a.key))).map((a) => a.key);
+  if (keys.includes("appearance") && data.appearance) { localStorage.setItem("fmcc-appearance", JSON.stringify(data.appearance)); applyAppearance(data.appearance); }
+  return keys;
+};
 
 const STEPS = [["Find FM", FolderSearch], ["Match analytics", Activity], ["DOF key", KeyRound], ["Health check", HeartPulse]];
 const ICON = { ok: Check, warn: AlertTriangle, fail: X };
@@ -125,7 +134,7 @@ const AnalyticsStep = ({ form, set, next, back }) => (
   </div>
 );
 
-const KeyStep = ({ next, busy, back }) => {
+const KeyStep = ({ next, busy, back, form, set }) => {
   const [key, setKey] = useState("");
   const [desktop, setDesktop] = useState(false);
   const [res, setRes] = useState(null);
@@ -143,6 +152,7 @@ const KeyStep = ({ next, busy, back }) => {
         <button className="btn btn-l" disabled={checking || (desktop && key.trim().length < 20)} onClick={check} data-testid="setup-key-check">{checking ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />}{desktop ? "Check key" : "Check the preview key"}</button>
       </div>
       {res && <CheckList id="setup-key-result" items={[{ key: "key", label: res.ok ? "Key works" : "Key didn't work", status: res.ok ? "ok" : "fail", detail: res.ok ? res.detail : res.error }]} />}
+      <DefaultsPick value={form.use_defaults} onChange={(v) => set({ use_defaults: v })} />
       <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
         <BackBtn back={back} id="3" />
         <span style={{ marginLeft: "auto" }} />
@@ -181,7 +191,7 @@ export default function Setup({ restart }) {
   const [fail, setFail] = useState(null);
   const finish = async () => {
     setBusy(true); setFail(null);
-    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, save_file: form.save_file || null, club_uid: form.club_uid ?? null, club_name: form.club_name, name: form.name, address: form.address.trim() }); markNewCareer(); setStep(3); }
+    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, save_file: form.save_file || null, club_uid: form.club_uid ?? null, use_defaults: await chosenDefaults(form.use_defaults), club_name: form.club_name, name: form.name, address: form.address.trim() }); markNewCareer(); setStep(3); }
     catch (e) { setFail(errMsg(e)); } finally { setBusy(false); }
   };
   return (
@@ -196,7 +206,7 @@ export default function Setup({ restart }) {
           <div className="card rise d1 wiz-card" data-testid="setup-card">
             {step === 0 && <FindStep form={form} set={set} next={() => setStep(1)} />}
             {step === 1 && <AnalyticsStep form={form} set={set} next={() => setStep(2)} back={() => setStep(0)} />}
-            {step === 2 && <KeyStep busy={busy} next={finish} back={() => { setFail(null); setStep(1); }} />}
+            {step === 2 && <KeyStep busy={busy} form={form} set={set} next={finish} back={() => { setFail(null); setStep(1); }} />}
             {step === 2 && fail && <div className="chk fail" style={{ marginTop: 18 }} data-testid="setup-finish-error"><div style={{ flex: 1 }}><b>FMCC couldn't finish setting up with this save</b><small>{fail}</small></div>
               <button className="btn btn-p" onClick={() => { setFail(null); setStep(0); }} data-testid="setup-pick-another">Pick another save</button></div>}
             {step === 3 && <HealthStep analytics={form.analytics} />}

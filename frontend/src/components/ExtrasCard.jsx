@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Download, RefreshCw, CheckCircle2, CircleAlert, Package } from "lucide-react";
 import { api, ago } from "@/lib/api";
+import { NgFind } from "@/components/NgFind";
 import { useGet, useAct } from "@/lib/ui";
 
 const confirmText = (it) => (it.key === "real_name_fix"
@@ -47,6 +48,7 @@ const Item = ({ it, u, act, desktop, refetch }) => (
       {it.kind !== "app" && <small className="note">{it.how}</small>}
       {it.download && <small data-testid={`extra-download-${it.key}`}>In Downloads: {it.download.file} ({it.download.mb} MB){it.download.sample ? " · SAMPLE file for this preview" : ""}</small>}
       <Update u={u} />
+      {it.key === "ng_regens" && !it.found && <NgFind />}
     </div>
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
       <a className="ib" href={it.page} target="_blank" rel="noreferrer" title="Official page" data-testid={`extra-get-${it.key}`}><ExternalLink size={13} /></a>

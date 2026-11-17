@@ -3,6 +3,7 @@ import { Upload, Shuffle, Trash2, Wand2, FolderOpen, Images } from "lucide-react
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { FacePicker } from "@/components/editor/FacePicker";
+import { NgFind } from "@/components/NgFind";
 import { useResizableTable, ResetWidths } from "@/components/ResizableCols";
 
 const BASE = `${process.env.REACT_APP_BACKEND_URL}/api/editor/image`;
@@ -82,6 +83,7 @@ export const FacesTab = ({ s }) => {
           ? <>FMCC reads NG_Regens's own face list and never edits its files. Your changes go into FMCC's folder next to it.{!s.desktop && " Browser preview: this is a small SAMPLE stand-in pack with drawn portraits, not the real NG_Regens."}</>
           : <>Install NG_Regens from ngregens.org, unzip its picture pack into FM's graphics folder and run its scan. FMCC then builds on it.</>}</p>
         <p className="note mono" style={{ marginTop: 6, fontSize: 11 }}>{s.ngregens.folder}</p>
+        {!s.ngregens.installed && <div style={{ marginTop: 8 }}>{s.ngregens.moved && <p className="note" data-testid="ngregens-moved">The NG_Regens folder FMCC used has moved or been deleted.</p>}<NgFind /></div>}
         <button className="btn btn-p" style={{ marginTop: 10 }} disabled={!s.ngregens.installed} onClick={fill} data-testid="fill-missing-button"><Wand2 size={13} />Give a face to everyone without one</button>
         {s.ngregens.installed && <NationFolders s={s} act={act} key={JSON.stringify(s.nation_folders)} />}
       </div>

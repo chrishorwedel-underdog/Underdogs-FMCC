@@ -5,7 +5,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from core import db, active_career, now_iso, new_id
+from core import db, active_career, now_iso, new_id, logger
 import features_api
 
 router = APIRouter(prefix="/api/notify")
@@ -128,12 +128,12 @@ async def sync(c: dict) -> None:
         pass
     try:
         await awards_api.auto_breakout(c)
-    except HTTPException:
-        pass
+    except Exception as exc:  # noqa: BLE001 - an automatic check must never block the bell
+        logger.warning("auto breakout skipped: %s", exc)
     try:
         await awards_api.auto_elite(c)
-    except HTTPException:
-        pass
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("auto elite skipped: %s", exc)
     import history_api
     try:
         await history_api.check_records(c)

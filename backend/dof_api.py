@@ -14,9 +14,36 @@ from features_api import need
 from matches_api import season_per90
 from rules_api import current as current_rules
 from sample_reader import GROUP
+from player_clean import first_pos
 
 router = APIRouter(prefix="/api/dof")
 MODEL = ("openai", "gpt-5.6-terra")
+FALLBACK_MODELS = [MODEL[1], "gpt-5.2", "gpt-5.1", "gpt-4.1"]
+MODEL_LABEL = {"gpt-5.6-terra": "GPT-5.6 Terra", "gpt-5.2": "GPT-5.2", "gpt-5.1": "GPT-5.1", "gpt-4.1": "GPT-4.1"}
+
+
+def current_model() -> tuple:
+    return ("openai", os.environ.get("OPENAI_MODEL") or MODEL[1])
+
+
+def key_problem(exc: Exception) -> str:
+    """'key', 'credit', 'network' or 'model' from an OpenAI error, so each gets its own plain message."""
+    t = f"{type(exc).__name__} {exc}".lower()
+    if any(w in t for w in ("insufficient_quota", "exceeded your current quota", "billing", "credit")):
+        return "credit"
+    if any(w in t for w in ("invalid_api_key", "incorrect api key", "401", "authentication", "unauthorized")):
+        return "key"
+    if any(w in t for w in ("model_not_found", "does not exist", "not have access", "404", "403", "unsupported model", "invalid model")):
+        return "model"
+    if any(w in t for w in ("connect", "timeout", "timed out", "network", "name resolution", "ssl")):
+        return "network"
+    return "model"
+
+
+KEY_ERRORS = {"key": "OpenAI didn't accept this key. Copy it again from platform.openai.com.",
+              "credit": "Your OpenAI account has no credit left. Add credit and try again.",
+              "network": "FMCC couldn't reach OpenAI. Check your internet connection or firewall.",
+              "model": "This key works, but your account can't use any of FMCC's chat models yet."}
 MARK = "ACTION:"
 SUGGESTED = ["Fill my biggest gap", "Cheapest upgrade for my XI", "Young player to develop",
              "Who should start the next game to give my U21s minutes?", "Where am I weakest?", "Which striker is underperforming his xG?"]
@@ -28,6 +55,7 @@ def api_key():
 
 class KeyIn(BaseModel):
     key: str = Field(min_length=20, max_length=300)
+    model: Optional[str] = Field(default=None, max_length=40)
 
 
 @router.put("/key")
@@ -39,6 +67,9 @@ async def set_key(body: KeyIn):
     cfg = Path(os.environ.get("APPDATA", Path.home())) / "FMCC" / "config.json"
     data = json.loads(cfg.read_text(encoding="utf-8")) if cfg.exists() else {}
     data["OPENAI_API_KEY"] = body.key.strip()
+    if body.model:
+        data["OPENAI_MODEL"] = body.model
+        os.environ["OPENAI_MODEL"] = body.model
     cfg.write_text(json.dumps(data), encoding="utf-8")
     os.environ["OPENAI_API_KEY"] = body.key.strip()
     return {"ok": True}
@@ -78,7 +109,7 @@ async def build_context(c: dict) -> str:
     pool_by = {p["unique_id"]: p for p in pool["players"]}
     groups = {}
     for p in sorted(pool["players"], key=lambda p: -(p["pa"] + p["ca"])):
-        g = GROUP[p["positions"][0]]
+        g = GROUP[first_pos(p)]
         if len(groups.setdefault(g, [])) < 4:
             groups[g].append(p)
     pool_lines = "; ".join(f"id {p['unique_id']} {p['name']} {p['age']} {'/'.join(p['positions'])} {p['club']} {_tier(p)} value {p['value']}" for ps in groups.values() for p in ps)
@@ -216,7 +247,7 @@ class Ask(BaseModel):
 
 @router.get("/status")
 async def status():
-    return {"ready": bool(api_key()), "model": MODEL[1], "suggested": SUGGESTED, "desktop": os.environ.get("FMCC_READER") == "fmsave",
+    return {"ready": bool(api_key()), "model": current_model()[1], "model_label": MODEL_LABEL.get(current_model()[1], current_model()[1]), "suggested": SUGGESTED, "desktop": os.environ.get("FMCC_READER") == "fmsave",
             "key_source": "Your OpenAI key" if os.environ.get("OPENAI_API_KEY") else "Emergent universal key (preview)"}
 
 
@@ -268,7 +299,7 @@ async def stream(conv_id: str, body: Ask):
         await db.dof_conversations.update_one({"id": conv_id}, {"$set": {"title": body.text[:60]}})
     system = SYSTEM + f"\nAddress the manager as \"{address}\", the way the game does (for example when you greet them or close an answer). Use it naturally, not in every sentence.\n" + context + (f"\n\nEARLIER IN THIS CONVERSATION:\n{transcript}" if transcript else "")
     from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, StreamDone
-    chat = LlmChat(api_key=key, session_id=f"dof-{conv_id}-{new_id()}", system_message=system).with_model(*MODEL)
+    chat = LlmChat(api_key=key, session_id=f"dof-{conv_id}-{new_id()}", system_message=system).with_model(*current_model())
 
     async def gen():
         full = ""

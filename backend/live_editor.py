@@ -69,6 +69,19 @@ def read_all(entity: str, uid: int) -> dict:
     return {m.group(1): int(m.group(2)) for m in re.finditer(r"^\s{2}(\S+)\s+(-?\d+)\s*$", out, re.M)}
 
 
+def list_staff() -> list:
+    """Every staff member in the running game, for Seed a Surname when the save's staff can't be read. Output format UNVERIFIED."""
+    out = run("list", "staff", timeout=300)
+    rows = []
+    for ln in out.splitlines():
+        m = re.match(r"^\s*(\d+)\s+(.+?)(?:\s{2,}|\t)(.+?)(?:(?:\s{2,}|\t)(.+?))?(?:(?:\s{2,}|\t)(\d+))?\s*$", ln)
+        if m:
+            rows.append({"unique_id": int(m.group(1)), "name": m.group(2).strip(), "job": (m.group(3) or "").strip() or None,
+                         "club": (m.group(4) or "").strip() or None, "age": int(m.group(5)) if m.group(5) else None, "has_contract": True, "source": "live"})
+    return rows
+
+
+
 def clamp(v: int) -> int:
     return max(LIMITS[0], min(LIMITS[1], v))
 

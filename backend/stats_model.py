@@ -12,6 +12,10 @@ from pathlib import Path
 import roles
 from core import db, latest_snapshot
 from sample_reader import GROUP
+from player_clean import clean_all, clean_player, first_pos
+import logging
+
+logger = logging.getLogger("fmcc")
 
 DATA = Path(__file__).parent / "data"
 WEIGHTS = json.loads((DATA / "position_weights.json").read_text(encoding="utf-8"))
@@ -73,7 +77,7 @@ HIDDEN = ["consistency", "important_matches", "injury_proneness", "versatility",
 
 
 def cohort_of(p: dict) -> str:
-    return "Wing-back" if p["positions"][0].startswith("WB") else COHORT[GROUP[p["positions"][0]]]
+    return "Wing-back" if first_pos(p).startswith("WB") else COHORT[GROUP[first_pos(p)]]
 
 
 def _rng(uid: int, salt: str) -> random.Random:
@@ -84,7 +88,7 @@ def sample_stats(p: dict) -> dict | None:
     """SAMPLE per-90 numbers for the browser preview, built from the player's attributes and position."""
     if not p.get("minutes"):
         return None
-    g, a, out = GROUP[p["positions"][0]], p.get("attributes", {}), {}
+    g, a, out = GROUP[first_pos(p)], p.get("attributes", {}), {}
     for k, (_, kind, mean, sd, drivers, gk_only) in METRICS.items():
         if gk_only and g != "GK":
             continue
@@ -163,6 +167,36 @@ async def archetypes(career_id: str) -> dict:
     return out
 
 
+def _row(p: dict, mult: dict, poss: dict, ours, gd) -> dict:
+    stats = p.get("stats") if p.get("stats") is not None else (None if LIVE or p["source"] == "html" else sample_stats(p))
+    hidden = p.get("hidden") or (None if LIVE or p["source"] == "html" else sample_hidden(p))
+    lm = mult.get(p["league"], {}).get("multiplier", 1.0) if p.get("league") else 1.0
+    lmeta = mult.get(p.get("league") or "", {})
+    theirs = poss.get(p["club"])
+    pa = ours / theirs if ours and theirs and not p["own"] else 1.0
+    adj, p90 = {}, {k: v for k, v in (stats or {}).items() if k in METRICS and isinstance(v, (int, float))}
+    for k, v in p90.items():
+        kind = METRICS[k][1]
+        adj[k] = v if kind == "pct" else round(v * (pa if kind == "att" else 1 / pa), 3)
+    r = _rng(p.get("unique_id") or 0, "know")
+    return {**{k: p.get(k) for k in ("unique_id", "name", "age", "nationality", "club", "league", "positions", "ca", "pa", "value", "wage",
+                                     "minutes", "appearances", "attributes", "own", "source", "import_id", "contract_end", "linked")},
+            "gender": p.get("gender", "M"), "league_scored": lmeta.get("scored", True), "league_note": lmeta.get("no_score"), "group": GROUP[first_pos(p)], "cohort": cohort_of(p),
+            "p90": p90, "adj": adj, "poss_mult": round(pa, 3), "league_mult": round(lm, 3), "hidden": hidden,
+            "personality": personality(hidden) if hidden else None, "knowledge": 100 if p["own"] else 20 + r.randint(0, 80),
+            "months_left": months_left(p.get("contract_end"), gd) if gd else None, "minutes": p.get("minutes") or 0}
+
+
+def _finish(x: dict, arch: dict):
+    x["phases"] = {ph: _avg([x["pct"].get(m) for m in ms]) for ph, ms in PHASES.items()} if x.get("pct") else {}
+    x["computed"] = {k: _score(x, a["metrics"]) if not a.get("groups") or x["group"] in a["groups"] else None for k, a in arch.items()} if x.get("pct") else {}
+    x["actions"] = {n: round(sum(x["p90"].get(m, 0) * w for m, w in ws.items()), 2) for n, ws in ACTIONS.items()} if x["p90"] else {}
+    x["confidence"] = "Low" if x["minutes"] < MIN_PRICE else "Medium" if x["minutes"] < 1800 else "High"
+    if x.get("attributes"):
+        b = roles.best_role(x)
+        x["best_role"] = f"{b['name']} ({b['duty']})"
+
+
 async def build(c: dict) -> dict:
     key, mult = await _state_key(c)
     if CACHE.get("key") == key:
@@ -176,42 +210,30 @@ async def build(c: dict) -> dict:
     poss = {k: v["value"] for k, v in (await latest_docs("possession", c["id"], "club")).items() if v.get("value")}
     ours = poss.get(c["club_name"])
     raw = [p | {"club": c["club_name"], "league": c.get("league") or "Premier Division", "own": True, "value": p.get("value") or 0, "source": "save"} for p in snap["players"]]
-    raw += [p | {"own": False, "source": "save"} for p in pool["players"]]
+    raw += [p | {"own": False, "source": "save"} for p in clean_all(pool["players"])]
     async for imp in db.html_imports.find({"career_id": c["id"], "status": "active"}, {"_id": 0}):
-        raw += [p | {"own": False, "source": "html", "import_id": imp["id"]} for p in imp["players"]]
-    players = []
+        raw += [p | {"own": False, "source": "html", "import_id": imp["id"]} for p in clean_all(imp["players"])]
+    players, left_out = [], 0
     for p in raw:
-        stats = p.get("stats") if p.get("stats") is not None else (None if LIVE or p["source"] == "html" else sample_stats(p))
-        hidden = p.get("hidden") or (None if LIVE or p["source"] == "html" else sample_hidden(p))
-        lm = mult.get(p["league"], {}).get("multiplier", 1.0) if p.get("league") else 1.0
-        lmeta = mult.get(p.get("league") or "", {})
-        theirs = poss.get(p["club"])
-        pa = ours / theirs if ours and theirs and not p["own"] else 1.0
-        adj, p90 = {}, stats or {}
-        for k, v in p90.items():
-            kind = METRICS[k][1]
-            adj[k] = v if kind == "pct" else round(v * (pa if kind == "att" else 1 / pa), 3)
-        r = _rng(p.get("unique_id") or 0, "know")
-        players.append({**{k: p.get(k) for k in ("unique_id", "name", "age", "nationality", "club", "league", "positions", "ca", "pa", "value", "wage",
-                                                 "minutes", "appearances", "attributes", "own", "source", "import_id", "contract_end", "linked")},
-                        "gender": p.get("gender", "M"), "league_scored": lmeta.get("scored", True), "league_note": lmeta.get("no_score"), "group": GROUP.get(p["positions"][0], "CM") if p.get("positions") else "CM", "cohort": cohort_of(p) if p.get("positions") else "Central midfielder",
-                        "p90": p90, "adj": adj, "poss_mult": round(pa, 3), "league_mult": round(lm, 3), "hidden": hidden,
-                        "personality": personality(hidden) if hidden else None, "knowledge": 100 if p["own"] else 20 + r.randint(0, 80),
-                        "months_left": months_left(p.get("contract_end"), gd) if gd else None, "minutes": p.get("minutes") or 0})
+        try:
+            players.append(_row(p, mult, poss, ours, gd))
+        except Exception as exc:  # noqa: BLE001 - one unreadable player must not break the page
+            logger.warning("scouting row skipped for %s: %s", p.get("unique_id"), exc)
+            if not p["own"]:
+                left_out += 1
+                continue
+            players.append(_row(clean_player({k: p.get(k) for k in ("unique_id", "name", "positions")}) | {k: p[k] for k in ("club", "league", "own", "source")} | {"stats": {}}, mult, poss, ours, gd))
     _grade(players)
     arch = await archetypes(c["id"])
     for x in players:
-        x["phases"] = {ph: _avg([x["pct"].get(m) for m in ms]) for ph, ms in PHASES.items()} if x["pct"] else {}
-        x["computed"] = {k: _score(x, a["metrics"]) if not a.get("groups") or x["group"] in a["groups"] else None for k, a in arch.items()} if x["pct"] else {}
-        x["actions"] = {n: round(sum(x["p90"].get(m, 0) * w for m, w in ws.items()), 2) for n, ws in ACTIONS.items()} if x["p90"] else {}
-        x["confidence"] = "Low" if x["minutes"] < MIN_PRICE else "Medium" if x["minutes"] < 1800 else "High"
-        if x.get("attributes"):
-            b = roles.best_role(x)
-            x["best_role"] = f"{b['name']} ({b['duty']})"
+        try:
+            _finish(x, arch)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("scouting extras skipped for %s: %s", x.get("unique_id"), exc)
     _fair_prices(players)
     by_uid = {p["unique_id"]: p for p in players if p.get("unique_id") and p["source"] == "html"}
     by_uid |= {p["unique_id"]: p for p in players if p.get("unique_id") and p["source"] == "save"}
-    data = {"players": players, "by_uid": by_uid, "game_date": gd, "archetypes": arch,
+    data = {"players": players, "by_uid": by_uid, "game_date": gd, "archetypes": arch, "left_out": left_out,
             "possession": poss, "season": pool.get("season")}
     CACHE.update(key=key, data=data)
     return data

@@ -128,8 +128,11 @@ async def _data():
     data = await sm.build(c)
     if not data["players"]:
         raise HTTPException(404, "No scouting data yet. Read a save first.")
-    await _record_seasons(c, data)
-    await lab_api.attach(c, data)
+    try:
+        await _record_seasons(c, data)
+        await lab_api.attach(c, data)
+    except Exception as exc:  # noqa: BLE001 - extras must never stop a search
+        sm.logger.warning("scouting extras skipped: %s", exc)
     return c, data
 
 
@@ -161,7 +164,7 @@ async def meta():
 async def players(f: Filters):
     _, data = await _data()
     rows = _filter(data, f.model_dump(), f.view)
-    return {"total": len(rows), "rows": [_row(x, f.view, f.mode) for x in rows[:f.limit]]}
+    return {"total": len(rows), "left_out": data.get("left_out", 0), "rows": [_row(x, f.view, f.mode) for x in rows[:f.limit]]}
 
 
 @router.post("/export")
@@ -586,7 +589,7 @@ async def set_prefs(body: PrefsIn):
 async def dof_report(uid: int):
     """Your Director of Football writes a scouting report from the Moneyball numbers only (no attributes)."""
     from emergentintegrations.llm.chat import LlmChat, UserMessage
-    from dof_api import api_key, MODEL
+    from dof_api import api_key, current_model
     c, data = await _data()
     x = data["by_uid"].get(uid)
     if not x:
@@ -603,7 +606,7 @@ async def dof_report(uid: int):
              + ". Archetype scores: " + "; ".join(f"{data['archetypes'][k]['name']} {v}" for k, v in x["computed"].items() if v is not None))
     chat = LlmChat(api_key=key, session_id=f"dof-report-{uid}-{new_id()}", system_message=(
         "You are the Director of Football in FMCC, a Football Manager companion. Write a short Moneyball scouting report (120-180 words) "
-        "from the numbers given only. Never mention attributes, CA or PA. Cover strengths, weaknesses, price versus fair price, and a clear recommendation.")).with_model(*MODEL)
+        "from the numbers given only. Never mention attributes, CA or PA. Cover strengths, weaknesses, price versus fair price, and a clear recommendation.")).with_model(*current_model())
     try:
         text = await chat.send_message(UserMessage(text=facts))
     except Exception as exc:

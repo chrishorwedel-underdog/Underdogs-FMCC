@@ -86,25 +86,96 @@ def _sample_pack(ng: Path, uids: list[int]):
     (ng / "config.xml").write_text(f'<record><boolean id="preload" value="false"/><boolean id="amap" value="false"/><list id="maps">{recs}</list></record>')
 
 
+def _faces_in(folder: Path, cap: int = 200000) -> int:
+    """Face pictures under a folder (NG_Regens keeps them in ethnicity folders such as Afroamerican, Afrocaribbean)."""
+    n = 0
+    try:
+        for _root, _dirs, files in os.walk(folder):
+            n += sum(1 for f in files if f.lower().endswith((".png", ".jpg")))
+            if n >= cap:
+                break
+    except OSError:
+        return 0
+    return n
+
+
+def _ng_candidates(dirs: dict) -> list:
+    if not LIVE:
+        return [dirs["graphics"] / "NG_Regens"]
+    home = Path.home()
+    docs = [home / "Documents", home / "OneDrive" / "Documents"] + [Path(os.environ[k]) / "Documents" for k in ("OneDrive", "OneDriveConsumer") if os.environ.get(k)]
+    out = []
+    for d in docs:
+        for fm in ("Football Manager 2027", "Football Manager 27", "Football Manager 2026", "Football Manager 26"):
+            g = d / "Sports Interactive" / fm / "graphics"
+            if g.is_dir():
+                out += [x for x in g.iterdir() if x.is_dir() and "regen" in x.name.lower()]
+                out += [y for x in g.iterdir() if x.is_dir() for y in x.iterdir() if y.is_dir() and "regen" in y.name.lower()] if g.is_dir() else []
+    for k in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA", "APPDATA"):
+        base = Path(os.environ.get(k, ""))
+        if os.environ.get(k) and base.is_dir():
+            out += [x for x in base.iterdir() if x.is_dir() and "ng_regens" in x.name.lower().replace(" ", "_")]
+    return list(dict.fromkeys(out))
+
+
+def find_ng(career: dict) -> dict | None:
+    """Best NG_Regens copy on this PC: the folder with the most faces. Only reads folder names and counts pictures."""
+    best = max(((_faces_in(c), c) for c in _ng_candidates(fm_dirs(career))), default=(0, None))
+    return {"folder": str(best[1]), "faces": best[0]} if best[0] >= NG_MIN_FACES else None
+
+
+NG_MIN_FACES = 10
+
+
 async def ng_index(career: dict) -> dict:
     """uid -> {file, newgen} from every config.xml inside NG_Regens, plus the picture folders."""
     dirs = fm_dirs(career)
-    ng = dirs["graphics"] / "NG_Regens"
-    if not LIVE and not (ng / "config.xml").exists():
+    ng = Path(career["ng_folder"]) if career.get("ng_folder") else dirs["graphics"] / "NG_Regens"
+    if not LIVE and not career.get("ng_folder") and not (ng / "config.xml").exists():
         pool = await db.pools.find_one({"career_id": career["id"]}, {"_id": 0, "players.unique_id": 1}) or {"players": []}
         await asyncio.to_thread(_sample_pack, ng, [p["unique_id"] for p in pool["players"]])
-    return await asyncio.to_thread(_read_ng, ng)
+    out = await asyncio.to_thread(_read_ng, ng)
+    if career.get("ng_folder") and not out["installed"]:
+        out["moved"] = True
+    return out
 
 
 def _read_ng(ng: Path) -> dict:
-    if not ng.is_dir():
+    if not ng.is_dir() or (not any(ng.rglob("config.xml")) and _faces_in(ng, NG_MIN_FACES) < NG_MIN_FACES):
         return {"installed": False, "folder": str(ng), "faces": {}, "folders": {}}
     faces = {}
     for cfg in ng.rglob("config.xml"):
         for frm, r, uid in re.findall(r'<record\s+from="([^"]+)"\s+to="graphics/pictures/person/(r-)?(\d+)/portrait"', cfg.read_text(errors="ignore")):
             faces[int(uid)] = {"file": str((cfg.parent / frm).with_suffix(".png")), "newgen": bool(r)}
     folders = {d.name: sorted(str(p) for p in d.glob("*.png")) for d in ng.iterdir() if d.is_dir()}
-    return {"installed": True, "folder": str(ng), "faces": faces, "folders": {k: v for k, v in folders.items() if v}}
+    return {"installed": True, "folder": str(ng), "faces": faces, "folders": {k: v for k, v in folders.items() if v}, "pictures": _faces_in(ng)}
+
+
+class NgFolderIn(BaseModel):
+    folder: str = Field(min_length=3, max_length=400)
+
+
+@router.post("/ng/find")
+async def ng_find():
+    c = await active_career()
+    hit = await asyncio.to_thread(find_ng, c)
+    if not hit:
+        return {"found": False, "message": "FMCC couldn't find NG_Regens faces in your FM, Documents, OneDrive, Program Files or AppData folders. Choose the NG_Regens folder yourself."}
+    await db.careers.update_one({"id": c["id"]}, {"$set": {"ng_folder": hit["folder"]}})
+    return {"found": True, "folder": hit["folder"], "faces": hit["faces"], "message": f"Found NG_Regens with {hit['faces']:,} faces in {hit['folder']}"}
+
+
+@router.post("/ng/choose")
+async def ng_choose(body: NgFolderIn):
+    c = await active_career()
+    p = Path(body.folder.strip().strip('"'))
+    if not p.is_dir():
+        raise HTTPException(404, "That folder isn't there. Check the path and try again.")
+    n = await asyncio.to_thread(_faces_in, p)
+    if n < NG_MIN_FACES and not any(p.rglob("config.xml")):
+        raise HTTPException(422, "That folder doesn't hold NG_Regens faces. Pick the NG_Regens folder that has the face folders inside it.")
+    await db.careers.update_one({"id": c["id"]}, {"$set": {"ng_folder": str(p)}})
+    return {"ok": True, "folder": str(p), "faces": n}
 
 
 # ---------- revisions and the FMCC graphics folder ----------
@@ -233,7 +304,7 @@ async def status():
     if files and files["lnc"].get("file") and (files["lnc"].get("lines") or files["lnc"].get("renames")):
         lnc_ok = await asyncio.to_thread(Path(files["lnc"]["file"]).exists)
     mapping = (await db.settings.find_one({"_id": "app"}, {"_id": 0, "nation_folders": 1}) or {}).get("nation_folders") or {}
-    return {"desktop": LIVE, "ngregens": {"installed": ng["installed"], "folder": ng["folder"], "faces": len(ng["faces"]), "folders": sorted(ng["folders"])},
+    return {"desktop": LIVE, "ngregens": {"installed": ng["installed"], "folder": ng["folder"], "faces": len(ng["faces"]) or ng.get("pictures", 0), "moved": bool(ng.get("moved")), "folders": sorted(ng["folders"])},
             "files": files, "lnc_present": lnc_ok, "nation_folders": mapping, "edition": c["edition"], "not_editable": NOT_EDITABLE}
 
 

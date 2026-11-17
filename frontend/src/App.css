@@ -636,3 +636,11 @@ th.sortable:hover,th.sortable[aria-sort]{color:var(--acc)}
 .cab-latest{border-left:3px solid #F5C542}
 [data-testid="history-tabs"] button,.seg button{white-space:nowrap}
 
+html:not(.theme-light) .recharts-cartesian-axis-tick-value,html:not(.theme-light) .recharts-polar-angle-axis-tick-value,html:not(.theme-light) .recharts-polar-radius-axis-tick-value,html:not(.theme-light) .recharts-legend-item-text,html:not(.theme-light) .recharts-label{fill:var(--text)!important;color:var(--text)!important}
+html:not(.theme-light) ::placeholder{color:var(--mut);opacity:.75}
+input:disabled,select:disabled,textarea:disabled{opacity:.5}
+.load-fail{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;border:1px solid rgba(242,181,74,.35);background:rgba(242,181,74,.08);border-radius:12px;color:var(--text);font-size:14px}
+.load-fail span{flex:1 1 240px}
+@media (max-width:640px){.load-fail .btn{width:100%;justify-content:center}}
+.crest-logo{width:100%;height:100%;object-fit:contain;border-radius:inherit}
+

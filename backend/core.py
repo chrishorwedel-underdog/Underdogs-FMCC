@@ -56,7 +56,11 @@ async def active_career() -> dict:
 
 
 async def latest_two(career_id: str) -> list:
-    return await db.snapshots.find({"career_id": career_id}, {"_id": 0}).sort("save_no", -1).limit(2).to_list(2)
+    from player_clean import clean_all
+    snaps = await db.snapshots.find({"career_id": career_id}, {"_id": 0}).sort("save_no", -1).limit(2).to_list(2)
+    for s in snaps:
+        s["players"] = clean_all(s.get("players"))
+    return snaps
 
 
 async def latest_snapshot(career_id: str) -> dict:

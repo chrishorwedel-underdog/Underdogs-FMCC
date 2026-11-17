@@ -145,7 +145,7 @@ export const PlayersTab = () => {
         <ShowMore more={moreRows} id="sp" />
         {isLoading && <div style={{ padding: 10 }}><Loading id="players-loading" rows={6} label="Loading players" /></div>}
         {data && !data.rows.length && <SpEmpty f={f} setF={setF} meta={meta} />}
-        {data && <p className="note" style={{ padding: 10 }} data-testid="sp-total">{data.total} players match. Showing {Math.min(100, data.total)}. Percentiles and grades need {meta?.min_minutes.percentiles} minutes; a fair price needs {meta?.min_minutes.fair_price}.{meta?.sample ? " Match stats are SAMPLE numbers in this preview." : ""}</p>}
+        {data && <p className="note" style={{ padding: 10 }} data-testid="sp-total">{data.total} players match. Showing {Math.min(100, data.total)}.{data.left_out ? ` ${data.left_out} player${data.left_out === 1 ? "" : "s"} left out: their save data couldn't be read.` : ""} Percentiles and grades need {meta?.min_minutes.percentiles} minutes; a fair price needs {meta?.min_minutes.fair_price}.{meta?.sample ? " Match stats are SAMPLE numbers in this preview." : ""}</p>}
       </div>
     </div>
   );

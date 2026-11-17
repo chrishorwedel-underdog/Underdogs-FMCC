@@ -10,6 +10,17 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api, ago, errMsg, gameDate } from "@/lib/api";
 
+const Crest = ({ career }) => {
+  const [bad, setBad] = useState(false);
+  useEffect(() => { setBad(false); }, [career?.id]);
+  const initials = career?.club_name?.slice(0, 2).toUpperCase();
+  return (
+    <div className="crest" data-testid="top-crest">
+      {career?.id && !bad ? <img className="crest-logo" alt={initials} src={`${process.env.REACT_APP_BACKEND_URL}/api/club-logo?career=${career.id}`} onError={() => setBad(true)} data-testid="top-crest-logo" /> : initials}
+    </div>
+  );
+};
+
 const linkTone = (iso) => {
   if (!iso) return "bad";
   return Date.now() - new Date(iso).getTime() > 6 * 3600 * 1000 ? "warn" : "ok";
@@ -50,7 +61,7 @@ export const TopBar = ({ career, onSearch, sample = true }) => {
   return (
     <header className="top" data-testid="top-bar">
       <div className="club">
-        <div className="crest" data-testid="top-crest">{career?.club_name?.slice(0, 2).toUpperCase()}</div>
+        <Crest career={career} />
         <div><b data-testid="top-club-name">{career?.club_name}</b><span data-testid="top-game-date">{career?.edition} · {gameDate(career?.last_game_date)}</span></div>
       </div>
       <div className="srch" onClick={onSearch} data-testid="top-search-button"><Search size={15} />Search players, screens, actions…<kbd>Ctrl K</kbd></div>

@@ -85,11 +85,13 @@ def _newest(folder: Path, pattern: str):
     return max(files, key=lambda f: f.stat().st_mtime) if files else None
 
 
-def _found(key: str, p: dict) -> tuple[bool, str]:
+def _found(key: str, p: dict, ng: dict | None = None) -> tuple[bool, str]:
     g = p["graphics"]
     if key == "ng_regens":
-        ok = (g / "NG_Regens" / "config.xml").exists()
-        return ok, "Faces found in FM's graphics folder" if ok else "Not found in FM's graphics folder"
+        if ng and ng.get("moved"):
+            return False, f"The NG_Regens folder FMCC used isn't there any more ({ng['folder']})"
+        ok = bool(ng and ng["installed"])
+        return ok, f"Faces found in {ng['folder']}" if ok else "Not found in FM's graphics folder"
     if key == "real_name_fix":
         n = sum(1 for d in _db_dirs(p["game"]) for f in (d / "lnc" / "all").glob("*.lnc") if f.name != OURS_LNC)
         return bool(n), f"{n} real-name file(s) in the game's database folders" if n else "Not found in the game's database folders"
@@ -104,13 +106,13 @@ def _found(key: str, p: dict) -> tuple[bool, str]:
 async def extras():
     c = await active_career()
     p = _paths(c)
-    await editor_api.ng_index(c)
+    ng = await editor_api.ng_index(c)
     if not LIVE:
         await asyncio.to_thread(_sample_downloads, p)
     last = {d["_id"]: d for d in await db.extras_installs.aggregate([{"$sort": {"at": -1}}, {"$group": {"_id": "$key", "at": {"$first": "$at"}, "file": {"$first": "$file"}}}]).to_list(20)}
     out = []
     for it in ITEMS:
-        ok, detail = await asyncio.to_thread(_found, it["key"], p)
+        ok, detail = await asyncio.to_thread(_found, it["key"], p, ng)
         f = await asyncio.to_thread(_newest, p["downloads"], it["pattern"])
         page = it["page"] or RNF_PAGE.get(c["edition"], RNF_PAGE["FM26"])
         out.append({k: v for k, v in it.items() if k != "pattern"} | {"page": page, "found": ok, "detail": detail,

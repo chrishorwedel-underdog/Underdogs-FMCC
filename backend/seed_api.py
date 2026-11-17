@@ -15,7 +15,8 @@ from pydantic import BaseModel, Field, model_validator
 import creator_api as cr
 import editor_api
 import sample_reader
-from core import db, active_career, latest_two, now_iso, new_id, audit
+from core import db, active_career, latest_two, now_iso, new_id, audit, logger
+from player_clean import clean_all
 
 router = APIRouter(prefix="/api/seed")
 CA_CAP, PA_CAP = 60, 100
@@ -241,6 +242,15 @@ async def meta():
             "desktop": editor_api.LIVE, "club": c["club_name"]}
 
 
+def _why_empty(b: SeedIn, rows: list, own: str) -> str:
+    if not rows:
+        return "FMCC has no low-profile players from this save yet. Read the save again"
+    nats = ", ".join(sorted({n.nation for n in b.nations})) or "any nation"
+    pos = ", ".join(k for k, n in b.players.items() if n) or "any position"
+    ages = ", ".join(lab for k, lab, _, _ in PLAYER_AGES if b.player_ages.get(k)) or "any age"
+    return f"no more low-profile {nats} players for {pos} aged {ages}"
+
+
 @router.post("/create")
 async def create(body: SeedIn):
     c = await active_career()
@@ -250,18 +260,30 @@ async def create(body: SeedIn):
         people = generate(body, await _game_date(c), extra)
     else:
         doc = await db.pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1, "staff": 1}) or {}
+        low = await db.seed_pools.find_one({"career_id": c["id"]}, {"_id": 0, "players": 1}) or {}
         taken = await _taken(c["id"])
-        people, missing = match_existing(body, doc.get("players") or [], c["club_name"], taken, extra)
+        player_rows = clean_all(low.get("players") or doc.get("players") or [])
+        people, missing = match_existing(body, player_rows, c["club_name"], taken, extra)
         nats = [n.nation for n in body.nations for _ in range(n.count)]
         random.Random(body.seed * 49979687 + body.total).shuffle(nats)
-        staff_rows = doc.get("staff") or ([] if editor_api.LIVE else sample_reader.sample_staff(0, c["club_name"]))
+        staff_rows, staff_src = doc.get("staff") or ([] if editor_api.LIVE else sample_reader.sample_staff(0, c["club_name"])), "save"
+        if not staff_rows and editor_api.LIVE and body.staff and sum(body.staff.values()):
+            import live_editor
+            try:
+                staff_rows, staff_src = await asyncio.to_thread(live_editor.list_staff), "game"
+            except Exception as exc:  # noqa: BLE001 - the running game is only a fallback
+                logger.warning("live staff list failed: %s", exc)
         staff, s_missing = match_staff(body, staff_rows, c["club_name"], taken, extra, nats, sum(body.players.values()))
         people += staff
-        notes = [f"{missing} player slot(s) had no low-profile player left to rename"] if missing else []
+        n_players = sum(1 for p in player_rows if p.get("gender") != "F" and _low_profile(p, c["club_name"], body.include_own_club))
+        n_staff = sum(1 for s in staff_rows if _low_profile_staff(s, c["club_name"], body.include_own_club))
+        notes = [f"Chose from {n_players:,} low-profile players and {n_staff:,} staff" + (" (staff from your running game)" if staff_src == "game" else "")]
+        if missing:
+            notes.append(f"{missing} player slot(s) are empty: {_why_empty(body, player_rows, c['club_name'])}")
         if s_missing:
-            notes.append(f"{s_missing} staff slot(s) had no low-profile staff member left to rename" if staff_rows
-                         else f"{s_missing} staff were left out: FMCC hasn't read any staff from this save yet. Read the save again to pick them up")
-        note = ". ".join(notes) or None
+            notes.append(f"{s_missing} staff slot(s) are empty: no low-profile staff match the jobs and nationalities you chose" if staff_rows
+                         else f"{s_missing} staff slot(s) are empty: FMCC couldn't read staff from this save. Open FM with this save loaded, then press Create again")
+        note = ". ".join(notes)
         if not people:
             raise HTTPException(409, note or "No low-profile players found to rename")
     draft = {"career_id": c["id"], "settings": body.model_dump(), "mode": body.mode, "surname": body.surname, "people": people, "note": note, "at": now_iso()}

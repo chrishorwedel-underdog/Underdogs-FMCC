@@ -2,6 +2,7 @@
 from core import db, latest_snapshot, season_start_ca
 from matches_api import season_per90
 from sample_reader import GROUP
+from player_clean import first_pos
 
 
 def _ctx(p: dict, club: str, league: str, start_ca, p90=None) -> dict:
@@ -10,7 +11,7 @@ def _ctx(p: dict, club: str, league: str, start_ca, p90=None) -> dict:
             "unique_id": p["unique_id"], "name": p["name"], "age": p["age"], "minutes": p.get("minutes", 0), "appearances": p.get("appearances", 0),
             "avg_rating": p.get("avg_rating"), "goals": p.get("goals", 0), "assists": p.get("assists", 0), "ca": p["ca"], "pa": p["pa"],
             "ca_growth": p["ca"] - start_ca if start_ca is not None else 0, "training_rating": p.get("training_rating"),
-            "position": GROUP[p["positions"][0]], "nationality": p["nationality"], "club": club, "league": league}
+            "position": GROUP[first_pos(p)], "nationality": p["nationality"], "club": club, "league": league}
 
 
 async def own_contexts(career: dict) -> list:

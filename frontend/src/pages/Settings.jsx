@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { api, ago, gameDate, errMsg } from "@/lib/api";
 import { CareersCard } from "@/components/CareersCard";
 import { RestartSetupCard } from "@/components/RestartSetupCard";
+import { DefaultsCard } from "@/components/DefaultsCard";
 import { AddressCard } from "@/components/AddressPick";
 import { UpdatesCard } from "@/components/UpdatesCard";
 import { startTour } from "@/components/Tour";
@@ -66,7 +67,10 @@ const AutoReadCard = ({ on, sample }) => {
 const KeyCard = () => {
   const [key, setKey] = useState("");
   const save = async () => {
-    try { await api.put("/dof/key", { key }); setKey(""); toast.success("OpenAI key saved on this PC"); } catch (e) { toast.error(errMsg(e)); }
+    try {
+      const { data } = await api.post("/setup/check-key", { key });
+      if (data.ok) { setKey(""); toast.success(data.detail); } else toast.error(data.error);
+    } catch (e) { toast.error(errMsg(e)); }
   };
   return (
     <div className="card rise d5" data-testid="openai-key-card">
@@ -94,7 +98,7 @@ export default function Settings({ state }) {
       <EmbedCtx.Provider value>
       {sec === "career" && <><div className="sgrid">
         <div style={col}><AddressCard current={state.address} key={state.address} /><CareersCard career={state.career} key={state.career.id} /></div>
-        <div style={col}><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /><TourCard /><RestartSetupCard /></div>
+        <div style={col}><AutoReadCard on={state.auto_read_saves !== false} sample={state.sample_mode} /><SavesCard /><TourCard /><RestartSetupCard /><DefaultsCard /></div>
       </div><div style={{ marginTop: 20 }}><TestingCard /></div></>}
       {sec === "appearance" && <Appearance />}
       {sec === "features" && <Features />}

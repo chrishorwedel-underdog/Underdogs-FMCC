@@ -112,15 +112,22 @@ async def check_key(body: KeyCheckIn):
     key = (body.key or "").strip() if LIVE else dof_api.api_key()
     if LIVE and len(key) < 20:
         raise HTTPException(422, "Paste your whole OpenAI key (it starts with sk-)")
-    try:
-        chat = LlmChat(api_key=key, session_id=f"keycheck-{new_id()}", system_message="Reply with the single word OK.").with_model(*dof_api.MODEL)
-        await asyncio.wait_for(chat.send_message(UserMessage(text="Are you there?")), 45)
-    except Exception as exc:
-        logger.warning("DOF key check failed: %s", type(exc).__name__)
-        return {"ok": False, "error": "That key didn't work. Check it's copied in full and that your OpenAI account has credit."}
-    if LIVE:
-        await dof_api.set_key(dof_api.KeyIn(key=key))
-    return {"ok": True, "detail": "Key works and is saved on this PC" if LIVE else "The preview key works"}
+    err = "model"
+    for model in dof_api.FALLBACK_MODELS if LIVE else [dof_api.current_model()[1]]:
+        try:
+            chat = LlmChat(api_key=key, session_id=f"keycheck-{new_id()}", system_message="Reply with the single word OK.").with_model("openai", model)
+            await asyncio.wait_for(chat.send_message(UserMessage(text="Are you there?")), 45)
+        except Exception as exc:  # noqa: BLE001 - each failure is sorted into a plain reason
+            err = "network" if isinstance(exc, asyncio.TimeoutError) else dof_api.key_problem(exc)
+            logger.warning("DOF key check with %s failed: %s %s", model, type(exc).__name__, str(exc)[:200])
+            if err != "model":
+                break
+            continue
+        if LIVE:
+            await dof_api.set_key(dof_api.KeyIn(key=key, model=model))
+        label = dof_api.MODEL_LABEL.get(model, model)
+        return {"ok": True, "model": model, "model_label": label, "detail": f"Key works with {label} and is saved on this PC" if LIVE else "The preview key works"}
+    return {"ok": False, "reason": err, "error": dof_api.KEY_ERRORS[err]}
 
 
 def _writable(folder: Path) -> bool:

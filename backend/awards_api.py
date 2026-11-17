@@ -7,7 +7,7 @@ from pymongo.errors import DuplicateKeyError
 import rules_engine as RE
 from features_api import need
 from changes_api import queue_changes
-from core import db, active_career, latest_snapshot, now_iso, new_id, next_revision, audit
+from core import db, active_career, latest_snapshot, now_iso, new_id, next_revision, audit, logger
 from population import contexts, own_contexts
 from rules_api import current as current_rules, active_nominees, save_version, Scope
 
@@ -202,7 +202,12 @@ async def auto_breakout(c: dict) -> dict | None:
 @router.get("/breakout")
 async def breakout():
     c = await active_career()
-    await auto_breakout(c)
+    note = None
+    try:
+        await auto_breakout(c)
+    except Exception as exc:  # noqa: BLE001 - the season-end check must never block the page
+        logger.warning("breakout season-end check failed: %s", exc)
+        note = "The season-end winner check couldn't run this time. It will run again on the next save read."
     s = await _standings(c)
     snap = s["snap"]
     pool = {**{x["unique_id"]: x for x in s["ranked"]}}
@@ -210,7 +215,7 @@ async def breakout():
     past = sorted([{"season": w["award_key"].split(":")[1], "unique_id": w["unique_id"], "name": w["name"], "note": w.get("note")} for w in s["winners"].values()], key=lambda w: w["season"], reverse=True)
     return {"season": snap["season"], "season_over": int(snap["game_date"][5:7]) in (5, 6), "min_minutes": MIN_MINUTES,
             "winner": {"unique_id": this["unique_id"], "name": this["name"], "note": this.get("note")} if this else None,
-            "leader": s["ranked"][0] if s["ranked"] and not this else None, "standings": s["ranked"], "ineligible": s["ineligible"], "past": past, "_n": len(pool)}
+            "leader": s["ranked"][0] if s["ranked"] and not this else None, "standings": s["ranked"], "ineligible": s["ineligible"], "past": past, "_n": len(pool), "check_note": note}
 
 
 # ---------- Home celebration cards (general terms only; true CA/PA never shown) ----------

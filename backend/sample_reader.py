@@ -15,8 +15,13 @@ PROFILE = {
     "W": ["pace", "acceleration", "dribbling", "crossing", "technique", "flair", "off_the_ball", "first_touch"],
     "ST": ["finishing", "off_the_ball", "composure", "first_touch", "anticipation", "pace", "heading", "strength"],
 }
-GROUP = {"GK": "GK", "D (C)": "CB", "D (L)": "FB", "D (R)": "FB", "WB (L)": "FB", "WB (R)": "FB", "DM": "DM",
-         "M (C)": "CM", "AM (C)": "AM", "AM (L)": "W", "AM (R)": "W", "ST": "ST"}
+class _Group(dict):
+    def __missing__(self, key):
+        return "CM"
+
+
+GROUP = _Group({"GK": "GK", "D (C)": "CB", "D (L)": "FB", "D (R)": "FB", "WB (L)": "FB", "WB (R)": "FB", "DM": "DM",
+         "M (C)": "CM", "AM (C)": "AM", "AM (L)": "W", "AM (R)": "W", "ST": "ST"})
 HOMEGROWN_NATIONS = {"England", "Scotland", "Ireland"}
 
 
