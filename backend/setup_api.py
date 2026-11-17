@@ -54,27 +54,43 @@ def _inspect(edition: str, folder: Optional[str]) -> dict:
 
 class CheckSaveIn(BaseModel):
     path: str = Field(min_length=3, max_length=400)
+    club_name: str = Field("", max_length=60)
+    club_uid: Optional[int] = None
+
+
+PICK_CLUB = "FMCC couldn't tell which club you manage from this save. Pick your club from the list below."
+
+
+def _need_club(choices: list) -> dict:
+    return {"ok": False, "need_club": True, "error": PICK_CLUB, "clubs": choices}
 
 
 @router.post("/check-save")
 async def check_save(body: CheckSaveIn):
     """Try reading the chosen save now, so a problem shows up in setup rather than after it."""
-    if not LIVE:
-        first = sample_reader.read_save(0, "Sample Club FC", {})
-        return {"ok": True, "club_name": first["club_name"], "game_date": first["game_date"], "players": len(first["players"]), "skipped": []}
     import fmsave_reader
+    if not LIVE:
+        # SAMPLE: the "Old career" sample save stands in for a save whose club can't be detected
+        names = dict(enumerate(sorted({c for cs in sample_reader.LEAGUES.values() for c in cs} | {"Sample Club FC"})))
+        if "Old career" in body.path and body.club_uid not in names:
+            return _need_club(fmsave_reader.club_choices(names, Path(body.path.replace("\\", "/")).stem, body.club_name))
+        first = sample_reader.read_save(0, names.get(body.club_uid, "Sample Club FC"), {})
+        return {"ok": True, "club_name": first["club_name"], "club_uid": body.club_uid if body.club_uid in names else None,
+                "game_date": first["game_date"], "players": len(first["players"]), "skipped": []}
     from server import read_error
     p = Path(body.path)
     if not p.is_file() or p.suffix.lower() != ".fm":
         raise HTTPException(404, "That save file isn't there any more. Press Find again.")
     try:
-        d = await asyncio.wait_for(asyncio.to_thread(fmsave_reader.read_save, p, ""), 240)
+        d = await asyncio.wait_for(asyncio.to_thread(fmsave_reader.read_save, p, body.club_name, body.club_uid), 240)
+    except fmsave_reader.ClubNotFound as exc:
+        return _need_club(exc.choices)
     except asyncio.TimeoutError:
         return {"ok": False, "error": "Reading this save took too long. Close FM and try again."}
     except Exception as exc:  # noqa: BLE001
         logger.error("check-save failed: %s", exc)
         return {"ok": False, "error": read_error(p.name, exc)}
-    return {"ok": True, "club_name": d["club_name"], "game_date": d["game_date"], "players": len(d["players"]), "skipped": d.get("skipped", [])}
+    return {"ok": True, "club_name": d["club_name"], "club_uid": d.get("club_uid"), "game_date": d["game_date"], "players": len(d["players"]), "skipped": d.get("skipped", [])}
 
 
 @router.post("/inspect")
@@ -207,7 +223,7 @@ async def put_progress(body: ProgressIn):
     s = await db.settings.find_one({"_id": "app"}, {"_id": 0, "setup_complete": 1}) or {}
     if s.get("setup_complete"):
         return {"ok": True, "ignored": True}
-    allowed = {k: v for k, v in body.form.items() if k in ("edition", "save_folder", "save_file", "club_name", "name", "analytics", "found", "club_edited", "name_edited") and isinstance(v, (str, bool))}
+    allowed = {k: v for k, v in body.form.items() if k in ("edition", "save_folder", "save_file", "club_name", "name", "analytics", "found", "club_edited", "name_edited", "club_uid") and (v is None or isinstance(v, (str, bool, int)))}
     await db.settings.update_one({"_id": "app"}, {"$set": {"setup_progress": {"step": body.step, "form": allowed}}}, upsert=True)
     return {"ok": True}
 

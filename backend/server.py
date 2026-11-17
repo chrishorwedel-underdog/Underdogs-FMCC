@@ -99,6 +99,7 @@ class CareerIn(BaseModel):
 class SetupIn(CareerIn):
     save_folder: str = Field(min_length=3, max_length=300)
     save_file: Optional[str] = Field(None, max_length=400)
+    club_uid: Optional[int] = None
     address: str = Field("Boss", min_length=1, max_length=30)
 
 
@@ -143,7 +144,9 @@ def _read_save_file(career: dict, save_no: int, edits: dict) -> dict:
     if career.get("last_file") == f"{path.name}:{path.stat().st_mtime}":
         raise HTTPException(409, "No new save since the last read")
     try:
-        return fmsave_reader.read_save(path, career["club_name"])
+        return fmsave_reader.read_save(path, career["club_name"], career.get("club_uid"))
+    except fmsave_reader.ClubNotFound:
+        raise HTTPException(422, f"FMCC couldn't tell which club you manage in {path.name}. Run setup again from Settings and pick your club from the list.")
     except Exception as exc:
         logger.error("fmsave read failed: %s", exc)
         raise HTTPException(422, read_error(path.name, exc))
@@ -198,7 +201,7 @@ async def read_next_save(career: dict) -> dict:
 
 async def new_career(body: CareerIn, save_folder: str) -> dict:
     career = {"id": str(uuid.uuid4()), "name": body.name.strip(), "club_name": body.club_name.strip(), "edition": body.edition,
-              "save_folder": save_folder, "save_file": getattr(body, "save_file", None), "reader": "sample", "next_save_no": 0, "created_at": now_iso(),
+              "save_folder": save_folder, "save_file": getattr(body, "save_file", None), "club_uid": getattr(body, "club_uid", None), "reader": "sample", "next_save_no": 0, "created_at": now_iso(),
               "last_read_at": None, "last_game_date": None}
     await db.careers.insert_one(dict(career))
     await read_next_save(career)

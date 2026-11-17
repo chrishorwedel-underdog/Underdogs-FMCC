@@ -3,6 +3,7 @@ field access is defensive, and anything fmsave can't read stays None instead of 
 from datetime import date
 from pathlib import Path
 import logging
+import re
 
 logger = logging.getLogger("fmcc")
 
@@ -275,6 +276,65 @@ def _club_history(club) -> dict:
             "academy": _first(club, "youth_academy", "academy_level", "youth_facilities"), "manager": _first(club, "manager_name", "manager.name")}
 
 
+NO_CLUB_LIST = ("FMCC couldn't read the list of clubs from this save, so it can't tell which club you manage. This usually means the save comes from an FM update "
+                "the save reader doesn't fully support yet. Make sure FM and FMCC are both up to date, or pick a different save.")
+
+
+class ClubNotFound(ValueError):
+    """No clue in the save says which club is yours; carries the club list so you can pick."""
+    def __init__(self, choices: list):
+        super().__init__("FMCC couldn't work out which club you manage in this save")
+        self.choices = choices
+
+
+def club_from_file(stem: str) -> str:
+    """'Chris Horwedel - Wrexham 27' -> 'Wrexham'."""
+    part = stem.split(" - ")[-1]
+    return re.sub(r"\b(backup|auto ?save|copy|\d+)\b", "", part, flags=re.I).strip(" -_()")
+
+
+def _likely(name: str, hints: list) -> bool:
+    n = (name or "").lower()
+    return any(h and len(h) >= 3 and (h in n or n in h) for h in hints)
+
+
+def club_choices(names: dict, stem: str, hint: str = "") -> list:
+    """Every club, likely matches (named in the save file or typed) first, then A-Z."""
+    hints = [club_from_file(stem).lower(), (hint or "").strip().lower()]
+    rows = [{"uid": int(u), "name": n, "likely": _likely(n, hints)} for u, n in names.items() if u is not None and n]
+    return sorted(rows, key=lambda r: (not r["likely"], r["name"].lower()))
+
+
+def _human_club(save):
+    for s in save.staff() if hasattr(save, "staff") else []:
+        if _get(s, "is_human_manager") and _get(s, "club_uid") is not None:
+            return _get(s, "club_uid")
+    return None
+
+
+def _find_club(save, names: dict, stem: str, hint: str, club_uid, skipped: list):
+    """Your club: the one you picked, the one you manage, your manager's employer, the save file's name, then the typed name."""
+    if club_uid is not None and club_uid in names:
+        return club_uid, None
+    mine = _safe(save.managed_clubs, [], "your club", skipped) if hasattr(save, "managed_clubs") else []
+    if mine:
+        return _first(mine[0], "club_uid", "uid"), mine[0]
+    human = _safe(lambda: _human_club(save), None, "your manager", skipped)
+    if human is not None and (not names or human in names):
+        return human, None
+    for want in (club_from_file(stem), hint):
+        want = (want or "").strip().lower()
+        if not want:
+            continue
+        exact = [u for u, n in names.items() if n and n.lower() == want]
+        close = exact or [u for u, n in names.items() if n and len(want) >= 3 and want in n.lower()]
+        if len(close) == 1:
+            return close[0], None
+    if not names:
+        raise ValueError(NO_CLUB_LIST)
+    raise ClubNotFound(club_choices(names, stem, hint))
+
+
 def _open(fmsave, path: Path):
     try:
         return fmsave.open(str(path), strict=False)
@@ -282,21 +342,15 @@ def _open(fmsave, path: Path):
         return fmsave.open(str(path))
 
 
-def read_save(path: Path, club_name_hint: str) -> dict:
+def read_save(path: Path, club_name_hint: str, club_uid: int | None = None) -> dict:
     import fmsave  # only installed in the Windows build
 
     skipped = []
     with _open(fmsave, path) as save:
-        clubs = _safe(lambda: {_first(c, "club_uid", "uid"): (_first(c, "name", "club_name"), _get(c, "nation_id"), _get(c, "gender"), _get(c, "reputation")) for c in save.clubs()} if hasattr(save, "clubs") else {}, {}, "club list", skipped)
-        mine = _safe(save.managed_clubs, [], "your club", skipped)
-        if mine:
-            club = mine[0]
-            my_uid = _first(club, "club_uid", "uid")
-        else:
-            my_uid = next((u for u, v in clubs.items() if v[0] and club_name_hint and v[0].lower() == club_name_hint.lower()), None)
-            club = None
-            if my_uid is None:
-                raise ValueError("FMCC couldn't find the club you manage in this save" + (" because this FM version stores clubs in a way FMCC's save reader doesn't know yet" if skipped else ""))
+        objs = _safe(lambda: list(save.clubs()) if hasattr(save, "clubs") else [], [], "club list", skipped)
+        clubs = {_first(c, "club_uid", "uid"): (_first(c, "name", "club_name"), _get(c, "nation_id"), _get(c, "gender"), _get(c, "reputation")) for c in objs}
+        my_uid, club = _find_club(save, {u: v[0] for u, v in clubs.items()}, path.stem, club_name_hint, club_uid, skipped)
+        club = club or next((c for c in objs if _first(c, "club_uid", "uid") == my_uid), None)
         club_lookup = {u: v[0] for u, v in clubs.items()}
         club_rows = [{"uid": int(u), "name": n, "league": None} for u, n in club_lookup.items() if u is not None and n]
         club_name = club_lookup.get(my_uid) or _get(club, "name") or club_name_hint
@@ -336,5 +390,5 @@ def read_save(path: Path, club_name_hint: str) -> dict:
     pool = sorted(pool, key=lambda r: -r["minutes"])[:WORLD_CAP]
     gd = game_date if isinstance(game_date, date) else date.fromisoformat(str(game_date)[:10])
     season_year = gd.year if gd.month >= 7 else gd.year - 1
-    return {"file_name": path.name, "club_name": club_name, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
+    return {"file_name": path.name, "club_name": club_name, "club_uid": my_uid, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
             "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "finance": finance, "history": history, "file_mtime": path.stat().st_mtime, "skipped": skipped}

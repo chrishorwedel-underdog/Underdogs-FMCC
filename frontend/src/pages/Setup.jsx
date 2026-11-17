@@ -8,6 +8,7 @@ import { api, errMsg } from "@/lib/api";
 import { DownloadLink } from "@/components/DownloadButton";
 import { ExtrasCard } from "@/components/ExtrasCard";
 import { markNewCareer } from "@/components/Tour";
+import { ClubPicker } from "@/components/ClubPicker";
 
 const STEPS = [["Find FM", FolderSearch], ["Match analytics", Activity], ["DOF key", KeyRound], ["Health check", HeartPulse]];
 const ICON = { ok: Check, warn: AlertTriangle, fail: X };
@@ -65,13 +66,14 @@ const FindStep = ({ form, set, next }) => {
       if (keep) test(keep.path);
     } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
-  const pick = (s) => { set({ save_folder: s.folder, save_file: s.path }); test(s.path); };
-  const test = async (path = form.save_file) => {
-    setCheck({ busy: true });
+  const pick = (s) => { set({ save_folder: s.folder, save_file: s.path, club_uid: null }); test(s.path); };
+  const test = async (path = form.save_file, club_uid = null) => {
+    const prev = check;
+    setCheck({ busy: true, clubs: prev?.clubs });
     try {
-      const { data } = await api.post("/setup/check-save", { path });
+      const { data } = await api.post("/setup/check-save", { path, club_uid, club_name: form.club_edited ? form.club_name : "" });
       setCheck(data);
-      if (data.ok) set({ ...(form.club_edited ? {} : { club_name: data.club_name }), ...(form.name_edited ? {} : { name: careerName(data.club_name, form.edition) }) });
+      if (data.ok) set({ club_uid: club_uid ?? null, ...(form.club_edited && club_uid == null ? {} : { club_name: data.club_name }), ...(form.name_edited ? {} : { name: careerName(data.club_name, form.edition) }) });
     } catch (e) { setCheck({ ok: false, error: errMsg(e) }); }
   };
   useEffect(() => { if (form.found && !res) inspect(form.save_folder); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -100,6 +102,7 @@ const FindStep = ({ form, set, next }) => {
             {check?.ok && <span className="st ok" data-testid="setup-check-ok">Read OK: {check.club_name}, {check.players} players, game date {check.game_date}{check.skipped?.length ? ` (skipped: ${check.skipped.join(", ")})` : ""}</span>}
           </div>
           {check?.ok === false && <p className="chk-fix" style={{ marginTop: 8 }} data-testid="setup-check-error">{check.error}</p>}
+          {(check?.need_club || (check?.busy && check.clubs)) && <ClubPicker clubs={check.clubs || []} busy={check.busy} onPick={(c) => test(form.save_file, c.uid)} />}
         </>}
         <div className="wiz-2col">
           <div><label className="lbl">Club</label><input className="inp" value={form.club_name} maxLength={60} placeholder="Filled in from your save" onChange={(e) => set({ club_name: e.target.value, club_edited: true })} data-testid="setup-club-input" /></div>
@@ -177,7 +180,7 @@ export default function Setup({ restart }) {
   const [fail, setFail] = useState(null);
   const finish = async () => {
     setBusy(true); setFail(null);
-    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, save_file: form.save_file || null, club_name: form.club_name, name: form.name, address: form.address.trim() }); markNewCareer(); setStep(3); }
+    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, save_file: form.save_file || null, club_uid: form.club_uid ?? null, club_name: form.club_name, name: form.name, address: form.address.trim() }); markNewCareer(); setStep(3); }
     catch (e) { setFail(errMsg(e)); } finally { setBusy(false); }
   };
   return (

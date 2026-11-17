@@ -1,106 +1,48 @@
-# FMCC Site Audit and Improvement Round
+# Fix "FMCC couldn't find the club you manage" in setup
 
-FM Command Centre is a companion app for Football Manager. It reads your save and helps you run your club, develop players, scout, and track history.
-This round fixes what the audit found: CA/PA leaks, slow or rough screens, inconsistent layouts, and a few obvious gaps.
+FMCC's setup wizard reads a Football Manager save and works out which club you manage. Right now it fails on the "Chris Horwedel - Wrexham 27" save. This fix gives FMCC more ways to find the club, and if they all fail, you pick the club yourself from a list taken from the save.
 
 ## Who it's for
-- The FMCC owner and anyone else who plays a Football Manager career with FMCC beside it.
-- They want quick answers on a single screen and nothing that spoils the game by showing true CA/PA.
+Anyone setting up FMCC on Windows whose FM27 save the save reader can't fully read. The first case is the Wrexham 27 career.
 
-## Audit findings
+## Why it fails today
+- The save reader is a third-party tool (fmsave, version 0.12.5) that only fully supports one FM27 game version, 27.0.0. Saves from other FM27 updates may only be partly readable.
+- In this save, both ways FMCC finds your club broke: reading "the club you manage" and reading the full club list.
+- FMCC's last fallback is to match a club name. The Club box now starts empty, so that fallback had no name to match, and setup stopped with the error.
 
-### 1. CA/PA rule (highest priority; a standing rule)
-Actual CA/PA must never be shown, hinted at with numbers, or included in exports.
-These places still show CA numbers or CA changes, or may do so:
-- **Squad table:** the "Ability gained since last save" column shows +/- CA numbers.
-- **Monthly Reports comparison:** each player's CA change and the squad's total CA change appear as numbers.
-- **Scout club deals:** a "Gain" column, which needs checking.
-- **Other places to check:** Dynamic Potential review, Balance Preview, Elite Training evidence, the player panel History tab, the DOF chat, CSV exports, bell notices, staff screens, and any tooltip or "title" text that mentions CA.
-- **Data sent to the app:** some screens receive raw CA values even when they don't display them. Any app user can read these in the browser.
-
-### 2. Speed and things that feel broken
-- **Home** is slow: it makes many separate requests (celebrations, record watch, what changed, up next, notices).
-- **Club History** rebuilds the season archive on every visit. The bell also rechecks every record each time it refreshes.
-- **Large tables** draw every row at once: Scout Players (100 rows × many columns) and the Transfer Market.
-- **Opening Home** sometimes lands on the last page you visited instead.
-- **Old pages** still use plain text placeholders, with no loading state or friendly empty state.
-
-### 3. Easier to use
-- **Inconsistent tables:** sorting, resizing and sticky headers work differently from table to table.
-- **Long, mixed Home page:** celebrations, record watch, up next, what changed and module cards are all stacked with no clear order.
-- **Phone use:** wide tables need sideways scrolling and have no card view on small screens.
-- **Labels:** some still use developer wording or short forms, such as "Mins", "xGP" and "version 1".
-- **Ctrl+K search:** it can't jump to Club History seasons, records or Hall of Fame players.
-
-### 4. Missing features
-- **Hall of Fame:** there's no way to write a note when you induct a player. The backend already supports it.
-- **Development goals:** there's no bell notice when a youngster reaches his goal.
-- **Club History:** the records and season pages can't be printed or saved as a page.
-- **Tables:** column choices aren't remembered per table; only widths are.
-
-## Core features and experience (Phase 1)
-
-**CA/PA sweep across the whole app**
-- Every CA or PA number and change is replaced with plain words such as "Big step forward", "Improving", "Holding steady" or "Slipped back a little".
-- Up/down trend lines show direction only.
-- Raw CA/PA values are removed from everything the app receives, in every screen, export, notice and DOF reply.
-- A final check covers every page to confirm nothing is left.
-
-**Faster Home and Club History**
-- Home loads in one request, with smooth placeholders while it loads.
-- The Club History archive is only rebuilt when a new save has been read.
-- The record check runs once per save read, not on every bell refresh.
-- Big tables show rows in pages of 50 with a "Show more" button.
-
-**Redesigned Home**
-- A clear top-to-bottom order:
-  1. Greeting and next match
-  2. Up next (urgent first)
-  3. One "Highlights" strip, combining celebrations and record watch into swipeable cards
-  4. What changed
-  5. Module shortcuts
-- Each section can be collapsed, and that choice is remembered.
-
-**One table style everywhere**
-- Every main table shares the same behaviour:
-  - click a heading to sort
-  - drag edges to resize
-  - the header stays visible while scrolling
-  - numbers are right-aligned
-  - spacing is the same
-  - widths and sort order are remembered for each career
-- On phones, tables switch to stacked player cards.
-
-**Clearer wording and navigation**
-- Full stat names replace short forms where there's room.
-- Ctrl+K search also finds Club History seasons, records and Hall of Fame players.
-- Opening Home always shows Home.
-
-**Small missing pieces**
-- Hall of Fame tribute note.
-- "Goal reached" bell notice for development plans.
+## Core features and experience
+1. **More ways to find your club.** Before giving up, FMCC tries these in order:
+   - the club you manage, read directly from the save;
+   - the club where the save's human manager (you) is employed;
+   - the club name in the save file's name, such as "Wrexham" in "Chris Horwedel - Wrexham 27", matched against the clubs in the save;
+   - a name you've typed in the Club box.
+2. **Pick your club from a list.** If none of those work, the check doesn't stop with an error. You get a searchable list of clubs read from the save, and choosing one finishes the check.
+   - The list shows likely matches first, such as clubs whose name appears in the save file's name.
+   - Choosing a club fills in the Club and Career name boxes (for example "Wrexham 27"), the same way the automatic check does. Names you typed yourself are kept.
+3. **Your choice is remembered.** That career keeps using the club you picked on every later save read, so you aren't asked again each time.
+4. **A plainer error message.** If even the club list can't be read, the message says what happened in plain words and suggests what to try, such as making sure FM is up to date or picking a different save. There's no copy-report button, as you chose.
 
 ## User flow
-1. Open FMCC. Home appears quickly: greeting, then urgent items, then highlights, then what changed.
-2. Click into any module. Its table behaves the same as every other table.
-3. On a phone, the same screens show cards instead of wide tables.
-4. Nowhere in the app shows a CA or PA number, including exports and the DOF chat.
+1. Scan the PC, then choose the Wrexham 27 save. FMCC checks it automatically.
+2. If FMCC finds the club itself: "Read OK: Wrexham…" appears and the names fill in, as they do now.
+3. If not: "Pick your club" appears with a search box and the club list. You choose Wrexham, the check passes, and the names fill in.
+4. Continue through setup as normal. Later save reads use Wrexham without asking.
 
 ## UI/UX feel
-- The existing themes, kit accent, club colours, text sizes and high-contrast mode are kept.
-- Calmer, more consistent spacing, with one heading style and one table style.
-- Gold stays reserved for records and celebrations.
-- Pages may be rearranged noticeably where it helps, as you allowed.
+- The club picker appears in place under the save list, in the same dark setup card, styles and spacing used elsewhere in setup.
+- On mobile it's a full-width list that scrolls, with large tap targets.
+- No new pages or pop-ups.
 
 ## Implementation phases
-- **Phase 1 (built now):** everything above. That's the CA/PA sweep, the speed fixes, the Home redesign, one table style with phone cards, wording and search fixes, the Hall of Fame note and the goal-reached notice.
-- **Phase 2:** printable or saveable Club History pages and season reports, remembered column choices for each table, and a Squad card view with filters.
-- **Phase 3:** a broader redesign of remaining pages (Transfer Market, Editor, Punish a Club, Settings) to the new standard, plus a guided first-run tour for new careers.
+- **Phase 1 (built now):** the extra ways to find your club, the club picker in setup, remembering the chosen club for that career, and the plainer error message.
+- **Phase 2:** a "Change club" option in Settings, using the same club picker, for an existing career whose club was detected wrongly.
+- **Phase 3:** a note in Settings showing which FM version a save comes from and whether the save reader fully supports it.
 
 ## Assumptions
-- "Never show CA/PA" also covers indirect numbers: CA changes, CA-based goals, staff CA, and CSV exports.
-- FMCC may still use CA/PA privately for its own calculations, such as awards, grades and Dynamic Potential.
-- Grades (for example "56.9 global") stay, because they are FMCC's own scouting score, not CA.
-- No data is deleted. Saved plans, widths and settings for each career carry over.
-- Real Windows and real-save behaviour can't be verified here; only the preview and sample save are checked.
-- Live production only changes when you publish again.
+- Only the club detection step changes. Reading of players, stats and history stays the same, and parts the reader can't handle keep being skipped quietly, as now.
+- The save reader stays at version 0.12.5, the newest release (14 Nov 2026). No newer version exists to update to.
+- The club list includes every club the save reader can read from the save. It's sorted with likely matches first, then by name.
+- If the human manager's employer is the only reliable clue, FMCC uses it without asking.
+- Your Wrexham save stays on your PC: it's never uploaded or sent anywhere.
+- The fix can only be checked in the browser preview with sample saves. Whether it reads the real Wrexham save is confirmed only once you run the new Windows build on your PC.
+- Applies to setup and to "Run setup again" in Settings.
