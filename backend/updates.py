@@ -15,9 +15,9 @@ def release_repo() -> str:
 
 COMPONENTS = [  # key, name, role, GitHub repo (None = not published yet), bundled version
     ("fmcc", "FMCC", "The program itself", release_repo() or None, os.environ.get("FMCC_VERSION") or "dev"),
-    ("fmsave", "fmsave", "Built-in save reader", "rhiever/fmsave", "v0.10.0"),
-    ("fmlibreeditor", "FMLibreEditor", "Built-in game editor", "tozmoz/FMLibreEditor", "v0.5.0"),
-    ("fmmatchlens", "FMMatchLens", "Match analytics add-on", "osnsyc/FMMatchLens", "v0.7.1"),
+    ("fmsave", "fmsave", "Built-in save reader", "rhiever/fmsave", "v0.12.5"),
+    ("fmlibreeditor", "FMLibreEditor", "Built-in game editor", "tozmoz/FMLibreEditor", "v0.5.2"),
+    ("fmmatchlens", "FMMatchLens", "Match analytics add-on", "osnsyc/FMMatchLens", "v0.7.3"),
     ("bepinex", "BepInEx 6", "Add-on loader for FM (IL2CPP bleeding edge)", "bepinex_be", "6.0.0-be.793"),
     ("scoutsheet", "ScoutSheet", "Scouting engine inside Scout Players (MIT licence)", os.environ.get("SCOUTSHEET_REPO") or None, "v1.0.0"),
     ("fmdossier", "FM Dossier", "Squad and recruitment app (launched from Connections)", "page:https://fmdossier.dev/download", "not tracked"),

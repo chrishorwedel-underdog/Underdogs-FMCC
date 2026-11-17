@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { api, errMsg, gameDate } from "@/lib/api";
 import { markNewCareer, startTour } from "@/components/Tour";
+import { SavePicker } from "@/components/SavePicker";
 
 const NewCareer = ({ open, setOpen }) => {
   const qc = useQueryClient();
@@ -52,6 +53,7 @@ export const CareersCard = ({ career }) => {
         <input className="inp mono" style={{ fontSize: 12.5 }} value={folder} onChange={(e) => setFolder(e.target.value)} data-testid="save-folder-input" />
         <button className="btn" style={{ height: 40 }} disabled={folder.trim().length < 3 || folder === career.save_folder} onClick={saveFolder} data-testid="save-folder-save">Save</button>
       </div>
+      <SavePicker career={career} />
       <NewCareer open={open} setOpen={setOpen} />
     </div>
   );

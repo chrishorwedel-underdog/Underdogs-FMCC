@@ -23,7 +23,7 @@ Give FMCC the repository name (`your-github-name/fmcc`) as `FMCC_RELEASE_REPO` i
 Every build runs the packaged `FMCC.exe --selftest` on GitHub's Windows machine (start everything, load the screens, stop). If it fails, nothing is published.
 
 ## What the build contains
-- the FMCC screens and server, with a real save reader that uses fmsave 0.10.0 (MIT) (`backend/fmsave_reader.py`);
+- the FMCC screens and server, with a real save reader that uses fmsave 0.12.5 (MIT) (`backend/fmsave_reader.py`);
 - a private local database (MongoDB `mongod.exe`) that stores data in `%APPDATA%\FMCC`;
 - a program window (pywebview, which uses Microsoft Edge WebView2, built into Windows 10/11);
 - FMLibreEditor's command-line tool (`fmlibre-probe`, GPL-3.0, built from tozmoz/FMLibreEditor v0.5.0, with its licence and source link) for live game changes in FM27;

@@ -33,7 +33,7 @@ export const CheckList = ({ items, id }) => (
 
 const Head = ({ title, text }) => (<><h2 className="ttl" style={{ justifyContent: "center", textAlign: "center" }}>{title}</h2><p className="note" style={{ textAlign: "center" }}>{text}</p></>);
 
-const SaveList = ({ saves, pick, onPick }) => (
+export const SaveList = ({ saves, pick, onPick }) => (
   <div className="save-list" role="radiogroup" aria-label="Saves found on this PC" data-testid="setup-save-list">
     {saves.map((s, i) => <button key={s.path} role="radio" aria-checked={pick === s.path} className={`save-opt${pick === s.path ? " on" : ""}`} onClick={() => onPick(s)} data-testid={`setup-save-${i}`}>
       <b>{s.name}</b><small>{new Date(s.modified * 1000).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} · {s.size_mb} MB</small><small className="mono">{s.folder}</small>

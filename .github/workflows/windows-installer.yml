@@ -17,8 +17,8 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-      MONGODB_VERSION: "7.0.14"
-      FMLIBRE_TAG: "v0.5.0"
+      MONGODB_VERSION: "7.0.48"
+      FMLIBRE_TAG: "v0.5.2"
       FMCC_VERSION: "0.2.${{ github.run_number }}"
     steps:
       - uses: actions/checkout@v4

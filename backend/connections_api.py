@@ -15,7 +15,7 @@ from core import db, active_career, audit, now_iso
 
 router = APIRouter(prefix="/api/connections")
 LIVE = os.environ.get("FMCC_READER") == "fmsave"
-MATCHLENS = {"FM27": "v0.7.1", "FM26": "v0.6.1"}
+MATCHLENS = {"FM27": "v0.7.3", "FM26": "v0.6.1"}
 ML_REPO = "https://github.com/osnsyc/FMMatchLens/releases/download"
 PLUGIN_DLL = Path("BepInEx/plugins/FMMatchLens/FMMatchLens.Plugin.dll")
 restart_hook = None  # set by the Windows launcher
