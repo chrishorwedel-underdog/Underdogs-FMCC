@@ -407,3 +407,12 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 ### Next
 - Phase 2: page-level "Data check" detail. Phase 3: plain-word grade bands.
 
+
+## 2026-11-17: Clear monthly stats in "The 12 biggest stories"
+- Removed grades and "scores N" / "averages N" text from the stories. Player stories now read tag · player · club · this month's stats by first-listed position · league.
+- Stats by position: GK shows games, clean sheets, saves and rating. CB/FB show games, tackles won, interceptions and rating, plus goals or assists if he got any. DM/CM show games, goals, assists, key passes and rating. AM/W/ST show games, goals, assists and rating.
+- The save reader now keeps season totals for tackles, interceptions, clean sheets, saves and key passes (fmsave field names are guessed: NOT VERIFIED on a real FM27 save). The month figure is this save's total minus the previous one, and a stat is left out when either save doesn't have it. The browser preview uses SAMPLE totals.
+- The grey end tag shows the league (hidden when unknown or when viewing a single league). Team and transfer stories carry their league too. On mobile the stats wrap onto their own line.
+- Testing: iteration_52, backend and frontend 100%.
+- Phase 2: tap a story to see his full month. Phase 3: use the same stats line in Monthly Awards and Breakout notices.
+

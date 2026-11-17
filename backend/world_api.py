@@ -284,7 +284,7 @@ def _news(rows: list, tables: list, transfers: list, awards: dict, scope: str) -
     for a in awards.values():
         if a["picks"] and a["picks"][0]["unique_id"] in idx:
             w = idx[a["picks"][0]["unique_id"]]
-            add(36, w["country"], a["label"].replace(" of the Month", " award"), w)
+            add(36, w["country"], "Award", w)
     for r in sorted([r for r in rows if r["m_apps"] >= 2 and r["m_rating"]], key=lambda r: -r["m_rating"])[:12]:
         add(8 + r["m_rating"], r["country"], "Top performer", r)
     ev.sort(key=lambda e: -e[0])

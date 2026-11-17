@@ -7,16 +7,19 @@ const money = (v) => (v >= 1e6 ? `€${(v / 1e6).toFixed(1)}m` : `€${Math.roun
 const Who = ({ r }) => <><b style={{ color: "var(--text)" }}>{r.name}</b><small style={{ display: "block", color: "var(--dim)" }}>{r.age} · {r.club}</small></>;
 
 const StatLine = ({ n, i }) => (
-  <span className="news-stats" data-testid={`world-news-stats-${i}`}>
+  <span data-testid={`world-news-stats-${i}`}>
     {n.stats.map((s, j) => <span key={s.key}>{j > 0 && " · "}<span className="mono">{s.value}</span> {s.label}</span>)}
   </span>
 );
 
+const Tag = ({ n, i }) => <small style={{ color: "var(--dim)" }} data-testid={`world-news-league-${i}`}> · {n.league}</small>;
+
 const Story = ({ n, i, showLeague }) => (
   <li data-testid={`world-news-${i}`}>
     <span className="st n" style={{ marginRight: 6 }}>{n.tag}</span>
-    {n.player ? <><b style={{ color: "var(--text)" }} data-testid={`world-news-player-${i}`}>{n.player}</b>, {n.club}: <StatLine n={n} i={i} /></> : n.text}
-    {showLeague && n.league && <small style={{ color: "var(--dim)" }} data-testid={`world-news-league-${i}`}> · {n.league}</small>}
+    {n.player
+      ? <><b style={{ color: "var(--text)" }} data-testid={`world-news-player-${i}`}>{n.player}</b>, {n.club}: <span className="news-stats"><StatLine n={n} i={i} />{showLeague && n.league && <Tag n={n} i={i} />}</span></>
+      : <>{n.text}{showLeague && n.league && <Tag n={n} i={i} />}</>}
   </li>
 );
 

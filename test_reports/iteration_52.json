@@ -1,0 +1,35 @@
+{
+  "summary": "Tested the per-position monthly stat lines in the World report's 'The 12 biggest stories'. Backend: 13 new tests (6 API, 7 unit tests of _stat_line/_story) all pass, and 59 earlier world/iter51 regression tests pass. As requested, I read two more sample saves through POST /api/saves/read (save 8 = 2028-04, save 9 = 2028-05). Save 8 was the first snapshot with 'totals'. Its previous snapshot (2028-03) has none, so in 2028-04 the defender and GK lines still show only games and rating, which is the intended left-out behaviour. After save 9, the 2028-05 lines include tackles won and interceptions for defenders, clean sheets and saves for GKs, and key passes for DM/CM. Singular labels (1 goal, 1 assist, 1 clean sheet, 1 key pass) and one-decimal ratings are correct. No 'scores N'/'averages N' text and no league shown as 'Other'. Frontend at 1920px: 12 rows, mono numbers separated by ' · ', the league tag at the end. At 390px the stats are display:block on their own line below the player, with no horizontal scroll. Continent (8), nation (5) and league (5) scopes work, and league scope hides the league tag (0 world-news-league elements). No 500s.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/world/report (_month_rows m_tot)", "issue": "If a player is in the current snapshot but not the previous one in the same season (o is None while prev exists), m_tot uses his whole-season totals, so one month can show season numbers. m_goals/m_assists already work this way, so it is consistent, but it can overstate the month."},
+      {"endpoint": "GET /api/world/report (_news tables)", "issue": "Not part of this change: a women's league title-race story appears in the World news ('Northbridge Athletic Women stay top of the Women's Super Division') even though player rows filter out gender F. Check this is wanted."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Reports > World, 390px", "issues": ["Because .news-stats is display:block, the league tag drops to its own third line and starts with ' · ' (e.g. '· Premier Division'). Consider dropping the leading dot on mobile or keeping the tag inline after the stats."]},
+      {"screen": "Reports > World (theme note)", "issues": ["The league tag uses var(--dim). In this preview the root --dim is overridden to #E8ECF2 (strong-focus/high-contrast appearance setting), so the tag looks near-white instead of grey. This is not a bug in this change; in the default theme --dim is #5C626C (grey)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter52_world_news_statlines.py", "/app/test_reports/pytest/iter52.xml"],
+  "action_items": [
+    "Optional: on mobile, render the league tag without the leading ' · ' when it wraps under the block stats line",
+    "Optional: decide whether players who are new to a snapshot should use season totals as their month totals",
+    "Optional: decide whether women's league title-race stories belong in the World news"
+  ],
+  "critical_code_review_comments": [
+    "_stat_line: the final guard keeps a line that has only games when games > 0. This matches the spec (a stat was read). It drops a line when every value is '0' and nothing but games was read. OK.",
+    "LINE_STATS: FB and CM are aliased correctly, WB maps to FB through GROUP, and AM/W/ST fall through to the default list. Confirmed by unit tests.",
+    "No _id leaks, no new endpoints, input validation unchanged."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter52_world_news_statlines.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "No records created. As requested, two sample saves were read for the active career TEST_Shot (save_no 8 -> 2028-04, save_no 9 -> 2028-05), which added world_months snapshots 2028-04 and 2028-05. setup_complete is unchanged.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "world_months snapshots up to 2028-03 have no totals. 2028-04 is the first with totals, so 2028-05 is the first month with tkw/int/cs/sv/kp in the stories, and test_latest_month_has_def_gk_totals relies on this. Rerun: export MONGO_URL/DB_NAME from backend/.env and REACT_APP_BACKEND_URL from frontend/.env, then pytest backend/tests/test_iter52_world_news_statlines.py -n 0."
+}
