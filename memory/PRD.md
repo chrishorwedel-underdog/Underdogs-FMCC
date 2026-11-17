@@ -416,3 +416,11 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - Testing: iteration_52, backend and frontend 100%.
 - Phase 2: tap a story to see his full month. Phase 3: use the same stats line in Monthly Awards and Breakout notices.
 
+
+## 2026-11-17: Stats line in Monthly Awards and Breakout notices (Phase 3)
+- Added shared world_api.stat_line(group, games, goals, assists, rating, totals) and the frontend StatsLine.jsx.
+- Monthly Awards picks now carry 'line', which replaces "avg X · NG NA · N min".
+- Breakout: awards_api.season_line uses the snapshot player's first-listed position. It is used in the Home celebration card ("This season: …", with the grade note removed) and the bell notice ("Best season among your first-team players: …").
+- Own-squad rows now keep season totals from the save (fmsave field names NOT VERIFIED).
+- Testing: iteration_53 found the wrong position group and the grade note on the card; both were fixed and checked by curl and a screenshot.
+

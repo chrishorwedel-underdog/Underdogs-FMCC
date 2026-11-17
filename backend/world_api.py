@@ -243,7 +243,7 @@ def stat_line(group: str, games, goals, assists, rating, tot: dict) -> list:
         if v is None or (only_if_any and not v):
             continue
         out.append({"key": k, "value": str(v), "label": STAT_WORDS[k][0 if v == 1 else 1]})
-    return out if any(s["key"] != "games" or s["value"] != "0" for s in out) else []
+    return out if any(s["key"] != "games" and s["value"] not in ("0", "0.0") for s in out) else []
 
 
 def _stat_line(r: dict) -> list:

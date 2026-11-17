@@ -1,0 +1,38 @@
+{
+  "summary": "Phase 3 stat lines. Monthly Awards: works. /api/world/report awards picks each have a valid 'line'. GK picks show games, clean sheets, saves and rating. DEF picks show games, tackles won, interceptions and rating, with goals/assists only when non-zero. Attacker and U21 picks follow the MID or ATT rule. Rating has 1 decimal, labels are singular for 1, and no CA/PA appears. The UI world-award-{k}-{i}-line shows the line with mono numbers (12 of 12), and the old 'N min' text is gone. Breakout: 2 defects. (1) The Home card still shows 'Season grade 57.2, the best season among his teammates.' (2) The Breakout line uses the wrong position: Luca Romano is D (C) but gets the CM line ('13 games · 0 goals · 0 assists · 6.8 avg rating'), and the same applies to the auto_breakout notice text. Regression: world-news stories render (6 stat lines). 390px mobile has no horizontal overflow on Reports or Home.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/celebrations (breakout line) + awards_api.auto_breakout notice", "issue": "season_line() calls GROUP[first_pos(x)], but x comes from own_contexts(), which has no 'positions' list. It only has 'position' (already a group code like 'CB'). first_pos falls back to FALLBACK_POS 'M (C)', so every Breakout winner gets the CM line. Luca Romano (positions ['D (C)','D (R)']) shows games/goals/assists/rating, with 0 goals and 0 assists shown. The CB rule should give games, tackles won, interceptions and rating, with goals/assists only if any. A GK winner would get goals/assists instead of clean sheets/saves.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "world_api.stat_line", "issue": "The empty-line guard only drops the line when 'games' is '0'. stat_line('ST',0,0,0,None,{}) returns '0 games · 0 goals · 0 assists' instead of []. This doesn't happen today because awards and stories need minutes and a rating, but it's worth tightening."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Celebrations.jsx BreakoutCard", "issue": "Still shows '{c.note}, the best season among his teammates.' and c.note = 'Season grade 57.2' (stored by auto_breakout via _award(..., f\"Season grade {w['grade']}\")). The spec says no 'Season grade N' text on the card. Remove that <p>, or stop returning the note in /api/celebrations.", "selector": "[data-testid=celebration-breakout-stats] ~ p.note", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home Highlights at 390px", "issues": ["The Breakout card's right edge looks about 16px inside the section's padding compared with the other cards (minor)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iter53_awards_breakout_statlines.py", "/app/backend/tests/test_iter52_world_news_statlines.py", "/app/test_reports/pytest/iter53.xml"],
+  "action_items": [
+    "awards_api.season_line: get the group from the snapshot player's positions (p.get('positions')), or use x['position'] directly (it's already a group code like 'CB'). Don't use first_pos(x) on own_contexts entries. Then re-check that Luca Romano shows a CB line with no 0-goal/0-assist items.",
+    "Celebrations.jsx BreakoutCard: remove the c.note 'Season grade N, the best season among his teammates.' paragraph (or don't send the note from /api/celebrations).",
+    "Optional: auto_breakout audit text still says '(grade N)'. That's internal only, so OK to leave unless it's shown in the UI."
+  ],
+  "critical_code_review_comments": [
+    "season_line() has the position-group bug above; the same bug affects auto_breakout's notice body.",
+    "auto_breakout's notice text was changed correctly to 'Best season among your first-team players: <line>' (checked by code review). I did not trigger a season-end save read to avoid changing the career's data.",
+    "The main agent's note 'a CM breakout line may have no key passes' is based on this bug: the preview winner is a CB, not a CM."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter53_awards_breakout_statlines.py"],
+  "success_rate": {"backend": "90% (20/20 tests pass, but the position bug was found by a manual check)", "frontend": "60% (Awards line and regressions OK; the Breakout card fails 2 checks)"},
+  "seed_data_creation": "None. No records created or changed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The active career is TEST_Shot (sample mode, game date May 2028). The Breakout winner is Luca Romano, uid 20481105, positions ['D (C)','D (R)'], with no season totals in the snapshot. Expected CB line: '13 games · 6.8 avg rating' (no tkw/int because there are no totals, and goals/assists are dropped because they are 0). The pytest needs backend/.env exported (MONGO_URL) for the helper unit tests.",
+  "rca of the issue": "own_contexts() returns 'position' (a group code) and no 'positions'. player_clean.first_pos() reads 'positions', gets nothing and falls back to 'M (C)'. GROUP['M (C)'] is 'CM', so the line follows the DM/CM rule. Reproduce: GET /api/celebrations shows line keys games/goals/assists/rating for a CB. The card's 'Season grade' text comes from award.note, which the BreakoutCard renders."
+}

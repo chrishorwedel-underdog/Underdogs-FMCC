@@ -18,7 +18,8 @@ from world_api import stat_line
 def season_line(x: dict, snap: dict | None) -> list:
     """His season so far, picked for his first-listed position."""
     p = next((q for q in (snap or {}).get("players", []) if q.get("unique_id") == x.get("unique_id")), {})
-    return stat_line(GROUP[first_pos(x)], x.get("appearances"), x.get("goals"), x.get("assists"), x.get("avg_rating"), p.get("totals") or x.get("totals") or {})
+    group = GROUP[first_pos(p)] if p.get("positions") else x.get("position") if x.get("position") in GROUP.values() else GROUP[first_pos(x)]
+    return stat_line(group, x.get("appearances"), x.get("goals"), x.get("assists"), x.get("avg_rating"), p.get("totals") or x.get("totals") or {})
 
 
 def line_text(line: list) -> str:
@@ -259,7 +260,7 @@ async def celebrations():
         if months_since(f"{end_year}-05") <= 4:
             x = ctxs.get(bo["unique_id"]) or {}
             cards.append({"id": f"breakout-{season}", "kind": "breakout", "title": f"{bo['name']} is your Breakout Player of {season}", "unique_id": bo["unique_id"],
-                          "stats": {k: x.get(k) for k in ("appearances", "minutes", "goals", "assists", "avg_rating")}, "line": season_line(x, snap) if x else [], "note": bo.get("note"),
+                          "stats": {k: x.get(k) for k in ("appearances", "minutes", "goals", "assists", "avg_rating")}, "line": season_line(x, snap) if x else [], "note": None,
                           "reward": _benefit(bo.get("field") or "pa", bo.get("delta")) + ", already applied to your save."})
     last = await db.awards.find_one({"career_id": c["id"], "module": "elite", "status": "awarded"}, {"_id": 0, "award_key": 1}, sort=[("at", -1)])
     if last:
