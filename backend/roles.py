@@ -98,6 +98,23 @@ def best_role(player: dict) -> dict:
     return role_ratings(player)[0]
 
 
+
+def fit_words(player: dict, role: str) -> dict | None:
+    """How well he suits a role, in words plus a short reason from the role's key attributes."""
+    a = player.get("attributes") or {}
+    if not a:
+        return None
+    r = role_rating(player, role)
+    word = "Excellent fit" if r >= 75 else "Good fit" if r >= 62 else "Fair fit" if r >= 50 else "Poor fit"
+    vals = sorted(((a.get(k, 0), k) for k in ROLES[role][2]), reverse=True)
+    name = lambda k: k.replace("_", " ")  # noqa: E731
+    strong = [name(k) for v, k in vals if v >= 14][:2]
+    weak = [name(k) for v, k in reversed(vals) if v <= 10][:1]
+    parts = ([f"strong {' and '.join(strong)}"] if strong else []) + ([f"weaker {weak[0]}"] if weak else [])
+    return {"word": word, "tone": {"Excellent fit": "g", "Good fit": "ok", "Fair fit": "a", "Poor fit": "r"}[word],
+            "reason": ", ".join(parts) if parts else "no standout strengths or weaknesses for this role"}
+
+
 def formation_meta(key: str) -> dict:
     name, slots = ALL_FORMATIONS[key]
     return {"key": key, "name": name, "slots": [{"key": s, "pos": p, "label": LABELS[p], "role": r, "role_name": f"{ROLES[r][0]} ({ROLES[r][1]})",

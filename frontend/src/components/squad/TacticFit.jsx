@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
 import { Stars, OopTag } from "@/components/Stars";
+import { Switch } from "@/components/ui/switch";
 
 const SHOW = 5;
 
-const Ranked = ({ s }) => {
+const Ranked = ({ s, showFit }) => {
   const [all, setAll] = useState(false);
   const rows = all ? s.ranked : s.ranked.slice(0, SHOW);
   return (
@@ -18,6 +19,7 @@ const Ranked = ({ s }) => {
           <small className="mono" style={{ color: "var(--dim)" }}>{i + 1}</small>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}><small style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{r.name}</small>{!r.natural && <OopTag id={`fit-oop-${s.slot}-${r.unique_id}`} />}</div>
+            {showFit && <small style={{ display: "block", color: "var(--mut)" }} data-testid={`fit-role-${s.slot}-${r.unique_id}`}>{r.role_fit ? <><span className={`st ${r.role_fit.tone}`} style={{ marginLeft: 0, marginRight: 4 }}>{r.role_fit.word}</span>{r.role_fit.reason}</> : "No attributes in the save to judge this"}</small>}
           </div>
           <Stars value={r.stars} size={10} id={`fit-stars-${s.slot}-${r.unique_id}`} />
         </div>))}
@@ -27,15 +29,19 @@ const Ranked = ({ s }) => {
   );
 };
 
-const Slot = ({ s, gap, onRole }) => (
+const Slot = ({ s, gap, onRole }) => {
+  const [showFit, setShowFit] = useState(false);
+  return (
   <div className="card" style={{ padding: 10, borderColor: gap ? "var(--amb)" : undefined }} data-testid={`fit-slot-${s.slot}`}>
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}><b>{s.label}</b><small className="mono" style={{ color: "var(--dim)" }}>{s.slot}</small>
       <span style={{ marginLeft: "auto" }} title="Starter 60%, backup 30%, depth 10%"><Stars value={s.score} size={11} id={`fit-score-${s.slot}`} /></span></div>
     <select className="inp" style={{ height: 30, margin: "6px 0 8px", fontSize: 12 }} value={s.role} onChange={(e) => onRole(s.slot, e.target.value)} data-testid={`fit-role-${s.slot}`}>
       {s.role_options.map((o) => <option key={o.key} value={o.key}>{o.name}</option>)}</select>
-    <Ranked s={s} />
+    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 6, cursor: "pointer" }}><Switch checked={showFit} onCheckedChange={setShowFit} data-testid={`fit-rolefit-toggle-${s.slot}`} />Show role fit</label>
+    <Ranked s={s} showFit={showFit} />
   </div>
-);
+  );
+};
 
 const TacticList = ({ tactics, current, pick, act, onDeleted }) => (
   <div className="card" data-testid="tactics-history"><div className="ttl">Your tactics</div>

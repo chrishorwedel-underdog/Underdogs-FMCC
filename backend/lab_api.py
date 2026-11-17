@@ -491,7 +491,7 @@ def fit(players: list, formation: str, picks: dict | None = None) -> list:
     for s in slots:
         top = [lay.get(s["key"]) for lay in layers]
         rated = [{"unique_id": r["unique_id"], "name": by[r["unique_id"]]["name"], "age": by[r["unique_id"]].get("age"), "positions": by[r["unique_id"]].get("positions"),
-                  "stars": r["stars"], "natural": not r["oop"]} for r in depth[s["key"]]]
+                  "stars": r["stars"], "natural": not r["oop"], "role_fit": roles.fit_words(by[r["unique_id"]], s["role"])} for r in depth[s["key"]]]
         score = round(sum(w * (t["stars"] if t else 0) for t, w in zip(top, (.6, .3, .1))) * 2) / 2
         out.append({"slot": s["key"], "label": s["label"], "role": s["role"], "role_name": s["role_name"], "group": GROUP.get(s["positions"][0], "CM"),
                     "starter": top[0], "backup": top[1], "depth": top[2], "score": score, "ranked": rated, "role_options": role_options(s)})

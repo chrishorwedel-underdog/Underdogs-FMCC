@@ -95,7 +95,8 @@ def _player(p, club_name: str, club_lookup: dict) -> dict:
             "ca": int(_get(p, "ability.current", 0)), "pa": int(_get(p, "ability.potential", 0)),
             "contract_end": contract_end.isoformat() if hasattr(contract_end, "isoformat") else str(contract_end or "2099-06-30"),
             "wage": _get(p, "contract.wage"), "value": int(_get(p, "transfer_value", 0) or 0),
-            "club": club_lookup.get(_get(p, "club_uid"), club_name), "minutes": 0, "appearances": 0, "avg_rating": None,
+            "club": club_lookup.get(_get(p, "club_uid"), club_name), "team": str(_first(p, "squad_name", "team_name", "team.name", default="") or "") or None,
+            "minutes": 0, "appearances": 0, "avg_rating": None,
             "goals": 0, "assists": 0, "training_rating": None, "homegrown": bool(_get(p, "home_grown", False)),
             "attributes": {k: int(_get(p, f"attributes.{v}", 0) or 0) for k, v in ATTR_MAP.items()}}
 

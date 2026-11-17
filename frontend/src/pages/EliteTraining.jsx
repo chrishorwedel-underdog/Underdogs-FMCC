@@ -13,6 +13,26 @@ const Spark = ({ pts }) => {
   return <svg width="110" height="30" viewBox="0 0 100 30" preserveAspectRatio="none"><polyline points={d} fill="none" stroke="var(--acc)" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg>;
 };
 
+const TeamPick = ({ team, rows, nominate }) => (
+  <div style={{ flex: "1 1 220px" }}>
+    <label className="lbl">{team} team</label>
+    <select className="inp" value="" disabled={!rows.length} onChange={(e) => e.target.value && nominate(e.target.value)} data-testid={`elite-team-${team.toLowerCase()}`}>
+      <option value="">{rows.length ? `Nominate from the ${team} team (${rows.length})` : `Nobody in the ${team} team`}</option>
+      {rows.map((p) => <option key={p.unique_id} value={p.unique_id}>{p.name}{p.age ? `, ${p.age}` : ""}</option>)}
+    </select>
+  </div>
+);
+
+const TeamPicks = ({ data, nominate }) => (
+  <div style={{ padding: 10 }} data-testid="elite-team-picks">
+    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+      <TeamPick team="U21" rows={data.teams?.U21 || []} nominate={nominate} />
+      <TeamPick team="U18" rows={data.teams?.U18 || []} nominate={nominate} />
+    </div>
+    <p className="note" style={{ marginTop: 6 }} data-testid="elite-team-note">{data.teams_from_save ? "Teams as your save lists them." : "Your save doesn't say which team each player is in, so FMCC groups them by age: under 18 for U18, 18 to 20 for U21."} Picking a player nominates him straight away.</p>
+  </div>
+);
+
 const Nominees = () => {
   const { data } = useGet("elite", "/elite");
   const act = useAct();
@@ -36,6 +56,7 @@ const Nominees = () => {
             </tr>))}</tbody>
         </table>
         {!data.nominees.length && <p className="note" style={{ padding: 10 }}>No nominees yet.</p>}
+        <TeamPicks data={data} nominate={nominate} />
       </div>
       <div className="card"><div className="ttl">Nominate</div>
         <p className="note" style={{ marginTop: 6 }}>Best young trainees right now, from the save's training ratings:</p>

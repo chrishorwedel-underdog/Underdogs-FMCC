@@ -67,9 +67,28 @@ async def elite():
         out.append(n | {"age": x["age"], "training_rating": x["training_rating"], "ca_growth": x["ca_growth"],
                         "evidence": evidence.get(n["unique_id"], [])[-8:], "rule": r["name"] if r else None, "preview": _rule_text(r) if r else None})
     nominated = {n["unique_id"] for n in noms}
+    snap = await latest_snapshot(c["id"])
+    teams = {"U21": [], "U18": []}
+    from_save = False
+    for p in (snap or {}).get("players", []):
+        t, saved = _youth_team(p)
+        from_save |= saved
+        if t and p["unique_id"] not in nominated:
+            teams[t].append({"unique_id": p["unique_id"], "name": p["name"], "age": p.get("age")})
+    for v in teams.values():
+        v.sort(key=lambda x: x["name"])
     suggestions = sorted([x for x in ctxs.values() if x["unique_id"] not in nominated and (x.get("age") or 99) <= 21], key=lambda x: -(x["training_rating"] or 0))[:5]
     return {"nominees": out, "suggestions": [{k: s[k] for k in ("unique_id", "name", "age", "training_rating")} for s in suggestions],
-            "rules_version": rules["version"]}
+            "rules_version": rules["version"], "teams": teams, "teams_from_save": from_save}
+
+
+def _youth_team(p: dict) -> tuple:
+    """(U21 / U18 / None, whether the save said so). Falls back to age when the save doesn't name his team."""
+    t = str(p.get("team") or "").lower()
+    if t:
+        return ("U18" if "18" in t else "U21" if any(x in t for x in ("19", "20", "21", "23", "reserve", "b team", "ii")) else None), True
+    age = p.get("age") or 99
+    return ("U18" if age < 18 else "U21" if age < 21 else None), False
 
 
 @router.post("/elite/nominations")
