@@ -5,10 +5,11 @@ import { api } from "@/lib/api";
 import { useGet, useAct, TabBar } from "@/lib/ui";
 import { Loading } from "@/components/Loading";
 import { Pitch } from "@/components/squad/Pitch";
+import { Stars } from "@/components/Stars";
 
 const strengthOf = (slots, depth) => {
-  const v = Object.entries(slots).map(([k, u]) => depth[k]?.find((r) => r.unique_id === u)?.rating || 0);
-  return Math.round(v.reduce((a, b) => a + b, 0) / Math.max(1, v.length));
+  const v = Object.entries(slots).map(([k, u]) => depth[k]?.find((r) => r.unique_id === u)?.stars || 0);
+  return Math.round((v.reduce((a, b) => a + b, 0) / Math.max(1, v.length)) * 2) / 2;
 };
 
 const Side = ({ plan, mode, slots }) => {
@@ -18,8 +19,8 @@ const Side = ({ plan, mode, slots }) => {
     <div>
       <div className="card rise d2"><div className="ttl">Team strength</div>
         <div className="cmp">
-          <div className="row">Best XI<div className="track"><i style={{ width: `${plan.best.strength}%`, background: "var(--mut)" }} /></div><span className="mono">{plan.best.strength}</span></div>
-          <div className="row">This lineup<div className="track"><i style={{ width: `${cur}%`, background: "var(--acc)" }} /></div><span className="mono" style={{ color: "var(--acc)" }} data-testid="lineup-strength">{cur}</span></div>
+          <div className="row" style={{ justifyContent: "space-between" }}>Best XI<Stars value={plan.best.strength} size={14} id="best-strength" /></div>
+          <div className="row" style={{ justifyContent: "space-between" }}>This lineup<Stars value={cur} size={14} id="lineup-strength" /></div>
         </div>
       </div>
       <div className="card rise d3" style={{ marginTop: 16 }}><div className="ttl">Why this lineup</div>

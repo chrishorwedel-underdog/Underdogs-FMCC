@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useFeatures, isOff } from "@/lib/features";
+import { Stars } from "@/components/Stars";
 
 const FEAT = { squad: "squad", development: "development", scouting: "scouting", report: "reports", breakout: "breakout" };
 import { Users, TrendingUp, Search, BarChart3, Zap, Star, ArrowRight } from "lucide-react";
@@ -21,7 +22,7 @@ const Card = ({ icon: Icon, title, tag, to, delay, children, id, open }) => {
 export const ModuleCards = ({ d }) => (
   <div className="bento">
     <Card id="squad" icon={Users} title="Squad" to="/squad" delay="d2" open="Open squad" tag={<span className="st g">{d.squad_size} players</span>}>
-      <div className="num" data-testid="home-xi-average">{d.squad.xi_average}<small>Best XI strength</small></div>
+      <div className="num" data-testid="home-xi-average"><Stars value={d.squad.xi_average} size={18} /><small>Best XI strength</small></div>
       <p className="sent">Weakest spot: <b data-testid="home-weak-spot">{d.squad.weak_spot || "—"}</b></p>
     </Card>
     <Card id="development" icon={TrendingUp} title="Youth Development" to="/development" delay="d3" open="Open plans" tag={d.development.count ? <span className="st a">Act</span> : <span className="st ok">On track</span>}>

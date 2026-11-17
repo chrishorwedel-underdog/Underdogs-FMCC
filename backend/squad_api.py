@@ -27,8 +27,8 @@ async def _plan_inputs(c: dict, formation: str):
 
 
 def _registered(players: list, max_senior: int, min_hg: int) -> list:
-    """Senior list by role rating, shrunk by each missing homegrown player; under-21s are always eligible."""
-    seniors = sorted([x for x in players if x["age"] >= 21], key=lambda x: -roles.best_role(x)["rating"])
+    """Senior list by in-FM ability, shrunk by each missing homegrown player; under-21s are always eligible."""
+    seniors = sorted([x for x in players if x["age"] >= 21], key=lambda x: -(x.get("ca") or 0))
     hg = [x for x in seniors if x.get("homegrown")][:min_hg]
     places = max_senior - max(0, min_hg - len(hg))
     rest = [x for x in seniors if x not in hg][:max(0, places - len(hg))]
@@ -60,7 +60,7 @@ def competition_xis(players: list, form: dict, depth: dict, best: dict, info: di
         "domestic": dom | {"why": [["acc", f"Strongest side from your league squad list ({max_senior} seniors, at least {min_hg} homegrown, under-21s free)."],
                                     ["blu", "Use it for league matches."]]},
         "cup": cup | {"rested": [name(u) for u in rested], "why": [["amb", f"Rests the {len(rested)} most-used regulars this month: {', '.join(name(u) for u in rested) or 'nobody'}."],
-                                                              ["blu", "Everyone else picked on role rating, so fringe and young players get a game."]]},
+                                                              ["blu", "Everyone else picked by in-FM ability in positions they play naturally, so fringe and young players get a game."]]},
         "uefa": uefa | {"left_out": left_out, "why": [["acc", f"Strongest side from your UEFA List A ({uefa_max} places, at least {uefa_hg} homegrown) plus List B under-21s."],
                                                      ["amb" if left_out else "blu", f"Not registered: {', '.join(left_out)}." if left_out else "Everyone fits on the UEFA lists."]]}}
 
@@ -93,18 +93,23 @@ async def squad_plan(formation: Optional[Formation] = None):
     best = roles.best_xi(latest["players"], form, depth)
     dev, picked, dev_why = roles.development_xi(best, form, depth, info, rules)
     labels = {s["key"]: s["label"] for s in form["slots"]}
-    weak = [{"slot": s["key"], "label": s["label"], "best": max((r["rating"] for r in depth[s["key"]]), default=0),
-             "options": len(depth[s["key"]])} for s in form["slots"]]
+    weak, seen = [], set()
+    for s in form["slots"]:
+        if s["label"] in seen:
+            continue
+        seen.add(s["label"])
+        nat = [r for r in depth[s["key"]] if not r["oop"]]
+        weak.append({"slot": s["key"], "label": s["label"], "stars": nat[0]["stars"] if nat else 0, "options": len(nat)})
     saved = await db.lineups.find_one({"career_id": c["id"], "formation": formation}, {"_id": 0}, sort=[("revision", -1)])
     for i in info.values():
         i.pop("ca", None)
     youth = sorted([{"unique_id": u, **i} for u, i in info.items() if i["u21"]], key=lambda y: y["month_minutes"])
     return {"formation": form, "formations": list(main.items()), "from_save": bool(yours), "all_formations": [[k, v[0]] for k, v in roles.ALL_FORMATIONS.items()],
-            "save_no": latest["save_no"], "game_date": latest["game_date"], "players": info, "depth": depth, "rules": rules,
+            "save_no": latest["save_no"], "game_date": latest["game_date"], "players": info, "depth": roles.public_depth(depth), "rules": rules,
             **competition_xis(latest["players"], form, depth, best, info, params),
             "best": {"slots": best, "strength": roles.strength(best, depth), "why": roles.best_why(best, form, depth, info, rules)},
             "dev": {"slots": dev, "strength": roles.strength(dev, depth), "why": dev_why, "youth": picked},
-            "weak": sorted(weak, key=lambda w: w["best"]), "youth_minutes": youth, "saved": saved,
+            "weak": sorted(weak, key=lambda w: w["stars"]), "youth_minutes": youth, "saved": saved,
             "weak_spot": roles.weak_spot(best, depth, labels), "depth_custom": sorted(custom)}
 
 
@@ -125,7 +130,7 @@ async def weakest(c: dict) -> dict | None:
         return None
     r, k, u = min(filled)
     slot = next(s for s in form["slots"] if s["key"] == k)
-    return {"label": roles.LABELS_FULL(slot["label"]), "pos": slot["pos"], "group": pos_group(slot["pos"]), "rating": r, "unique_id": u, "name": info.get(u, {}).get("name")}
+    return {"label": roles.LABELS_FULL(slot["label"]), "pos": slot["pos"], "group": pos_group(slot["pos"]), "stars": roles.stars(r), "unique_id": u, "name": info.get(u, {}).get("name")}
 
 
 async def squad_outcome(c: dict, params: dict) -> dict:
@@ -136,7 +141,7 @@ async def squad_outcome(c: dict, params: dict) -> dict:
     rules = {k: int(v) for k, v in params.items()}
     best = roles.best_xi(latest["players"], form, depth)
     dev = set(roles.development_xi(best, form, depth, info, rules)[0].values())
-    seniors = sorted([x for x in latest["players"] if x["age"] >= 21], key=lambda x: -roles.best_role(x)["rating"])
+    seniors = sorted([x for x in latest["players"] if x["age"] >= 21], key=lambda x: -(x.get("ca") or 0))
     reg = {x["unique_id"] for x in seniors[:rules["max_senior"]]}
     return {u: (u in dev, u in reg or i["u21"], i["u21"] and i["month_minutes"] < rules["target_minutes"]) for u, i in info.items()}
 
@@ -173,7 +178,7 @@ async def try_xi(add: str = Query("", max_length=200), formation: Optional[Forma
     players = latest["players"] + trial
     depth2 = roles.depth_chart(players, form)
     after = roles.best_xi(players, form, depth2)
-    rating = lambda d, k, u: next((r["rating"] for r in d[k] if r["unique_id"] == u), 0)  # noqa: E731
+    rating = lambda d, k, u: next((r["stars"] for r in d[k] if r["unique_id"] == u), None)  # noqa: E731
     slots = [{"slot": s["key"], "label": s["label"], "before": names.get(before.get(s["key"])), "after": names.get(after.get(s["key"])),
               "before_rating": rating(depth, s["key"], before.get(s["key"])), "after_rating": rating(depth2, s["key"], after.get(s["key"])),
               "trial": after.get(s["key"]) in {p["unique_id"] for p in trial}} for s in form["slots"]]
@@ -234,7 +239,8 @@ async def registration():
     latest = (await latest_two(c["id"]))[0]
     p = (await current_rules(c["id"], "squad"))["data"]["params"]
     max_senior, min_hg = int(p["max_senior"]), int(p["min_homegrown"])
-    seniors = sorted([x for x in latest["players"] if x["age"] >= 21], key=lambda x: -roles.best_role(x)["rating"])
+    seniors = sorted([x for x in latest["players"] if x["age"] >= 21], key=lambda x: -(x.get("ca") or 0))
+    top = max([x.get("ca") or 0 for x in latest["players"]] or [0])
     u21 = [x for x in latest["players"] if x["age"] < 21]
     registered = seniors[:max_senior]
     left_out = seniors[max_senior:]
@@ -246,7 +252,7 @@ async def registration():
          "detail": f"Each missing homegrown player removes one senior place ({max(0, min_hg - len(hg))} short)." if len(hg) < min_hg else "Quota met."},
         {"key": "u21", "label": "Under-21 list", "value": len(u21), "limit": "no limit", "ok": True, "detail": "Under-21s can be registered without using a senior place."},
     ]
-    suggestions = [f"Leave out {x['name']} (role rating {roles.best_role(x)['rating']}) to stay within {max_senior} seniors." for x in left_out]
+    suggestions = [f"Leave out {x['name']} ({roles.stars(roles._score(x, top)):g} stars, one of your lowest-rated seniors) to stay within {max_senior} seniors." for x in left_out]
     if len(hg) < min_hg:
         suggestions.append(f"Sign or keep {min_hg - len(hg)} more homegrown senior player(s), or your senior list shrinks to {max_senior - (min_hg - len(hg))}.")
     return {"checks": checks, "suggestions": suggestions, "preset": "Example league preset (edit in Rules)",

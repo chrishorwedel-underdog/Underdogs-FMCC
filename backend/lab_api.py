@@ -468,34 +468,31 @@ async def list_tactics():
     return await _save_tactics(c) + await db.tactics.find({"career_id": c["id"]}, {"_id": 0, "career_id": 0}).sort("at", -1).to_list(50)
 
 
-def _layer(slots: list, players: list, used: set) -> dict:
-    """Best natural player per slot with nobody used twice (optimal assignment)."""
-    cand = [p for p in players if p["unique_id"] not in used]
-    if not cand:
-        return {}
-    rate = [[roles.role_rating(p, s["role"]) if roles.eligible(p, s) else None for p in cand] for s in slots]
-    n = len(cand)
-    cost = [[(-r[j] if r[j] is not None else 10_000) if j < n else 0 for j in range(n + len(slots))] for r in rate]
-    out = {}
-    for i, j in enumerate(roles._hungarian(cost)):
-        if j is not None and j < n and rate[i][j] is not None:
-            out[slots[i]["key"]] = {"unique_id": cand[j]["unique_id"], "name": cand[j]["name"], "age": cand[j].get("age"), "club": cand[j].get("club"), "rating": rate[i][j], "natural": True}
-    return out
+def _layer(slots: list, players: list, used: set, depth: dict) -> dict:
+    """Best natural player per slot (out-of-position cover only where short) with nobody used twice."""
+    left = {k: [r for r in v if r["unique_id"] not in used] for k, v in depth.items()}
+    pick = roles.best_xi(players, {"slots": slots}, left)
+    by = {p["unique_id"]: p for p in players}
+    star = {(k, r["unique_id"]): r for k, v in left.items() for r in v}
+    return {k: {"unique_id": u, "name": by[u]["name"], "age": by[u].get("age"), "club": by[u].get("club"), "stars": star[(k, u)]["stars"], "natural": not star[(k, u)]["oop"]}
+            for k, u in pick.items() if u}
 
 
 def fit(players: list, formation: str, picks: dict | None = None) -> list:
     slots = tactic_slots(formation, picks)
+    depth = roles.depth_chart(players, {"slots": slots})
+    by = {p["unique_id"]: p for p in players}
     used, layers = set(), []
     for _ in range(3):
-        lay = _layer(slots, players, used)
+        lay = _layer(slots, players, used, depth)
         used |= {r["unique_id"] for r in lay.values()}
         layers.append(lay)
     out = []
     for s in slots:
         top = [lay.get(s["key"]) for lay in layers]
-        rated = sorted(({"unique_id": p["unique_id"], "name": p["name"], "age": p.get("age"), "positions": p.get("positions"), "rating": roles.role_rating(p, s["role"]),
-                         "natural": roles.eligible(p, s)} for p in players), key=lambda r: (-r["natural"], -r["rating"]))
-        score = round(sum(w * (t["rating"] if t else 0) for t, w in zip(top, (.6, .3, .1))), 1)
+        rated = [{"unique_id": r["unique_id"], "name": by[r["unique_id"]]["name"], "age": by[r["unique_id"]].get("age"), "positions": by[r["unique_id"]].get("positions"),
+                  "stars": r["stars"], "natural": not r["oop"]} for r in depth[s["key"]]]
+        score = round(sum(w * (t["stars"] if t else 0) for t, w in zip(top, (.6, .3, .1))) * 2) / 2
         out.append({"slot": s["key"], "label": s["label"], "role": s["role"], "role_name": s["role_name"], "group": GROUP.get(s["positions"][0], "CM"),
                     "starter": top[0], "backup": top[1], "depth": top[2], "score": score, "ranked": rated, "role_options": role_options(s)})
     return out
@@ -517,7 +514,7 @@ async def tactic_fit(formation: Optional[str] = None, tactic: Optional[str] = No
     asked = dict(x.split(":", 1) for x in picks.split(",") if ":" in x)
     slots = fit((await latest_snapshot(c["id"]))["players"], formation, asked or (chosen or {}).get("roles"))
     note = ("FMCC reads the shape of your save's tactics but not their roles yet, so each slot starts on FMCC's default role. Change a role to see the fit move."
-            if chosen and chosen.get("from_save") else "Fit uses attributes only, rated for the role in each slot. Each player is used once across starter, backup and depth.")
+            if chosen and chosen.get("from_save") else "Each slot lists the players who play there naturally, ranked by their in-FM ability, as stars within your squad. Roles label each slot but don't change who's picked.")
     return {"formation": roles.ALL_FORMATIONS[formation][0], "formation_key": formation, "tactic": chosen, "slots": slots,
             "gaps": sorted(slots, key=lambda s: s["score"])[:3], "note": note, "formations": [[k, v[0]] for k, v in roles.ALL_FORMATIONS.items()]}
 
@@ -531,7 +528,7 @@ async def shapes():
         form = roles.formation_meta(k)
         depth = roles.depth_chart(players, form)
         out.append({"key": k, "name": name, "strength": roles.strength(roles.best_xi(players, form, depth), depth),
-                    "depth": round(sum(s["score"] for s in fit(players, k)) / len(form["slots"]), 1)})
+                    "depth": round(sum(s["score"] for s in fit(players, k)) / len(form["slots"]) * 2) / 2})
     return sorted(out, key=lambda r: -r["strength"])
 
 

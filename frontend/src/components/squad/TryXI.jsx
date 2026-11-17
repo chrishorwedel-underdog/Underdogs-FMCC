@@ -33,12 +33,12 @@ export const TryXI = ({ formation }) => {
           <span style={{ cursor: "pointer" }} onClick={() => openDossier(p.unique_id)}>{p.name} ({p.club}){p.in_xi ? " · starts" : " · doesn't start"}</span>
           <button className="ib" style={{ marginLeft: 4 }} onClick={() => remove(p.unique_id)} aria-label={`Remove ${p.name}`} data-testid={`try-xi-remove-${p.unique_id}`}><X size={11} /></button></span>)}
           {data.trial.length > 0 && <button className="btn" style={{ marginLeft: "auto" }} onClick={() => sendToFm(act, data.trial.map((p) => p.unique_id))} data-testid="try-xi-send-fm"><ListPlus size={13} />Send to FM shortlist</button>}</div>
-        <p className="sent" data-testid="try-xi-strength">Best XI strength in {data.label}: <b>{data.strength_before}</b> → <b>{data.strength_after}</b> <span className={`mono ${diff > 0 ? "up" : diff < 0 ? "down" : ""}`}>({diff > 0 ? "+" : ""}{diff})</span>
+        <p className="sent" data-testid="try-xi-strength">Best XI strength in {data.label}: <Stars value={data.strength_before} id="try-xi-before" /> → <Stars value={data.strength_after} id="try-xi-after" /> <span className={diff > 0 ? "up" : diff < 0 ? "down" : ""}>({diff > 0 ? "stronger" : diff < 0 ? "weaker" : "no change"})</span>
           {data.dropped.length > 0 && <> · drops out: {data.dropped.join(", ")}</>}</p>
         <div style={{ overflowX: "auto" }}><table className="tbl" data-testid="try-xi-table"><thead><tr><th>Position</th><th>Now</th><th>With trial players</th></tr></thead>
           <tbody>{data.slots.map((s) => <tr key={s.slot} style={{ cursor: "default", background: s.trial ? "rgba(52,211,153,.08)" : undefined }} data-testid={`try-xi-slot-${s.slot}`}>
-            <td><b>{s.label}</b></td><td>{s.before || "—"} <span className="mono note">{s.before_rating}</span></td>
-            <td>{s.trial && <UserPlus size={12} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 4, color: "#34D399" }} />}{s.after || "—"} <span className="mono note">{s.after_rating}</span></td></tr>)}</tbody></table></div>
+            <td><b>{s.label}</b></td><td>{s.before || "—"} {s.before_rating != null && <Stars value={s.before_rating} size={10} />}</td>
+            <td>{s.trial && <UserPlus size={12} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 4, color: "#34D399" }} />}{s.after || "—"} {s.after_rating != null && <Stars value={s.after_rating} size={10} />}</td></tr>)}</tbody></table></div>
       </>}
     </div>
   );

@@ -523,7 +523,7 @@ async def home():
     import squad_api as SQ
     w = await SQ.weakest(c)
     d["attention"] = [a for a in d["attention"] if a["kind"] != "weak"] + ([{"kind": "weak", "tone": "acc", "unique_id": w["unique_id"], "text": f"{w['label']} is your weakest position in the Best XI.",
-                                                                              "sub": f"{w['name']} is the best option there (role rating {w['rating']})."}] if w else [])
+                                                                              "sub": f"{w['name']} is the best option there ({w['stars']:g} stars)."}] if w else [])
     d["squad"]["weak_spot"] = w["label"] if w else None
     return d | {"read_at": snaps[0]["read_at"], "pending_changes": pending, "address": address}
 

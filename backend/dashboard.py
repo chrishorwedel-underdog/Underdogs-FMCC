@@ -41,7 +41,7 @@ def compute(latest: dict, prev: dict | None, last_backup: str | None) -> dict:
     rate = {k: {r["unique_id"]: r["rating"] for r in v} for k, v in depth.items()}
     filled = [(rate[k][u], k, u) for k, u in xi.items() if u]
     w = min(filled) if filled else None
-    weak = {"label": labels[w[1]], "player": by_id[w[2]] | {"rating": w[0]}} if w else None
+    weak = {"label": labels[w[1]], "player": by_id[w[2]] | {"stars": roles.stars(w[0])}} if w else None
 
     youth = []
     for p in players:
@@ -70,7 +70,7 @@ def compute(latest: dict, prev: dict | None, last_backup: str | None) -> dict:
     if weak:
         attention.append({"kind": "weak", "tone": "acc", "unique_id": weak["player"]["unique_id"],
                           "text": f"{weak['label']} is your weakest position in the Best XI.",
-                          "sub": f"{weak['player']['name']} is the best option there (role rating {weak['player']['rating']})."})
+                          "sub": f"{weak['player']['name']} is the best option there ({weak['player']['stars']:g} stars)."})
 
     return {
         "game_date": latest["game_date"], "season": latest["season"], "club_name": latest["club_name"],

@@ -80,7 +80,7 @@ def _lineup(players, form):
     xy = _slot_xy(form)
     by = {p["unique_id"]: p for p in players}
     return [{"unique_id": u, "name": by[u]["name"], "pos": next(s["pos"] for s in form["slots"] if s["key"] == k), "x": xy[k][0], "y": xy[k][1]}
-            for k, u in xi.items() if u], roles.strength(xi, depth)
+            for k, u in xi.items() if u], round(roles.score(xi, depth))
 
 
 def play_month(save_no: int, game_date: str, club_name: str, players: list, pool: list, opponents: list) -> list:

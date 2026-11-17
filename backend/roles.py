@@ -104,18 +104,67 @@ def formation_meta(key: str) -> dict:
                                                  "positions": acc, "x": x, "y": y} for s, p, r, acc, x, y in slots]}
 
 
+def natural_positions(player: dict) -> list:
+    """His first-listed position plus every position FM rates him Natural (just the first when the save gives no ratings)."""
+    pos = player.get("positions") or []
+    return list(dict.fromkeys(pos[:1] + [x for x in (player.get("natural") or []) if isinstance(x, str)]))
+
+
 def eligible(player: dict, slot: dict) -> bool:
-    return bool(set(player["positions"]) & set(slot["positions"]))
+    return bool(set(natural_positions(player)) & set(slot["positions"]))
+
+
+# Nearby positions that may cover a slot when too few players play there naturally (goalkeepers: none).
+COVER = {"GK": [], "CB": ["DM"], "LB": ["WB (L)", "D (L)", "D (C)"], "RB": ["WB (R)", "D (R)", "D (C)"], "DM": ["M (C)", "D (C)"],
+         "CM": ["DM", "AM (C)"], "AM": ["M (C)", "AM (L)", "AM (R)", "M (L)", "M (R)"],
+         "LW": ["AM (L)", "M (L)", "AM (C)", "WB (L)", "ST"], "RW": ["AM (R)", "M (R)", "AM (C)", "WB (R)", "ST"], "ST": ["AM (C)", "AM (L)", "AM (R)"]}
+MIN_NATURAL, FILL_TO, OOP_COST = 2, 3, 500
+STAR_CA = 15  # one star = this much in-FM ability below the squad's best (internal only, never shown)
+
+
+def stars(score: float) -> float:
+    return max(.5, min(5.0, round(score / 10) / 2))
+
+
+def _score(p: dict, top: int) -> float:
+    """Squad-relative 0-100 score from in-FM ability; internal only. 20 points = one star."""
+    return max(0.0, 100 - (top - (p.get("ca") or 0)) * 20 / STAR_CA)
 
 
 def depth_chart(players: list, form: dict) -> dict:
-    return {s["key"]: sorted([{"unique_id": p["unique_id"], "rating": role_rating(p, s["role"])} for p in players if eligible(p, s)],
-                             key=lambda r: -r["rating"]) for s in form["slots"]}
+    top = max([p.get("ca") or 0 for p in players] or [0])
+    row = lambda p, oop: {"unique_id": p["unique_id"], "rating": _score(p, top), "stars": stars(_score(p, top)), "oop": oop}  # noqa: E731
+    out = {}
+    for s in form["slots"]:
+        nat = sorted([p for p in players if eligible(p, s)], key=lambda p: -(p.get("ca") or 0))
+        rows = [row(p, False) for p in nat]
+        if len(nat) < MIN_NATURAL:
+            ids = {p["unique_id"] for p in nat}
+            cover = sorted([p for p in players if p["unique_id"] not in ids and set(natural_positions(p)) & set(COVER.get(s["pos"], []))], key=lambda p: -(p.get("ca") or 0))
+            rows += [row(p, True) for p in cover[:FILL_TO - len(nat)]]
+        out[s["key"]] = rows
+    return out
 
 
-def strength(assign: dict, depth: dict) -> int:
+def public_depth(depth: dict) -> dict:
+    """Depth chart for the browser: order, stars and the out-of-position tag only."""
+    return {k: [{"unique_id": r["unique_id"], "stars": r["stars"], "oop": r["oop"]} for r in v] for k, v in depth.items()}
+
+
+def score(assign: dict, depth: dict) -> float:
+    """Average internal score of a lineup (for FMCC's own rules; never shown)."""
     vals = [next((r["rating"] for r in depth[k] if r["unique_id"] == uid), 0) for k, uid in assign.items() if uid]
-    return round(sum(vals) / max(1, len(vals)))
+    return sum(vals) / max(1, len(vals))
+
+
+def strength(assign: dict, depth: dict) -> float:
+    """Lineup strength in stars."""
+    return stars(score(assign, depth))
+
+
+def star_words(points: float) -> str:
+    s = round(points / 10) / 2
+    return "less than half a star" if s < .5 else f"{s:g} star{'' if s == 1 else 's'}"
 
 
 def _hungarian(cost: list) -> list:
@@ -157,8 +206,8 @@ def _hungarian(cost: list) -> list:
 
 
 def best_xi(players: list, form: dict, depth: dict) -> dict:
-    """The highest-scoring lineup of eligible players for the formation and roles (optimal assignment, not a greedy pick)."""
-    rate = {k: {r["unique_id"]: r["rating"] for r in v} for k, v in depth.items()}
+    """The strongest lineup: natural players first, then out-of-position cover, by in-FM ability (optimal assignment)."""
+    rate = {k: {r["unique_id"]: r["rating"] - (OOP_COST if r.get("oop") else 0) for r in v} for k, v in depth.items()}
     slots = [s["key"] for s in form["slots"]]
     uids = sorted({u for r in rate.values() for u in r})
     if not uids:
@@ -174,7 +223,7 @@ def development_xi(best: dict, form: dict, depth: dict, info: dict, rules: dict)
     rate = {k: {r["unique_id"]: r["rating"] for r in v} for k, v in depth.items()}
     labels = {s["key"]: s["label"] for s in form["slots"]}
     assign = dict(best)
-    best_avg = strength(best, depth)
+    best_avg = score(best, depth)
     youth = [uid for uid in assign.values() if uid and info[uid]["u21"]]
     picked, skipped = [], []
     needy = sorted([u for u, i in info.items() if i["u21"] and u not in assign.values() and i["month_minutes"] < rules["target_minutes"]],
@@ -189,25 +238,25 @@ def development_xi(best: dict, form: dict, depth: dict, info: dict, rules: dict)
             continue
         drop, slot = min(options)
         trial = dict(assign, **{slot: uid})
-        if drop > rules["max_slot_drop"] or best_avg - strength(trial, depth) > rules["max_team_drop"]:
+        if drop > rules["max_slot_drop"] or best_avg - score(trial, depth) > rules["max_team_drop"]:
             skipped.append((uid, "drop", slot, drop))
             continue
         assign = trial
         youth.append(uid)
         picked.append(uid)
     why = []
-    dev_avg = strength(assign, depth)
+    dev_avg = score(assign, depth)
     if picked:
         names = ", ".join(info[u]["name"] for u in picked)
         why.append(("acc", f"Gives {len(picked)} under-21 {'player' if len(picked) == 1 else 'players'} a start: {names}."))
     else:
         why.append(("blu", "No under-21 player fits your rules this time, so it matches the Best XI."))
-    why.append(("acc", f"Team strength {dev_avg}, {best_avg - dev_avg} {'point' if best_avg - dev_avg == 1 else 'points'} below your Best XI (your limit is {rules['max_team_drop']})."))
+    why.append(("acc", f"Team strength {stars(dev_avg):g} stars, {star_words(best_avg - dev_avg)} below your Best XI."))
     for uid, reason, slot, drop in skipped[:2]:
         short = rules["target_minutes"] - info[uid]["month_minutes"]
         text = {"limit": f"{info[uid]['name']} is {short} minutes short, but you already have {rules['max_youth']} under-21 starters (your limit).",
                 "position": f"{info[uid]['name']} is {short} minutes short, but has no natural position in this shape.",
-                "drop": f"{info[uid]['name']} is {short} minutes short, but would weaken {labels.get(slot, '')} by {drop} points (your limit is {rules['max_slot_drop']})."}[reason]
+                "drop": f"{info[uid]['name']} is {short} minutes short, but would weaken {labels.get(slot, '')} by {star_words(drop)}, more than your rules allow."}[reason]
         why.append(("amb", text))
     return assign, picked, why
 
@@ -215,7 +264,7 @@ def development_xi(best: dict, form: dict, depth: dict, info: dict, rules: dict)
 def best_why(best: dict, form: dict, depth: dict, info: dict, rules: dict) -> list:
     rate = {k: {r["unique_id"]: r["rating"] for r in v} for k, v in depth.items()}
     labels = {s["key"]: s["label"] for s in form["slots"]}
-    why = [("acc", f"Your strongest eleven by role rating for this {form['name']}.")]
+    why = [("acc", f"Your strongest eleven for this {form['name']}: players in positions they play naturally, ranked by their in-FM ability.")]
     youth = [info[u]["name"] for u in best.values() if u and info[u]["u21"]]
     why.append(("blu", f"Under-21 starters: {', '.join(youth)}." if youth else "No under-21 starters in this lineup."))
     needy = sorted([u for u, i in info.items() if i["u21"] and u not in best.values() and i["month_minutes"] < rules["target_minutes"]], key=lambda u: info[u]["month_minutes"])
@@ -224,7 +273,7 @@ def best_why(best: dict, form: dict, depth: dict, info: dict, rules: dict) -> li
         why.append(("amb", f"{info[u]['name']} stays {rules['target_minutes'] - info[u]['month_minutes']} minutes short of his monthly target."))
     weak = weak_spot(best, depth, labels, rate)
     if weak:
-        why.append(("amb", f"{weak[0]} is the weakest position in the team ({weak[1]})."))
+        why.append(("amb", f"{weak[0]} is the weakest position in the team ({weak[1]:g} stars)."))
     return why
 
 
@@ -234,7 +283,7 @@ def weak_spot(assign: dict, depth: dict, labels: dict, rate: dict | None = None)
     if not filled:
         return None
     r, k = min(filled)
-    return LABELS_FULL(labels[k]), r
+    return LABELS_FULL(labels[k]), stars(r)
 
 
 def LABELS_FULL(pos: str) -> str:  # noqa: N802

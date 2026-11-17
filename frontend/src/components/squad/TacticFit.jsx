@@ -3,9 +3,9 @@ import { FileUp, Trash2, Hammer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { Stars, OopTag } from "@/components/Stars";
 
 const SHOW = 5;
-const tone = (r) => (r >= 70 ? "#34D399" : r >= 55 ? "var(--acc)" : r >= 40 ? "#FBBF24" : "#F87171");
 
 const Ranked = ({ s }) => {
   const [all, setAll] = useState(false);
@@ -13,15 +13,15 @@ const Ranked = ({ s }) => {
   return (
     <div data-testid={`fit-ranked-${s.slot}`}>
       {rows.map((r, i) => (
-        <div key={r.unique_id} style={{ display: "grid", gridTemplateColumns: "18px 1fr 34px", gap: 6, alignItems: "center", padding: "3px 0", opacity: r.natural ? 1 : 0.55 }}
+        <div key={r.unique_id} style={{ display: "grid", gridTemplateColumns: "18px minmax(0,1fr) auto", gap: 6, alignItems: "center", padding: "3px 0" }}
           title={r.natural ? (r.positions || []).join(", ") : `Out of position (${(r.positions || []).join(", ")})`} data-testid={`fit-rank-${s.slot}-${r.unique_id}`}>
           <small className="mono" style={{ color: "var(--dim)" }}>{i + 1}</small>
           <div style={{ minWidth: 0 }}>
-            <small style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}{!r.natural && " · out of position"}</small>
-            <div style={{ height: 3, background: "var(--line)", borderRadius: 2 }}><div style={{ width: `${r.rating}%`, height: 3, background: tone(r.rating), borderRadius: 2 }} /></div>
+            <small style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}{!r.natural && <OopTag id={`fit-oop-${s.slot}-${r.unique_id}`} />}</small>
           </div>
-          <span className="mono" style={{ textAlign: "right", color: tone(r.rating) }}>{r.rating}</span>
+          <Stars value={r.stars} size={10} id={`fit-stars-${s.slot}-${r.unique_id}`} />
         </div>))}
+      {!s.ranked.length && <small className="note" data-testid={`fit-empty-${s.slot}`}>Nobody plays here naturally.</small>}
       {s.ranked.length > SHOW && <button className="btn" style={{ marginTop: 6, height: 26, fontSize: 12 }} onClick={() => setAll(!all)} data-testid={`fit-more-${s.slot}`}>{all ? "Show top 5" : `Show all ${s.ranked.length}`}</button>}
     </div>
   );
@@ -30,7 +30,7 @@ const Ranked = ({ s }) => {
 const Slot = ({ s, gap, onRole }) => (
   <div className="card" style={{ padding: 10, borderColor: gap ? "var(--amb)" : undefined }} data-testid={`fit-slot-${s.slot}`}>
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}><b>{s.label}</b><small className="mono" style={{ color: "var(--dim)" }}>{s.slot}</small>
-      <span className="st n" style={{ marginLeft: "auto" }} title="Slot score: starter 60%, backup 30%, depth 10%">{s.score}</span></div>
+      <span style={{ marginLeft: "auto" }} title="Starter 60%, backup 30%, depth 10%"><Stars value={s.score} size={11} id={`fit-score-${s.slot}`} /></span></div>
     <select className="inp" style={{ height: 30, margin: "6px 0 8px", fontSize: 12 }} value={s.role} onChange={(e) => onRole(s.slot, e.target.value)} data-testid={`fit-role-${s.slot}`}>
       {s.role_options.map((o) => <option key={o.key} value={o.key}>{o.name}</option>)}</select>
     <Ranked s={s} />
@@ -87,9 +87,9 @@ export const TacticFit = () => {
       <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
         <TacticList tactics={tactics} current={sel.tactic} pick={pick} act={act} onDeleted={onDeleted} />
         <div className="card" data-testid="squad-gaps"><div className="ttl">Squad gaps</div>
-          {data?.gaps.map((g) => <div key={g.slot} className="row" style={{ cursor: "pointer" }} onClick={() => nav(`/scouting?group=${g.group}`)} data-testid={`gap-${g.slot}`}><div style={{ flex: 1 }}>{g.label}<small>{g.role_name} · find players</small></div><span className="mono">{g.score}</span></div>)}</div>
+          {data?.gaps.map((g) => <div key={g.slot} className="row" style={{ cursor: "pointer" }} onClick={() => nav(`/scouting?group=${g.group}`)} data-testid={`gap-${g.slot}`}><div style={{ flex: 1 }}>{g.label}<small>{g.role_name} · find players</small></div><Stars value={g.score} size={11} /></div>)}</div>
         <div className="card" data-testid="shape-advisor"><div className="ttl">Shape advisor</div>
-          {shapes.map((s) => <div key={s.key} className="row" style={{ cursor: "pointer" }} onClick={() => setSel({ tactic: null, formation: s.key, picks: {} })} data-testid={`shape-${s.key}`}><div style={{ flex: 1 }}>{s.name}<small>depth {s.depth}</small></div><span className="mono" style={{ color: "var(--acc)" }}>{s.strength}</span></div>)}</div>
+          {shapes.map((s) => <div key={s.key} className="row" style={{ cursor: "pointer" }} onClick={() => setSel({ tactic: null, formation: s.key, picks: {} })} data-testid={`shape-${s.key}`}><div style={{ flex: 1 }}>{s.name}<small>depth</small><Stars value={s.depth} size={9} /></div><Stars value={s.strength} size={11} id={`shape-stars-${s.key}`} /></div>)}</div>
       </div>
     </div>
   );

@@ -52,6 +52,14 @@ def _positions(p: dict) -> list:
     return out or ([POS[p["best_position"]]] if p.get("best_position") in POS else [])
 
 
+def _natural(p: dict) -> list | None:
+    """Positions FM rates Natural (20 on its 1-20 scale); None when the save gives no ratings."""
+    rated = p.get("positions")
+    if not isinstance(rated, dict) or not rated:
+        return None
+    return list(dict.fromkeys(POS[k] for k, v in rated.items() if isinstance(v, int) and v >= 20 and k in POS))
+
+
 def normalize(raw: dict, attr_keys) -> dict:
     """fm_save_parser JSON -> FMCC's player rows, keyed by unique ID. CA/PA stay internal like everywhere else."""
     v = raw.get("version") or {}
@@ -67,7 +75,7 @@ def normalize(raw: dict, attr_keys) -> dict:
         birth, contract = _iso(p.get("date_of_birth")), p.get("contract") or {}
         attrs = p.get("attributes") or {}
         players[p["uid"]] = {"unique_id": int(p["uid"]), "name": p.get("name") or p.get("full_name") or "Unknown", "birth_date": birth or "",
-                             "age": _age(birth, today), "nationality": p.get("nation_name") or "", "positions": _positions(p),
+                             "age": _age(birth, today), "nationality": p.get("nation_name") or "", "positions": _positions(p), "natural": _natural(p),
                              "ca": int(p.get("current_ability") or 0), "pa": max(int(p.get("potential_ability") or 0), 0),
                              "contract_end": _iso(contract.get("ends")) or "2099-06-30", "wage": contract.get("weekly_wage") or None,
                              "value": int(p.get("valuation_unverified") or 0), "club_uid": c.get("uid"), "club": c.get("name") or c.get("short_name"),

@@ -77,12 +77,21 @@ def _positions(p) -> list:
     return [x for x in out if x] or POS_FALLBACK
 
 
+def _natural(p) -> list | None:
+    """Positions FM rates Natural (20/20), or None when the save gives no position ratings."""
+    raw = _get(p, "positions") or []
+    rated = [(str(getattr(x, "label", x)), _first(x, "rating", "familiarity", "level")) for x in raw] if isinstance(raw, (list, tuple)) else []
+    if not any(r is not None for _, r in rated):
+        return None
+    return [lab for lab, r in rated if isinstance(r, (int, float)) and r >= 20]
+
+
 def _player(p, club_name: str, club_lookup: dict) -> dict:
     birth = _get(p, "birth_date")
     contract_end = _get(p, "contract.end_date") or _get(p, "contract.expires")
     return {"unique_id": int(_get(p, "unique_id", _get(p, "uid", 0))), "name": _get(p, "name", "Unknown"),
             "birth_date": birth.isoformat() if hasattr(birth, "isoformat") else str(birth or ""), "age": int(_get(p, "age", 0)),
-            "nationality": _get(p, "nationality.name") or str(_get(p, "nationality", "")), "positions": _positions(p),
+            "nationality": _get(p, "nationality.name") or str(_get(p, "nationality", "")), "positions": _positions(p), "natural": _natural(p),
             "ca": int(_get(p, "ability.current", 0)), "pa": int(_get(p, "ability.potential", 0)),
             "contract_end": contract_end.isoformat() if hasattr(contract_end, "isoformat") else str(contract_end or "2099-06-30"),
             "wage": _get(p, "contract.wage"), "value": int(_get(p, "transfer_value", 0) or 0),
@@ -407,6 +416,8 @@ def combine(main: dict | None, backup: dict | None, backup_err: str | None, path
             gaps = {k: b[k] for k, empty in (("positions", POS_FALLBACK), ("contract_end", "2099-06-30"), ("wage", None), ("nationality", ""), ("birth_date", ""))
                     if row.get(k) in (empty, None, "") and b.get(k) not in (empty, None, "", [])}
             filled += bool(gaps)
+            if row.get("natural") is None and b.get("natural") is not None:
+                gaps["natural"] = b["natural"]
             row.update(gaps)
         for uid, b in bp.items():
             if uid not in have and b["club_uid"] == main["club_uid"]:

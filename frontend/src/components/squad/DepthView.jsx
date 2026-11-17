@@ -3,6 +3,7 @@ import { Loading } from "@/components/Loading";
 import { GripVertical } from "lucide-react";
 import { api } from "@/lib/api";
 import { useGet, useAct } from "@/lib/ui";
+import { Stars, OopTag } from "@/components/Stars";
 
 const Slot = ({ s, plan, formation }) => {
   const act = useAct();
@@ -20,15 +21,15 @@ const Slot = ({ s, plan, formation }) => {
       <p className="note" style={{ marginTop: 4 }}>{s.role_name}</p>
       <div className="mbars">
         {rows.slice(0, 6).map((r, i) => (
-          <div className="mb" key={r.unique_id} style={{ gridTemplateColumns: "14px 110px 1fr 30px", cursor: "grab" }} draggable data-testid={`depth-row-${s.key}-${i}`}
+          <div className="mb" key={r.unique_id} style={{ gridTemplateColumns: "14px minmax(0,1fr) auto", cursor: "grab" }} draggable data-testid={`depth-row-${s.key}-${i}`}
             onDragStart={(e) => e.dataTransfer.setData("text/fmcc-depth", `${s.key}:${i}`)} onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => { const [k, from] = e.dataTransfer.getData("text/fmcc-depth").split(":"); if (k === s.key) move(Number(from), i); }}>
             <GripVertical size={12} style={{ color: "var(--dim)" }} />
-            <span style={{ color: i === 0 ? "var(--text)" : undefined }}>{i + 1}. {plan.players[r.unique_id].name} ({plan.players[r.unique_id].age})</span>
-            <div className="track"><i style={{ width: `${r.rating}%`, background: i === 0 ? "var(--acc)" : "var(--mut)" }} /></div><span className="mono">{r.rating}</span>
+            <span style={{ color: i === 0 ? "var(--text)" : undefined }}>{i + 1}. {plan.players[r.unique_id].name} ({plan.players[r.unique_id].age}){r.oop && <OopTag id={`depth-oop-${s.key}-${i}`} />}</span>
+            <Stars value={r.stars} id={`depth-stars-${s.key}-${i}`} />
           </div>
         ))}
-        {rows.length === 0 && <span className="note">Nobody plays here naturally.</span>}
+        {rows.length === 0 && <span className="note" data-testid={`depth-empty-${s.key}`}>{s.pos === "GK" ? "No goalkeeper plays here naturally, and outfield players can't cover in goal." : "Nobody plays here naturally, and nobody from a nearby position can cover."}</span>}
       </div>
     </div>
   );
@@ -45,10 +46,10 @@ export const DepthView = ({ formation }) => {
       <div className="card" data-testid="weak-positions">
         <div className="ttl">Weakest positions</div>
         {plan.weak.slice(0, 6).map((w) => (
-          <div className="row" key={w.slot}><div style={{ flex: 1 }}>{w.label}<small>{w.options} natural {w.options === 1 ? "option" : "options"}</small></div>
-            <span className={`st ${w.best < plan.best.strength - 5 ? "a" : "n"}`}>{w.best}</span></div>
+          <div className="row" key={w.slot} data-testid={`weak-${w.slot}`}><div style={{ flex: 1 }}>{w.label}<small>{w.options} natural {w.options === 1 ? "option" : "options"}</small></div>
+            <Stars value={w.stars} id={`weak-stars-${w.slot}`} /></div>
         ))}
-        <p className="note" style={{ marginTop: 8 }}>Ratings are role ratings (0–100) for the role in this shape. Drag players within a position to set your own order; FMCC keeps it for this tactic.</p>
+        <p className="note" style={{ marginTop: 8 }}>Stars compare players within your squad, as FM's coach stars do: your best players sit near 5 stars. Only players who play a position naturally are listed, with out-of-position cover added below them where a position is short. Drag players within a position to set your own order; FMCC keeps it for this tactic.</p>
       </div>
     </div>
   );

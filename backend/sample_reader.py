@@ -189,7 +189,7 @@ def read_save(save_no: int, club_name: str, edits: dict | None = None) -> dict:
         starts = min(apps, round(played / 90 * 0.9))
         players.append({
             "unique_id": uid, "name": name, "birth_date": birth, "age": _age(birth, game_date),
-            "nationality": nat, "positions": pos, "ca": cur, "pa": pa,
+            "nationality": nat, "positions": pos, "natural": pos[:1] + (pos[1:] if uid % 3 else []), "ca": cur, "pa": pa,
             "contract_end": contract, "wage": wage, "minutes": played, "appearances": apps, "starts": starts, "sub_apps": apps - starts,
             "avg_rating": round(6.4 + (cur - 100) / 120 + rng.uniform(-0.2, 0.2), 2) if apps else None,
             "goals": int(played / 90 * (0.5 if "ST" in pos else 0.2 if any(x.startswith("AM") for x in pos) else 0.04)),

@@ -1,4 +1,5 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Stars, OopTag } from "@/components/Stars";
 
 const Lines = () => (
   <svg className="lines" viewBox="0 0 68 105" preserveAspectRatio="none" fill="none" stroke="rgba(255,255,255,.13)" strokeWidth="1.2">
@@ -11,12 +12,12 @@ const Lines = () => (
 
 const Token = ({ slot, uid, plan, onPick, slots }) => {
   const p = plan.players[uid];
-  const rating = plan.depth[slot.key]?.find((r) => r.unique_id === uid)?.rating;
+  const row = plan.depth[slot.key]?.find((r) => r.unique_id === uid);
   const drop = (e) => { e.preventDefault(); const from = e.dataTransfer.getData("text/fmcc-slot"); if (from && from !== slot.key) onPick(slot.key, slots[from]); };
   return (
     <div className="p" style={{ left: `${slot.x}%`, top: `${slot.y}%` }} data-testid={`pitch-slot-${slot.key}`}
       draggable onDragStart={(e) => e.dataTransfer.setData("text/fmcc-slot", slot.key)} onDragOver={(e) => e.preventDefault()} onDrop={drop}>
-      <div className="tip"><b>{p?.name}</b><span>{slot.role_name} · rating {rating}</span></div>
+      <div className="tip"><b>{p?.name}</b><span>{slot.role_name}{row?.oop ? " · out of position" : ""}</span></div>
       <Popover>
         <PopoverTrigger asChild>
           <button className={`tok${p?.u21 ? " y" : ""}`} data-testid={`pitch-token-${slot.key}`}>{slot.pos}{p?.u21 && <em>U21</em>}</button>
@@ -25,12 +26,12 @@ const Token = ({ slot, uid, plan, onPick, slots }) => {
           <div className="gl" style={{ fontSize: 10.5, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--dim)", padding: "6px 8px" }}>{slot.label} · {slot.role_name}</div>
           {plan.depth[slot.key].map((r) => (
             <div key={r.unique_id} className={`pi${r.unique_id === uid ? " sel" : ""}`} onClick={() => onPick(slot.key, r.unique_id)} data-testid={`pitch-pick-${slot.key}-${r.unique_id}`}>
-              {plan.players[r.unique_id].name} <span style={{ color: "var(--dim)", fontSize: 11.5 }}>{plan.players[r.unique_id].age}</span>{plan.players[r.unique_id].u21 && <span className="tag st g">U21</span>}<small className="mono">{r.rating}</small>
+              {plan.players[r.unique_id].name} <span style={{ color: "var(--dim)", fontSize: 11.5 }}>{plan.players[r.unique_id].age}</span>{plan.players[r.unique_id].u21 && <span className="tag st g">U21</span>}{r.oop && <OopTag id={`pitch-oop-${slot.key}-${r.unique_id}`} />}<small style={{ marginLeft: "auto" }}><Stars value={r.stars} size={10} /></small>
             </div>
           ))}
         </PopoverContent>
       </Popover>
-      <b>{p?.name || "—"}</b><small>{rating ?? ""}{p?.u21 ? " · U21" : ""}</small>
+      <b>{p?.name || "—"}</b><small>{row && <Stars value={row.stars} size={9} id={`pitch-stars-${slot.key}`} />}{p?.u21 ? " · U21" : ""}</small>
     </div>
   );
 };
