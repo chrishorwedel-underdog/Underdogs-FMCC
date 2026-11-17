@@ -33,33 +33,65 @@ export const CheckList = ({ items, id }) => (
 
 const Head = ({ title, text }) => (<><h2 className="ttl" style={{ justifyContent: "center", textAlign: "center" }}>{title}</h2><p className="note" style={{ textAlign: "center" }}>{text}</p></>);
 
+const SaveList = ({ saves, pick, onPick }) => (
+  <div className="save-list" role="radiogroup" aria-label="Saves found on this PC" data-testid="setup-save-list">
+    {saves.map((s, i) => <button key={s.path} role="radio" aria-checked={pick === s.path} className={`save-opt${pick === s.path ? " on" : ""}`} onClick={() => onPick(s)} data-testid={`setup-save-${i}`}>
+      <b>{s.name}</b><small>{new Date(s.modified * 1000).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} · {s.size_mb} MB</small><small className="mono">{s.folder}</small>
+    </button>)}
+  </div>
+);
+
 const FindStep = ({ form, set, next }) => {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState(null);
   const [folder, setFolder] = useState("");
+  const [check, setCheck] = useState(null);
   const inspect = async (save_folder) => {
     setBusy(true);
-    try { const { data } = await api.post("/setup/inspect", { edition: form.edition, save_folder }); setRes(data); set({ save_folder: data.save_folder, found: true }); }
-    catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
+    setCheck(null);
+    try {
+      const { data } = await api.post("/setup/inspect", { edition: form.edition, save_folder });
+      setRes(data);
+      const keep = data.saves?.find((s) => s.path === form.save_file) || data.saves?.[0];
+      set({ save_folder: keep?.folder || data.save_folder, save_file: keep?.path || "", found: true });
+    } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
+  };
+  const pick = (s) => { set({ save_folder: s.folder, save_file: s.path }); setCheck(null); };
+  const test = async () => {
+    setCheck({ busy: true });
+    try {
+      const { data } = await api.post("/setup/check-save", { path: form.save_file });
+      setCheck(data);
+      if (data.ok && (!form.club_name.trim() || form.club_name === "Sample Club FC")) set({ club_name: data.club_name });
+    } catch (e) { setCheck({ ok: false, error: errMsg(e) }); }
   };
   useEffect(() => { if (form.found && !res) inspect(form.save_folder); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const bad = res?.items.some((i) => i.status === "fail");
-  const ready = res && res.items.find((i) => i.key === "saves")?.status === "ok" && form.name.trim() && form.club_name.trim() && (form.address || "").trim();
+  const saves = res?.saves || [];
+  const ready = res && form.save_file && check?.ok !== false && form.name.trim() && form.club_name.trim() && (form.address || "").trim();
   return (
     <div>
-      <Head title="Find Football Manager" text="FMCC finds FM and your save folder for you. In this browser preview it uses a sample save instead of your PC." />
+      <Head title="Find your saves" text="FMCC scans this PC for Football Manager saves, including OneDrive Documents folders. Pick the one to use, or type your save folder. In this browser preview it uses sample saves." />
       <div className="wiz-row">
         <div className="seg">
           {["FM26", "FM27"].map((e) => <button key={e} className={form.edition === e ? "on" : ""} onClick={() => { set({ edition: e, found: false }); setRes(null); }} data-testid={`setup-edition-${e.toLowerCase()}`}>{e}</button>)}
         </div>
-        <button className="btn btn-g btn-l" onClick={() => inspect()} disabled={busy} data-testid="setup-detect-button">{busy ? <Loader2 size={18} className="animate-spin" /> : <FolderSearch size={18} />}{res ? "Find again" : `Find ${form.edition}`}</button>
+        <button className="btn btn-g btn-l" onClick={() => inspect()} disabled={busy} data-testid="setup-detect-button">{busy ? <Loader2 size={18} className="animate-spin" /> : <FolderSearch size={18} />}{res ? "Scan again" : "Scan this PC for saves"}</button>
+      </div>
+      <div className="wiz-row" style={{ marginTop: 10 }} data-testid="setup-choose-folder">
+        <input className="inp" style={{ flex: 1 }} placeholder="Or type a save folder, e.g. C:\Users\You\Documents\Sports Interactive\Football Manager 2027\games" value={folder} onChange={(e) => setFolder(e.target.value)} data-testid="setup-folder-input" />
+        <button className="btn btn-l" disabled={folder.trim().length < 3 || busy} onClick={() => inspect(folder.trim())} data-testid="setup-choose-folder-button">Search this folder</button>
       </div>
       {res && <>
         <CheckList items={res.items} id="setup-found" />
-        {bad && <div className="wiz-row" style={{ marginTop: 14 }} data-testid="setup-choose-folder">
-          <input className="inp" style={{ flex: 1 }} placeholder="Path to your FM 'games' folder" value={folder} onChange={(e) => setFolder(e.target.value)} data-testid="setup-folder-input" />
-          <button className="btn btn-l" disabled={folder.trim().length < 3 || busy} onClick={() => inspect(folder.trim())} data-testid="setup-choose-folder-button">Choose folder</button>
-        </div>}
+        {saves.length > 0 && <>
+          <label className="lbl" style={{ marginTop: 16 }}>Choose your save ({saves.length} found, newest first)</label>
+          <SaveList saves={saves} pick={form.save_file} onPick={pick} />
+          <div className="wiz-row" style={{ marginTop: 10 }}>
+            <button className="btn" disabled={!form.save_file || check?.busy} onClick={test} data-testid="setup-check-save">{check?.busy ? <Loader2 size={15} className="animate-spin" /> : null}{check?.busy ? "Reading the save… this can take a minute" : "Check this save"}</button>
+            {check?.ok && <span className="st ok" data-testid="setup-check-ok">Read OK: {check.club_name}, {check.players} players, game date {check.game_date}{check.skipped?.length ? ` (skipped: ${check.skipped.join(", ")})` : ""}</span>}
+          </div>
+          {check?.ok === false && <p className="chk-fix" style={{ marginTop: 8 }} data-testid="setup-check-error">{check.error}</p>}
+        </>}
         <div className="wiz-2col">
           <div><label className="lbl">Club</label><input className="inp" value={form.club_name} maxLength={60} onChange={(e) => set({ club_name: e.target.value })} data-testid="setup-club-input" /></div>
           <div><label className="lbl">Career name</label><input className="inp" value={form.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} data-testid="setup-career-input" /></div>
@@ -125,13 +157,13 @@ const HealthStep = ({ analytics }) => {
 export default function Setup() {
   const [step, setStep] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ edition: "FM27", save_folder: "", club_name: "Sample Club FC", name: "My first career", address: "Boss", analytics: false, found: false });
+  const [form, setForm] = useState({ edition: "FM27", save_folder: "", save_file: "", club_name: "Sample Club FC", name: "My first career", address: "Boss", analytics: false, found: false });
   useEffect(() => { api.get("/setup/progress").then((r) => { setForm((f) => ({ ...f, ...r.data.form })); setStep(Math.min(r.data.step, 2)); }).catch(() => setStep(0)); }, []);
   useEffect(() => { if (step !== null && step < 3) api.put("/setup/progress", { step, form }).catch(() => {}); }, [step, form]);
   const set = (p) => setForm((f) => ({ ...f, ...p }));
   const finish = async () => {
     setBusy(true);
-    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, club_name: form.club_name, name: form.name, address: form.address.trim() }); markNewCareer(); setStep(3); }
+    try { await api.post("/setup/complete", { edition: form.edition, save_folder: form.save_folder, save_file: form.save_file || null, club_name: form.club_name, name: form.name, address: form.address.trim() }); markNewCareer(); setStep(3); }
     catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
   return (

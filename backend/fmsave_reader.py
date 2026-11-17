@@ -2,6 +2,9 @@
 field access is defensive, and anything fmsave can't read stays None instead of being guessed."""
 from datetime import date
 from pathlib import Path
+import logging
+
+logger = logging.getLogger("fmcc")
 
 ATTR_MAP = {"handling": "handling", "reflexes": "reflexes", "one_on_ones": "one_on_ones", "kicking": "kicking", "command_of_area": "command_of_area",
             "aerial_reach": "aerial_reach", "passing": "passing", "first_touch": "first_touch", "technique": "technique", "dribbling": "dribbling",
@@ -18,9 +21,53 @@ def _get(obj, path, default=None):
     return default if obj is None else obj
 
 
-def latest_save(folder: str) -> Path | None:
+def latest_save(folder: str, pick: str | None = None) -> Path | None:
+    """The save you chose in setup if it's still there, otherwise the newest .fm in the folder."""
+    if pick and Path(pick).is_file():
+        return Path(pick)
     files = sorted(Path(folder).glob("*.fm"), key=lambda p: p.stat().st_mtime, reverse=True)
     return files[0] if files else None
+
+
+def candidate_folders(edition: str, extra: str | None = None) -> list[Path]:
+    """Every place FM usually keeps saves on Windows, including OneDrive-moved Documents folders."""
+    import os
+    home = Path(os.environ.get("USERPROFILE") or Path.home())
+    docs = [home / "Documents", *sorted(home.glob("OneDrive*/Documents")), *sorted(home.glob("OneDrive*/Dokumente")), *sorted(home.glob("OneDrive*/Documenten"))]
+    years = ["27", "26"] if edition == "FM27" else ["26", "27"]
+    names = [n for y in years for n in (f"Football Manager 20{y}", f"Football Manager {y}")]
+    out = ([Path(extra)] if extra else []) + [d / "Sports Interactive" / n / "games" for d in docs for n in names]
+    seen, uniq = set(), []
+    for p in out:
+        if str(p).lower() not in seen:
+            seen.add(str(p).lower())
+            uniq.append(p)
+    return uniq
+
+
+def find_saves(edition: str, extra: str | None = None, limit: int = 40) -> list[dict]:
+    """Scan the usual save folders (and one level of sub-folders) for .fm saves, newest first."""
+    found = {}
+    for folder in candidate_folders(edition, extra):
+        if not folder.is_dir():
+            continue
+        for f in [*folder.glob("*.fm"), *folder.glob("*/*.fm")]:
+            try:
+                st = f.stat()
+            except OSError:
+                continue
+            found[str(f)] = {"path": str(f), "name": f.stem, "folder": str(f.parent), "modified": st.st_mtime, "size_mb": round(st.st_size / 1e6, 1)}
+    return sorted(found.values(), key=lambda s: -s["modified"])[:limit]
+
+
+def _safe(fn, default, label: str, skipped: list):
+    """Optional parts of the save: if the reader can't handle one, FMCC carries on without it."""
+    try:
+        return fn()
+    except Exception as exc:  # noqa: BLE001 - fmsave raises many layout-specific errors
+        logger.warning("fmsave skipped %s: %s", label, exc)
+        skipped.append(label)
+        return default
 
 
 def _positions(p) -> list:
@@ -228,30 +275,42 @@ def _club_history(club) -> dict:
             "academy": _first(club, "youth_academy", "academy_level", "youth_facilities"), "manager": _first(club, "manager_name", "manager.name")}
 
 
+def _open(fmsave, path: Path):
+    try:
+        return fmsave.open(str(path), strict=False)
+    except TypeError:
+        return fmsave.open(str(path))
+
+
 def read_save(path: Path, club_name_hint: str) -> dict:
     import fmsave  # only installed in the Windows build
 
-    with fmsave.open(str(path)) as save:
-        mine = save.managed_clubs()
-        if not mine:
-            raise ValueError("You aren't managing a club in this save")
-        club = mine[0]
-        my_uid = _first(club, "club_uid", "uid")
-        clubs = {_first(c, "club_uid", "uid"): (_first(c, "name", "club_name"), _get(c, "nation_id"), _get(c, "gender"), _get(c, "reputation")) for c in save.clubs()} if hasattr(save, "clubs") else {}
+    skipped = []
+    with _open(fmsave, path) as save:
+        clubs = _safe(lambda: {_first(c, "club_uid", "uid"): (_first(c, "name", "club_name"), _get(c, "nation_id"), _get(c, "gender"), _get(c, "reputation")) for c in save.clubs()} if hasattr(save, "clubs") else {}, {}, "club list", skipped)
+        mine = _safe(save.managed_clubs, [], "your club", skipped)
+        if mine:
+            club = mine[0]
+            my_uid = _first(club, "club_uid", "uid")
+        else:
+            my_uid = next((u for u, v in clubs.items() if v[0] and club_name_hint and v[0].lower() == club_name_hint.lower()), None)
+            club = None
+            if my_uid is None:
+                raise ValueError("FMCC couldn't find the club you manage in this save" + (" because this FM version stores clubs in a way FMCC's save reader doesn't know yet" if skipped else ""))
         club_lookup = {u: v[0] for u, v in clubs.items()}
         club_rows = [{"uid": int(u), "name": n, "league": None} for u, n in club_lookup.items() if u is not None and n]
         club_name = club_lookup.get(my_uid) or _get(club, "name") or club_name_hint
-        club_colours = _colours(club)
-        stats = _season_stats(save)
+        club_colours = _safe(lambda: _colours(club), None, "club colours", skipped)
+        stats = _safe(lambda: _season_stats(save), {}, "season stats", skipped)
         everyone = list(save.players())
         nations = {}
         for p in everyone:
             nid, nn = _get(p, "nation_id"), _get(p, "nationality.name")
             if nid is not None and nn and isinstance(nn, str):
                 nations.setdefault(nid, nn)
-        tables, club_league = _tables(save, {u: (v[0], v[1], v[3], v[2]) for u, v in clubs.items()}, nations)
-        moves = _transfers(save)
-        tactics = _tactics(save, my_uid)
+        tables, club_league = _safe(lambda: _tables(save, {u: (v[0], v[1], v[3], v[2]) for u, v in clubs.items()}, nations), ([], {}), "league tables", skipped)
+        moves = _safe(lambda: _transfers(save), {}, "transfers", skipped)
+        tactics = _safe(lambda: _tactics(save, my_uid), [], "tactics", skipped)
         squad, pool = [], []
         for p in everyone:
             uid, cu = _first(p, "unique_id", "uid"), _get(p, "club_uid")
@@ -271,9 +330,11 @@ def read_save(path: Path, club_name_hint: str) -> dict:
                        last_move=moves.get(_first(p, "uid", "unique_id")), gender="F" if str(clubs.get(cu, (0, 0, ""))[2]).lower().startswith(("f", "w")) else "M")
             pool.append(row)
         game_date = _get(save, "game_date") or date.today()
-        staff = _staff(save, club_lookup, club_league, nations)
+        staff = _safe(lambda: _staff(save, club_lookup, club_league, nations), [], "staff", skipped)
+        finance = _safe(lambda: _finance(club), {}, "finances", skipped)
+        history = _safe(lambda: _club_history(club), {}, "club history", skipped)
     pool = sorted(pool, key=lambda r: -r["minutes"])[:WORLD_CAP]
     gd = game_date if isinstance(game_date, date) else date.fromisoformat(str(game_date)[:10])
     season_year = gd.year if gd.month >= 7 else gd.year - 1
     return {"file_name": path.name, "club_name": club_name, "game_date": gd.isoformat(), "season": f"{season_year}/{str(season_year + 1)[2:]}",
-            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "finance": _finance(club), "history": _club_history(club), "file_mtime": path.stat().st_mtime}
+            "players": squad, "next_fixture": None, "tactics": tactics, "pool": pool, "tables": tables, "clubs": club_rows, "staff": staff, "club_colours": club_colours, "finance": finance, "history": history, "file_mtime": path.stat().st_mtime, "skipped": skipped}

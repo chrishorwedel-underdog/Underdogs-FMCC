@@ -7,7 +7,7 @@ import uuid
 from contextlib import suppress
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, APIRouter, HTTPException, Query
@@ -98,6 +98,7 @@ class CareerIn(BaseModel):
 
 class SetupIn(CareerIn):
     save_folder: str = Field(min_length=3, max_length=300)
+    save_file: Optional[str] = Field(None, max_length=400)
     address: str = Field("Boss", min_length=1, max_length=30)
 
 
@@ -107,6 +108,7 @@ class AddressIn(BaseModel):
 
 class FolderIn(BaseModel):
     save_folder: str = Field(min_length=3, max_length=300)
+    save_file: Optional[str] = Field(None, max_length=400)
     expected_career_id: str
 
 
@@ -122,11 +124,20 @@ class AutoReadIn(BaseModel):
 READER = os.environ.get("FMCC_READER", "sample")
 
 
+def read_error(name: str, exc: Exception) -> str:
+    """Plain-words reason a save couldn't be read, with the technical detail kept short at the end."""
+    text = str(exc)
+    if "layout" in text or "framing" in text or "section" in text:
+        return (f"FMCC couldn't read {name}: this save uses a layout FMCC's save reader doesn't know yet (usually a newer FM update). "
+                f"Update FMCC to the latest version, or pick a different save. Detail: {text[:160]}")
+    return f"FMCC couldn't read {name}: {text[:220]}"
+
+
 def _read_save_file(career: dict, save_no: int, edits: dict) -> dict:
     if READER != "fmsave":
         return sample_reader.read_save(save_no, career["club_name"], edits)
     import fmsave_reader
-    path = fmsave_reader.latest_save(career["save_folder"])
+    path = fmsave_reader.latest_save(career["save_folder"], career.get("save_file"))
     if not path:
         raise HTTPException(404, "No .fm save found in your save folder")
     if career.get("last_file") == f"{path.name}:{path.stat().st_mtime}":
@@ -135,7 +146,7 @@ def _read_save_file(career: dict, save_no: int, edits: dict) -> dict:
         return fmsave_reader.read_save(path, career["club_name"])
     except Exception as exc:
         logger.error("fmsave read failed: %s", exc)
-        raise HTTPException(422, f"FMCC couldn't read {path.name}: {exc}")
+        raise HTTPException(422, read_error(path.name, exc))
 
 
 async def read_next_save(career: dict) -> dict:
@@ -187,7 +198,7 @@ async def read_next_save(career: dict) -> dict:
 
 async def new_career(body: CareerIn, save_folder: str) -> dict:
     career = {"id": str(uuid.uuid4()), "name": body.name.strip(), "club_name": body.club_name.strip(), "edition": body.edition,
-              "save_folder": save_folder, "reader": "sample", "next_save_no": 0, "created_at": now_iso(),
+              "save_folder": save_folder, "save_file": getattr(body, "save_file", None), "reader": "sample", "next_save_no": 0, "created_at": now_iso(),
               "last_read_at": None, "last_game_date": None}
     await db.careers.insert_one(dict(career))
     await read_next_save(career)
@@ -300,7 +311,7 @@ async def set_folder(body: FolderIn):
     c = await active_career()
     if c["id"] != body.expected_career_id:
         raise HTTPException(409, "The active career changed in another window. Reload and try again.")
-    await db.careers.update_one({"id": c["id"]}, {"$set": {"save_folder": body.save_folder.strip()}})
+    await db.careers.update_one({"id": c["id"]}, {"$set": {"save_folder": body.save_folder.strip(), "save_file": body.save_file}})
     return {"ok": True}
 
 

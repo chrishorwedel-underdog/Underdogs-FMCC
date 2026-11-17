@@ -73,10 +73,10 @@ def clamp(v: int) -> int:
     return max(LIMITS[0], min(LIMITS[1], v))
 
 
-def backup_save(folder: str) -> dict:
+def backup_save(folder: str, pick: str | None = None) -> dict:
     import fmsave_reader
     from fm_game import DATA
-    src = fmsave_reader.latest_save(folder)
+    src = fmsave_reader.latest_save(folder, pick)
     if not src:
         raise EditorError("There's no save file to back up in your save folder")
     dest_dir = DATA / "save-backups"

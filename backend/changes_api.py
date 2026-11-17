@@ -225,7 +225,7 @@ async def start_batch(career: dict, ids: list, expected: dict | None = None) -> 
     if LIVE:
         import live_editor
         try:
-            save_backup = await asyncio.to_thread(live_editor.backup_save, career["save_folder"])
+            save_backup = await asyncio.to_thread(live_editor.backup_save, career["save_folder"], career.get("save_file"))
         except Exception as exc:
             raise HTTPException(422, f"Nothing was applied: {exc}")
     backup = await create_backup(f"{career['name']}: before game change batch ({len(ids)})", automatic=False)

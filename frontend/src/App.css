@@ -584,6 +584,12 @@ th.sortable:hover,th.sortable[aria-sort]{color:var(--acc)}
 .tbl-scroll{max-height:72vh;overflow:auto}
 .show-more{display:block;margin:12px auto 4px}
 .hof-note{margin:8px 0;color:var(--mut)}
+.save-list{display:grid;gap:8px;max-height:300px;overflow:auto;margin-top:6px}
+.save-opt{display:grid;gap:2px;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--s1);color:inherit;cursor:pointer;transition:border-color .15s,background-color .15s}
+.save-opt:hover{border-color:var(--acc)}
+.save-opt.on{border-color:var(--acc);background:var(--s2);box-shadow:inset 3px 0 0 var(--acc)}
+.save-opt b{color:var(--text)}
+.save-opt small{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hof-note q{color:var(--text);font-style:italic}
 @media (max-width:640px){
   .tbl-std,.tbl-std tbody{display:block;width:100%!important}

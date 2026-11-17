@@ -31,21 +31,50 @@ def _inspect(edition: str, folder: Optional[str]) -> dict:
     if not LIVE:
         sf = folder or det["save_folder"]
         first = sample_reader.read_save(0, "Sample Club FC", {})
-        return {"save_folder": sf, "sample": True, "items": [
+        now = datetime.now().timestamp()
+        saves = [{"path": f"{sf}\\{n}.fm", "name": n, "folder": sf, "modified": now - i * 86400 * 3, "size_mb": 48.2 - i} for i, n in enumerate(["Sample Club FC", "Sample Club FC - backup", "Old career"])]
+        return {"save_folder": sf, "sample": True, "saves": saves, "items": [
             _item("game", "Game folder", True, f"Sample {edition} install (browser preview)"),
             _item("saves", "Save folder", True, sf),
-            _item("count", "Saves in it", True, f"Sample saves · newest: {first['file_name']}, game date {first['game_date']}")]}
+            _item("count", "Saves found", True, f"Sample saves · newest: {first['file_name']}, game date {first['game_date']}")]}
     from fm_game import game_root
+    import fmsave_reader
     root = game_root(edition)
-    sf = Path(folder or det["save_folder"])
-    saves = sorted(sf.glob("*.fm"), key=lambda p: p.stat().st_mtime, reverse=True) if sf.is_dir() else []
-    newest = f"{len(saves)} save{'s' if len(saves) != 1 else ''} · newest: {saves[0].name}, saved {datetime.fromtimestamp(saves[0].stat().st_mtime):%d %b %Y %H:%M}" if saves else "No .fm saves in this folder yet"
-    return {"save_folder": str(sf), "sample": False, "items": [
-        _item("game", "Game folder", bool(root), str(root) if root else f"{edition} wasn't found in your Steam libraries",
-              None if root else "Install it through Steam, or check Steam is on this PC. FMCC only looks in Steam folders."),
-        _item("saves", "Save folder", sf.is_dir(), str(sf) if sf.is_dir() else f"{sf} doesn't exist",
-              None if sf.is_dir() else "Press Choose folder and type the path to your FM 'games' folder."),
-        _item("count", "Saves in it", bool(saves), newest, None if saves else "Start a career in FM, save once, then press Find again.")]}
+    saves = fmsave_reader.find_saves(edition, folder)
+    sf = Path(folder) if folder else Path(saves[0]["folder"]) if saves else Path(det["save_folder"])
+    folders = sorted({s["folder"] for s in saves})
+    newest = f"{len(saves)} save{'s' if len(saves) != 1 else ''} in {len(folders)} folder{'s' if len(folders) != 1 else ''} · newest: {saves[0]['name']}, saved {datetime.fromtimestamp(saves[0]['modified']):%d %b %Y %H:%M}" if saves else "No .fm saves found yet"
+    return {"save_folder": str(sf), "sample": False, "saves": saves, "items": [
+        _item("game", "Game folder", bool(root) or None, str(root) if root else f"{edition} wasn't found in your Steam libraries",
+              None if root else "That's fine if FM is installed elsewhere; FMCC only needs your saves."),
+        _item("saves", "Save folder", bool(saves) or sf.is_dir(), str(sf) if (saves or sf.is_dir()) else f"{sf} doesn't exist",
+              None if (saves or sf.is_dir()) else "Type the folder that holds your .fm saves and press Search this folder."),
+        _item("count", "Saves found", bool(saves), newest, None if saves else "Start a career in FM, save once, then press Find again, or type your save folder below.")]}
+
+
+class CheckSaveIn(BaseModel):
+    path: str = Field(min_length=3, max_length=400)
+
+
+@router.post("/check-save")
+async def check_save(body: CheckSaveIn):
+    """Try reading the chosen save now, so a problem shows up in setup rather than after it."""
+    if not LIVE:
+        first = sample_reader.read_save(0, "Sample Club FC", {})
+        return {"ok": True, "club_name": first["club_name"], "game_date": first["game_date"], "players": len(first["players"]), "skipped": []}
+    import fmsave_reader
+    from server import read_error
+    p = Path(body.path)
+    if not p.is_file() or p.suffix.lower() != ".fm":
+        raise HTTPException(404, "That save file isn't there any more. Press Find again.")
+    try:
+        d = await asyncio.wait_for(asyncio.to_thread(fmsave_reader.read_save, p, ""), 240)
+    except asyncio.TimeoutError:
+        return {"ok": False, "error": "Reading this save took too long. Close FM and try again."}
+    except Exception as exc:  # noqa: BLE001
+        logger.error("check-save failed: %s", exc)
+        return {"ok": False, "error": read_error(p.name, exc)}
+    return {"ok": True, "club_name": d["club_name"], "game_date": d["game_date"], "players": len(d["players"]), "skipped": d.get("skipped", [])}
 
 
 @router.post("/inspect")
@@ -178,6 +207,6 @@ async def put_progress(body: ProgressIn):
     s = await db.settings.find_one({"_id": "app"}, {"_id": 0, "setup_complete": 1}) or {}
     if s.get("setup_complete"):
         return {"ok": True, "ignored": True}
-    allowed = {k: v for k, v in body.form.items() if k in ("edition", "save_folder", "club_name", "name", "analytics", "found") and isinstance(v, (str, bool))}
+    allowed = {k: v for k, v in body.form.items() if k in ("edition", "save_folder", "save_file", "club_name", "name", "analytics", "found") and isinstance(v, (str, bool))}
     await db.settings.update_one({"_id": "app"}, {"$set": {"setup_progress": {"step": body.step, "form": allowed}}}, upsert=True)
     return {"ok": True}
