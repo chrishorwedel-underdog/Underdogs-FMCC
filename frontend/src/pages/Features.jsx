@@ -6,20 +6,21 @@ import { Switch } from "@/components/ui/switch";
 import { NAV } from "@/constants/nav";
 import { FEATURE_TEXT, useFeatures } from "@/lib/features";
 
+const ALWAYS_ON = ["home", "club-history"];
 const ALL = [...NAV, { to: "/dof", key: "dof", label: "Chat with your Director of Football", c: "#E5302F", Icon: Sparkles }];
 
 const FeatureCard = ({ f, on, set }) => {
-  const [about, example] = FEATURE_TEXT[f.key];
-  const home = f.key === "home";
+  const [about, example] = FEATURE_TEXT[f.key] || ["", ""];
+  const home = ALWAYS_ON.includes(f.key);
   return (
     <div className={`card feat-card${on ? "" : " off"}`} style={{ "--c": f.c }} data-testid={`feature-card-${f.key}`}>
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
         <span className="tile2"><f.Icon size={20} strokeWidth={2.2} /></span>
         <b style={{ flex: 1 }}>{f.label}</b>
-        {home ? <span className="st n">Always on</span> : <Switch checked={on} onCheckedChange={set} data-testid={`feature-switch-${f.key}`} />}
+        {home ? <span className="st n" data-testid={`feature-always-on-${f.key}`}>Always on</span> : <Switch checked={on} onCheckedChange={set} data-testid={`feature-switch-${f.key}`} />}
       </div>
       <p className="note" style={{ margin: "10px 0 6px" }}>{about}</p>
-      <small className="note" style={{ opacity: 0.8 }}><b>For example:</b> {example}</small>
+      {example && <small className="note" style={{ opacity: 0.8 }}><b>For example:</b> {example}</small>}
     </div>
   );
 };
@@ -52,7 +53,7 @@ export default function Features() {
       </PageHead>
       <p className="note" style={{ marginBottom: 18 }}>Pick what FMCC does in this career. You can change this any time from Features at the bottom of the app. Turning a feature off never deletes anything; it just stops its automatic work and locks it in the menu.</p>
       <ReviewCard on={!!data.review_changes} act={act} />
-      <div className="feat-grid">{ALL.map((f) => <FeatureCard key={f.key} f={f} on={f.key === "home" || data.features[f.key] !== false} set={(v) => save({ [f.key]: v })} />)}</div>
+      <div className="feat-grid">{ALL.map((f) => <FeatureCard key={f.key} f={f} on={ALWAYS_ON.includes(f.key) || data.features[f.key] !== false} set={(v) => save({ [f.key]: v })} />)}</div>
     </div>
   );
 }

@@ -67,7 +67,7 @@ export const ExtrasCard = ({ compact }) => {
       <p className="note" style={{ marginTop: 6 }}>These belong to their authors, so FMCC can't ship them. Press Download & install: FMCC fetches NG_Regens itself; for sortitoutsi packs it opens the official page (sign in there as normal), watches your Downloads folder and installs the file the moment it lands.{!data.desktop && " In this browser preview the downloads are SAMPLE files."}</p>
       <div style={{ marginTop: 8 }}>{items.map((it) => <Item key={it.key} it={it} u={upd?.items[it.key]} act={act} desktop={data.desktop} refetch={refetch} />)}</div>
       <div className="acts" style={{ marginTop: 10 }}>
-        <button className="btn" onClick={() => act(() => api.get("/extras/updates")).then((r) => r && setUpd(r))} data-testid="extras-check-updates"><RefreshCw size={13} />Check for pack updates</button>
+        <button className="btn" onClick={() => act(() => api.get("/extras/updates"), null, ["extras"]).then((r) => r && setUpd(r))} data-testid="extras-check-updates"><RefreshCw size={13} />Check for pack updates</button>
         {upd && <small className="note" data-testid="extras-checked-at">Checked {ago(upd.checked_at)}</small>}
       </div>
       {!compact && <div style={{ marginTop: 14 }} data-testid="extras-built-in"><div className="eyebrow">Already built into FMCC (nothing to download)</div>
