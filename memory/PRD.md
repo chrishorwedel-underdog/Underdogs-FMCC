@@ -445,4 +445,6 @@ Windows packaging with the real fmsave reader, FMLibreEditor editor and FMMatchL
 - roles.fit_words gives a word (Excellent/Good/Fair/Poor fit) plus a reason built from the role's key attributes. It is added to lab_api fit ranked rows as role_fit.
 - TacticFit.jsx: each slot card has a "Show role fit" switch. Its state lives in TacticFit, so it survives role changes.
 - Testing: iteration_55, backend 100%. The toggle-reset bug, the tone colours and the testids were fixed and then checked with a screenshot.
+- 2026-11-18: The team dropdowns moved into the Nominate card, under the suggestions. A 1st Team dropdown was added (players whose team is not a youth team and who are aged 21 or under, ELITE_MAX_AGE). The order is 1st Team, U21, U18.
+
 

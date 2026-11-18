@@ -68,18 +68,23 @@ async def elite():
                         "evidence": evidence.get(n["unique_id"], [])[-8:], "rule": r["name"] if r else None, "preview": _rule_text(r) if r else None})
     nominated = {n["unique_id"] for n in noms}
     snap = await latest_snapshot(c["id"])
-    teams = {"U21": [], "U18": []}
+    teams = {"First": [], "U21": [], "U18": []}
     from_save = False
     for p in (snap or {}).get("players", []):
         t, saved = _youth_team(p)
         from_save |= saved
+        if not t and (p.get("age") or 99) <= ELITE_MAX_AGE:
+            t = "First"
         if t and p["unique_id"] not in nominated:
             teams[t].append({"unique_id": p["unique_id"], "name": p["name"], "age": p.get("age")})
     for v in teams.values():
         v.sort(key=lambda x: x["name"])
-    suggestions = sorted([x for x in ctxs.values() if x["unique_id"] not in nominated and (x.get("age") or 99) <= 21], key=lambda x: -(x["training_rating"] or 0))[:5]
+    suggestions = sorted([x for x in ctxs.values() if x["unique_id"] not in nominated and (x.get("age") or 99) <= ELITE_MAX_AGE], key=lambda x: -(x["training_rating"] or 0))[:5]
     return {"nominees": out, "suggestions": [{k: s[k] for k in ("unique_id", "name", "age", "training_rating")} for s in suggestions],
             "rules_version": rules["version"], "teams": teams, "teams_from_save": from_save}
+
+
+ELITE_MAX_AGE = 21
 
 
 def _youth_team(p: dict) -> tuple:
